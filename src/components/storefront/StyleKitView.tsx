@@ -333,7 +333,7 @@ function LockedPairPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="flex flex-col bg-card/50 backdrop-blur-sm border-t border-border h-full"
+      className="flex flex-col bg-card/50 backdrop-blur-sm border-y border-border h-full"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
