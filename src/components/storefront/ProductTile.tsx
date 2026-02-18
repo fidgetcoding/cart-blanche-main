@@ -26,10 +26,10 @@ export function ProductTile({ product, scale, isFocused, onClick }: ProductTileP
       whileHover={{ scale: 1.04, zIndex: 10 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
-      <div className="w-full h-full bg-card rounded-lg overflow-hidden border border-border/50 hover:border-border transition-colors flex flex-col">
-        {/* Image placeholder */}
-        <div className="flex-1 bg-secondary flex items-center justify-center relative overflow-hidden">
-          <span className="font-display text-muted-foreground/30 text-xs tracking-widest">
+      <div className="w-full h-full rounded-lg overflow-hidden flex flex-col">
+        {/* Image area */}
+        <div className="flex-1 bg-secondary/30 flex items-center justify-center relative overflow-hidden rounded-lg">
+          <span className="font-display text-muted-foreground/15 text-[10px] tracking-[0.2em]">
             {product.category.toUpperCase()}
           </span>
           {product.compare_at_price && (

@@ -17,7 +17,7 @@ import {
 
 const CANVAS_W = 2000;
 const CANVAS_H = 1600;
-const MIN_SCALE = 0.25;
+const MIN_SCALE = 0.55;
 const MAX_SCALE = 2;
 const ZOOM_SENSITIVITY = 0.0025;
 
@@ -227,9 +227,9 @@ export function SpatialCanvas() {
     targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * s;
   }, [focusedIndex]);
 
-  const zoomLabel = scaleState < 0.35 ? 'L0' : scaleState < 0.65 ? 'L1' : scaleState < 1.2 ? 'L2' : 'L3';
-  const zoomLevels = ['L0', 'L1', 'L2', 'L3'];
-  const zoomScales = [0.25, 0.55, 0.9, 1.5];
+  const zoomLabel = scaleState < 0.65 ? 'L1' : scaleState < 1.2 ? 'L2' : 'L3';
+  const zoomLevels = ['L1', 'L2', 'L3'];
+  const zoomScales = [0.55, 0.9, 1.5];
 
   return (
     <div ref={rootRef} className="relative w-full h-screen overflow-hidden bg-background select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={() => rootRef.current?.focus()}>
