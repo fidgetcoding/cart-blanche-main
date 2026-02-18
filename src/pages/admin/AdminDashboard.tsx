@@ -43,7 +43,7 @@ export default function AdminDashboard() {
         {cards.map(c => (
           <div key={c.label} className="bg-card border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-display tracking-widest text-muted-foreground">{c.label}</p>
+              <p className="text-[10px] font-display tracking-widest text-muted-foreground whitespace-nowrap">{c.label}</p>
               <c.icon className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="font-display text-3xl font-bold">
