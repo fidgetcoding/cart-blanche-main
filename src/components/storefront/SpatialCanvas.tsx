@@ -522,9 +522,10 @@ export function SpatialCanvas() {
     if (e.key === 'Escape') {
       e.preventDefault();
       if (selectedIndex !== null) {
-        // Close product detail overlay and refocus root
+        // Close product detail overlay, reset zoom, and refocus root
         setSelectedIndex(null);
         maxZoomTriggeredRef.current = false;
+        fitToVisibleProducts();
         requestAnimationFrame(() => rootRef.current?.focus());
         return;
       }
@@ -779,6 +780,7 @@ export function SpatialCanvas() {
               setFocusedIndex(selectedIndex);
               setSelectedIndex(null);
               maxZoomTriggeredRef.current = false;
+              fitToVisibleProducts();
               setTimeout(() => rootRef.current?.focus(), 50);
             }}
             onNavigate={(newIdx) => setSelectedIndex(newIdx)}
