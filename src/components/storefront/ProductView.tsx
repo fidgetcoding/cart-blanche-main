@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Heart, X, ShoppingBag } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
@@ -78,6 +78,7 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const { addItem } = useCart();
+  const scrollCooldown = useRef(false);
 
   const product = DEMO_PRODUCTS[productIndex];
 
@@ -91,6 +92,28 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
     const newIndex = getWrappingNeighbor(productIndex, direction, DEMO_PRODUCTS);
     onNavigate(newIndex);
   }, [productIndex, onNavigate]);
+
+  // Scroll wheel navigation (throttled)
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault();
+    if (scrollCooldown.current) return;
+    const absX = Math.abs(e.deltaX);
+    const absY = Math.abs(e.deltaY);
+    if (absX < 5 && absY < 5) return;
+    scrollCooldown.current = true;
+    setTimeout(() => { scrollCooldown.current = false; }, 300);
+    if (absX > absY) {
+      navigate(e.deltaX > 0 ? 'right' : 'left');
+    } else {
+      navigate(e.deltaY > 0 ? 'down' : 'up');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    const el = document.body;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
 
   // Keyboard navigation
   useEffect(() => {
