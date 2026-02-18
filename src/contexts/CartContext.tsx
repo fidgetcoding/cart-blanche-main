@@ -10,6 +10,13 @@ export interface CartItem {
   image?: string;
 }
 
+export interface AppliedDiscount {
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  description: string | null;
+}
+
 interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
@@ -22,6 +29,11 @@ interface CartContextType {
   clearCart: () => void;
   itemCount: number;
   subtotal: number;
+  discount: AppliedDiscount | null;
+  discountAmount: number;
+  total: number;
+  applyDiscount: (discount: AppliedDiscount) => void;
+  removeDiscount: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -70,16 +82,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     ));
   }, [removeItem]);
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => { setItems([]); setDiscount(null); }, []);
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
   const toggleCart = useCallback(() => setIsOpen(p => !p), []);
 
+  const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
+  const applyDiscount = useCallback((d: AppliedDiscount) => setDiscount(d), []);
+  const removeDiscount = useCallback(() => setDiscount(null), []);
+
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+  const discountAmount = discount
+    ? discount.discount_type === 'percentage'
+      ? Math.round(subtotal * discount.discount_value / 100)
+      : discount.discount_type === 'fixed'
+        ? Math.min(discount.discount_value, subtotal)
+        : 0
+    : 0;
+  const total = Math.max(0, subtotal - discountAmount);
+
   return (
-    <CartContext.Provider value={{ items, isOpen, openCart, closeCart, toggleCart, addItem, removeItem, updateQuantity, clearCart, itemCount, subtotal }}>
+    <CartContext.Provider value={{ items, isOpen, openCart, closeCart, toggleCart, addItem, removeItem, updateQuantity, clearCart, itemCount, subtotal, discount, discountAmount, total, applyDiscount, removeDiscount }}>
       {children}
     </CartContext.Provider>
   );
