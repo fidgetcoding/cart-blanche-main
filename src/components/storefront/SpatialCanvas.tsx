@@ -11,6 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 const CANVAS_W = 1360;
 const CANVAS_H = 1230;
 const MAX_SCALE = 2;
+const MAX_ZOOM_THRESHOLD = 1.9; // trigger detail view near max
 const ZOOM_SENSITIVITY = 0.0025;
 
 const CATEGORIES = ['ALL', ...new Set(DEMO_PRODUCTS.map(p => p.category.toUpperCase()))];
@@ -33,6 +34,8 @@ export function SpatialCanvas() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const hoveredIndexRef = useRef<number | null>(null);
+  const maxZoomTriggeredRef = useRef(false);
   const { toggleCart, itemCount } = useCart();
   const navigate = useNavigate();
 
@@ -96,6 +99,30 @@ export function SpatialCanvas() {
     return () => { running = false; cancelAnimationFrame(rafRef.current); };
   }, [applyTransform]);
 
+  // Find the product index under a given screen coordinate
+  const getProductAtCursor = useCallback((screenX: number, screenY: number) => {
+    const container = containerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    const t = targetTransformRef.current;
+    // Convert screen coords to canvas coords
+    const canvasX = (screenX - rect.left - t.x) / t.scale;
+    const canvasY = (screenY - rect.top - t.y) / t.scale;
+
+    // Check each product tile (approx 220x280 size)
+    const products = DEMO_PRODUCTS;
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      if (activeCategory !== 'ALL' && p.category.toUpperCase() !== activeCategory) continue;
+      const gx = p.grid_position.x;
+      const gy = p.grid_position.y;
+      if (canvasX >= gx && canvasX <= gx + 220 && canvasY >= gy && canvasY <= gy + 280) {
+        return i;
+      }
+    }
+    return null;
+  }, [activeCategory]);
+
   // Wheel zoom
   useEffect(() => {
     const container = containerRef.current;
@@ -104,10 +131,22 @@ export function SpatialCanvas() {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      
+      // If already at max and zooming in further, open detail view
+      const target = targetTransformRef.current;
+      if (target.scale >= MAX_ZOOM_THRESHOLD && e.deltaY < 0 && !maxZoomTriggeredRef.current) {
+        const idx = getProductAtCursor(e.clientX, e.clientY);
+        if (idx !== null) {
+          maxZoomTriggeredRef.current = true;
+          setSelectedIndex(idx);
+          setFocusedIndex(idx);
+          return;
+        }
+      }
+
       const rect = container.getBoundingClientRect();
       const cursorX = e.clientX - rect.left;
       const cursorY = e.clientY - rect.top;
-      const target = targetTransformRef.current;
       const delta = -e.deltaY * ZOOM_SENSITIVITY;
       const oldScale = target.scale;
       const newScale = Math.max(minScaleRef.current, Math.min(MAX_SCALE, oldScale * (1 + delta)));
@@ -115,6 +154,11 @@ export function SpatialCanvas() {
       target.x = cursorX - (cursorX - target.x) * ratio;
       target.y = cursorY - (cursorY - target.y) * ratio;
       target.scale = newScale;
+
+      // Reset max zoom trigger when zooming out
+      if (newScale < MAX_ZOOM_THRESHOLD) {
+        maxZoomTriggeredRef.current = false;
+      }
 
       clearTimeout(scaleUpdateTimer);
       scaleUpdateTimer = window.setTimeout(() => {
@@ -127,7 +171,7 @@ export function SpatialCanvas() {
       container.removeEventListener('wheel', onWheel);
       clearTimeout(scaleUpdateTimer);
     };
-  }, []);
+  }, [getProductAtCursor]);
 
   // Drag to pan
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -354,6 +398,7 @@ export function SpatialCanvas() {
             onClose={() => {
               setFocusedIndex(selectedIndex);
               setSelectedIndex(null);
+              maxZoomTriggeredRef.current = false;
               setTimeout(() => rootRef.current?.focus(), 50);
             }}
             onNavigate={(newIdx) => setSelectedIndex(newIdx)}
