@@ -212,6 +212,8 @@ export default function AdminSettings() {
           </div>
         </div>
       </section>
+
+      <p className="text-center text-[10px] text-muted-foreground/50 font-display tracking-widest py-6">Version 1.01</p>
     </div>
   );
 }
