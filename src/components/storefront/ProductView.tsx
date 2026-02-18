@@ -5,7 +5,6 @@ import type { DemoProduct } from '@/data/demo-data';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
-
 interface ProductViewProps {
   productIndex: number;
   onClose: () => void;
@@ -79,7 +78,7 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
-  const { addItem } = useCart();
+  const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(true); // Start with cooldown to absorb momentum from zoom-in
 
@@ -213,13 +212,20 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-30 bg-background flex flex-col items-center justify-center"
     >
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-6 right-6 z-40 p-2 hover:bg-secondary rounded-lg transition-colors"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {/* Top-right: cart button (always visible) */}
+      <div className="absolute top-6 right-6 z-40">
+        <button
+          onClick={(e) => { e.stopPropagation(); openCart(); }}
+          className="relative p-2 rounded-xl bg-gradient-to-br from-violet-500/20 via-fuchsia-500/20 to-amber-500/20 border border-fuchsia-500/20 hover:border-fuchsia-500/40 hover:from-violet-500/30 hover:via-fuchsia-500/30 hover:to-amber-500/30 transition-all"
+        >
+          <ShoppingBag className="w-4 h-4 text-foreground/90" />
+          {itemCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-fuchsia-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
+              {itemCount}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Navigation arrows — always visible on all 4 sides */}
       <button
@@ -259,11 +265,18 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
         >
           {/* Product image area */}
           <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 relative">
+            {/* Close button — anchored to thumbnail */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 z-10 p-1.5 bg-background/60 backdrop-blur-sm hover:bg-secondary rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
             <span className="font-display text-muted-foreground/15 text-lg tracking-[0.3em]">
               {product.category.toUpperCase()}
             </span>
             {product.compare_at_price && (
-              <div className="absolute top-4 left-4 bg-accent text-accent-foreground text-[10px] font-display font-bold px-2 py-1 rounded">
+              <div className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-display font-bold px-2 py-1 rounded">
                 SALE
               </div>
             )}
