@@ -17,64 +17,162 @@ import {
 
 const CANVAS_W = 2000;
 const CANVAS_H = 1600;
+const MIN_SCALE = 0.25;
+const MAX_SCALE = 2;
+const ZOOM_SENSITIVITY = 0.0025;
 
 export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [scale, setScale] = useState(0.55);
+
+  // Use refs for high-frequency transform updates (no re-renders)
+  const transformRef = useRef({ x: 0, y: 0, scale: 0.55 });
+  const targetTransformRef = useRef({ x: 0, y: 0, scale: 0.55 });
+  const rafRef = useRef<number>(0);
+
+  // React state only for UI that needs re-renders
+  const [scaleState, setScaleState] = useState(0.55);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const dragRef = useRef({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, dragging: false });
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const { toggleCart, itemCount } = useCart();
   const navigate = useNavigate();
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
+  // Apply transform directly to DOM
+  const applyTransform = useCallback(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const { x, y, scale } = transformRef.current;
+    el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+  }, []);
+
+  // Smooth interpolation loop
+  useEffect(() => {
+    let running = true;
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const LERP_SPEED = 0.18;
+
+    const tick = () => {
+      if (!running) return;
+      const t = transformRef.current;
+      const target = targetTransformRef.current;
+
+      // Only interpolate when not dragging (dragging is direct)
+      if (!dragRef.current.dragging) {
+        const dx = Math.abs(t.x - target.x);
+        const dy = Math.abs(t.y - target.y);
+        const ds = Math.abs(t.scale - target.scale);
+
+        if (dx > 0.1 || dy > 0.1 || ds > 0.0001) {
+          t.x = lerp(t.x, target.x, LERP_SPEED);
+          t.y = lerp(t.y, target.y, LERP_SPEED);
+          t.scale = lerp(t.scale, target.scale, LERP_SPEED);
+          applyTransform();
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { running = false; cancelAnimationFrame(rafRef.current); };
+  }, [applyTransform]);
+
+  // Wheel handler — updates target, lerp loop smoothly catches up
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let scaleUpdateTimer: number;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = container.getBoundingClientRect();
+      const cursorX = e.clientX - rect.left;
+      const cursorY = e.clientY - rect.top;
+
+      const target = targetTransformRef.current;
+      const delta = -e.deltaY * ZOOM_SENSITIVITY;
+      const oldScale = target.scale;
+      const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, oldScale * (1 + delta)));
+      const ratio = newScale / oldScale;
+
+      target.x = cursorX - (cursorX - target.x) * ratio;
+      target.y = cursorY - (cursorY - target.y) * ratio;
+      target.scale = newScale;
+
+      // Debounced React state update for zoom label
+      clearTimeout(scaleUpdateTimer);
+      scaleUpdateTimer = window.setTimeout(() => {
+        setScaleState(targetTransformRef.current.scale);
+      }, 80);
+    };
+
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', onWheel);
+      clearTimeout(scaleUpdateTimer);
+    };
+  }, []);
+
+  // Dragging — direct manipulation (no lerp)
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      panStartX: transformRef.current.x,
+      panStartY: transformRef.current.y,
+      dragging: true,
+    };
+    setIsDragging(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const d = dragRef.current;
+    if (!d.dragging) return;
+    const t = transformRef.current;
+    t.x = d.panStartX + (e.clientX - d.startX);
+    t.y = d.panStartY + (e.clientY - d.startY);
+    // Keep target in sync
+    targetTransformRef.current.x = t.x;
+    targetTransformRef.current.y = t.y;
+    applyTransform();
+  }, [applyTransform]);
+
+  const handleMouseUp = useCallback(() => {
+    dragRef.current.dragging = false;
+    setIsDragging(false);
+  }, []);
+
+  // Set scale from zoom level buttons
+  const setScaleSmooth = useCallback((newScale: number) => {
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    const cursorX = e.clientX - rect.left;
-    const cursorY = e.clientY - rect.top;
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.max(0.25, Math.min(2, scale * delta));
-    const newPanX = cursorX - (cursorX - pan.x) * (newScale / scale);
-    const newPanY = cursorY - (cursorY - pan.y) * (newScale / scale);
-    setScale(newScale);
-    setPan({ x: newPanX, y: newPanY });
-  }, [scale, pan]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setPanStart({ x: pan.x, y: pan.y });
-  }, [pan]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setPan({
-      x: panStart.x + (e.clientX - dragStart.x),
-      y: panStart.y + (e.clientY - dragStart.y),
-    });
-  }, [isDragging, dragStart, panStart]);
-
-  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const target = targetTransformRef.current;
+    const ratio = newScale / target.scale;
+    target.x = cx - (cx - target.x) * ratio;
+    target.y = cy - (cy - target.y) * ratio;
+    target.scale = newScale;
+    setScaleState(newScale);
+  }, []);
 
   useEffect(() => { rootRef.current?.focus(); }, []);
 
-  // Grid keyboard nav with wrapping — only active when NOT in product view
+  // Grid keyboard nav with wrapping
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (selectedIndex !== null) return; // ProductView handles its own keys
+    if (selectedIndex !== null) return;
 
     const products = DEMO_PRODUCTS;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
       if (focusedIndex === -1) { setFocusedIndex(0); return; }
 
-      // Build grid rows sorted by Y then X
       const yPositions = [...new Set(products.map(p => p.grid_position.y))].sort((a, b) => a - b);
       const rows: number[][] = yPositions.map(y =>
         products
@@ -113,23 +211,23 @@ export function SpatialCanvas() {
     if (e.key === 'Enter' && focusedIndex >= 0) {
       setSelectedIndex(focusedIndex);
     }
-    if (e.key === '=' || e.key === '+') setScale(s => Math.min(2, s * 1.15));
-    if (e.key === '-') setScale(s => Math.max(0.25, s * 0.85));
-  }, [focusedIndex, selectedIndex]);
+    if (e.key === '=' || e.key === '+') setScaleSmooth(Math.min(MAX_SCALE, targetTransformRef.current.scale * 1.15));
+    if (e.key === '-') setScaleSmooth(Math.max(MIN_SCALE, targetTransformRef.current.scale * 0.85));
+  }, [focusedIndex, selectedIndex, setScaleSmooth]);
 
+  // Pan to focused product
   useEffect(() => {
     if (focusedIndex < 0) return;
     const p = DEMO_PRODUCTS[focusedIndex];
     const container = containerRef.current;
     if (!container || !p) return;
     const rect = container.getBoundingClientRect();
-    setPan({
-      x: rect.width / 2 - (p.grid_position.x + 110) * scale,
-      y: rect.height / 2 - (p.grid_position.y + 140) * scale,
-    });
-  }, [focusedIndex, scale]);
+    const s = targetTransformRef.current.scale;
+    targetTransformRef.current.x = rect.width / 2 - (p.grid_position.x + 110) * s;
+    targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * s;
+  }, [focusedIndex]);
 
-  const zoomLabel = scale < 0.35 ? 'L0' : scale < 0.65 ? 'L1' : scale < 1.2 ? 'L2' : 'L3';
+  const zoomLabel = scaleState < 0.35 ? 'L0' : scaleState < 0.65 ? 'L1' : scaleState < 1.2 ? 'L2' : 'L3';
   const zoomLevels = ['L0', 'L1', 'L2', 'L3'];
   const zoomScales = [0.25, 0.55, 0.9, 1.5];
 
@@ -142,7 +240,7 @@ export function SpatialCanvas() {
           {zoomLevels.map((level, i) => (
             <button
               key={level}
-              onClick={() => setScale(zoomScales[i])}
+              onClick={() => setScaleSmooth(zoomScales[i])}
               className={`font-display text-[11px] tracking-[0.15em] px-3 py-1.5 transition-colors ${
                 zoomLabel === level
                   ? 'text-foreground'
@@ -185,16 +283,22 @@ export function SpatialCanvas() {
 
       {/* Canvas */}
       <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing"
-        onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove}
+        onMouseDown={handleMouseDown} onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-        <div style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-          transformOrigin: '0 0', width: CANVAS_W, height: CANVAS_H, position: 'relative',
-          transition: isDragging ? 'none' : 'transform 0.3s ease-out',
-        }}>
-          <HotzoneLayer hotzones={DEMO_HOTZONES} scale={scale} />
+        <div
+          ref={canvasRef}
+          style={{
+            transformOrigin: '0 0',
+            width: CANVAS_W,
+            height: CANVAS_H,
+            position: 'relative',
+            willChange: 'transform',
+            transform: `translate3d(0px, 0px, 0) scale(0.55)`,
+          }}
+        >
+          <HotzoneLayer hotzones={DEMO_HOTZONES} scale={scaleState} />
           {DEMO_PRODUCTS.map((product, i) => (
-            <ProductTile key={product.id} product={product} scale={scale}
+            <ProductTile key={product.id} product={product} scale={scaleState}
               isFocused={focusedIndex === i} onClick={() => setSelectedIndex(i)} />
           ))}
         </div>
@@ -206,7 +310,7 @@ export function SpatialCanvas() {
         <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
       </div>
 
-      {/* Full-screen product view (Yeezy-style) */}
+      {/* Full-screen product view */}
       <AnimatePresence>
         {selectedIndex !== null && (
           <ProductView
