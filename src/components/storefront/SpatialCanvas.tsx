@@ -99,8 +99,8 @@ export function SpatialCanvas() {
       (rect.width - padX * 2) / CANVAS_W,
       (rect.height - padY * 2) / CANVAS_H
     );
-    const s = Math.max(0.15, Math.min(1, fitScale));
-    minScaleRef.current = s * 0.8;
+    const s = Math.max(0.3, Math.min(1, fitScale));
+    minScaleRef.current = s;
     const cx = (rect.width - CANVAS_W * s) / 2;
     const cy = (rect.height - CANVAS_H * s) / 2;
     transformRef.current = { x: cx, y: cy, scale: s };
