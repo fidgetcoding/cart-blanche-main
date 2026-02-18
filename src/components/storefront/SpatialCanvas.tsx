@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, User } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { ProductTile } from '@/components/storefront/ProductTile';
@@ -353,7 +353,7 @@ export function SpatialCanvas() {
             )}
           </button>
           <button onClick={() => navigate('/admin')} className="p-2 hover:opacity-70 transition-opacity">
-            <User className="w-5 h-5 text-foreground/70" />
+            <LayoutDashboard className="w-5 h-5 text-foreground/70" />
           </button>
         </div>
       </div>
