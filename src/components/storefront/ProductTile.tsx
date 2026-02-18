@@ -25,7 +25,7 @@ export function ProductTile({ product, scale, isFocused, onClick, positionOverri
         width: 220,
         height: 280,
       }}
-      whileHover={{ scale: 1.04, zIndex: 10 }}
+      whileHover={{ scale: 1.04, zIndex: 10, boxShadow: '0 0 20px 2px hsla(0, 0%, 100%, 0.08), 0 0 40px 4px hsla(0, 0%, 100%, 0.04)' }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
       <div className="w-full h-full flex flex-col">
