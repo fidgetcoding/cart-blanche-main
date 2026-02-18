@@ -458,7 +458,7 @@ export function SpatialCanvas() {
       </div>
 
       {/* Zoom hint */}
-      <div className="absolute bottom-6 left-6 z-20 text-xs text-muted-foreground/50 font-display tracking-wider space-y-1">
+      <div className="absolute bottom-6 left-6 z-20 text-xs text-muted-foreground/30 font-display tracking-wider space-y-1 transition-all duration-300 hover:text-foreground/80 hover:drop-shadow-[0_0_8px_hsla(0,0%,100%,0.3)] cursor-default">
         <p>SCROLL TO ZOOM · DRAG TO PAN</p>
         <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
       </div>
