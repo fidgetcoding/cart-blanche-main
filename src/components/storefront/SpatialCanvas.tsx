@@ -315,12 +315,21 @@ export function SpatialCanvas() {
         maxZoomTriggeredRef.current = false;
       }
 
-      // When zooming out past threshold with a category filter, immediately switch to ALL
+      // Two-stage zoom-out transition: peek → switch to ALL
       if (activeCategory !== 'ALL' && categoryZoomRef.current) {
-        if (newScale < categoryZoomRef.current.scale * 0.92) {
-          setActiveCategory('ALL');
-          categoryZoomRef.current = null;
-          setPeekingAll(false);
+        const ratio = newScale / categoryZoomRef.current.scale;
+        if (ratio < 0.95 && !peekingAll) {
+          // Stage 1: Start peeking — show all products dimmed
+          setPeekingAll(true);
+        }
+        if (ratio < 0.78) {
+          // Stage 2: Commit to ALL view after sufficient zoom-out
+          clearTimeout(peekTimerRef.current);
+          peekTimerRef.current = window.setTimeout(() => {
+            setActiveCategory('ALL');
+            categoryZoomRef.current = null;
+            setPeekingAll(false);
+          }, 400);
         }
       }
 
