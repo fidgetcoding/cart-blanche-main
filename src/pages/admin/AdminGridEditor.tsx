@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { GripVertical, Save, RotateCcw } from 'lucide-react';
 
 const TILE_W = 220;
@@ -15,18 +15,16 @@ interface GridProduct {
   compare_at_price?: number;
   category: string;
   images: string[];
-  gridIndex: number;
 }
 
 function buildGridProducts(): GridProduct[] {
-  return DEMO_PRODUCTS.map((p, i) => ({
+  return DEMO_PRODUCTS.map(p => ({
     id: p.id,
     title: p.title,
     price: p.price,
     compare_at_price: p.compare_at_price,
     category: p.category,
     images: p.images,
-    gridIndex: i,
   }));
 }
 
@@ -41,6 +39,13 @@ function getCatColor(cat: string) {
   return CATEGORY_COLORS[cat] || 'border-border bg-secondary text-muted-foreground';
 }
 
+function getGridPos(index: number) {
+  return {
+    x: (index % COLS) * (TILE_W + GAP),
+    y: Math.floor(index / COLS) * (TILE_H + GAP),
+  };
+}
+
 export default function AdminGridEditor() {
   const [products, setProducts] = useState<GridProduct[]>(buildGridProducts);
   const [categories, setCategories] = useState<string[]>(() => {
@@ -48,29 +53,27 @@ export default function AdminGridEditor() {
     return ['all', ...Array.from(cats)];
   });
 
-  // Drag state for products
-  const [draggingProductIdx, setDraggingProductIdx] = useState<number | null>(null);
-  const [dropTargetIdx, setDropTargetIdx] = useState<number | null>(null);
-
-  // Drag state for categories
-  const [draggingCatIdx, setDraggingCatIdx] = useState<number | null>(null);
-  const [catDropIdx, setCatDropIdx] = useState<number | null>(null);
-
   const [hasChanges, setHasChanges] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Calculate grid positions
-  const getGridPos = (index: number) => ({
-    x: (index % COLS) * (TILE_W + GAP),
-    y: Math.floor(index / COLS) * (TILE_H + GAP),
-  });
+  // --- Product drag (pointer-based, live reorder) ---
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [liveOrder, setLiveOrder] = useState<GridProduct[]>(products);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const isDragging = dragIdx !== null;
+
+  // Keep liveOrder synced when not dragging
+  useEffect(() => {
+    if (!isDragging) setLiveOrder(products);
+  }, [products, isDragging]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.6);
 
   const rows = Math.ceil(products.length / COLS);
   const canvasH = rows * (TILE_H + GAP) - GAP;
-
-  // Scale to fit
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0.6);
 
   useEffect(() => {
     function resize() {
@@ -85,79 +88,104 @@ export default function AdminGridEditor() {
     return () => window.removeEventListener('resize', resize);
   }, [canvasH]);
 
-  // Product drag handlers
-  const handleProductDragStart = (e: React.DragEvent, idx: number) => {
-    setDraggingProductIdx(idx);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', 'product');
-  };
+  // Determine which grid slot a point falls into
+  const pointToSlot = useCallback((clientX: number, clientY: number): number | null => {
+    if (!canvasRef.current) return null;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (clientX - rect.left) / scale;
+    const y = (clientY - rect.top) / scale;
+    const col = Math.round(x / (TILE_W + GAP));
+    const row = Math.round(y / (TILE_H + GAP));
+    const idx = row * COLS + col;
+    if (idx < 0 || idx >= liveOrder.length) return null;
+    return idx;
+  }, [scale, liveOrder.length]);
 
-  const handleProductDragOver = (e: React.DragEvent, idx: number) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent, idx: number) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (draggingProductIdx !== null && idx !== draggingProductIdx) {
-      setDropTargetIdx(idx);
-    }
-  };
-
-  const handleProductDrop = (e: React.DragEvent, idx: number) => {
-    e.preventDefault();
-    if (draggingProductIdx === null || draggingProductIdx === idx) return;
-
-    setProducts(prev => {
-      const next = [...prev];
-      const [moved] = next.splice(draggingProductIdx, 1);
-      next.splice(idx, 0, moved);
-      return next.map((p, i) => ({ ...p, gridIndex: i }));
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const pos = getGridPos(idx);
+    setDragIdx(idx);
+    setDragPos({ x: pos.x, y: pos.y });
+    setDragOffset({
+      x: e.clientX / scale - pos.x,
+      y: e.clientY / scale - pos.y,
     });
-    setDraggingProductIdx(null);
-    setDropTargetIdx(null);
-    setHasChanges(true);
-  };
+  }, [scale]);
 
-  const handleProductDragEnd = () => {
-    setDraggingProductIdx(null);
-    setDropTargetIdx(null);
-  };
-
-  // Category drag handlers
-  const handleCatDragStart = (e: React.DragEvent, idx: number) => {
-    if (idx === 0) return; // Can't drag "ALL"
-    setDraggingCatIdx(idx);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', 'category');
-  };
-
-  const handleCatDragOver = (e: React.DragEvent, idx: number) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (dragIdx === null) return;
     e.preventDefault();
+
+    const newX = e.clientX / scale - dragOffset.x;
+    const newY = e.clientY / scale - dragOffset.y;
+    setDragPos({ x: newX, y: newY });
+
+    // Determine hovered slot and live-reorder
+    const hoverSlot = pointToSlot(e.clientX, e.clientY);
+    if (hoverSlot !== null && hoverSlot !== dragIdx) {
+      setLiveOrder(prev => {
+        const next = [...prev];
+        const [moved] = next.splice(dragIdx, 1);
+        next.splice(hoverSlot, 0, moved);
+        return next;
+      });
+      setDragIdx(hoverSlot);
+    }
+  }, [dragIdx, dragOffset, scale, pointToSlot]);
+
+  const handlePointerUp = useCallback(() => {
+    if (dragIdx === null) return;
+    setProducts(liveOrder);
+    setDragIdx(null);
+    setHasChanges(true);
+  }, [dragIdx, liveOrder]);
+
+  // --- Category drag (same pointer approach) ---
+  const [catDragIdx, setCatDragIdx] = useState<number | null>(null);
+  const [liveCats, setLiveCats] = useState<string[]>(categories);
+  const catRibbonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (catDragIdx === null) setLiveCats(categories);
+  }, [categories, catDragIdx]);
+
+  const handleCatPointerDown = (e: React.PointerEvent, idx: number) => {
     if (idx === 0) return;
-    if (draggingCatIdx !== null && idx !== draggingCatIdx) {
-      setCatDropIdx(idx);
-    }
-  };
-
-  const handleCatDrop = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
-    if (draggingCatIdx === null || draggingCatIdx === idx || idx === 0) return;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setCatDragIdx(idx);
+  };
 
-    setCategories(prev => {
-      const next = [...prev];
-      const [moved] = next.splice(draggingCatIdx, 1);
-      next.splice(idx, 0, moved);
-      return next;
-    });
-    setDraggingCatIdx(null);
-    setCatDropIdx(null);
+  const handleCatPointerMove = useCallback((e: React.PointerEvent) => {
+    if (catDragIdx === null || !catRibbonRef.current) return;
+    e.preventDefault();
+
+    // Find which tab we're over
+    const children = Array.from(catRibbonRef.current.children) as HTMLElement[];
+    for (let i = 1; i < children.length; i++) {
+      const rect = children[i].getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right && i !== catDragIdx) {
+        setLiveCats(prev => {
+          const next = [...prev];
+          const [moved] = next.splice(catDragIdx, 1);
+          next.splice(i, 0, moved);
+          return next;
+        });
+        setCatDragIdx(i);
+        break;
+      }
+    }
+  }, [catDragIdx]);
+
+  const handleCatPointerUp = useCallback(() => {
+    if (catDragIdx === null) return;
+    setCategories(liveCats);
+    setCatDragIdx(null);
     setHasChanges(true);
-  };
-
-  const handleCatDragEnd = () => {
-    setDraggingCatIdx(null);
-    setCatDropIdx(null);
-  };
+  }, [catDragIdx, liveCats]);
 
   const handleSave = () => {
-    // In a real app, persist to Supabase
     setHasChanges(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -195,26 +223,26 @@ export default function AdminGridEditor() {
         </div>
       </div>
 
-      {/* Category ribbon — draggable */}
+      {/* Category ribbon */}
       <div className="px-6 pb-4 flex-shrink-0">
         <label className="text-[10px] font-display tracking-widest text-muted-foreground mb-2 block">
           CATEGORY TABS — drag to reorder
         </label>
-        <div className="flex items-center gap-2 flex-wrap">
-          {categories.map((cat, idx) => (
+        <div
+          ref={catRibbonRef}
+          className="flex items-center gap-2 flex-wrap"
+          onPointerMove={handleCatPointerMove}
+          onPointerUp={handleCatPointerUp}
+        >
+          {liveCats.map((cat, idx) => (
             <div
               key={cat}
-              draggable={idx !== 0}
-              onDragStart={e => handleCatDragStart(e, idx)}
-              onDragOver={e => handleCatDragOver(e, idx)}
-              onDrop={e => handleCatDrop(e, idx)}
-              onDragEnd={handleCatDragEnd}
+              onPointerDown={e => handleCatPointerDown(e, idx)}
               className={`
                 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-display tracking-wider
-                transition-all cursor-grab active:cursor-grabbing select-none
-                ${idx === 0 ? 'border-foreground/20 bg-foreground/10 text-foreground opacity-60 cursor-default' : getCatColor(cat)}
-                ${draggingCatIdx === idx ? 'opacity-40 scale-95' : ''}
-                ${catDropIdx === idx ? 'ring-2 ring-primary scale-105' : ''}
+                transition-all duration-200 select-none touch-none
+                ${idx === 0 ? 'border-foreground/20 bg-foreground/10 text-foreground opacity-60 cursor-default' : `cursor-grab active:cursor-grabbing ${getCatColor(cat)}`}
+                ${catDragIdx === idx ? 'opacity-50 scale-110 shadow-lg ring-2 ring-primary z-20' : ''}
               `}
             >
               {idx !== 0 && <GripVertical className="w-3 h-3 opacity-40" />}
@@ -237,42 +265,41 @@ export default function AdminGridEditor() {
           }}
         >
           <div
+            ref={canvasRef}
             className="absolute top-0 left-0 origin-top-left"
             style={{
               width: CANVAS_W,
               height: canvasH,
               transform: `scale(${scale})`,
             }}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
           >
-            {products.map((p, idx) => {
+            {liveOrder.map((p, idx) => {
               const pos = getGridPos(idx);
-              const isDragging = draggingProductIdx === idx;
-              const isDropTarget = dropTargetIdx === idx;
+              const isBeingDragged = dragIdx === idx;
 
               return (
                 <div
                   key={p.id}
-                  draggable
-                  onDragStart={e => handleProductDragStart(e, idx)}
-                  onDragOver={e => handleProductDragOver(e, idx)}
-                  onDrop={e => handleProductDrop(e, idx)}
-                  onDragEnd={handleProductDragEnd}
+                  onPointerDown={e => handlePointerDown(e, idx)}
                   className={`
-                    absolute rounded-xl border cursor-grab active:cursor-grabbing
-                    transition-all duration-200 ease-out select-none
-                    ${isDragging ? 'opacity-30 scale-95 z-0' : 'z-10'}
-                    ${isDropTarget ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]' : ''}
+                    absolute rounded-xl border select-none touch-none
+                    ${isBeingDragged
+                      ? 'z-50 cursor-grabbing scale-105 shadow-2xl ring-2 ring-primary/50'
+                      : 'z-10 cursor-grab transition-all duration-300 ease-out'
+                    }
                   `}
                   style={{
-                    left: pos.x,
-                    top: pos.y,
+                    left: isBeingDragged ? dragPos.x : pos.x,
+                    top: isBeingDragged ? dragPos.y : pos.y,
                     width: TILE_W,
                     height: TILE_H,
+                    // Only transition when NOT being dragged (so others animate to new slots)
+                    ...(isBeingDragged ? {} : { transition: 'left 300ms ease-out, top 300ms ease-out' }),
                   }}
                 >
-                  {/* Tile content */}
-                  <div className="liquid-glass rounded-xl w-full h-full flex flex-col p-3 overflow-hidden group">
-                    {/* Drag handle */}
+                  <div className={`liquid-glass rounded-xl w-full h-full flex flex-col p-3 overflow-hidden group ${isBeingDragged ? 'opacity-90' : ''}`}>
                     <div className="flex items-center justify-between mb-2">
                       <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
                       <span className={`text-[8px] font-display px-1.5 py-0.5 rounded border ${getCatColor(p.category)}`}>
@@ -280,10 +307,9 @@ export default function AdminGridEditor() {
                       </span>
                     </div>
 
-                    {/* Image placeholder */}
-                    <div className="flex-1 bg-muted/20 rounded-lg mb-2 flex items-center justify-center">
+                    <div className="flex-1 bg-muted/20 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
                       {p.images.length > 0 ? (
-                        <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover rounded-lg" />
+                        <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover rounded-lg pointer-events-none" />
                       ) : (
                         <div className="text-[10px] font-display text-muted-foreground/30 tracking-wider">
                           {idx + 1}
@@ -291,7 +317,6 @@ export default function AdminGridEditor() {
                       )}
                     </div>
 
-                    {/* Product info */}
                     <div>
                       <p className="text-[11px] font-display font-medium truncate leading-tight">{p.title}</p>
                       <div className="flex items-center gap-1.5 mt-1">
