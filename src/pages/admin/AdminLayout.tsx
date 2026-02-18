@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { to: '/admin/flow', icon: GitBranch, label: 'Flow' },
   { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/admin/inventory', icon: Warehouse, label: 'Inventory' },
-  { to: '/admin/styling-guide', icon: Layers, label: 'Styling Guide' },
+  { to: '/admin/styling-guide', icon: Layers, label: 'Style Guide' },
 ];
 
 export default function AdminLayout() {

@@ -106,7 +106,7 @@ export default function AdminStylingGuide() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Layers className="w-5 h-5 text-muted-foreground" />
-          <h1 className="font-display text-lg font-bold tracking-wide">STYLING GUIDE</h1>
+          <h1 className="font-display text-lg font-bold tracking-wide">STYLE GUIDE</h1>
         </div>
         <button
           onClick={saveGuide}
