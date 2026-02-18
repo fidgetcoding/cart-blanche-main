@@ -237,7 +237,7 @@ export function SpatialCanvas() {
     if (e.key === '-') setScaleSmooth(Math.max(minScaleRef.current, targetTransformRef.current.scale * 0.85));
   }, [focusedIndex, selectedIndex, setScaleSmooth]);
 
-  // Pan to focused product
+  // Pan to focused product only when zoomed in enough that tile might be off-screen
   useEffect(() => {
     if (focusedIndex < 0) return;
     const p = DEMO_PRODUCTS[focusedIndex];
@@ -245,8 +245,30 @@ export function SpatialCanvas() {
     if (!container || !p) return;
     const rect = container.getBoundingClientRect();
     const s = targetTransformRef.current.scale;
-    targetTransformRef.current.x = rect.width / 2 - (p.grid_position.x + 110) * s;
-    targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * s;
+    const tx = targetTransformRef.current.x;
+    const ty = targetTransformRef.current.y;
+
+    // Only pan if the canvas is zoomed in beyond fit (i.e. tiles can be off-screen)
+    const fitScale = Math.min(rect.width / CANVAS_W, rect.height / CANVAS_H);
+    if (s <= fitScale * 1.1) return;
+
+    // Check if the focused tile is currently visible
+    const tileScreenX = p.grid_position.x * s + tx;
+    const tileScreenY = p.grid_position.y * s + ty;
+    const tileW = 220 * s;
+    const tileH = 280 * s;
+    const margin = 40;
+
+    const offScreen =
+      tileScreenX + tileW < margin ||
+      tileScreenX > rect.width - margin ||
+      tileScreenY + tileH < margin ||
+      tileScreenY > rect.height - margin;
+
+    if (offScreen) {
+      targetTransformRef.current.x = rect.width / 2 - (p.grid_position.x + 110) * s;
+      targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * s;
+    }
   }, [focusedIndex]);
 
   return (
