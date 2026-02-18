@@ -479,10 +479,10 @@ export function StyleKitView() {
           {/* Anchor panel position depends on smart orientation */}
           {splitDirection === 'horizontal' && orientation === 'top' && (
             <>
-              <div className="min-h-0 overflow-y-auto" style={{ height: '38%' }}>
+              <div className="h-1/2 min-h-0 overflow-y-auto">
                 <AnchorPanel direction="horizontal" />
               </div>
-              <div className="min-h-0 relative" style={{ height: '62%' }}>
+              <div className="h-1/2 min-h-0 relative">
                 <CarouselRow
                   products={suggestions}
                   onSelect={setPreviewProduct}
@@ -495,7 +495,7 @@ export function StyleKitView() {
 
           {splitDirection === 'horizontal' && orientation === 'bottom' && (
             <>
-              <div className="min-h-0 relative" style={{ height: '62%' }}>
+              <div className="h-1/2 min-h-0 relative">
                 <CarouselRow
                   products={suggestions}
                   onSelect={setPreviewProduct}
@@ -503,7 +503,7 @@ export function StyleKitView() {
                   direction="horizontal"
                 />
               </div>
-              <div className="min-h-0 overflow-y-auto" style={{ height: '38%' }}>
+              <div className="h-1/2 min-h-0 overflow-y-auto">
                 <AnchorPanel direction="horizontal" />
               </div>
             </>
