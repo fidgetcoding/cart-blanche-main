@@ -101,7 +101,7 @@ function CarouselRow({
                 className="mt-2 w-full py-1.5 bg-primary text-primary-foreground text-[10px] font-display font-semibold tracking-wider rounded flex items-center justify-center gap-1 hover:opacity-90 transition-opacity"
               >
                 <Plus className="w-3 h-3" />
-                ADD TO LOOK
+                ADD
               </button>
             </div>
           </motion.div>
