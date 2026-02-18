@@ -454,10 +454,13 @@ export function SmartChatPanel() {
         <div className="flex items-center gap-2 px-3 py-1.5 flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
+            className="group/hist flex items-center gap-1.5 p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
             title="Chat History"
           >
             {sidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
+            <span className="text-[10px] font-display tracking-wider opacity-0 max-w-0 overflow-hidden group-hover/hist:opacity-100 group-hover/hist:max-w-[80px] transition-all duration-200">
+              CHAT HISTORY
+            </span>
           </button>
           {activeConversationId && (
             <span className="text-[10px] font-display tracking-wider text-muted-foreground truncate">
