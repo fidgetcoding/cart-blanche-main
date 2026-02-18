@@ -159,20 +159,20 @@ function AnchorPanel({
 
   return (
     <div
-      className={`flex flex-col bg-card/50 backdrop-blur-sm border-border overflow-y-auto ${
+      className={`flex flex-col bg-card/50 backdrop-blur-sm border-border overflow-y-auto h-full ${
         direction === 'horizontal' ? 'border-b' : 'border-r'
       }`}
     >
-      <div className="flex-1 flex flex-col md:flex-row gap-4 p-6">
-        {/* Image placeholder */}
-        <div className="w-full md:w-1/2 max-w-[320px] aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 mx-auto md:mx-0">
+      <div className="flex-1 flex flex-col p-6 gap-4 overflow-y-auto">
+        {/* Large image thumbnail */}
+        <div className="w-full aspect-[4/3] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0">
           <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
             {anchorProduct.category.toUpperCase()}
           </span>
         </div>
 
-        {/* Product details */}
-        <div className="flex-1 flex flex-col justify-center gap-3 min-w-0">
+        {/* Product details below thumbnail */}
+        <div className="flex flex-col gap-3">
           <div>
             <h3 className="font-display text-base font-bold tracking-wide">{anchorProduct.title}</h3>
             <div className="flex items-center gap-2 mt-1">
