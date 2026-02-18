@@ -162,7 +162,20 @@ export function SpatialCanvas() {
     setScaleState(newScale);
   }, []);
 
-  useEffect(() => { rootRef.current?.focus(); }, []);
+  // Center canvas on mount
+  useEffect(() => {
+    rootRef.current?.focus();
+    const container = containerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const s = 0.55;
+      const cx = (rect.width - CANVAS_W * s) / 2;
+      const cy = (rect.height - CANVAS_H * s) / 2;
+      transformRef.current = { x: cx, y: cy, scale: s };
+      targetTransformRef.current = { x: cx, y: cy, scale: s };
+      applyTransform();
+    }
+  }, [applyTransform]);
 
   // Grid keyboard nav with wrapping
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -241,30 +254,11 @@ export function SpatialCanvas() {
     targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * s;
   }, [focusedIndex]);
 
-  const zoomLabel = scaleState < 0.65 ? 'L1' : scaleState < 1.2 ? 'L2' : 'L3';
-  const zoomLevels = ['L1', 'L2', 'L3'];
-  const zoomScales = [0.55, 0.9, 1.5];
-
   return (
     <div ref={rootRef} className="relative w-full h-screen overflow-hidden bg-background select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={() => rootRef.current?.focus()}>
-      {/* Top bar */}
+      {/* Top bar — minimal */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-4">
         <h1 className="font-display text-xl font-bold tracking-[0.2em]">CART BLANCHE</h1>
-        <div className="flex items-center gap-1">
-          {zoomLevels.map((level, i) => (
-            <button
-              key={level}
-              onClick={() => setScaleSmooth(zoomScales[i])}
-              className={`font-display text-[11px] tracking-[0.15em] px-3 py-1.5 transition-colors ${
-                zoomLabel === level
-                  ? 'text-foreground'
-                  : 'text-muted-foreground/40 hover:text-muted-foreground'
-              }`}
-            >
-              {level}
-            </button>
-          ))}
-        </div>
         <div className="flex items-center gap-3">
           <button onClick={toggleCart} className="relative p-2 hover:bg-secondary rounded-lg transition-colors">
             <ShoppingBag className="w-5 h-5" />

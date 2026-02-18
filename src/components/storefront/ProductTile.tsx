@@ -9,67 +9,69 @@ interface ProductTileProps {
 }
 
 export function ProductTile({ product, scale, isFocused, onClick }: ProductTileProps) {
-  const showDetails = scale > 0.6;
-  const showActions = scale > 0.8;
+  const showTitle = scale > 0.6;
+  const showPrice = scale > 0.75;
 
   return (
     <motion.div
       layout
       onClick={onClick}
-      className={`absolute cursor-pointer group ${isFocused ? 'tile-focus' : ''}`}
+      className={`absolute cursor-pointer group`}
       style={{
         left: product.grid_position.x,
         top: product.grid_position.y,
         width: 220,
         height: 280,
       }}
-      whileHover={{ scale: 1.04, zIndex: 10 }}
+      whileHover={{ scale: 1.03, zIndex: 10 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
-      <div className="w-full h-full rounded-lg overflow-hidden flex flex-col">
-        {/* Image area */}
-        <div className="flex-1 bg-secondary/30 flex items-center justify-center relative overflow-hidden rounded-lg">
-          <span className="font-display text-muted-foreground/15 text-[10px] tracking-[0.2em]">
-            {product.category.toUpperCase()}
+      {/* Product image area — no borders, just a subtle surface */}
+      <div
+        className="w-full h-full flex flex-col transition-opacity duration-200"
+        style={{ opacity: isFocused ? 1 : 0.85 }}
+      >
+        <div className="flex-1 bg-[hsl(0_0%_8%)] flex items-center justify-center relative overflow-hidden">
+          <span className="font-display text-[hsl(0_0%_20%)] text-[9px] tracking-[0.25em] uppercase">
+            {product.category}
           </span>
           {product.compare_at_price && (
-            <div className="absolute top-2 left-2 bg-accent text-accent-foreground text-[10px] font-display font-bold px-1.5 py-0.5 rounded">
+            <div className="absolute top-2 left-2 bg-accent text-accent-foreground text-[9px] font-display font-bold px-1.5 py-0.5">
               SALE
             </div>
           )}
         </div>
 
-        {/* Info */}
-        {showDetails && (
+        {/* Title + price fade in at closer zoom */}
+        {showTitle && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="p-3 space-y-1"
+            className="pt-2.5 space-y-0.5"
           >
-            <p className="font-display text-xs font-medium truncate">{product.title}</p>
-            <div className="flex items-center gap-2">
-              <span className="font-display text-xs font-semibold">${product.price}</span>
-              {product.compare_at_price && (
-                <span className="text-[10px] text-muted-foreground line-through">
-                  ${product.compare_at_price}
-                </span>
-              )}
-            </div>
-            {showActions && (
-              <div className="flex gap-1 mt-1">
-                {product.variants.slice(0, 4).map((v) => (
-                  <span key={v.id} className="text-[9px] px-1.5 py-0.5 bg-secondary rounded text-muted-foreground">
-                    {v.title}
+            <p className="font-display text-[11px] font-medium text-foreground/70 truncate">{product.title}</p>
+            {showPrice && (
+              <div className="flex items-center gap-2">
+                <span className="font-display text-[11px] text-foreground/50">${product.price}</span>
+                {product.compare_at_price && (
+                  <span className="text-[10px] text-muted-foreground/40 line-through">
+                    ${product.compare_at_price}
                   </span>
-                ))}
-                {product.variants.length > 4 && (
-                  <span className="text-[9px] px-1 text-muted-foreground">+{product.variants.length - 4}</span>
                 )}
               </div>
             )}
           </motion.div>
         )}
       </div>
+
+      {/* Focus indicator — subtle border, not a ring */}
+      {isFocused && (
+        <motion.div
+          layoutId="tile-focus"
+          className="absolute inset-0 border border-accent/40 pointer-events-none"
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        />
+      )}
     </motion.div>
   );
 }

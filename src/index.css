@@ -100,6 +100,6 @@
   }
 
   .tile-focus {
-    @apply ring-2 ring-accent ring-offset-2 ring-offset-background;
+    /* handled in component */
   }
 }
