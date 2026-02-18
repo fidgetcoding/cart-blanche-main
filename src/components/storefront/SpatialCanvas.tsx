@@ -467,17 +467,25 @@ export function SpatialCanvas() {
     setScaleState(newScale);
   }, []);
 
-  // Focus root on mount
-  useEffect(() => { rootRef.current?.focus(); }, []);
+  // Focus root on mount and refocus after any click within the canvas
+  useEffect(() => {
+    rootRef.current?.focus();
+    const root = rootRef.current;
+    if (!root) return;
+    const refocus = () => { setTimeout(() => root.focus(), 0); };
+    root.addEventListener('click', refocus, true); // capture phase
+    return () => root.removeEventListener('click', refocus, true);
+  }, []);
 
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
       if (selectedIndex !== null) {
-        // Close product detail overlay
+        // Close product detail overlay and refocus root
         setSelectedIndex(null);
         maxZoomTriggeredRef.current = false;
+        requestAnimationFrame(() => rootRef.current?.focus());
         return;
       }
       // Zoom out to fit-all view
