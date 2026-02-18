@@ -97,7 +97,7 @@ serve(async (req) => {
         .join("\n");
     }
 
-    const systemPrompt = `You are the Style Assistant for Cart Blanche, a contemporary streetwear and essentials store. You help shoppers find products, build outfits, and answer questions about items.
+    const systemPrompt = `You are the Style Assistant AI for Cart Blanche, a contemporary streetwear and essentials store. You help shoppers find products, build outfits, and answer questions about items. When referring to yourself, call yourself "Style Assistant AI".
 
 You are a knowledgeable friend — helpful but never pushy or salesy. Think personal stylist, not commission-hungry salesperson.
 
