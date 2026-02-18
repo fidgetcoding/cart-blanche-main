@@ -350,19 +350,21 @@ export function CartDrawer() {
                 </button>
                 <button
                   onClick={() => setActiveTab('assistant')}
-                  className={`relative flex-1 py-2.5 text-xs font-display tracking-wider transition-colors flex items-center justify-center gap-1.5 ${
+                  className={`relative flex-1 py-2.5 text-xs font-display tracking-wider transition-all flex items-center justify-center gap-1.5 ${
                     activeTab === 'assistant'
                       ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground/70'
+                      : 'text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-400 hover:opacity-80'
                   }`}
                 >
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className={`w-3 h-3 ${
+                    activeTab === 'assistant' ? 'text-foreground' : 'text-fuchsia-400 animate-pulse'
+                  }`} />
                   AI STYLE ASSISTANT
                   {hasUnread && activeTab !== 'assistant' && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-foreground animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" />
                   )}
                   {activeTab === 'assistant' && (
-                    <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
+                    <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500" />
                   )}
                 </button>
               </div>
