@@ -278,15 +278,56 @@ function LockedPairPanel({
   selectedSize,
   setSelectedSize,
   onRemove,
+  direction = 'horizontal',
 }: {
   product: DemoProduct;
   selectedSize: string | null;
   setSelectedSize: (s: string | null) => void;
   onRemove: () => void;
+  direction?: 'horizontal' | 'vertical';
 }) {
   const sizes = product.variants.map(v => v.title);
   const selectedVariant = product.variants.find(v => v.title === selectedSize);
 
+  if (direction === 'vertical') {
+    // EXTRAS mode: thumbnail on top, details below — mirrors anchor panel vertical layout
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 20 }}
+        className="flex flex-col bg-card/50 backdrop-blur-sm border-l border-border h-full overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="flex-1 flex flex-col p-4 gap-3">
+          <div className="w-full aspect-[4/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%] relative">
+            <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
+              {product.category.toUpperCase()}
+            </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
+            >
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-display tracking-widest text-primary">PAIRED ITEM</span>
+          </div>
+          <ProductDetails
+            anchorProduct={product}
+            sizes={sizes}
+            selectedSize={selectedSize}
+            setSelectedSize={setSelectedSize}
+            selectedVariant={selectedVariant}
+          />
+        </div>
+      </motion.div>
+    );
+  }
+
+  // PAIRS mode: horizontal layout — thumbnail left, details right
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -297,12 +338,10 @@ function LockedPairPanel({
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="flex-1 flex flex-row overflow-hidden">
-        {/* Thumbnail */}
         <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0 relative">
           <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
             {product.category.toUpperCase()}
           </span>
-          {/* Remove button */}
           <button
             onClick={(e) => { e.stopPropagation(); onRemove(); }}
             className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
@@ -310,7 +349,6 @@ function LockedPairPanel({
             <X className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
         </div>
-        {/* Details */}
         <div className="flex-1 flex flex-col p-5 overflow-y-auto">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-display tracking-widest text-primary">PAIRED ITEM</span>
@@ -691,6 +729,7 @@ export function StyleKitView() {
                       selectedSize={pairedSize}
                       setSelectedSize={setPairedSize}
                       onRemove={handleRemovePaired}
+                      direction="vertical"
                     />
                   ) : (
                     <CarouselRow
