@@ -367,12 +367,12 @@ export function SpatialCanvas() {
 
         {/* Centered category nav */}
         <nav className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
-          <div className="flex items-center gap-1.5 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-full px-2 py-1 shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
+          <div className="flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1.5 py-1 shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`font-display text-[11px] tracking-[0.15em] uppercase transition-all duration-300 rounded-full px-4 py-1.5 ${
+                className={`font-display text-[11px] tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
                   activeCategory === cat
                     ? 'bg-foreground/[0.12] text-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_1px_3px_rgba(0,0,0,0.2)]'
                     : 'text-muted-foreground hover:text-foreground/80 hover:bg-foreground/[0.05]'
