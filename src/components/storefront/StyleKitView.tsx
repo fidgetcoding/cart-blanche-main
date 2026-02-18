@@ -331,7 +331,7 @@ function AnchorPanel({
     <div className="flex flex-col bg-card/50 backdrop-blur-sm border-r border-border h-full overflow-y-auto">
       <div className="flex-1 flex flex-col p-4 gap-3">
         {/* Very large tall thumbnail */}
-        <div className="w-full aspect-[3/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-full aspect-[4/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%]">
           <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
             {anchorProduct.category.toUpperCase()}
           </span>
