@@ -183,10 +183,10 @@ function BudgetComparisonCard({ comparison, onSwapAll, onSwapOne }: {
 }
 
 const PROMPT_CARDS = [
-  { label: "Complete Outfit", text: "Complete this outfit", icon: Layers },
-  { label: "Find Similar", text: "Find something like this", icon: Sparkles },
-  { label: "Budget Rebuild", text: "Rebuild my cart cheaper", icon: DollarSign },
-  { label: "Style Advice", text: "What's trending right now?", icon: ShoppingBag },
+  { label: "What's On Sale", text: "What items are on sale right now?", icon: DollarSign },
+  { label: "Best Sellers", text: "Show me the best sellers", icon: ShoppingBag },
+  { label: "Under $100", text: "What can I get under $100?", icon: Sparkles },
+  { label: "New Arrivals", text: "Show me the newest arrivals", icon: Layers },
 ];
 
 export function CartDrawer() {
