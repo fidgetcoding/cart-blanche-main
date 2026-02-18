@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2 } from 'lucide-react';
 import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -73,6 +73,12 @@ export default function AdminInventory() {
   const [addForm, setAddForm] = useState({ title: '', price: '', description: '', category: '' });
   const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
+  const [addThumbnail, setAddThumbnail] = useState<string | null>(null);
+  const [addVideo, setAddVideo] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchInventory(); }, []);
 
@@ -229,12 +235,32 @@ export default function AdminInventory() {
     ));
   }
 
+  async function handleMediaUpload(file: File, type: 'image' | 'video') {
+    if (type === 'image') setUploadingImage(true);
+    else setUploadingVideo(true);
+    try {
+      const ext = file.name.split('.').pop() || (type === 'image' ? 'jpg' : 'mp4');
+      const path = `${type}s/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('product-media').upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
+      if (type === 'image') setAddThumbnail(publicUrl);
+      else setAddVideo(publicUrl);
+    } catch (e) {
+      console.error(`Upload ${type} failed:`, e);
+    } finally {
+      if (type === 'image') setUploadingImage(false);
+      else setUploadingVideo(false);
+    }
+  }
+
   async function handleAddProduct() {
     if (!addForm.title.trim() || !addForm.price) return;
     setAddSaving(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setAddSaving(false); return; }
 
+    const images = addThumbnail ? [addThumbnail] : [];
     const { data: product, error } = await supabase.from('products').insert({
       merchant_id: session.user.id,
       title: addForm.title.trim(),
@@ -243,6 +269,7 @@ export default function AdminInventory() {
       category: addForm.category.trim().toLowerCase(),
       status: 'active',
       tags: addForm.category.trim() ? [addForm.category.trim().toLowerCase()] : [],
+      images,
     }).select().single();
 
     if (!error && product) {
@@ -262,6 +289,8 @@ export default function AdminInventory() {
     setShowAddProduct(false);
     setAddForm({ title: '', price: '', description: '', category: '' });
     setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
+    setAddThumbnail(null);
+    setAddVideo(null);
     fetchInventory();
   }
 
@@ -538,6 +567,50 @@ export default function AdminInventory() {
                 <input value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Product name"
                   className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+
+              {/* Thumbnail & Video Upload */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">THUMBNAIL IMAGE</label>
+                  <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image'); e.target.value = ''; }} />
+                  {addThumbnail ? (
+                    <div className="relative aspect-square rounded-lg overflow-hidden border border-border/50 bg-background/40">
+                      <img src={addThumbnail} alt="Thumbnail" className="w-full h-full object-cover" />
+                      <button onClick={() => setAddThumbnail(null)}
+                        className="absolute top-1.5 right-1.5 p-1 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => imageInputRef.current?.click()} disabled={uploadingImage}
+                      className="w-full aspect-square rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
+                      {uploadingImage ? <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" /> : <ImageIcon className="w-6 h-6 text-muted-foreground/50" />}
+                      <span className="text-[10px] font-display tracking-wider text-muted-foreground">{uploadingImage ? 'UPLOADING...' : 'ADD IMAGE'}</span>
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT VIDEO</label>
+                  <input ref={videoInputRef} type="file" accept="video/*" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'video'); e.target.value = ''; }} />
+                  {addVideo ? (
+                    <div className="relative aspect-square rounded-lg overflow-hidden border border-border/50 bg-background/40">
+                      <video src={addVideo} className="w-full h-full object-cover" muted />
+                      <button onClick={() => setAddVideo(null)}
+                        className="absolute top-1.5 right-1.5 p-1 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => videoInputRef.current?.click()} disabled={uploadingVideo}
+                      className="w-full aspect-square rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
+                      {uploadingVideo ? <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" /> : <Video className="w-6 h-6 text-muted-foreground/50" />}
+                      <span className="text-[10px] font-display tracking-wider text-muted-foreground">{uploadingVideo ? 'UPLOADING...' : 'ADD VIDEO'}</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
