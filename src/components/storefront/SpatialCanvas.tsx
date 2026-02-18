@@ -706,7 +706,7 @@ function useIsTablet() {
   useEffect(() => {
     const check = () => {
       const w = window.innerWidth;
-      setIsTablet(w >= 768 && w < 1280);
+      setIsTablet(w >= 768 && w <= 1024);
     };
     check();
     window.addEventListener('resize', check);
