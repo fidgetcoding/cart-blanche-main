@@ -103,15 +103,15 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
     onNavigate(newIndex);
   }, [productIndex, onNavigate]);
 
-  // Scroll wheel navigation (throttled)
+  // Scroll wheel navigation (strict one-per-swipe)
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     if (scrollCooldown.current) return;
     const absX = Math.abs(e.deltaX);
     const absY = Math.abs(e.deltaY);
-    if (absX < 5 && absY < 5) return;
+    if (absX < 15 && absY < 15) return;
     scrollCooldown.current = true;
-    setTimeout(() => { scrollCooldown.current = false; }, 300);
+    setTimeout(() => { scrollCooldown.current = false; }, 800);
     if (absX > absY) {
       navigate(e.deltaX > 0 ? 'right' : 'left');
     } else {
