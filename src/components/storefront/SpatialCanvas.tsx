@@ -172,7 +172,7 @@ export function SpatialCanvas() {
   useEffect(() => {
     let running = true;
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-    const LERP_SPEED = 0.18;
+    const LERP_SPEED = 0.25;
 
     const tick = () => {
       if (!running) return;
@@ -306,7 +306,7 @@ export function SpatialCanvas() {
 
       // Peek-all: when zooming out with a category filter active
       if (activeCategory !== 'ALL' && categoryZoomRef.current) {
-        if (newScale < categoryZoomRef.current.scale * 0.85) {
+        if (newScale < categoryZoomRef.current.scale * 0.9) {
           setPeekingAll(true);
         }
       }
@@ -316,14 +316,14 @@ export function SpatialCanvas() {
       peekTimerRef.current = window.setTimeout(() => {
         setScaleState(targetTransformRef.current.scale);
         if (activeCategory !== 'ALL' && categoryZoomRef.current) {
-          if (targetTransformRef.current.scale < categoryZoomRef.current.scale * 0.85) {
+          if (targetTransformRef.current.scale < categoryZoomRef.current.scale * 0.9) {
             // Commit to ALL view: reset category, clear peek state
             setActiveCategory('ALL');
             categoryZoomRef.current = null;
             setPeekingAll(false);
           }
         }
-      }, 300);
+      }, 150);
 
       clearTimeout(scaleUpdateTimer);
       scaleUpdateTimer = window.setTimeout(() => {
