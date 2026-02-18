@@ -54,13 +54,13 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-display text-sm font-semibold tracking-wider mb-4 whitespace-nowrap">RECENT ORDERS</h3>
-          <p className="text-sm text-muted-foreground whitespace-nowrap">No orders yet</p>
+        <div className="bg-card border border-border rounded-xl p-6 min-h-[160px] flex flex-col">
+          <h3 className="font-display text-xs font-semibold tracking-[0.15em] text-muted-foreground mb-auto">RECENT ORDERS</h3>
+          <p className="text-sm text-muted-foreground/60 mt-6">No orders yet</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-display text-sm font-semibold tracking-wider mb-4 whitespace-nowrap">TOP PRODUCTS</h3>
-          <p className="text-sm text-muted-foreground whitespace-nowrap">No sales data yet</p>
+        <div className="bg-card border border-border rounded-xl p-6 min-h-[160px] flex flex-col">
+          <h3 className="font-display text-xs font-semibold tracking-[0.15em] text-muted-foreground mb-auto">TOP PRODUCTS</h3>
+          <p className="text-sm text-muted-foreground/60 mt-6">No sales data yet</p>
         </div>
       </div>
     </div>
