@@ -458,7 +458,7 @@ export function SmartChatPanel() {
             title="Chat History"
           >
             {sidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
-            <span className="text-[10px] font-display tracking-wider opacity-0 max-w-0 overflow-hidden group-hover/hist:opacity-100 group-hover/hist:max-w-[80px] transition-all duration-200">
+            <span className="text-[10px] font-display tracking-wider opacity-0 group-hover/hist:opacity-100 transition-opacity duration-200 whitespace-nowrap">
               CHAT HISTORY
             </span>
           </button>
