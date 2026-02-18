@@ -87,7 +87,10 @@ function CarouselRow({
     }
   }, [products.length, isHorizontal]);
 
-  const cardWidth = cardSize === 'large' ? 'w-[350px]' : 'w-[240px]';
+  // In vertical (EXTRAS) mode, cards should fill the width; in horizontal (PAIRS) use fixed widths
+  const cardWidthClass = isHorizontal
+    ? (cardSize === 'large' ? 'w-[350px]' : 'w-[240px]')
+    : 'w-full';
 
   return (
     <div className="relative h-full w-full min-h-0 min-w-0">
@@ -126,10 +129,10 @@ function CarouselRow({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className={`absolute inset-0 no-scrollbar p-4 gap-3 flex items-start cursor-grab active:cursor-grabbing select-none ${
+        className={`absolute inset-0 no-scrollbar gap-3 flex items-start cursor-grab active:cursor-grabbing select-none ${
           isHorizontal
-            ? 'flex-row overflow-x-auto overflow-y-hidden'
-            : 'flex-col overflow-y-auto overflow-x-hidden'
+            ? 'flex-row overflow-x-auto overflow-y-hidden p-4'
+            : 'flex-col overflow-y-auto overflow-x-hidden px-2 py-3'
         }`}
         style={{
           WebkitOverflowScrolling: 'touch',
@@ -142,7 +145,7 @@ function CarouselRow({
             key={`${product.id}-${idx}`}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer ${cardWidth}`}
+            className={`flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer ${cardWidthClass}`}
             onClick={() => { if (!hasDragged.current) onSelect(product); }}
           >
             <div className={`${cardSize === 'large' ? 'aspect-square' : 'aspect-[4/5]'} bg-secondary/50 flex items-center justify-center w-full`}>
@@ -403,8 +406,8 @@ export function StyleKitView() {
   const [anchorSize, setAnchorSize] = useState<string | null>(null);
   const [pairedSize, setPairedSize] = useState<string | null>(null);
 
-  // The locked paired product (non-anchor item in lookItems for PAIRS mode)
-  const pairedProduct = mode === 'counterparts' && lookItems.length > 1
+  // The locked paired product (non-anchor item in lookItems) — works for both modes
+  const pairedProduct = lookItems.length > 1
     ? lookItems.find(p => p.id !== anchorProduct?.id) ?? null
     : null;
 
@@ -442,17 +445,13 @@ export function StyleKitView() {
   });
 
   const handleAddToLook = (product: DemoProduct) => {
-    // In PAIRS mode: only keep one paired product at a time
-    if (isCounterparts) {
-      // Remove any existing paired product first
-      lookItems.forEach(item => {
-        if (item.id !== anchorProduct.id) {
-          removeFromLook(item.id);
-        }
-      });
-    }
+    // Only keep one paired product at a time in both modes
+    lookItems.forEach(item => {
+      if (item.id !== anchorProduct.id) {
+        removeFromLook(item.id);
+      }
+    });
     addToLook(product);
-    // Don't add to cart yet — wait for "ADD SET TO CART"
   };
 
   const handleAddSetToCart = () => {
@@ -633,13 +632,26 @@ export function StyleKitView() {
                 <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} />
               </div>
               <div className="w-1/2 min-w-0 relative">
-                <CarouselRow
-                  products={suggestions}
-                  onSelect={setPreviewProduct}
-                  onAddToLook={handleAddToLook}
-                  direction="vertical"
-                  cardSize="large"
-                />
+                <AnimatePresence mode="wait">
+                  {pairedProduct ? (
+                    <LockedPairPanel
+                      key="locked"
+                      product={pairedProduct}
+                      selectedSize={pairedSize}
+                      setSelectedSize={setPairedSize}
+                      onRemove={handleRemovePaired}
+                    />
+                  ) : (
+                    <CarouselRow
+                      key="carousel"
+                      products={suggestions}
+                      onSelect={setPreviewProduct}
+                      onAddToLook={handleAddToLook}
+                      direction="vertical"
+                      cardSize="large"
+                    />
+                  )}
+                </AnimatePresence>
               </div>
             </>
           )}
@@ -647,7 +659,7 @@ export function StyleKitView() {
 
         {/* ADD SET TO CART — big floating button when a pair is locked */}
         <AnimatePresence>
-          {isCounterparts && pairedProduct && (
+          {pairedProduct && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
