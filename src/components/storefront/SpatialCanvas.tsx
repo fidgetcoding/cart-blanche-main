@@ -8,6 +8,7 @@ import { ProductView } from '@/components/storefront/ProductView';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStyleKit } from '@/contexts/StyleKitContext';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -42,6 +43,8 @@ export function SpatialCanvas() {
   const maxZoomTriggeredRef = useRef(false);
   const { toggleCart, itemCount } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { addItem } = useCart();
+  const { openStyleKit } = useStyleKit();
   const navigate = useNavigate();
 
   // Compute reflowed positions when filtering by category
@@ -458,6 +461,15 @@ export function SpatialCanvas() {
                 onClick={() => setSelectedIndex(i)}
                 onHoverStart={() => { setHoveredIndex(i); setFocusedIndex(-1); }}
                 onHoverEnd={() => setHoveredIndex(null)}
+                onQuickAdd={(e) => {
+                  e.stopPropagation();
+                  const v = product.variants[0];
+                  if (v) addItem({ productId: product.id, variantId: v.id, title: product.title, variantTitle: v.title, price: v.price ?? product.price });
+                }}
+                onQuickStyleKit={(e) => {
+                  e.stopPropagation();
+                  openStyleKit(product);
+                }}
                 positionOverride={posOverride} />
             );
           })}
