@@ -67,7 +67,7 @@ function CarouselRow({
             key={product.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`flex-shrink-0 bg-card border border-border rounded-lg overflow-hidden group cursor-pointer ${
+            className={`flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer ${
               direction === 'horizontal' ? 'w-[160px]' : 'w-[160px]'
             }`}
             onClick={() => onSelect(product)}

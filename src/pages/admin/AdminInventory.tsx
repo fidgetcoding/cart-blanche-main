@@ -219,7 +219,7 @@ export default function AdminInventory() {
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..."
-            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            className="w-full pl-10 pr-4 py-2.5 liquid-glass rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -246,7 +246,7 @@ export default function AdminInventory() {
       {loading ? (
         <div className="text-center py-20 text-muted-foreground font-display tracking-wider animate-pulse">LOADING...</div>
       ) : filtered.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
+        <div className="liquid-glass rounded-xl p-12 text-center">
           <p className="text-muted-foreground font-display tracking-wider text-sm">No products match your criteria</p>
         </div>
       ) : (
@@ -258,7 +258,7 @@ export default function AdminInventory() {
             const isExpanded = expandedId === p.id;
 
             return (
-              <div key={p.id} className="bg-card border border-border rounded-xl overflow-hidden transition-colors">
+              <div key={p.id} className="liquid-glass rounded-xl overflow-hidden transition-colors">
                 {/* Product row */}
                 <div
                   className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
@@ -451,7 +451,7 @@ export default function AdminInventory() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card border border-border rounded-xl w-full max-w-lg p-6 space-y-4"
+              className="liquid-glass rounded-xl w-full max-w-lg p-6 space-y-4"
               onClick={e => e.stopPropagation()}
             >
               <h2 className="font-display text-lg font-bold">Edit Product</h2>
