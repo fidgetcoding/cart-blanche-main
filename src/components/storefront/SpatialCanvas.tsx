@@ -663,11 +663,11 @@ export function SpatialCanvas() {
             <LayoutDashboard className="w-4 h-4 text-foreground/70" />
             <span className="hidden group-hover:inline text-[10px] font-display tracking-wider text-foreground/60">SMART PORTAL</span>
           </button>
-          <button onClick={toggleCart} className="relative p-2 md:p-2.5 rounded-xl bg-gradient-to-br from-violet-500/20 via-fuchsia-500/20 to-amber-500/20 border border-fuchsia-500/20 hover:border-fuchsia-500/40 hover:from-violet-500/30 hover:via-fuchsia-500/30 hover:to-amber-500/30 transition-all group">
-            <ShoppingBag className="w-4 md:w-5 h-4 md:h-5 text-foreground/90 group-hover:text-foreground transition-colors" />
+          <button onClick={toggleCart} className="relative p-2 md:p-2.5 rounded-xl bg-foreground/10 border border-foreground/10 hover:bg-foreground/20 hover:border-foreground/20 transition-all">
+            <ShoppingBag className="w-4 md:w-5 h-4 md:h-5 text-foreground" />
             {itemCount > 0 && (
               <motion.span key={itemCount} initial={{ scale: 0 }} animate={{ scale: 1 }}
-                className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-fuchsia-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
+                className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-foreground text-background text-[9px] font-bold rounded-full flex items-center justify-center">
                 {itemCount}
               </motion.span>
             )}
