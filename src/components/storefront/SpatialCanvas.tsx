@@ -70,6 +70,45 @@ export function SpatialCanvas() {
     applyTransform();
   }, [applyTransform]);
 
+  // Fit canvas to visible products when category changes
+  const fitToVisibleProducts = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+
+    const visible = DEMO_PRODUCTS.filter(
+      p => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory
+    );
+    if (visible.length === 0) return;
+
+    // Compute bounding box of visible tiles (each tile is 220x280)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of visible) {
+      minX = Math.min(minX, p.grid_position.x);
+      minY = Math.min(minY, p.grid_position.y);
+      maxX = Math.max(maxX, p.grid_position.x + 220);
+      maxY = Math.max(maxY, p.grid_position.y + 280);
+    }
+
+    const bboxW = maxX - minX;
+    const bboxH = maxY - minY;
+    const padX = 60, padY = 100;
+    const fitScale = Math.min(
+      (rect.width - padX * 2) / bboxW,
+      (rect.height - padY * 2) / bboxH
+    );
+    const s = Math.max(0.2, Math.min(MAX_SCALE, fitScale));
+    const cx = (rect.width - bboxW * s) / 2 - minX * s;
+    const cy = (rect.height - bboxH * s) / 2 - minY * s;
+
+    targetTransformRef.current = { x: cx, y: cy, scale: s };
+    setScaleState(s);
+  }, [activeCategory]);
+
+  useEffect(() => {
+    fitToVisibleProducts();
+  }, [fitToVisibleProducts]);
+
   // Smooth interpolation loop
   useEffect(() => {
     let running = true;
