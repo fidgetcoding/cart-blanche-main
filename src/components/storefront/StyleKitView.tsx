@@ -476,7 +476,7 @@ function AnchorPanel({
 }
 
 export function StyleKitView() {
-  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, lookItems } = useStyleKit();
+  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, lookItems, initialAnchorSize } = useStyleKit();
   const { items: cartItems, addItem } = useCart();
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);
   
@@ -494,11 +494,11 @@ export function StyleKitView() {
     ? lookItems.find(p => p.id !== anchorProduct?.id) ?? null
     : null;
 
-  // Reset sizes when anchor changes
+  // Reset sizes when anchor changes, using initial size if provided
   useEffect(() => {
-    setAnchorSize(null);
+    setAnchorSize(initialAnchorSize ?? null);
     setPairedSize(null);
-  }, [anchorProduct?.id]);
+  }, [anchorProduct?.id, initialAnchorSize]);
 
   // Reset paired size when paired product changes
   useEffect(() => {
