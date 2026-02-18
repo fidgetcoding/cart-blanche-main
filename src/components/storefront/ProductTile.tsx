@@ -25,12 +25,12 @@ export function ProductTile({ product, scale, isFocused, onClick, positionOverri
         width: 220,
         height: 280,
       }}
-      whileHover={{ scale: 1.04, zIndex: 10, boxShadow: '0 0 20px 2px hsla(0, 0%, 100%, 0.08), 0 0 40px 4px hsla(0, 0%, 100%, 0.04)' }}
+      whileHover={{ scale: 1.04, zIndex: 10 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
       <div className="w-full h-full flex flex-col">
         {/* Product image area */}
-          <div className="flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden">
+          <div className="flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300 group-hover:shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)]">
           <div className="w-3/4 h-3/4 bg-muted/60 rounded-md" />
         </div>
 
