@@ -7,6 +7,7 @@ interface ProductTileProps {
   scale: number;
   isFocused: boolean;
   isHovered: boolean;
+  dimmed?: boolean;
   onClick: () => void;
   onHoverStart: () => void;
   onHoverEnd: () => void;
@@ -15,7 +16,7 @@ interface ProductTileProps {
   positionOverride?: { x: number; y: number };
 }
 
-export function ProductTile({ product, scale, isFocused, isHovered, onClick, onHoverStart, onHoverEnd, onQuickAdd, onQuickStyleKit, positionOverride }: ProductTileProps) {
+export function ProductTile({ product, scale, isFocused, isHovered, dimmed, onClick, onHoverStart, onHoverEnd, onQuickAdd, onQuickStyleKit, positionOverride }: ProductTileProps) {
   const pos = positionOverride || product.grid_position;
   const showLabel = scale > 0.45;
   const glowing = isFocused || isHovered;
@@ -24,17 +25,19 @@ export function ProductTile({ product, scale, isFocused, isHovered, onClick, onH
   return (
     <motion.div
       layout
-      onClick={onClick}
-      onHoverStart={onHoverStart}
-      onHoverEnd={onHoverEnd}
-      className="absolute cursor-pointer"
+      onClick={dimmed ? undefined : onClick}
+      onHoverStart={dimmed ? undefined : onHoverStart}
+      onHoverEnd={dimmed ? undefined : onHoverEnd}
+      className={`absolute ${dimmed ? 'pointer-events-none' : 'cursor-pointer'}`}
       style={{
         left: pos.x,
         top: pos.y,
         width: 220,
         height: 280,
+        opacity: dimmed ? 0.15 : 1,
+        transition: 'opacity 0.4s ease',
       }}
-      whileHover={{ scale: 1.04, zIndex: 10 }}
+      whileHover={dimmed ? undefined : { scale: 1.04, zIndex: 10 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
       <div className="w-full h-full flex flex-col">

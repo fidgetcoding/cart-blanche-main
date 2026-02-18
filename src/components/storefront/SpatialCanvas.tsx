@@ -44,6 +44,9 @@ export function SpatialCanvas() {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [peekingAll, setPeekingAll] = useState(false);
+  const categoryZoomRef = useRef<{ x: number; y: number; scale: number } | null>(null);
+  const peekTimerRef = useRef<number>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const maxZoomTriggeredRef = useRef(false);
   const { toggleCart, itemCount } = useCart();
@@ -144,7 +147,11 @@ export function SpatialCanvas() {
     const cy = (rect.height - bboxH * s) / 2 - minY * s;
 
     targetTransformRef.current = { x: cx, y: cy, scale: s };
+    if (activeCategory !== 'ALL') {
+      categoryZoomRef.current = { x: cx, y: cy, scale: s };
+    }
     setScaleState(s);
+    setPeekingAll(false);
   }, [activeCategory, overridePositions, isMobile]);
 
   useEffect(() => {
@@ -263,6 +270,27 @@ export function SpatialCanvas() {
         maxZoomTriggeredRef.current = false;
       }
 
+      // Peek-all: when zooming out with a category filter active
+      if (activeCategory !== 'ALL' && categoryZoomRef.current) {
+        if (newScale < categoryZoomRef.current.scale * 0.85) {
+          setPeekingAll(true);
+        }
+      }
+
+      // On scroll idle, snap back if peeking
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = window.setTimeout(() => {
+        setScaleState(targetTransformRef.current.scale);
+        if (activeCategory !== 'ALL' && categoryZoomRef.current) {
+          const cz = categoryZoomRef.current;
+          if (targetTransformRef.current.scale < cz.scale * 0.85) {
+            targetTransformRef.current = { ...cz };
+            setScaleState(cz.scale);
+            setPeekingAll(false);
+          }
+        }
+      }, 400);
+
       clearTimeout(scaleUpdateTimer);
       scaleUpdateTimer = window.setTimeout(() => {
         setScaleState(targetTransformRef.current.scale);
@@ -274,7 +302,7 @@ export function SpatialCanvas() {
       container.removeEventListener('wheel', onWheel);
       clearTimeout(scaleUpdateTimer);
     };
-  }, [getProductAtCursor]);
+  }, [getProductAtCursor, activeCategory]);
 
   // Touch gestures (pan + pinch-to-zoom)
   useEffect(() => {
@@ -594,12 +622,17 @@ export function SpatialCanvas() {
           }}
         >
           {DEMO_PRODUCTS.map((product, i) => {
-            if (activeCategory !== 'ALL' && product.category.toUpperCase() !== activeCategory) return null;
-            const posOverride = overridePositions ? overridePositions[i] : undefined;
+            const isInCategory = activeCategory === 'ALL' || product.category.toUpperCase() === activeCategory;
+            // Hide non-matching products unless we're peeking
+            if (!isInCategory && !peekingAll) return null;
+            // When peeking, use original positions for all; when filtered, use overrides
+            const posOverride = peekingAll ? undefined : (overridePositions ? overridePositions[i] : undefined);
+            const isDimmed = peekingAll && !isInCategory;
             return (
               <ProductTile key={product.id} product={product} scale={scaleState}
                 isFocused={focusedIndex === i && hoveredIndex === null}
                 isHovered={hoveredIndex === i}
+                dimmed={isDimmed}
                 onClick={() => setSelectedIndex(i)}
                 onHoverStart={() => { setHoveredIndex(i); setFocusedIndex(-1); }}
                 onHoverEnd={() => setHoveredIndex(null)}
