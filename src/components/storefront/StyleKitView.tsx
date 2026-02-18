@@ -22,10 +22,11 @@ function CarouselRow({
   const scroll = (dir: number) => {
     if (!scrollRef.current) return;
     const amount = direction === 'horizontal' ? 260 : 320;
-    scrollRef.current.scrollBy({
-      [direction === 'horizontal' ? 'left' : 'top']: amount * dir,
-      behavior: 'smooth',
-    });
+    if (direction === 'horizontal') {
+      scrollRef.current.scrollBy({ left: amount * dir, behavior: 'smooth' });
+    } else {
+      scrollRef.current.scrollBy({ top: amount * dir, behavior: 'smooth' });
+    }
   };
 
   return (
