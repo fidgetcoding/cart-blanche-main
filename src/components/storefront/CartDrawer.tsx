@@ -334,13 +334,10 @@ export function CartDrawer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevItemCountRef = useRef(itemCount);
 
-  // Proactive: on add-to-cart, trigger suggestion
+  // Track item count for reference (proactive triggers removed to keep prompt cards visible)
   useEffect(() => {
-    if (itemCount > prevItemCountRef.current && itemCount > 0) {
-      triggerProactive('proactive_add', items);
-    }
     prevItemCountRef.current = itemCount;
-  }, [itemCount]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [itemCount]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
