@@ -161,7 +161,7 @@ export function CartDrawer() {
 
   const emptyAssistantMessage = items.length > 0
     ? "I see you've got some great picks. Want me to suggest pieces that go with them?"
-    : "Hey! I know every item in this store.\nTell me what you're looking for and I'll help you find it.";
+    : "Hey! I know every item in this store.\nTell me what you're looking for.";
 
   return (
     <AnimatePresence>
