@@ -287,6 +287,7 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
                 <button
                   key={i}
                   onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
+                  onMouseEnter={() => setActiveImage(i)}
                   className="flex-1 relative group"
                 >
                   <div className={`absolute bottom-2 left-1 right-1 h-1 rounded-full transition-all duration-200 ${
