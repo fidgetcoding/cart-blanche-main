@@ -394,7 +394,7 @@ export function SmartChatPanel() {
   const isNewChat = activeConversationId === null && messages.length === 0;
 
   return (
-    <div className="flex flex-shrink-0" style={{ width: panelWidth }}>
+    <div className="flex flex-shrink-0 flex-1" style={{ width: panelWidth }}>
       {/* Conversation history sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
