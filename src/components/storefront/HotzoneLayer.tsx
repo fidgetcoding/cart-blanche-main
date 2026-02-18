@@ -3,10 +3,9 @@ import type { DemoHotzone } from '@/data/demo-data';
 interface HotzoneLayerProps {
   hotzones: DemoHotzone[];
   scale: number;
-  getEmphasis?: (hotzoneId: string) => number;
 }
 
-export function HotzoneLayer({ hotzones, scale, getEmphasis }: HotzoneLayerProps) {
+export function HotzoneLayer({ hotzones, scale }: HotzoneLayerProps) {
   // Labels visible when zoomed out, fade as you zoom in
   const labelOpacity = scale < 0.6 ? 0.2 : scale < 0.8 ? 0.2 * (1 - (scale - 0.6) / 0.2) : 0;
 
@@ -26,15 +25,11 @@ export function HotzoneLayer({ hotzones, scale, getEmphasis }: HotzoneLayerProps
           {/* Category label — just text, no box */}
           <div
             className="absolute inset-0 flex items-center justify-center"
-            style={{ opacity: labelOpacity * (getEmphasis?.(hz.id) ?? 1.0) }}
+            style={{ opacity: labelOpacity }}
           >
             <span
               className="font-display text-2xl font-bold tracking-[0.35em] select-none"
-              style={{
-                color: hz.style_config.color,
-                transform: `scale(${getEmphasis?.(hz.id) ?? 1.0})`,
-                transition: 'transform 0.3s ease-out, opacity 0.3s ease-out',
-              }}
+              style={{ color: hz.style_config.color }}
             >
               {hz.name}
             </span>
