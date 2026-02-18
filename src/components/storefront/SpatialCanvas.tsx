@@ -209,7 +209,21 @@ export function SpatialCanvas() {
     }
 
     if (e.key === 'Enter' && focusedIndex >= 0) {
-      setSelectedIndex(focusedIndex);
+      // Zoom into the product first, then open detail view
+      const p = DEMO_PRODUCTS[focusedIndex];
+      const container = containerRef.current;
+      if (p && container) {
+        const rect = container.getBoundingClientRect();
+        const zoomScale = 1.2;
+        targetTransformRef.current.scale = zoomScale;
+        targetTransformRef.current.x = rect.width / 2 - (p.grid_position.x + 110) * zoomScale;
+        targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * zoomScale;
+        setScaleState(zoomScale);
+        // Open detail view after zoom animation
+        setTimeout(() => setSelectedIndex(focusedIndex), 350);
+      } else {
+        setSelectedIndex(focusedIndex);
+      }
     }
     if (e.key === '=' || e.key === '+') setScaleSmooth(Math.min(MAX_SCALE, targetTransformRef.current.scale * 1.15));
     if (e.key === '-') setScaleSmooth(Math.max(MIN_SCALE, targetTransformRef.current.scale * 0.85));
