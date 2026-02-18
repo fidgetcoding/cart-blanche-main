@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Sun, Moon } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Sun, Moon, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { ProductTile } from '@/components/storefront/ProductTile';
@@ -9,6 +9,7 @@ import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -16,7 +17,7 @@ const TILE_GAP = 6;
 const CANVAS_W = 1360;
 const CANVAS_H = 1230;
 const MAX_SCALE = 2;
-const MAX_ZOOM_THRESHOLD = 1.9; // trigger detail view near max
+const MAX_ZOOM_THRESHOLD = 1.9;
 const ZOOM_SENSITIVITY = 0.0025;
 
 const CATEGORIES = ['ALL', ...new Set(DEMO_PRODUCTS.map(p => p.category.toUpperCase()))];
@@ -25,6 +26,8 @@ export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
 
   // Transform refs for high-frequency updates
   const transformRef = useRef({ x: 0, y: 0, scale: 0.5 });
@@ -40,12 +43,21 @@ export function SpatialCanvas() {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const maxZoomTriggeredRef = useRef(false);
   const { toggleCart, itemCount } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { addItem } = useCart();
   const { openStyleKit } = useStyleKit();
   const navigate = useNavigate();
+
+  // Touch gesture refs
+  const touchRef = useRef<{
+    startX: number; startY: number;
+    panStartX: number; panStartY: number;
+    lastDist: number; lastScale: number;
+    touching: boolean; pinching: boolean;
+  }>({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, lastDist: 0, lastScale: 1, touching: false, pinching: false });
 
   // Compute reflowed positions when filtering by category
   const overridePositions = useMemo(() => {
@@ -55,9 +67,8 @@ export function SpatialCanvas() {
       .filter(({ p }) => p.category.toUpperCase() === activeCategory);
     if (visible.length === 0) return null;
 
-    // Choose columns: aim for roughly square grid
     const count = visible.length;
-    const cols = Math.ceil(Math.sqrt(count));
+    const cols = isMobile ? 2 : Math.ceil(Math.sqrt(count));
 
     const positions: Record<number, { x: number; y: number }> = {};
     visible.forEach(({ i }, idx) => {
@@ -67,7 +78,7 @@ export function SpatialCanvas() {
       };
     });
     return positions;
-  }, [activeCategory]);
+  }, [activeCategory, isMobile]);
 
   // Apply transform directly to DOM
   const applyTransform = useCallback(() => {
@@ -82,21 +93,21 @@ export function SpatialCanvas() {
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    // Fit canvas into viewport with padding
-    const padX = 40, padY = 80;
+    const padX = isMobile ? 16 : 40;
+    const padY = isMobile ? 60 : 80;
     const fitScale = Math.min(
       (rect.width - padX * 2) / CANVAS_W,
       (rect.height - padY * 2) / CANVAS_H
     );
-    const s = Math.max(0.2, Math.min(1, fitScale));
-    minScaleRef.current = s * 0.8; // allow slight zoom out beyond fit
+    const s = Math.max(0.15, Math.min(1, fitScale));
+    minScaleRef.current = s * 0.8;
     const cx = (rect.width - CANVAS_W * s) / 2;
     const cy = (rect.height - CANVAS_H * s) / 2;
     transformRef.current = { x: cx, y: cy, scale: s };
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     setScaleState(s);
     applyTransform();
-  }, [applyTransform]);
+  }, [applyTransform, isMobile]);
 
   // Fit canvas to visible products when category changes
   const fitToVisibleProducts = useCallback(() => {
@@ -109,7 +120,6 @@ export function SpatialCanvas() {
       .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
     if (visibleWithIndex.length === 0) return;
 
-    // Use override positions if available, else original
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const { p, i } of visibleWithIndex) {
       const pos = overridePositions ? overridePositions[i] : p.grid_position;
@@ -122,18 +132,19 @@ export function SpatialCanvas() {
 
     const bboxW = maxX - minX;
     const bboxH = maxY - minY;
-    const padX = 60, padY = 100;
+    const padX = isMobile ? 20 : 60;
+    const padY = isMobile ? 70 : 100;
     const fitScale = Math.min(
       (rect.width - padX * 2) / bboxW,
       (rect.height - padY * 2) / bboxH
     );
-    const s = Math.max(0.2, Math.min(MAX_SCALE, fitScale));
+    const s = Math.max(0.15, Math.min(MAX_SCALE, fitScale));
     const cx = (rect.width - bboxW * s) / 2 - minX * s;
     const cy = (rect.height - bboxH * s) / 2 - minY * s;
 
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     setScaleState(s);
-  }, [activeCategory, overridePositions]);
+  }, [activeCategory, overridePositions, isMobile]);
 
   useEffect(() => {
     fitToVisibleProducts();
@@ -150,19 +161,16 @@ export function SpatialCanvas() {
       const t = transformRef.current;
       const target = targetTransformRef.current;
 
-      // When zoomed out enough that the grid fits in the viewport, re-center
-      if (!dragRef.current.dragging) {
+      if (!dragRef.current.dragging && !touchRef.current.touching) {
         const container = containerRef.current;
         if (container) {
           const rect = container.getBoundingClientRect();
           const scaledW = CANVAS_W * target.scale;
           const scaledH = CANVAS_H * target.scale;
 
-          // If canvas fits horizontally, center X
           if (scaledW <= rect.width) {
             target.x = (rect.width - scaledW) / 2;
           }
-          // If canvas fits vertically, center Y
           if (scaledH <= rect.height) {
             target.y = (rect.height - scaledH) / 2;
           }
@@ -193,14 +201,11 @@ export function SpatialCanvas() {
     if (!container) return null;
     const rect = container.getBoundingClientRect();
     const t = targetTransformRef.current;
-    // Convert screen coords to canvas coords
     const canvasX = (screenX - rect.left - t.x) / t.scale;
     const canvasY = (screenY - rect.top - t.y) / t.scale;
 
-    // Check each product tile (approx 220x280 size)
-    const products = DEMO_PRODUCTS;
-    for (let i = 0; i < products.length; i++) {
-      const p = products[i];
+    for (let i = 0; i < DEMO_PRODUCTS.length; i++) {
+      const p = DEMO_PRODUCTS[i];
       if (activeCategory !== 'ALL' && p.category.toUpperCase() !== activeCategory) continue;
       const gx = p.grid_position.x;
       const gy = p.grid_position.y;
@@ -220,7 +225,6 @@ export function SpatialCanvas() {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       
-      // If already at max and zooming in further, open detail view
       const target = targetTransformRef.current;
       if (target.scale >= MAX_ZOOM_THRESHOLD && e.deltaY < 0 && !maxZoomTriggeredRef.current) {
         const idx = getProductAtCursor(e.clientX, e.clientY);
@@ -243,7 +247,6 @@ export function SpatialCanvas() {
       target.y = cursorY - (cursorY - target.y) * ratio;
       target.scale = newScale;
 
-      // Reset max zoom trigger when zooming out
       if (newScale < MAX_ZOOM_THRESHOLD) {
         maxZoomTriggeredRef.current = false;
       }
@@ -261,7 +264,112 @@ export function SpatialCanvas() {
     };
   }, [getProductAtCursor]);
 
-  // Drag to pan
+  // Touch gestures (pan + pinch-to-zoom)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const getTouchDist = (touches: TouchList) => {
+      if (touches.length < 2) return 0;
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const getTouchCenter = (touches: TouchList) => {
+      if (touches.length < 2) return { x: touches[0].clientX, y: touches[0].clientY };
+      return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2,
+      };
+    };
+
+    let scaleUpdateTimer: number;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        const t = e.touches[0];
+        touchRef.current = {
+          startX: t.clientX, startY: t.clientY,
+          panStartX: transformRef.current.x, panStartY: transformRef.current.y,
+          lastDist: 0, lastScale: targetTransformRef.current.scale,
+          touching: true, pinching: false,
+        };
+      } else if (e.touches.length === 2) {
+        e.preventDefault();
+        touchRef.current.pinching = true;
+        touchRef.current.lastDist = getTouchDist(e.touches);
+        touchRef.current.lastScale = targetTransformRef.current.scale;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const tr = touchRef.current;
+      if (!tr.touching) return;
+
+      if (tr.pinching && e.touches.length === 2) {
+        e.preventDefault();
+        const dist = getTouchDist(e.touches);
+        const center = getTouchCenter(e.touches);
+        const rect = container.getBoundingClientRect();
+        const cx = center.x - rect.left;
+        const cy = center.y - rect.top;
+
+        const scaleFactor = dist / tr.lastDist;
+        const oldScale = targetTransformRef.current.scale;
+        const newScale = Math.max(minScaleRef.current, Math.min(MAX_SCALE, tr.lastScale * scaleFactor));
+        const ratio = newScale / oldScale;
+
+        const target = targetTransformRef.current;
+        target.x = cx - (cx - target.x) * ratio;
+        target.y = cy - (cy - target.y) * ratio;
+        target.scale = newScale;
+
+        // Also apply pan during pinch
+        transformRef.current.x = target.x;
+        transformRef.current.y = target.y;
+        transformRef.current.scale = target.scale;
+        applyTransform();
+
+        clearTimeout(scaleUpdateTimer);
+        scaleUpdateTimer = window.setTimeout(() => {
+          setScaleState(targetTransformRef.current.scale);
+        }, 80);
+      } else if (e.touches.length === 1 && !tr.pinching) {
+        const t = e.touches[0];
+        const dx = t.clientX - tr.startX;
+        const dy = t.clientY - tr.startY;
+        transformRef.current.x = tr.panStartX + dx;
+        transformRef.current.y = tr.panStartY + dy;
+        targetTransformRef.current.x = transformRef.current.x;
+        targetTransformRef.current.y = transformRef.current.y;
+        applyTransform();
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        touchRef.current.pinching = false;
+      }
+      if (e.touches.length === 0) {
+        touchRef.current.touching = false;
+        setScaleState(targetTransformRef.current.scale);
+      }
+    };
+
+    container.addEventListener('touchstart', onTouchStart, { passive: false });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      clearTimeout(scaleUpdateTimer);
+    };
+  }, [applyTransform]);
+
+  // Drag to pan (mouse)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
     dragRef.current = {
@@ -348,7 +456,7 @@ export function SpatialCanvas() {
         }
       }
       setFocusedIndex(newIdx);
-      setHoveredIndex(null); // keyboard takes over from mouse
+      setHoveredIndex(null);
     }
 
     if (e.key === 'Enter' && focusedIndex >= 0) {
@@ -379,53 +487,76 @@ export function SpatialCanvas() {
     const rect = container.getBoundingClientRect();
     const s = targetTransformRef.current.scale;
 
-    // Only pan if zoomed in beyond fit
     const fitScale = Math.min(rect.width / CANVAS_W, rect.height / CANVAS_H);
     if (s <= fitScale * 1.1) return;
 
-    // Always center the focused tile when zoomed in
     targetTransformRef.current.x = rect.width / 2 - (p.grid_position.x + 110) * s;
     targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * s;
   }, [focusedIndex]);
 
+  const compactHeader = isMobile || isTablet;
+
   return (
     <div ref={rootRef} className="relative w-full h-screen overflow-hidden bg-background select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={() => rootRef.current?.focus()}>
-      {/* Top bar — Yeezy style: + left, categories center, bag right */}
-      <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-3">
-          <span className="font-display text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
+      {/* Top bar */}
+      <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-4 md:px-6 py-3 md:py-5">
+        {/* Left: Brand */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="font-display text-xs md:text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
             CART BLANCHE
           </span>
         </div>
 
-        {/* Centered category nav */}
-        <nav className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
-          <div className="flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1.5 py-1 shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`font-display text-[11px] tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
-                  activeCategory === cat
-                    ? 'bg-foreground/[0.12] text-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_1px_3px_rgba(0,0,0,0.2)]'
-                    : 'text-muted-foreground hover:text-foreground/80 hover:bg-foreground/[0.05]'
-                }`}
-              >
-                {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
-              </button>
-            ))}
+        {/* Center: Category nav — full on desktop, hamburger on mobile */}
+        {!compactHeader ? (
+          <nav className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1.5 py-1 shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`font-display text-[11px] tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
+                    activeCategory === cat
+                      ? 'bg-foreground/[0.12] text-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_1px_3px_rgba(0,0,0,0.2)]'
+                      : 'text-muted-foreground hover:text-foreground/80 hover:bg-foreground/[0.05]'
+                  }`}
+                >
+                  {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
+                </button>
+              ))}
+            </div>
+          </nav>
+        ) : (
+          /* Mobile/tablet: scrollable category pills */
+          <div className="flex-1 mx-3 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-1.5 w-max">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`font-display text-[10px] tracking-[0.12em] uppercase transition-all duration-200 rounded-md px-3 py-1.5 whitespace-nowrap flex-shrink-0 ${
+                    activeCategory === cat
+                      ? 'bg-foreground/[0.15] text-foreground font-medium'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
+                </button>
+              ))}
+            </div>
           </div>
-        </nav>
+        )}
 
-        <div className="flex items-center gap-3">
-          <button onClick={toggleTheme} className="p-2 hover:opacity-70 transition-opacity" title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+        {/* Right: Actions */}
+        <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
+          <button onClick={toggleTheme} className="p-1.5 md:p-2 hover:opacity-70 transition-opacity" title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
             {theme === 'dark' ? <Sun className="w-4 h-4 text-foreground/70" /> : <Moon className="w-4 h-4 text-foreground/70" />}
           </button>
-          <button onClick={() => navigate('/admin')} className="p-2 hover:opacity-70 transition-opacity" title="Dashboard">
+          <button onClick={() => navigate('/admin')} className="p-1.5 md:p-2 hover:opacity-70 transition-opacity" title="Dashboard">
             <LayoutDashboard className="w-4 h-4 text-foreground/70" />
           </button>
-          <button onClick={toggleCart} className="relative p-2 hover:opacity-70 transition-opacity">
-            <ShoppingBag className="w-5 h-5 text-foreground/70" />
+          <button onClick={toggleCart} className="relative p-1.5 md:p-2 hover:opacity-70 transition-opacity">
+            <ShoppingBag className="w-4 md:w-5 h-4 md:h-5 text-foreground/70" />
             {itemCount > 0 && (
               <motion.span key={itemCount} initial={{ scale: 0 }} animate={{ scale: 1 }}
                 className="absolute -top-1 -right-1 w-4 h-4 bg-foreground text-background text-[9px] font-bold rounded-full flex items-center justify-center">
@@ -437,7 +568,7 @@ export function SpatialCanvas() {
       </div>
 
       {/* Spatial Canvas */}
-      <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing"
+      <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
         onMouseDown={handleMouseDown} onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
         <div
@@ -450,7 +581,6 @@ export function SpatialCanvas() {
             willChange: 'transform',
           }}
         >
-          {/* No hotzone layer — clean grid */}
           {DEMO_PRODUCTS.map((product, i) => {
             if (activeCategory !== 'ALL' && product.category.toUpperCase() !== activeCategory) return null;
             const posOverride = overridePositions ? overridePositions[i] : undefined;
@@ -476,19 +606,28 @@ export function SpatialCanvas() {
         </div>
       </div>
 
-      {/* Zoom hint */}
-      <div className="absolute bottom-6 left-6 z-20 text-xs text-muted-foreground/30 font-display tracking-wider space-y-1 transition-all duration-300 hover:text-foreground/80 hover:drop-shadow-[0_0_8px_hsla(0,0%,100%,0.3)] cursor-default">
-        <p>SCROLL TO ZOOM · DRAG TO PAN</p>
-        <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
+      {/* Hints — contextual for device */}
+      <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20 text-[10px] md:text-xs text-muted-foreground/30 font-display tracking-wider space-y-0.5 md:space-y-1 transition-all duration-300 hover:text-foreground/80 cursor-default">
+        {isMobile || isTablet ? (
+          <>
+            <p>PINCH TO ZOOM · DRAG TO PAN</p>
+            <p>TAP TO VIEW</p>
+          </>
+        ) : (
+          <>
+            <p>SCROLL TO ZOOM · DRAG TO PAN</p>
+            <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
+          </>
+        )}
       </div>
 
       {/* Social icons */}
-      <div className="absolute bottom-6 right-6 z-20 flex items-center gap-3">
-        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
-          <Instagram className="w-4 h-4" />
+      <div className="absolute bottom-4 md:bottom-6 right-4 md:right-6 z-20 flex items-center gap-2 md:gap-3">
+        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+          <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
         </a>
-        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
-          <Twitter className="w-4 h-4" />
+        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+          <Twitter className="w-3.5 md:w-4 h-3.5 md:h-4" />
         </a>
       </div>
 
@@ -512,4 +651,19 @@ export function SpatialCanvas() {
       <CartDrawer />
     </div>
   );
+}
+
+// Tablet detection hook
+function useIsTablet() {
+  const [isTablet, setIsTablet] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const w = window.innerWidth;
+      setIsTablet(w >= 768 && w <= 1024);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isTablet;
 }
