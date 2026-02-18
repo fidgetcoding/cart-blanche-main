@@ -153,38 +153,38 @@ export default function AdminProducts() {
             <div>
               <label className="text-xs font-display tracking-widest text-muted-foreground">TITLE</label>
               <input value={formTitle} onChange={e => setFormTitle(e.target.value)}
-                className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground">PRICE</label>
                 <input type="number" value={formPrice} onChange={e => setFormPrice(e.target.value)}
-                  className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground">COMPARE AT PRICE</label>
                 <input type="number" value={formComparePrice} onChange={e => setFormComparePrice(e.target.value)}
-                  placeholder="Optional" className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  placeholder="Optional" className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
             </div>
 
             <div>
               <label className="text-xs font-display tracking-widest text-muted-foreground">CATEGORY</label>
               <input value={formCategory} onChange={e => setFormCategory(e.target.value)} placeholder="e.g. outerwear"
-                className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
 
             <div>
               <label className="text-xs font-display tracking-widest text-muted-foreground">DESCRIPTION</label>
               <textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={3}
-                className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+                className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
             </div>
 
             <div>
               <label className="text-xs font-display tracking-widest text-muted-foreground">STATUS</label>
               <select value={formStatus} onChange={e => setFormStatus(e.target.value)}
-                className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none">
+                className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none">
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
                 <option value="archived">Archived</option>

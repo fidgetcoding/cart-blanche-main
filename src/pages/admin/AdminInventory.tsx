@@ -154,13 +154,45 @@ export default function AdminInventory() {
     setEditForm({ title: p.title, price: String(p.price), description: p.description, category: p.category });
   }
 
-  function saveProductEdit() {
+  async function saveProductEdit() {
     if (!editingProduct) return;
+    
+    // Update local state
     setProducts(prev => prev.map(p =>
       p.id === editingProduct.id
-        ? { ...p, title: editForm.title, price: parseFloat(editForm.price) || p.price, description: editForm.description, category: editForm.category }
+        ? { ...p, title: editForm.title, price: parseFloat(editForm.price) || p.price, description: editForm.description, category: editForm.category, variants: editingProduct.variants, totalStock: editingProduct.variants.reduce((s, v) => s + v.inventory_count, 0) }
         : p
     ));
+
+    // Persist to DB for non-demo products
+    if (!editingProduct.isDemo) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.from('products').update({
+          title: editForm.title,
+          price: parseFloat(editForm.price) || editingProduct.price,
+          description: editForm.description,
+          category: editForm.category,
+        }).eq('id', editingProduct.id);
+
+        // Update variants
+        for (const v of editingProduct.variants) {
+          if (v.id.startsWith('new-')) {
+            await supabase.from('product_variants').insert({
+              product_id: editingProduct.id,
+              title: v.title,
+              inventory_count: v.inventory_count,
+            });
+          } else {
+            await supabase.from('product_variants').update({
+              title: v.title,
+              inventory_count: v.inventory_count,
+            }).eq('id', v.id);
+          }
+        }
+      }
+    }
+
     setEditingProduct(null);
   }
 
@@ -459,26 +491,113 @@ export default function AdminInventory() {
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground">TITLE</label>
                 <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
-                  className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-display tracking-widest text-muted-foreground">PRICE</label>
                   <input type="number" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
-                    className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
                 <div>
                   <label className="text-xs font-display tracking-widest text-muted-foreground">CATEGORY</label>
                   <input value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
-                    className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
               </div>
 
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground">DESCRIPTION</label>
                 <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3}
-                  className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+                  className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+              </div>
+
+              {/* Variant / Size Management */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">SIZES & INVENTORY</label>
+                  <button
+                    onClick={() => {
+                      const newVariant = {
+                        id: `new-${Date.now()}`,
+                        title: '',
+                        inventory_count: 0,
+                        sku: null,
+                      };
+                      setProducts(prev => prev.map(p =>
+                        p.id === editingProduct.id
+                          ? { ...p, variants: [...p.variants, newVariant] }
+                          : p
+                      ));
+                      // Refresh editingProduct reference
+                      setEditingProduct(prev => prev ? {
+                        ...prev,
+                        variants: [...prev.variants, newVariant],
+                      } : prev);
+                    }}
+                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-display tracking-wider border border-border/50 rounded-md hover:bg-secondary/50 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" /> ADD SIZE
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {editingProduct.variants.map((v, vi) => (
+                    <div key={v.id} className="flex items-center gap-2 bg-background/30 border border-border/30 rounded-lg px-3 py-2">
+                      <input
+                        value={v.title}
+                        onChange={e => {
+                          const newTitle = e.target.value;
+                          const updated = editingProduct.variants.map((vv, i) => i === vi ? { ...vv, title: newTitle } : vv);
+                          setEditingProduct({ ...editingProduct, variants: updated });
+                          setProducts(prev => prev.map(p =>
+                            p.id === editingProduct.id
+                              ? { ...p, variants: updated, totalStock: updated.reduce((s, vv) => s + vv.inventory_count, 0) }
+                              : p
+                          ));
+                        }}
+                        placeholder="Size (e.g. S, M, L)"
+                        className="flex-1 px-2 py-1.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded text-xs font-display focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground">QTY</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={v.inventory_count}
+                          onChange={e => {
+                            const count = parseInt(e.target.value) || 0;
+                            const updated = editingProduct.variants.map((vv, i) => i === vi ? { ...vv, inventory_count: count } : vv);
+                            setEditingProduct({ ...editingProduct, variants: updated });
+                            setProducts(prev => prev.map(p =>
+                              p.id === editingProduct.id
+                                ? { ...p, variants: updated, totalStock: updated.reduce((s, vv) => s + vv.inventory_count, 0) }
+                                : p
+                            ));
+                          }}
+                          className="w-16 px-2 py-1.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded text-xs text-center font-display focus:outline-none focus:ring-1 focus:ring-ring"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const updated = editingProduct.variants.filter((_, i) => i !== vi);
+                          setEditingProduct({ ...editingProduct, variants: updated });
+                          setProducts(prev => prev.map(p =>
+                            p.id === editingProduct.id
+                              ? { ...p, variants: updated, totalStock: updated.reduce((s, vv) => s + vv.inventory_count, 0) }
+                              : p
+                          ));
+                        }}
+                        className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {editingProduct.variants.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-3">No sizes yet — add one above</p>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
