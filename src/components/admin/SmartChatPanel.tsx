@@ -66,7 +66,7 @@ const PROMPTS_BY_ROUTE: Record<string, SuggestedPrompt[]> = {
     { icon: Settings, text: "Walk me through store settings", label: "Settings Guide" },
     { icon: Sparkles, text: "Help me configure my brand identity", label: "Brand Setup" },
     { icon: Tag, text: "What's the optimal platform fee?", label: "Fee Advice" },
-    { icon: BarChart3, text: "Review my store configuration", label: "Config Review" },
+    { icon: BarChart3, text: "Review my store configuration", label: "Configuration Review" },
   ],
 };
 
