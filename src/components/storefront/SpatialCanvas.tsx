@@ -14,6 +14,7 @@ const CANVAS_H = 1600;
 
 export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(0.55);
   const [isDragging, setIsDragging] = useState(false);
@@ -64,62 +65,62 @@ export function SpatialCanvas() {
     setIsDragging(false);
   }, []);
 
-  // Keyboard nav
+  // Auto-focus on mount so keyboard events work
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedProduct) {
-        if (e.key === 'Escape') setSelectedProduct(null);
+    rootRef.current?.focus();
+  }, []);
+
+  // Keyboard nav handler attached to the root div
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (selectedProduct) {
+      if (e.key === 'Escape') setSelectedProduct(null);
+      return;
+    }
+
+    const products = DEMO_PRODUCTS;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      if (focusedIndex === -1) {
+        setFocusedIndex(0);
         return;
       }
+      const current = products[focusedIndex];
+      const cx = current.grid_position.x;
+      const cy = current.grid_position.y;
 
-      const products = DEMO_PRODUCTS;
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        e.preventDefault();
-        if (focusedIndex === -1) {
-          setFocusedIndex(0);
-          return;
+      let bestIdx = focusedIndex;
+      let bestDist = Infinity;
+
+      products.forEach((p, i) => {
+        if (i === focusedIndex) return;
+        const dx = p.grid_position.x - cx;
+        const dy = p.grid_position.y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        let valid = false;
+        if (e.key === 'ArrowRight' && dx > 50 && Math.abs(dy) < Math.abs(dx)) valid = true;
+        if (e.key === 'ArrowLeft' && dx < -50 && Math.abs(dy) < Math.abs(dx)) valid = true;
+        if (e.key === 'ArrowDown' && dy > 50 && Math.abs(dx) < Math.abs(dy)) valid = true;
+        if (e.key === 'ArrowUp' && dy < -50 && Math.abs(dx) < Math.abs(dy)) valid = true;
+
+        if (valid && dist < bestDist) {
+          bestDist = dist;
+          bestIdx = i;
         }
-        const current = products[focusedIndex];
-        const cx = current.grid_position.x;
-        const cy = current.grid_position.y;
+      });
+      setFocusedIndex(bestIdx);
+    }
 
-        let bestIdx = focusedIndex;
-        let bestDist = Infinity;
+    if (e.key === 'Enter' && focusedIndex >= 0) {
+      setSelectedProduct(products[focusedIndex]);
+    }
 
-        products.forEach((p, i) => {
-          if (i === focusedIndex) return;
-          const dx = p.grid_position.x - cx;
-          const dy = p.grid_position.y - cy;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          let valid = false;
-          if (e.key === 'ArrowRight' && dx > 50 && Math.abs(dy) < Math.abs(dx)) valid = true;
-          if (e.key === 'ArrowLeft' && dx < -50 && Math.abs(dy) < Math.abs(dx)) valid = true;
-          if (e.key === 'ArrowDown' && dy > 50 && Math.abs(dx) < Math.abs(dy)) valid = true;
-          if (e.key === 'ArrowUp' && dy < -50 && Math.abs(dx) < Math.abs(dy)) valid = true;
-
-          if (valid && dist < bestDist) {
-            bestDist = dist;
-            bestIdx = i;
-          }
-        });
-        setFocusedIndex(bestIdx);
-      }
-
-      if (e.key === 'Enter' && focusedIndex >= 0) {
-        setSelectedProduct(products[focusedIndex]);
-      }
-
-      if (e.key === '=' || e.key === '+') {
-        setScale(s => Math.min(2, s * 1.15));
-      }
-      if (e.key === '-') {
-        setScale(s => Math.max(0.25, s * 0.85));
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    if (e.key === '=' || e.key === '+') {
+      setScale(s => Math.min(2, s * 1.15));
+    }
+    if (e.key === '-') {
+      setScale(s => Math.max(0.25, s * 0.85));
+    }
   }, [focusedIndex, selectedProduct]);
 
   // Center focused tile in view
@@ -140,7 +141,7 @@ export function SpatialCanvas() {
   const zoomLabel = scale < 0.35 ? 'L0' : scale < 0.65 ? 'L1' : scale < 1.2 ? 'L2' : 'L3';
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-background select-none" tabIndex={0}>
+    <div ref={rootRef} className="relative w-full h-screen overflow-hidden bg-background select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={() => rootRef.current?.focus()}>
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-4">
         <h1 className="font-display text-xl font-bold tracking-[0.2em]">CART BLANCHE</h1>
