@@ -1,0 +1,656 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+// Tool definitions for the AI agent
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "query_products",
+      description:
+        "Search or list products in the merchant's store. Can filter by title, category, status, tags, or price range.",
+      parameters: {
+        type: "object",
+        properties: {
+          search: { type: "string", description: "Search term for product title" },
+          category: { type: "string", description: "Filter by category" },
+          status: { type: "string", enum: ["active", "draft"], description: "Filter by status" },
+          tag: { type: "string", description: "Filter by tag" },
+          limit: { type: "number", description: "Max results (default 20)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_product",
+      description:
+        "Update a product's fields. Returns a preview of changes. Requires confirmation from the merchant.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_id: { type: "string", description: "UUID of the product to update" },
+          updates: {
+            type: "object",
+            description: "Fields to update: title, description, price, compare_at_price, status, category, tags, pinned",
+          },
+        },
+        required: ["product_id", "updates"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_product",
+      description: "Create a new product in the store. Returns a preview for confirmation.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          description: { type: "string" },
+          price: { type: "number" },
+          compare_at_price: { type: "number" },
+          category: { type: "string" },
+          tags: { type: "array", items: { type: "string" } },
+          status: { type: "string", enum: ["active", "draft"], description: "Default: draft" },
+        },
+        required: ["title", "price"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "query_orders",
+      description: "Query orders with optional filters. Returns order summaries.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"] },
+          limit: { type: "number", description: "Max results (default 20)" },
+          date_from: { type: "string", description: "ISO date string for start range" },
+          date_to: { type: "string", description: "ISO date string for end range" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "analyze_sales",
+      description: "Analyze sales data: revenue, order count, top sellers, trends.",
+      parameters: {
+        type: "object",
+        properties: {
+          period: { type: "string", enum: ["today", "this_week", "this_month", "last_30_days", "all_time"], description: "Time period for analysis" },
+          metric: { type: "string", enum: ["revenue", "orders", "top_products", "summary"], description: "What to analyze" },
+        },
+        required: ["period"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_inventory",
+      description: "Update inventory count for a product variant. Requires confirmation.",
+      parameters: {
+        type: "object",
+        properties: {
+          variant_id: { type: "string", description: "UUID of the variant" },
+          inventory_count: { type: "number", description: "New inventory count" },
+        },
+        required: ["variant_id", "inventory_count"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "query_inventory",
+      description: "Query inventory levels, optionally filtering by low stock.",
+      parameters: {
+        type: "object",
+        properties: {
+          low_stock_only: { type: "boolean", description: "Only show items below threshold" },
+          product_id: { type: "string", description: "Filter variants for a specific product" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "query_hotzones",
+      description: "List hotzones in the store.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_copy",
+      description: "Generate product description or marketing copy. Returns generated text (does not save automatically).",
+      parameters: {
+        type: "object",
+        properties: {
+          product_id: { type: "string", description: "Product to generate copy for" },
+          style: { type: "string", enum: ["luxury", "casual", "technical", "playful", "minimal"], description: "Tone of the copy" },
+          type: { type: "string", enum: ["description", "tagline", "seo_title", "seo_description"], description: "What to generate" },
+        },
+        required: ["product_id", "type"],
+      },
+    },
+  },
+];
+
+// Execute tool calls against Supabase
+async function executeTool(
+  toolName: string,
+  args: Record<string, unknown>,
+  merchantId: string,
+  supabaseAdmin: ReturnType<typeof createClient>
+): Promise<unknown> {
+  switch (toolName) {
+    case "query_products": {
+      let query = supabaseAdmin
+        .from("products")
+        .select("id, title, description, price, compare_at_price, category, tags, status, images, pinned, created_at")
+        .eq("merchant_id", merchantId)
+        .order("created_at", { ascending: false })
+        .limit((args.limit as number) || 20);
+
+      if (args.search) query = query.ilike("title", `%${args.search}%`);
+      if (args.category) query = query.eq("category", args.category);
+      if (args.status) query = query.eq("status", args.status);
+      if (args.tag) query = query.contains("tags", [args.tag]);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { products: data, count: data?.length || 0 };
+    }
+
+    case "update_product": {
+      // Return preview, don't execute yet — needs confirmation
+      const { data: current } = await supabaseAdmin
+        .from("products")
+        .select("*")
+        .eq("id", args.product_id)
+        .eq("merchant_id", merchantId)
+        .single();
+
+      if (!current) throw new Error("Product not found");
+
+      return {
+        action: "update_product",
+        requires_confirmation: true,
+        product_id: args.product_id,
+        current_values: Object.fromEntries(
+          Object.keys(args.updates as object).map((k) => [k, current[k]])
+        ),
+        new_values: args.updates,
+        product_title: current.title,
+      };
+    }
+
+    case "create_product": {
+      return {
+        action: "create_product",
+        requires_confirmation: true,
+        product: {
+          title: args.title,
+          description: args.description || "",
+          price: args.price,
+          compare_at_price: args.compare_at_price,
+          category: args.category || "",
+          tags: args.tags || [],
+          status: args.status || "draft",
+        },
+      };
+    }
+
+    case "query_orders": {
+      let query = supabaseAdmin
+        .from("orders")
+        .select("id, order_number, customer_name, customer_email, status, total, items, created_at")
+        .eq("merchant_id", merchantId)
+        .order("created_at", { ascending: false })
+        .limit((args.limit as number) || 20);
+
+      if (args.status) query = query.eq("status", args.status);
+      if (args.date_from) query = query.gte("created_at", args.date_from);
+      if (args.date_to) query = query.lte("created_at", args.date_to);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { orders: data, count: data?.length || 0 };
+    }
+
+    case "analyze_sales": {
+      const now = new Date();
+      let dateFrom: Date;
+
+      switch (args.period) {
+        case "today":
+          dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case "this_week":
+          dateFrom = new Date(now);
+          dateFrom.setDate(now.getDate() - now.getDay());
+          break;
+        case "this_month":
+          dateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case "last_30_days":
+          dateFrom = new Date(now);
+          dateFrom.setDate(now.getDate() - 30);
+          break;
+        default:
+          dateFrom = new Date(0);
+      }
+
+      const { data: orders, error } = await supabaseAdmin
+        .from("orders")
+        .select("total, items, created_at, status")
+        .eq("merchant_id", merchantId)
+        .gte("created_at", dateFrom.toISOString());
+
+      if (error) throw error;
+
+      const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total), 0) || 0;
+      const orderCount = orders?.length || 0;
+
+      return {
+        period: args.period,
+        total_revenue: totalRevenue,
+        order_count: orderCount,
+        average_order_value: orderCount > 0 ? (totalRevenue / orderCount).toFixed(2) : 0,
+      };
+    }
+
+    case "update_inventory": {
+      const { data: variant } = await supabaseAdmin
+        .from("product_variants")
+        .select("id, title, inventory_count, product_id, products(title, merchant_id)")
+        .eq("id", args.variant_id)
+        .single();
+
+      if (!variant || (variant as any).products?.merchant_id !== merchantId) {
+        throw new Error("Variant not found");
+      }
+
+      return {
+        action: "update_inventory",
+        requires_confirmation: true,
+        variant_id: args.variant_id,
+        variant_title: variant.title,
+        product_title: (variant as any).products?.title,
+        current_count: variant.inventory_count,
+        new_count: args.inventory_count,
+      };
+    }
+
+    case "query_inventory": {
+      let query = supabaseAdmin
+        .from("product_variants")
+        .select("id, title, sku, inventory_count, product_id, products(title)")
+        .eq("products.merchant_id", merchantId);
+
+      if (args.product_id) query = query.eq("product_id", args.product_id);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      let variants = data || [];
+      if (args.low_stock_only) {
+        variants = variants.filter((v) => (v.inventory_count || 0) < 5);
+      }
+
+      return { variants, count: variants.length };
+    }
+
+    case "query_hotzones": {
+      const { data, error } = await supabaseAdmin
+        .from("hotzones")
+        .select("id, name, product_ids, sort_order, position, neighbors")
+        .eq("merchant_id", merchantId)
+        .order("sort_order");
+
+      if (error) throw error;
+      return { hotzones: data, count: data?.length || 0 };
+    }
+
+    case "generate_copy": {
+      const { data: product } = await supabaseAdmin
+        .from("products")
+        .select("*")
+        .eq("id", args.product_id)
+        .eq("merchant_id", merchantId)
+        .single();
+
+      if (!product) throw new Error("Product not found");
+
+      return {
+        action: "generate_copy",
+        product_title: product.title,
+        product_category: product.category,
+        product_price: product.price,
+        current_description: product.description,
+        requested_type: args.type,
+        requested_style: args.style || "casual",
+        note: "Generate the requested copy based on this product info and return it to the merchant for review.",
+      };
+    }
+
+    default:
+      throw new Error(`Unknown tool: ${toolName}`);
+  }
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase config missing");
+
+    // Get merchant from auth token
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header");
+
+    const supabaseUser = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !user) throw new Error("Unauthorized");
+
+    const merchantId = user.id;
+
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Get merchant context
+    const { data: merchant } = await supabaseAdmin
+      .from("merchants")
+      .select("store_name, store_category, store_description, brand_config")
+      .eq("id", merchantId)
+      .single();
+
+    const { messages, confirm_action } = await req.json();
+
+    // Handle action confirmation
+    if (confirm_action) {
+      const { action, ...actionArgs } = confirm_action;
+      let result;
+
+      if (action === "update_product") {
+        const { error } = await supabaseAdmin
+          .from("products")
+          .update(actionArgs.new_values)
+          .eq("id", actionArgs.product_id)
+          .eq("merchant_id", merchantId);
+        if (error) throw error;
+        result = { success: true, message: `Updated "${actionArgs.product_title}" successfully.` };
+      } else if (action === "create_product") {
+        const { error } = await supabaseAdmin
+          .from("products")
+          .insert({ ...actionArgs.product, merchant_id: merchantId });
+        if (error) throw error;
+        result = { success: true, message: `Created "${actionArgs.product.title}" successfully.` };
+      } else if (action === "update_inventory") {
+        const { error } = await supabaseAdmin
+          .from("product_variants")
+          .update({ inventory_count: actionArgs.new_count })
+          .eq("id", actionArgs.variant_id);
+        if (error) throw error;
+        result = { success: true, message: `Updated inventory for "${actionArgs.variant_title}" to ${actionArgs.new_count} units.` };
+      }
+
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Build system prompt
+    const systemPrompt = `You are the Smart Chat AI assistant for "${merchant?.store_name || "this store"}", a ${merchant?.store_category || "retail"} store. You are an intelligent store manager that can read data, perform actions, and provide advice.
+
+Store context:
+- Store name: ${merchant?.store_name || "Not set"}
+- Category: ${merchant?.store_category || "General"}
+- Description: ${merchant?.store_description || "No description"}
+
+Your capabilities:
+1. **Read store data**: Query products, orders, inventory, hotzones
+2. **Execute actions**: Create/update products, manage inventory, generate copy (always ask for confirmation before write actions)
+3. **Analyze**: Sales trends, top products, inventory health
+4. **Advise**: Pricing, product descriptions, merchandising strategy
+
+Guidelines:
+- Be concise and action-oriented. You're a smart manager, not a generic chatbot.
+- When showing data, format it clearly using markdown tables or lists.
+- For write actions, ALWAYS use the appropriate tool and present the preview to the merchant for confirmation.
+- For analysis, use the analyze_sales and query tools to get real data before making claims.
+- If asked about competitive pricing or trends, note that web search is coming soon, and provide advice based on general knowledge.
+- Use currency formatting for prices (e.g., $45.00).
+- Keep responses focused and practical.`;
+
+    // Call Lovable AI with tools
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [{ role: "system", content: systemPrompt }, ...messages],
+        tools,
+        stream: true,
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const text = await aiResponse.text();
+      console.error("AI gateway error:", aiResponse.status, text);
+      throw new Error("AI gateway error");
+    }
+
+    // We need to handle tool calls non-streaming first
+    // Read the full streamed response to check for tool calls
+    const reader = aiResponse.body!.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = "";
+    let toolCallsAccumulator: Record<number, { name: string; arguments: string }> = {};
+    let finishReason = "";
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+        let line = buffer.slice(0, newlineIndex);
+        buffer = buffer.slice(newlineIndex + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (!line.startsWith("data: ")) continue;
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") continue;
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const choice = parsed.choices?.[0];
+          if (!choice) continue;
+
+          if (choice.finish_reason) finishReason = choice.finish_reason;
+
+          const delta = choice.delta;
+          if (delta?.content) fullContent += delta.content;
+
+          if (delta?.tool_calls) {
+            for (const tc of delta.tool_calls) {
+              const idx = tc.index ?? 0;
+              if (!toolCallsAccumulator[idx]) {
+                toolCallsAccumulator[idx] = { name: "", arguments: "" };
+              }
+              if (tc.function?.name) toolCallsAccumulator[idx].name = tc.function.name;
+              if (tc.function?.arguments) toolCallsAccumulator[idx].arguments += tc.function.arguments;
+            }
+          }
+        } catch {
+          // partial JSON, skip
+        }
+      }
+    }
+
+    // If there are tool calls, execute them and do a second pass
+    const toolCallKeys = Object.keys(toolCallsAccumulator);
+    if (toolCallKeys.length > 0 || finishReason === "tool_calls") {
+      const toolResults = [];
+
+      for (const idx of toolCallKeys) {
+        const tc = toolCallsAccumulator[Number(idx)];
+        try {
+          const toolArgs = JSON.parse(tc.arguments);
+          const result = await executeTool(tc.name, toolArgs, merchantId, supabaseAdmin);
+          toolResults.push({
+            role: "tool",
+            tool_call_id: `call_${idx}`,
+            content: JSON.stringify(result),
+          });
+        } catch (err) {
+          toolResults.push({
+            role: "tool",
+            tool_call_id: `call_${idx}`,
+            content: JSON.stringify({ error: err instanceof Error ? err.message : "Tool execution failed" }),
+          });
+        }
+      }
+
+      // Build tool_calls array for the assistant message
+      const assistantToolCalls = toolCallKeys.map((idx) => ({
+        id: `call_${idx}`,
+        type: "function",
+        function: {
+          name: toolCallsAccumulator[Number(idx)].name,
+          arguments: toolCallsAccumulator[Number(idx)].arguments,
+        },
+      }));
+
+      // Second call with tool results — stream this one
+      const secondResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+            {
+              role: "assistant",
+              content: fullContent || null,
+              tool_calls: assistantToolCalls,
+            },
+            ...toolResults,
+          ],
+          tools,
+          stream: true,
+        }),
+      });
+
+      if (!secondResponse.ok) {
+        const text = await secondResponse.text();
+        console.error("AI second pass error:", secondResponse.status, text);
+        throw new Error("AI gateway error on tool result processing");
+      }
+
+      // Stream the second response back with tool call metadata
+      const { readable, writable } = new TransformStream();
+      const writer = writable.getWriter();
+      const encoder = new TextEncoder();
+
+      // Prepend tool call info as a special SSE event
+      const toolMeta = toolCallKeys.map((idx) => {
+        const tc = toolCallsAccumulator[Number(idx)];
+        const resultObj = toolResults.find((r) => r.tool_call_id === `call_${idx}`);
+        return {
+          tool: tc.name,
+          args: JSON.parse(tc.arguments),
+          result: resultObj ? JSON.parse(resultObj.content) : null,
+        };
+      });
+
+      (async () => {
+        await writer.write(encoder.encode(`data: ${JSON.stringify({ tool_calls: toolMeta })}\n\n`));
+
+        const reader2 = secondResponse.body!.getReader();
+        while (true) {
+          const { done, value } = await reader2.read();
+          if (done) break;
+          await writer.write(value);
+        }
+        await writer.close();
+      })();
+
+      return new Response(readable, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
+    // No tool calls — re-stream the content we already read
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    const encoder = new TextEncoder();
+
+    (async () => {
+      // Send the content we already accumulated as SSE chunks
+      if (fullContent) {
+        const chunk = {
+          choices: [{ delta: { content: fullContent }, finish_reason: null }],
+        };
+        await writer.write(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+      }
+      await writer.write(encoder.encode("data: [DONE]\n\n"));
+      await writer.close();
+    })();
+
+    return new Response(readable, {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    });
+  } catch (e) {
+    console.error("smart-chat error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

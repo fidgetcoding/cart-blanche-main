@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string | null
+          id: string
+          merchant_id: string
+          role: string
+          tool_calls: Json | null
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string | null
+          id?: string
+          merchant_id: string
+          role: string
+          tool_calls?: Json | null
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          merchant_id?: string
+          role?: string
+          tool_calls?: Json | null
+        }
+        Relationships: []
+      }
       editorial_tiles: {
         Row: {
           created_at: string | null

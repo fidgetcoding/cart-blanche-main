@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { SmartChatPanel } from '@/components/admin/SmartChatPanel';
 import {
   LayoutDashboard,
   Package,
@@ -108,6 +109,9 @@ export default function AdminLayout() {
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
+
+      {/* Smart Chat AI Panel */}
+      <SmartChatPanel />
     </div>
   );
 }
