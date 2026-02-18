@@ -39,11 +39,11 @@ export default function AdminDashboard() {
     <div className="p-8">
       <h1 className="font-display text-2xl font-bold mb-8">Dashboard</h1>
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {cards.map(c => (
           <div key={c.label} className="bg-card border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-display tracking-widest text-muted-foreground whitespace-nowrap">{c.label}</p>
+              <p className="text-[10px] font-display tracking-widest text-muted-foreground">{c.label}</p>
               <c.icon className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="font-display text-3xl font-bold">
@@ -53,14 +53,14 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-display text-sm font-semibold tracking-wider mb-4">RECENT ORDERS</h3>
-          <p className="text-sm text-muted-foreground">No orders yet</p>
+          <h3 className="font-display text-sm font-semibold tracking-wider mb-4 whitespace-nowrap">RECENT ORDERS</h3>
+          <p className="text-sm text-muted-foreground whitespace-nowrap">No orders yet</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-display text-sm font-semibold tracking-wider mb-4">TOP PRODUCTS</h3>
-          <p className="text-sm text-muted-foreground">No sales data yet</p>
+          <h3 className="font-display text-sm font-semibold tracking-wider mb-4 whitespace-nowrap">TOP PRODUCTS</h3>
+          <p className="text-sm text-muted-foreground whitespace-nowrap">No sales data yet</p>
         </div>
       </div>
     </div>
