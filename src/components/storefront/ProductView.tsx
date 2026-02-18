@@ -312,6 +312,7 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
           {/* Expand button to show details */}
           <button
             onClick={() => setExpandDetails(!expandDetails)}
+            onMouseEnter={() => setExpandDetails(true)}
             className="mt-3 p-2 hover:bg-secondary rounded-full transition-colors"
           >
             <Plus className={`w-5 h-5 transition-transform duration-200 ${expandDetails ? 'rotate-45' : ''}`} />
