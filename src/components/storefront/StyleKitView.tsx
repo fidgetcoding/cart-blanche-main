@@ -20,6 +20,38 @@ function CarouselRow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const isHorizontal = direction === 'horizontal';
 
+  // Mouse/pointer drag scrolling
+  const isDragging = useRef(false);
+  const dragStartPos = useRef(0);
+  const scrollStartPos = useRef(0);
+  const hasDragged = useRef(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    isDragging.current = true;
+    hasDragged.current = false;
+    dragStartPos.current = isHorizontal ? e.clientX : e.clientY;
+    scrollStartPos.current = isHorizontal
+      ? scrollRef.current?.scrollLeft ?? 0
+      : scrollRef.current?.scrollTop ?? 0;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    const pos = isHorizontal ? e.clientX : e.clientY;
+    const delta = dragStartPos.current - pos;
+    if (Math.abs(delta) > 3) hasDragged.current = true;
+    if (isHorizontal) {
+      scrollRef.current.scrollLeft = scrollStartPos.current + delta;
+    } else {
+      scrollRef.current.scrollTop = scrollStartPos.current + delta;
+    }
+  };
+
+  const handlePointerUp = () => {
+    isDragging.current = false;
+  };
+
   // Triple the products for infinite loop illusion
   const loopedProducts = products.length > 0
     ? [...products, ...products, ...products]
@@ -29,7 +61,6 @@ function CarouselRow({
   useEffect(() => {
     if (!scrollRef.current || products.length === 0) return;
     const el = scrollRef.current;
-    // Jump to middle third without animation
     requestAnimationFrame(() => {
       if (isHorizontal) {
         el.scrollLeft = el.scrollWidth / 3;
@@ -70,20 +101,23 @@ function CarouselRow({
         </>
       )}
 
-      {/* Scrollable area with native touch swiping */}
+      {/* Scrollable area with drag + native scroll */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className={`absolute inset-0 no-scrollbar p-4 gap-3 flex items-start ${
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        className={`absolute inset-0 no-scrollbar p-4 gap-3 flex items-start cursor-grab active:cursor-grabbing select-none ${
           isHorizontal
-            ? 'flex-row overflow-x-scroll overflow-y-hidden'
-            : 'flex-col overflow-y-scroll overflow-x-hidden'
+            ? 'flex-row overflow-x-auto overflow-y-hidden'
+            : 'flex-col overflow-y-auto overflow-x-hidden'
         }`}
         style={{
           WebkitOverflowScrolling: 'touch',
           touchAction: isHorizontal ? 'pan-x' : 'pan-y',
-          overscrollBehaviorX: isHorizontal ? 'contain' : undefined,
-          overscrollBehaviorY: !isHorizontal ? 'contain' : undefined,
+          overscrollBehavior: 'contain',
         }}
       >
         {loopedProducts.map((product, idx) => (
@@ -92,7 +126,7 @@ function CarouselRow({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer w-[200px]"
-            onClick={() => onSelect(product)}
+            onClick={() => { if (!hasDragged.current) onSelect(product); }}
           >
             <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full">
               <span className="font-display text-muted-foreground/20 text-[10px] tracking-widest">
@@ -320,6 +354,7 @@ export function StyleKitView() {
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-35 bg-background flex flex-col"
         style={{ zIndex: 35 }}
+        onWheel={(e) => e.stopPropagation()}
       >
         {/* Top bar */}
         <div className="h-12 flex items-center justify-between px-4 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
