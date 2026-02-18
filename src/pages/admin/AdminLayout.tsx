@@ -47,64 +47,61 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* AI Chat — full height on left */}
-      <SmartChatPanel />
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Top ribbon header — spans full width */}
+      <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-5 flex-shrink-0 z-10 overflow-hidden">
+        <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground mr-4 flex-shrink-0">CART BLANCHE</h1>
 
-      {/* Right side: header + content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top ribbon header — only spans the content area */}
-        <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-5 flex-shrink-0 z-10 overflow-hidden">
-          <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground mr-4 flex-shrink-0">CART BLANCHE</h1>
+        {/* Store link */}
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0 mr-2"
+        >
+          <Store className="w-3.5 h-3.5" />
+          Store
+        </button>
 
-          {/* Store link */}
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0 mr-2"
-          >
-            <Store className="w-3.5 h-3.5" />
-            Store
-          </button>
+        {/* Nav items */}
+        <nav className="flex items-center gap-0.5">
+          {NAV_ITEMS.map(item => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                `flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+                }`
+              }
+            >
+              <item.icon className="w-3.5 h-3.5" />
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
 
-          {/* Nav items */}
-          <nav className="flex items-center gap-0.5">
-            {NAV_ITEMS.map(item => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap ${
-                    isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
-                  }`
-                }
-              >
-                <item.icon className="w-3.5 h-3.5" />
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+        {/* Spacer + Settings */}
+        <div className="flex-1" />
+        <NavLink
+          to="/admin/settings"
+          className={({ isActive }) =>
+            `flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap flex-shrink-0 ${
+              isActive
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+            }`
+          }
+        >
+          <Settings className="w-3.5 h-3.5" />
+          Settings
+        </NavLink>
+      </header>
 
-          {/* Spacer + Settings */}
-          <div className="flex-1" />
-          <NavLink
-            to="/admin/settings"
-            className={({ isActive }) =>
-              `flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap flex-shrink-0 ${
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
-              }`
-            }
-          >
-            <Settings className="w-3.5 h-3.5" />
-            Settings
-          </NavLink>
-        </header>
-
-        {/* Main content */}
+      {/* Below header: chat panel + content side by side */}
+      <div className="flex-1 flex overflow-hidden">
+        <SmartChatPanel />
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
