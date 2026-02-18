@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Heart, X, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Heart, X, ShoppingBag, Layers } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
+import { useStyleKit } from '@/contexts/StyleKitContext';
 
 interface ProductViewProps {
   productIndex: number;
@@ -78,6 +79,7 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const { addItem } = useCart();
+  const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(false);
 
   const product = DEMO_PRODUCTS[productIndex];
@@ -337,7 +339,7 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
                     <button
                       onClick={handleAddToCart}
                       disabled={!canAdd || isOutOfStock}
-                      className={`px-8 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center gap-2 transition-all ${
+                      className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center gap-2 transition-all ${
                         !canAdd || isOutOfStock
                           ? 'bg-muted text-muted-foreground cursor-not-allowed'
                           : 'bg-primary text-primary-foreground hover:opacity-90'
@@ -345,6 +347,13 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
                     >
                       <ShoppingBag className="w-4 h-4" />
                       {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
+                    </button>
+                    <button
+                      onClick={() => openStyleKit(product)}
+                      className="px-4 py-3 border border-border font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center gap-2 hover:bg-secondary transition-colors"
+                    >
+                      <Layers className="w-4 h-4" />
+                      BUILD A SET
                     </button>
                     <button
                       onClick={() => setIsSaved(!isSaved)}

@@ -333,6 +333,55 @@ export type Database = {
           },
         ]
       }
+      product_pairings: {
+        Row: {
+          created_at: string | null
+          id: string
+          merchant_id: string
+          paired_product_id: string
+          pairing_strength: number | null
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          merchant_id: string
+          paired_product_id: string
+          pairing_strength?: number | null
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          merchant_id?: string
+          paired_product_id?: string
+          pairing_strength?: number | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_pairings_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_pairings_paired_product_id_fkey"
+            columns: ["paired_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_pairings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           created_at: string | null
@@ -478,6 +527,41 @@ export type Database = {
             foreignKeyName: "store_config_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: true
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      styling_guides: {
+        Row: {
+          created_at: string | null
+          id: string
+          merchant_id: string
+          name: string
+          rules: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          merchant_id: string
+          name?: string
+          rules?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          merchant_id?: string
+          name?: string
+          rules?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "styling_guides_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
           },

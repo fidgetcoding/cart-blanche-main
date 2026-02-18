@@ -1,9 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, Layers } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useStyleKit } from '@/contexts/StyleKitContext';
+import { DEMO_PRODUCTS } from '@/data/demo-data';
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, itemCount, subtotal } = useCart();
+  const { openStyleKit } = useStyleKit();
 
   return (
     <AnimatePresence>
@@ -51,7 +54,7 @@ export function CartDrawer() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: 50 }}
-                    className="flex gap-4 p-4 bg-secondary/50 rounded-lg"
+                    className="flex gap-4 p-4 bg-secondary/50 rounded-lg relative"
                   >
                     <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-xs font-display">
                       IMG
@@ -83,6 +86,20 @@ export function CartDrawer() {
                       className="self-start p-1 text-muted-foreground hover:text-destructive transition-colors"
                     >
                       <X className="w-4 h-4" />
+                    </button>
+                    {/* Find Pairs button */}
+                    <button
+                      onClick={() => {
+                        const product = DEMO_PRODUCTS.find(p => p.id === item.productId);
+                        if (product) {
+                          closeCart();
+                          openStyleKit(product);
+                        }
+                      }}
+                      className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 text-[9px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-colors"
+                    >
+                      <Layers className="w-3 h-3" />
+                      FIND PAIRS
                     </button>
                   </motion.div>
                 ))
