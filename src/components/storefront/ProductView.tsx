@@ -81,7 +81,13 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
   const [activeImage, setActiveImage] = useState(0);
   const { addItem } = useCart();
   const { openStyleKit } = useStyleKit();
-  const scrollCooldown = useRef(false);
+  const scrollCooldown = useRef(true); // Start with cooldown to absorb momentum from zoom-in
+
+  // Release initial cooldown after mount
+  useEffect(() => {
+    const timer = setTimeout(() => { scrollCooldown.current = false; }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const product = DEMO_PRODUCTS[productIndex];
 
