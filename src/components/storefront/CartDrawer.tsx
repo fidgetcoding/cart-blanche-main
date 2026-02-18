@@ -192,7 +192,7 @@ export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, itemCount, subtotal, addItem } = useCart();
   const { messages, isLoading, hasUnread, clearUnread, sendMessage, triggerProactive, clearChat } = useSmartCart();
   const { openStyleKit } = useStyleKit();
-  const [activeTab, setActiveTab] = useState<Tab>('cart');
+  const [activeTab, setActiveTab] = useState<Tab>(items.length > 0 ? 'cart' : 'assistant');
   const [inputValue, setInputValue] = useState('');
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -215,6 +215,13 @@ export function CartDrawer() {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, activeTab]);
+
+  // When cart opens, switch tab based on whether items exist
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(items.length > 0 ? 'cart' : 'assistant');
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear unread when switching to assistant tab
   useEffect(() => {
