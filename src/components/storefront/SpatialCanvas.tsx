@@ -98,15 +98,17 @@ export function SpatialCanvas() {
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const padX = isMobile ? 16 : 40;
+    const headerPad = 70;
     const padY = isMobile ? 60 : 80;
     const fitScale = Math.min(
       (rect.width - padX * 2) / CANVAS_W,
-      (rect.height - padY * 2) / CANVAS_H
+      (rect.height - headerPad - padY) / CANVAS_H
     );
     const s = Math.max(0.3, Math.min(1, fitScale));
     minScaleRef.current = s;
     const cx = (rect.width - CANVAS_W * s) / 2;
-    const cy = (rect.height - CANVAS_H * s) / 2;
+    const availH = rect.height - headerPad;
+    const cy = headerPad + (availH - CANVAS_H * s) / 2;
     transformRef.current = { x: cx, y: cy, scale: s };
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     setScaleState(s);
@@ -137,14 +139,16 @@ export function SpatialCanvas() {
     const bboxW = maxX - minX;
     const bboxH = maxY - minY;
     const padX = isMobile ? 20 : 60;
-    const padY = isMobile ? 70 : 100;
+    const headerPad = 70;
+    const padY = isMobile ? 60 : 80;
     const fitScale = Math.min(
       (rect.width - padX * 2) / bboxW,
-      (rect.height - padY * 2) / bboxH
+      (rect.height - headerPad - padY) / bboxH
     );
     const s = Math.max(0.15, Math.min(MAX_SCALE, fitScale));
     const cx = (rect.width - bboxW * s) / 2 - minX * s;
-    const cy = (rect.height - bboxH * s) / 2 - minY * s;
+    const availH = rect.height - headerPad;
+    const cy = headerPad + (availH - bboxH * s) / 2 - minY * s;
 
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     if (activeCategory !== 'ALL') {
@@ -181,27 +185,31 @@ export function SpatialCanvas() {
             const rect = container.getBoundingClientRect();
             const scaledW = CANVAS_W * target.scale;
             const scaledH = CANVAS_H * target.scale;
+            const headerPad = 70; // consistent gap below header ribbon
+            const bottomPad = 80;
+            const sidePad = 80;
 
             if (scaledW <= rect.width && scaledH <= rect.height) {
-              // Canvas fits entirely — center it
+              // Canvas fits entirely — center horizontally, push below header
               target.x = (rect.width - scaledW) / 2;
-              target.y = (rect.height - scaledH) / 2;
+              const availH = rect.height - headerPad;
+              target.y = headerPad + (availH - scaledH) / 2;
             } else {
               // Canvas is larger than viewport — clamp so content doesn't drift off-screen
-              const pad = 80; // allow a bit of overscroll
               if (scaledW > rect.width) {
-                const minX = rect.width - scaledW - pad;
-                const maxX = pad;
+                const minX = rect.width - scaledW - sidePad;
+                const maxX = sidePad;
                 target.x = Math.max(minX, Math.min(maxX, target.x));
               } else {
                 target.x = (rect.width - scaledW) / 2;
               }
-              if (scaledH > rect.height) {
-                const minY = rect.height - scaledH - pad;
-                const maxY = pad;
+              if (scaledH > rect.height - headerPad) {
+                const minY = rect.height - scaledH - bottomPad;
+                const maxY = headerPad;
                 target.y = Math.max(minY, Math.min(maxY, target.y));
               } else {
-                target.y = (rect.height - scaledH) / 2;
+                const availH = rect.height - headerPad;
+                target.y = headerPad + (availH - scaledH) / 2;
               }
             }
           }
