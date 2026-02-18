@@ -85,7 +85,7 @@ export function SmartChatPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [panelWidth, setPanelWidth] = useState(380);
   const [attachments, setAttachments] = useState<string[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -452,12 +452,19 @@ export function SmartChatPanel() {
       <div className="flex-1 flex flex-col bg-sidebar border-r border-sidebar-border overflow-hidden">
         {/* Header — toggle sidebar */}
         <div className="flex items-center gap-2 px-3 py-2.5 border-b border-sidebar-border">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
-          >
-            {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
-          </button>
+          <div className="group flex items-center">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
+            >
+              {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+            </button>
+            {!sidebarOpen && (
+              <span className="ml-1.5 text-[10px] font-display tracking-wider text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                Chat History
+              </span>
+            )}
+          </div>
           {activeConversationId && (
             <span className="text-[11px] font-display tracking-wider text-muted-foreground truncate">
               {conversations.find(c => c.id === activeConversationId)?.title || ''}
