@@ -651,7 +651,7 @@ export function SpatialCanvas() {
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  onClick={() => { if (cat === activeCategory) { fitToVisibleProducts(); } else { setActiveCategory(cat); } }}
                   className={`font-display text-[11px] tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
                     activeCategory === cat
                       ? 'bg-foreground/[0.12] text-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_1px_3px_rgba(0,0,0,0.2)]'
@@ -670,7 +670,7 @@ export function SpatialCanvas() {
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  onClick={() => { if (cat === activeCategory) { fitToVisibleProducts(); } else { setActiveCategory(cat); } }}
                   className={`font-display text-[10px] tracking-[0.12em] uppercase transition-all duration-200 rounded-md px-3 py-1.5 whitespace-nowrap flex-shrink-0 ${
                     activeCategory === cat
                       ? 'bg-foreground/[0.15] text-foreground font-medium'
