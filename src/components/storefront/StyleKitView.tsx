@@ -211,17 +211,21 @@ function CarouselRow({
   );
 }
 
-function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, selectedVariant }: {
+function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, selectedVariant, label }: {
   anchorProduct: DemoProduct;
   sizes: string[];
   selectedSize: string | null;
   setSelectedSize: (s: string | null) => void;
   selectedVariant: DemoProduct['variants'][0] | undefined;
+  label?: string;
 }) {
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h3 className="font-display text-base font-bold tracking-wide">{anchorProduct.title}</h3>
+        <div className="flex items-center gap-2">
+          {label && <span className="text-[10px] font-display tracking-widest text-primary">{label}</span>}
+          <h3 className="font-display text-base font-bold tracking-wide">{anchorProduct.title}</h3>
+        </div>
         <div className="flex items-center gap-2 mt-1">
           <span className="font-display text-sm text-muted-foreground">${anchorProduct.price}</span>
           {anchorProduct.compare_at_price && (
@@ -301,7 +305,7 @@ function LockedPairPanel({
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="flex-1 flex flex-col p-4 gap-3">
-          <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%] relative">
+          <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 relative">
             <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
               {product.category.toUpperCase()}
             </span>
@@ -312,15 +316,13 @@ function LockedPairPanel({
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-display tracking-widest text-primary">PAIRED ITEM</span>
-          </div>
           <ProductDetails
             anchorProduct={product}
             sizes={sizes}
             selectedSize={selectedSize}
             setSelectedSize={setSelectedSize}
             selectedVariant={selectedVariant}
+            label="PAIRED ITEM"
           />
         </div>
       </motion.div>
@@ -350,15 +352,13 @@ function LockedPairPanel({
           </button>
         </div>
         <div className="flex-1 flex flex-col p-5 overflow-y-auto">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-display tracking-widest text-primary">PAIRED ITEM</span>
-          </div>
           <ProductDetails
             anchorProduct={product}
             sizes={sizes}
             selectedSize={selectedSize}
             setSelectedSize={setSelectedSize}
             selectedVariant={selectedVariant}
+            label="PAIRED ITEM"
           />
         </div>
       </div>
@@ -421,7 +421,7 @@ function AnchorPanel({
   return (
     <div className="flex flex-col bg-card/50 backdrop-blur-sm border-r border-border h-full overflow-y-auto">
       <div className="flex-1 flex flex-col p-4 gap-3">
-        <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%] relative">
+        <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 relative">
           <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
             {anchorProduct.category.toUpperCase()}
           </span>
