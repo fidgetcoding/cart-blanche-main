@@ -253,9 +253,9 @@ export function SpatialCanvas() {
     <div ref={rootRef} className="relative w-full h-screen overflow-hidden bg-background select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={() => rootRef.current?.focus()}>
       {/* Top bar — Yeezy style: + left, categories center, bag right */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-5">
-        <button className="font-display text-lg font-light text-foreground/80 hover:text-foreground transition-colors">
-          +
-        </button>
+        <span className="font-display text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
+          CART BLANCHE
+        </span>
 
         {/* Centered category nav */}
         <nav className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
