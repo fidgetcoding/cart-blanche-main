@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,9 @@ import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
+const TILE_W = 220;
+const TILE_H = 300;
+const TILE_GAP = 6;
 const CANVAS_W = 1360;
 const CANVAS_H = 1230;
 const MAX_SCALE = 2;
@@ -40,6 +43,28 @@ export function SpatialCanvas() {
   const { toggleCart, itemCount } = useCart();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+
+  // Compute reflowed positions when filtering by category
+  const overridePositions = useMemo(() => {
+    if (activeCategory === 'ALL') return null;
+    const visible = DEMO_PRODUCTS
+      .map((p, i) => ({ p, i }))
+      .filter(({ p }) => p.category.toUpperCase() === activeCategory);
+    if (visible.length === 0) return null;
+
+    // Choose columns: aim for roughly square grid
+    const count = visible.length;
+    const cols = Math.ceil(Math.sqrt(count));
+
+    const positions: Record<number, { x: number; y: number }> = {};
+    visible.forEach(({ i }, idx) => {
+      positions[i] = {
+        x: (idx % cols) * (TILE_W + TILE_GAP),
+        y: Math.floor(idx / cols) * (TILE_H + TILE_GAP),
+      };
+    });
+    return positions;
+  }, [activeCategory]);
 
   // Apply transform directly to DOM
   const applyTransform = useCallback(() => {
@@ -76,18 +101,20 @@ export function SpatialCanvas() {
     if (!container) return;
     const rect = container.getBoundingClientRect();
 
-    const visible = DEMO_PRODUCTS.filter(
-      p => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory
-    );
-    if (visible.length === 0) return;
+    const visibleWithIndex = DEMO_PRODUCTS
+      .map((p, i) => ({ p, i }))
+      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
+    if (visibleWithIndex.length === 0) return;
 
-    // Compute bounding box of visible tiles (each tile is 220x280)
+    // Use override positions if available, else original
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const p of visible) {
-      minX = Math.min(minX, p.grid_position.x);
-      minY = Math.min(minY, p.grid_position.y);
-      maxX = Math.max(maxX, p.grid_position.x + 220);
-      maxY = Math.max(maxY, p.grid_position.y + 280);
+    for (const { p, i } of visibleWithIndex) {
+      const pos = overridePositions ? overridePositions[i] : p.grid_position;
+      if (!pos) continue;
+      minX = Math.min(minX, pos.x);
+      minY = Math.min(minY, pos.y);
+      maxX = Math.max(maxX, pos.x + TILE_W);
+      maxY = Math.max(maxY, pos.y + TILE_H);
     }
 
     const bboxW = maxX - minX;
@@ -103,7 +130,7 @@ export function SpatialCanvas() {
 
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     setScaleState(s);
-  }, [activeCategory]);
+  }, [activeCategory, overridePositions]);
 
   useEffect(() => {
     fitToVisibleProducts();
@@ -419,11 +446,12 @@ export function SpatialCanvas() {
         >
           {/* No hotzone layer — clean grid */}
           {DEMO_PRODUCTS.map((product, i) => {
-            // Filter by category — hide non-matching tiles
             if (activeCategory !== 'ALL' && product.category.toUpperCase() !== activeCategory) return null;
+            const posOverride = overridePositions ? overridePositions[i] : undefined;
             return (
               <ProductTile key={product.id} product={product} scale={scaleState}
-                isFocused={focusedIndex === i} onClick={() => setSelectedIndex(i)} />
+                isFocused={focusedIndex === i} onClick={() => setSelectedIndex(i)}
+                positionOverride={posOverride} />
             );
           })}
         </div>

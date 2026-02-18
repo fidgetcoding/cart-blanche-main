@@ -6,9 +6,11 @@ interface ProductTileProps {
   scale: number;
   isFocused: boolean;
   onClick: () => void;
+  positionOverride?: { x: number; y: number };
 }
 
-export function ProductTile({ product, scale, isFocused, onClick }: ProductTileProps) {
+export function ProductTile({ product, scale, isFocused, onClick, positionOverride }: ProductTileProps) {
+  const pos = positionOverride || product.grid_position;
   // Show SKU label at reasonable zoom
   const showLabel = scale > 0.45;
 
@@ -18,8 +20,8 @@ export function ProductTile({ product, scale, isFocused, onClick }: ProductTileP
       onClick={onClick}
       className="absolute cursor-pointer group"
       style={{
-        left: product.grid_position.x,
-        top: product.grid_position.y,
+        left: pos.x,
+        top: pos.y,
         width: 220,
         height: 280,
       }}
