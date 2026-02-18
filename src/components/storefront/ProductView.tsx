@@ -216,11 +216,11 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
       <div className="absolute top-6 right-6 z-40">
         <button
           onClick={(e) => { e.stopPropagation(); openCart(); }}
-          className="relative p-2 rounded-xl bg-gradient-to-br from-violet-500/20 via-fuchsia-500/20 to-amber-500/20 border border-fuchsia-500/20 hover:border-fuchsia-500/40 hover:from-violet-500/30 hover:via-fuchsia-500/30 hover:to-amber-500/30 transition-all"
+          className="relative p-2 rounded-xl bg-foreground/10 border border-foreground/10 hover:bg-foreground/20 hover:border-foreground/20 transition-all"
         >
-          <ShoppingBag className="w-4 h-4 text-foreground/90" />
+          <ShoppingBag className="w-4 h-4 text-foreground" />
           {itemCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-fuchsia-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-foreground text-background text-[9px] font-bold rounded-full flex items-center justify-center">
               {itemCount}
             </span>
           )}
