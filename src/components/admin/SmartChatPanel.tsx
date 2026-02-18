@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2, Check, XCircle, Sparkles, BarChart3, Package, Tag, ImagePlus, X, Plus, MessageSquare, PanelLeftClose, PanelLeft, Trash2 } from 'lucide-react';
+import { Send, Loader2, Check, XCircle, Sparkles, BarChart3, Package, Tag, ImagePlus, X, Plus, MessageSquare, PanelLeftClose, PanelLeft, Trash2, Warehouse, Grid3X3, ShoppingCart, Settings, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useLocation } from 'react-router-dom';
 
 type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
 type ToolCall = { tool: string; args: Record<string, unknown>; result: unknown };
@@ -22,14 +23,61 @@ type Conversation = {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smart-chat`;
 
-const SUGGESTED_PROMPTS = [
-  { icon: Package, text: "What products do I have?", label: "View Products" },
-  { icon: BarChart3, text: "How are my sales this month?", label: "Sales Report" },
-  { icon: Tag, text: "Suggest prices for my catalog", label: "Pricing Help" },
-  { icon: Sparkles, text: "Write descriptions for products missing one", label: "Generate Copy" },
-];
+type SuggestedPrompt = { icon: React.ElementType; text: string; label: string };
+
+const PROMPTS_BY_ROUTE: Record<string, SuggestedPrompt[]> = {
+  dashboard: [
+    { icon: BarChart3, text: "How are my sales this month?", label: "Sales Report" },
+    { icon: Package, text: "What products do I have?", label: "View Products" },
+    { icon: Tag, text: "Suggest prices for my catalog", label: "Pricing Help" },
+    { icon: Sparkles, text: "Write descriptions for products missing one", label: "Generate Copy" },
+  ],
+  products: [
+    { icon: Package, text: "What products do I have?", label: "List Products" },
+    { icon: Sparkles, text: "Write descriptions for products missing one", label: "Generate Copy" },
+    { icon: Tag, text: "Suggest prices for my catalog", label: "Pricing Help" },
+    { icon: BarChart3, text: "Which products sell the most?", label: "Top Sellers" },
+  ],
+  inventory: [
+    { icon: Warehouse, text: "Show me items that are low on stock", label: "Low Stock" },
+    { icon: Package, text: "Give me an inventory summary", label: "Stock Overview" },
+    { icon: BarChart3, text: "Which variants need restocking?", label: "Restock Alerts" },
+    { icon: Sparkles, text: "Suggest optimal stock levels for my products", label: "Stock Planning" },
+  ],
+  orders: [
+    { icon: ShoppingCart, text: "Show me recent orders", label: "Recent Orders" },
+    { icon: BarChart3, text: "What's my revenue this week?", label: "Revenue" },
+    { icon: Package, text: "Are there any unfulfilled orders?", label: "Unfulfilled" },
+    { icon: Sparkles, text: "Summarize order trends", label: "Order Trends" },
+  ],
+  grid: [
+    { icon: Grid3X3, text: "How should I arrange my storefront grid?", label: "Grid Tips" },
+    { icon: Sparkles, text: "Suggest a visual layout for my products", label: "Layout Ideas" },
+    { icon: Package, text: "Which products should be featured?", label: "Featured Items" },
+    { icon: Tag, text: "Help me create editorial tiles", label: "Editorial Help" },
+  ],
+  flow: [
+    { icon: GitBranch, text: "How does the flow editor work?", label: "Flow Guide" },
+    { icon: Sparkles, text: "Suggest automation flows for my store", label: "Automations" },
+    { icon: BarChart3, text: "What flows would boost conversions?", label: "Conversion Tips" },
+    { icon: Settings, text: "Help me set up a notification flow", label: "Notifications" },
+  ],
+  settings: [
+    { icon: Settings, text: "Walk me through store settings", label: "Settings Guide" },
+    { icon: Sparkles, text: "Help me configure my brand identity", label: "Brand Setup" },
+    { icon: Tag, text: "What's the optimal platform fee?", label: "Fee Advice" },
+    { icon: BarChart3, text: "Review my store configuration", label: "Config Review" },
+  ],
+};
 
 export function SmartChatPanel() {
+  const location = useLocation();
+  const currentRoute = useMemo(() => {
+    const path = location.pathname.replace('/admin', '').replace('/', '') || 'dashboard';
+    return path in PROMPTS_BY_ROUTE ? path : 'dashboard';
+  }, [location.pathname]);
+  const suggestedPrompts = PROMPTS_BY_ROUTE[currentRoute];
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -428,7 +476,7 @@ export function SmartChatPanel() {
                 <p className="text-[11px] text-muted-foreground">Ask me anything about your store.</p>
               </div>
               <div className="grid grid-cols-2 gap-1.5 pt-2">
-                {SUGGESTED_PROMPTS.map((prompt) => (
+                {suggestedPrompts.map((prompt) => (
                   <button
                     key={prompt.label}
                     onClick={() => sendMessage(prompt.text)}
