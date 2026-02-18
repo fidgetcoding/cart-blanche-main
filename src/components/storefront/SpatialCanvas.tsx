@@ -251,39 +251,43 @@ export function SpatialCanvas() {
 
   return (
     <div ref={rootRef} className="relative w-full h-screen overflow-hidden bg-background select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={() => rootRef.current?.focus()}>
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-4">
-        <h1 className="font-display text-xl font-bold tracking-[0.2em]">CART BLANCHE</h1>
+      {/* Top bar — Yeezy style: + left, categories center, bag right */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-5">
+        <button className="font-display text-lg font-light text-foreground/80 hover:text-foreground transition-colors">
+          +
+        </button>
 
-        {/* Category filter tabs */}
-        <nav className="flex items-center gap-1">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`font-display text-[11px] tracking-[0.15em] px-3 py-1.5 transition-colors ${
-                activeCategory === cat
-                  ? 'text-foreground'
-                  : 'text-muted-foreground/40 hover:text-muted-foreground'
-              }`}
-            >
-              {cat.replace('-', ' ')}
-            </button>
-          ))}
+        {/* Centered category nav */}
+        <nav className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
+          <div className="flex items-center gap-6">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`font-display text-[11px] tracking-[0.15em] uppercase transition-colors ${
+                  activeCategory === cat
+                    ? 'text-foreground font-medium'
+                    : 'text-muted-foreground hover:text-foreground/70'
+                }`}
+              >
+                {cat === 'ALL' ? 'NEW' : cat.replace('-', ' ')}
+              </button>
+            ))}
+          </div>
         </nav>
 
         <div className="flex items-center gap-3">
-          <button onClick={toggleCart} className="relative p-2 hover:bg-secondary rounded-lg transition-colors">
-            <ShoppingBag className="w-5 h-5" />
+          <button onClick={toggleCart} className="relative p-2 hover:opacity-70 transition-opacity">
+            <ShoppingBag className="w-5 h-5 text-foreground/70" />
             {itemCount > 0 && (
               <motion.span key={itemCount} initial={{ scale: 0 }} animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                className="absolute -top-1 -right-1 w-4 h-4 bg-foreground text-background text-[9px] font-bold rounded-full flex items-center justify-center">
                 {itemCount}
               </motion.span>
             )}
           </button>
-          <button onClick={() => navigate('/admin')} className="p-2 hover:bg-secondary rounded-lg transition-colors">
-            <User className="w-5 h-5" />
+          <button onClick={() => navigate('/admin')} className="p-2 hover:opacity-70 transition-opacity">
+            <User className="w-5 h-5 text-foreground/70" />
           </button>
         </div>
       </div>
@@ -315,7 +319,7 @@ export function SpatialCanvas() {
       </div>
 
       {/* Zoom hint */}
-      <div className="absolute bottom-6 left-6 z-20 text-xs text-muted-foreground/30 font-display tracking-wider space-y-1">
+      <div className="absolute bottom-6 left-6 z-20 text-xs text-muted-foreground/50 font-display tracking-wider space-y-1">
         <p>SCROLL TO ZOOM · DRAG TO PAN</p>
         <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
       </div>
