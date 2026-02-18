@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Save } from 'lucide-react';
+import { Save, LogOut } from 'lucide-react';
 
 export default function AdminSettings() {
+  const navigate = useNavigate();
   const [storeName, setStoreName] = useState('');
   const [storeSlug, setStoreSlug] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
@@ -185,6 +187,26 @@ export default function AdminSettings() {
             </div>
             <button className="px-4 py-2 bg-secondary border border-border rounded-lg text-sm font-display tracking-wider hover:bg-muted transition-colors">
               CONNECT STRIPE
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Account */}
+      <section className="mt-8">
+        <h2 className="font-display text-sm font-semibold tracking-wider mb-4">ACCOUNT</h2>
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-display text-sm font-medium">Sign Out</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Sign out of your merchant account</p>
+            </div>
+            <button
+              onClick={async () => { await supabase.auth.signOut(); navigate('/auth'); }}
+              className="px-4 py-2 bg-secondary border border-border rounded-lg text-sm font-display tracking-wider hover:bg-destructive/20 hover:text-destructive hover:border-destructive/50 transition-colors flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              SIGN OUT
             </button>
           </div>
         </div>
