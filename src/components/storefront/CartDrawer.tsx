@@ -320,10 +320,10 @@ export function CartDrawer() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md z-50 bg-card border-l border-border flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-md z-50 liquid-glass border-l border-white/[0.06] flex flex-col"
           >
             {/* Header with tabs */}
-            <div className="border-b border-border">
+            <div className="border-b border-white/[0.06]">
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
                 <h2 className="font-display text-sm font-semibold tracking-[0.15em]">
                   SMARTCART
@@ -597,8 +597,8 @@ export function CartDrawer() {
                   )}
 
                   {/* Chat input */}
-                  <div className="border-t border-border p-3">
-                    <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
+                  <div className="border-t border-white/[0.06] p-3">
+                    <div className="flex items-center gap-2 bg-white/[0.04] rounded-lg px-3 py-2">
                       {/* Image upload */}
                       <input
                         ref={fileInputRef}
