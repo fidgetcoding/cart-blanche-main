@@ -247,7 +247,7 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
                 <button
                   key={size}
                   disabled={outOfStock}
-                  onClick={() => setSelectedSize(size === selectedSize ? null : size)}
+                  onClick={(e) => { e.stopPropagation(); setSelectedSize(size === selectedSize ? null : size); }}
                   className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded border transition-colors ${
                     size === selectedSize
                       ? 'bg-primary text-primary-foreground border-primary'
@@ -293,6 +293,8 @@ function LockedPairPanel({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       className="flex flex-col bg-card/50 backdrop-blur-sm border-t border-border h-full"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="flex-1 flex flex-row overflow-hidden">
         {/* Thumbnail */}
@@ -302,7 +304,7 @@ function LockedPairPanel({
           </span>
           {/* Remove button */}
           <button
-            onClick={onRemove}
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
             className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
           >
             <X className="w-3.5 h-3.5 text-muted-foreground" />
