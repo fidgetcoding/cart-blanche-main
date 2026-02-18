@@ -53,8 +53,17 @@ export default function AdminLayout() {
       {/* Left side: brand header + chat panel */}
       <div className="flex flex-col flex-shrink-0 border-r border-sidebar-border">
         {/* Brand section in header — aligns with chat panel width */}
-        <div className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0">
+        <div className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 gap-2">
           <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">CARTE BLANCHE</h1>
+          <div className="flex-1" />
+          <button
+            onClick={() => navigate('/')}
+            className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
+            title="Back to Store"
+          >
+            <span className="hidden group-hover:inline text-[10px] tracking-wider opacity-80">BACK TO STORE</span>
+            <Store className="w-3.5 h-3.5" />
+          </button>
         </div>
         <SmartChatPanel />
       </div>
@@ -63,16 +72,6 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Nav ribbon — same height as brand bar, inline */}
         <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 overflow-hidden gap-0.5">
-          {/* Store link */}
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 px-2 xl:px-3 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0 mr-1"
-            title="Store"
-          >
-            <Store className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Store</span>
-          </button>
-
           {NAV_ITEMS.map(item => (
             <NavLink
               key={item.to}
