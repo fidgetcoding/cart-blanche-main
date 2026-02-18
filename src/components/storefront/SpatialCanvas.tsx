@@ -1,12 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, User, LayoutDashboard, LogIn } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { DEMO_PRODUCTS, DEMO_HOTZONES, type DemoProduct } from '@/data/demo-data';
 import { ProductTile } from '@/components/storefront/ProductTile';
 import { HotzoneLayer } from '@/components/storefront/HotzoneLayer';
 import { ProductView } from '@/components/storefront/ProductView';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const CANVAS_W = 2000;
 const CANVAS_H = 1600;
@@ -22,6 +29,7 @@ export function SpatialCanvas() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const { toggleCart, itemCount } = useCart();
+  const navigate = useNavigate();
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -128,7 +136,7 @@ export function SpatialCanvas() {
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-4">
         <h1 className="font-display text-xl font-bold tracking-[0.2em]">CART BLANCHE</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <span className="text-xs font-display text-muted-foreground tracking-widest">{zoomLabel}</span>
           <button onClick={toggleCart} className="relative p-2 hover:bg-secondary rounded-lg transition-colors">
             <ShoppingBag className="w-5 h-5" />
@@ -139,6 +147,23 @@ export function SpatialCanvas() {
               </motion.span>
             )}
           </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
+                <User className="w-5 h-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="z-50 bg-popover border border-border shadow-lg">
+              <DropdownMenuItem onClick={() => navigate('/admin')} className="gap-2 cursor-pointer">
+                <LayoutDashboard className="w-4 h-4" />
+                Admin Portal
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/auth')} className="gap-2 cursor-pointer">
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
