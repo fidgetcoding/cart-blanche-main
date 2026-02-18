@@ -252,7 +252,7 @@ function AnchorPanel({
       )}
 
       {/* Look total */}
-      <div className="px-6 py-3 border-t border-border flex items-center justify-between">
+      <div className="px-6 py-3 border-t border-border flex items-center gap-2">
         <span className="text-[10px] font-display tracking-widest text-muted-foreground">
           LOOK TOTAL
         </span>
