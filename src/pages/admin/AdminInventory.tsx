@@ -270,33 +270,33 @@ export default function AdminInventory() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl font-bold">Inventory</h1>
-        <div className="flex gap-3">
-          <button onClick={() => setShowAddProduct(true)}
-            className="px-4 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
-            <Plus className="w-4 h-4" /> ADD PRODUCT
-          </button>
-          <span className="text-xs font-display px-3 py-1.5 bg-secondary rounded-lg text-muted-foreground">
+        <button onClick={() => setShowAddProduct(true)}
+          className="px-4 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+          <Plus className="w-4 h-4" /> ADD PRODUCT
+        </button>
+      </div>
+
+      {/* Search + Stats + Category Tags */}
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..."
+              className="w-full pl-10 pr-4 py-2.5 liquid-glass rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+          <span className="text-xs font-display px-3 py-1.5 bg-secondary rounded-lg text-muted-foreground whitespace-nowrap">
             {totalItems} PRODUCTS
           </span>
           {lowStockProducts > 0 && (
-            <span className="text-xs font-display px-3 py-1.5 bg-warning/20 text-warning rounded-lg flex items-center gap-1.5">
+            <span className="text-xs font-display px-3 py-1.5 bg-warning/20 text-warning rounded-lg flex items-center gap-1.5 whitespace-nowrap">
               <AlertTriangle className="w-3 h-3" /> {lowStockProducts} LOW
             </span>
           )}
           {outOfStockProducts > 0 && (
-            <span className="text-xs font-display px-3 py-1.5 bg-destructive/20 text-destructive rounded-lg">
+            <span className="text-xs font-display px-3 py-1.5 bg-destructive/20 text-destructive rounded-lg whitespace-nowrap">
               {outOfStockProducts} OUT
             </span>
           )}
-        </div>
-      </div>
-
-      {/* Search + Category Tags */}
-      <div className="space-y-3 mb-6">
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..."
-            className="w-full pl-10 pr-4 py-2.5 liquid-glass rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
         <div className="flex flex-wrap gap-2">
           <button
