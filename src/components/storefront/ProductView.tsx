@@ -282,16 +282,20 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
             )}
           </div>
 
-          {/* Image dots */}
-          <div className="flex gap-1.5 mb-4" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          {/* Image selector zones — 3 large segments at bottom of thumbnail */}
+          <div className="absolute bottom-0 left-0 right-0 flex h-12 z-10" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
             {[0, 1, 2].map((i) => (
               <button
                 key={i}
                 onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  activeImage === i ? 'bg-foreground' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
+                className="flex-1 relative group"
+              >
+                <div className={`absolute bottom-0 left-1 right-1 h-1 rounded-full transition-all duration-200 ${
+                  activeImage === i 
+                    ? 'bg-foreground/80' 
+                    : 'bg-foreground/15 group-hover:bg-foreground/30'
+                }`} />
+              </button>
             ))}
           </div>
 
