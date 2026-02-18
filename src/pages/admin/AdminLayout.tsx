@@ -49,16 +49,17 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top ribbon header — spans full width */}
-      <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-5 flex-shrink-0 z-10 overflow-hidden">
-        <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground mr-4 flex-shrink-0">CART BLANCHE</h1>
+      <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 overflow-hidden">
+        <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground mr-2 xl:mr-4 flex-shrink-0 hidden lg:block">CART BLANCHE</h1>
 
         {/* Store link */}
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0 mr-2"
+          className="flex items-center gap-1.5 px-2 xl:px-3 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0 mr-1 xl:mr-2"
+          title="Store"
         >
           <Store className="w-3.5 h-3.5" />
-          Store
+          <span className="hidden xl:inline">Store</span>
         </button>
 
         {/* Nav items */}
@@ -68,8 +69,9 @@ export default function AdminLayout() {
               key={item.to}
               to={item.to}
               end={item.end}
+              title={item.label}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap ${
+                `flex items-center gap-1.5 px-2 xl:px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap ${
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                     : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -77,7 +79,7 @@ export default function AdminLayout() {
               }
             >
               <item.icon className="w-3.5 h-3.5" />
-              {item.label}
+              <span className="hidden xl:inline">{item.label}</span>
             </NavLink>
           ))}
         </nav>
@@ -86,8 +88,9 @@ export default function AdminLayout() {
         <div className="flex-1" />
         <NavLink
           to="/admin/settings"
+          title="Settings"
           className={({ isActive }) =>
-            `flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap flex-shrink-0 ${
+            `flex items-center gap-1.5 px-2 xl:px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap flex-shrink-0 ${
               isActive
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                 : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -95,7 +98,7 @@ export default function AdminLayout() {
           }
         >
           <Settings className="w-3.5 h-3.5" />
-          Settings
+          <span className="hidden xl:inline">Settings</span>
         </NavLink>
       </header>
 
