@@ -574,7 +574,7 @@ export function SmartChatPanel() {
         )}
 
         {/* Input */}
-        <div className="border-t border-sidebar-border p-3">
+        <div className="liquid-glass border-t border-sidebar-border p-3 rounded-t-xl">
           <div className="flex items-end gap-2">
             <input
               ref={fileInputRef}
