@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           attachments: Json | null
           content: string
+          conversation_id: string | null
           created_at: string | null
           id: string
           merchant_id: string
@@ -27,6 +28,7 @@ export type Database = {
         Insert: {
           attachments?: Json | null
           content: string
+          conversation_id?: string | null
           created_at?: string | null
           id?: string
           merchant_id: string
@@ -36,11 +38,44 @@ export type Database = {
         Update: {
           attachments?: Json | null
           content?: string
+          conversation_id?: string | null
           created_at?: string | null
           id?: string
           merchant_id?: string
           role?: string
           tool_calls?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
