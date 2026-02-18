@@ -55,9 +55,7 @@ function CarouselRow({
       {/* Scrollable area */}
       <div
         ref={scrollRef}
-        className={`flex-1 overflow-auto no-scrollbar p-4 gap-3 ${
-          direction === 'horizontal' ? 'flex flex-row items-stretch' : 'flex flex-col'
-        }`}
+        className="flex-1 overflow-auto no-scrollbar p-4 gap-3 flex flex-row items-start flex-wrap content-start"
       >
         {products.map((product) => (
           <motion.div
@@ -65,15 +63,13 @@ function CarouselRow({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className={`flex-shrink-0 bg-card border border-border rounded-lg overflow-hidden group cursor-pointer ${
-              direction === 'horizontal' ? 'w-[240px]' : 'h-[180px] flex flex-row'
+              direction === 'horizontal' ? 'w-[160px]' : 'w-[160px]'
             }`}
             onClick={() => onSelect(product)}
           >
-            {/* Image placeholder */}
+            {/* Square image placeholder */}
             <div
-              className={`bg-secondary/50 flex items-center justify-center ${
-                direction === 'horizontal' ? 'h-[200px] w-full' : 'w-[180px] h-full flex-shrink-0'
-              }`}
+              className="aspect-square bg-secondary/50 flex items-center justify-center w-full"
             >
               <span className="font-display text-muted-foreground/20 text-[10px] tracking-widest">
                 {product.category.toUpperCase()}
@@ -302,10 +298,10 @@ export function StyleKitView() {
           {/* Anchor panel position depends on smart orientation */}
           {splitDirection === 'horizontal' && orientation === 'top' && (
             <>
-              <div className="h-[40%]">
+              <div className="h-1/2">
                 <AnchorPanel direction="horizontal" />
               </div>
-              <div className="h-[60%] flex flex-col">
+              <div className="h-1/2 flex flex-col">
                 <CarouselRow
                   products={suggestions}
                   onSelect={setPreviewProduct}
@@ -318,7 +314,7 @@ export function StyleKitView() {
 
           {splitDirection === 'horizontal' && orientation === 'bottom' && (
             <>
-              <div className="h-[60%] flex flex-col">
+              <div className="h-1/2 flex flex-col">
                 <CarouselRow
                   products={suggestions}
                   onSelect={setPreviewProduct}
@@ -326,7 +322,7 @@ export function StyleKitView() {
                   direction="horizontal"
                 />
               </div>
-              <div className="h-[40%]">
+              <div className="h-1/2">
                 <AnchorPanel direction="horizontal" />
               </div>
             </>
@@ -334,10 +330,10 @@ export function StyleKitView() {
 
           {splitDirection === 'vertical' && (
             <>
-              <div className="w-[40%]">
+              <div className="w-1/2">
                 <AnchorPanel direction="vertical" />
               </div>
-              <div className="w-[60%] flex flex-col">
+              <div className="w-1/2 flex flex-col">
                 <CarouselRow
                   products={suggestions}
                   onSelect={setPreviewProduct}
