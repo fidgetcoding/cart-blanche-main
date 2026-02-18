@@ -492,7 +492,7 @@ export default function AdminInventory() {
                         {/* Variants / sizes */}
                         <div>
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">
-                            VARIANTS ({p.variants.length})
+                            SIZES ({p.variants.length})
                           </p>
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                             {p.variants.map(v => {
