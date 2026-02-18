@@ -1,13 +1,13 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Sun, Moon, Menu, X } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { ProductTile } from '@/components/storefront/ProductTile';
 import { ProductView } from '@/components/storefront/ProductView';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
-import { useTheme } from '@/contexts/ThemeContext';
+
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -50,7 +50,7 @@ export function SpatialCanvas() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const maxZoomTriggeredRef = useRef(false);
   const { toggleCart, itemCount } = useCart();
-  const { theme, toggleTheme } = useTheme();
+  
   const { addItem } = useCart();
   const { openStyleKit } = useStyleKit();
   const navigate = useNavigate();
@@ -622,9 +622,6 @@ export function SpatialCanvas() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
-          <button onClick={toggleTheme} className="p-1.5 md:p-2 hover:opacity-70 transition-opacity" title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-foreground/70" /> : <Moon className="w-4 h-4 text-foreground/70" />}
-          </button>
           <button onClick={() => navigate('/admin')} className="p-1.5 md:p-2 hover:opacity-70 transition-opacity" title="Dashboard">
             <LayoutDashboard className="w-4 h-4 text-foreground/70" />
           </button>
