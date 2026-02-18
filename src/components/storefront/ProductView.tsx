@@ -115,6 +115,37 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
 
+  // Touch swipe navigation
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      touchStart.current = { x: t.clientX, y: t.clientY };
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!touchStart.current) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStart.current.x;
+      const dy = t.clientY - touchStart.current.y;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      const MIN_SWIPE = 50;
+      if (absX < MIN_SWIPE && absY < MIN_SWIPE) { touchStart.current = null; return; }
+      if (absX > absY) {
+        navigate(dx < 0 ? 'right' : 'left');
+      } else {
+        navigate(dy < 0 ? 'down' : 'up');
+      }
+      touchStart.current = null;
+    };
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [navigate]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
