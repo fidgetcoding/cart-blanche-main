@@ -1,0 +1,183 @@
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { DEMO_PRODUCTS } from '@/data/demo-data';
+import type { CartItem } from '@/contexts/CartContext';
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  products?: { product_id: string; reason: string }[] | null;
+  outfit?: {
+    name: string;
+    total: number;
+    items: { product_id: string; role: string; reason: string }[];
+  } | null;
+  timestamp: number;
+}
+
+interface SmartCartContextType {
+  messages: ChatMessage[];
+  isLoading: boolean;
+  hasUnread: boolean;
+  clearUnread: () => void;
+  sendMessage: (text: string, cartItems: CartItem[]) => Promise<void>;
+  triggerProactive: (mode: 'proactive_add' | 'proactive_review' | 'proactive_remove', cartItems: CartItem[], context?: string) => Promise<void>;
+  clearChat: () => void;
+}
+
+const SmartCartContext = createContext<SmartCartContextType | undefined>(undefined);
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smartcart-chat`;
+
+function generateId() {
+  return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function buildCatalog() {
+  return DEMO_PRODUCTS.map(p => ({
+    id: p.id,
+    title: p.title,
+    price: p.price,
+    compare_at_price: p.compare_at_price,
+    category: p.category,
+    description: p.description,
+    variants: p.variants.map(v => ({
+      id: v.id,
+      title: v.title,
+      inventory_count: v.inventory_count,
+    })),
+  }));
+}
+
+export function SmartCartProvider({ children }: { children: React.ReactNode }) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const clearUnread = useCallback(() => setHasUnread(false), []);
+  const clearChat = useCallback(() => setMessages([]), []);
+
+  const callAI = useCallback(async (
+    userMessages: { role: string; content: string }[],
+    cartItems: CartItem[],
+    mode?: string
+  ): Promise<ChatMessage | null> => {
+    try {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: userMessages,
+          catalog: buildCatalog(),
+          cart_items: cartItems,
+          mode: mode || undefined,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Request failed' }));
+        console.error('SmartCart AI error:', err);
+        return {
+          id: generateId(),
+          role: 'assistant',
+          content: err.error || 'Something went wrong. Please try again.',
+          timestamp: Date.now(),
+        };
+      }
+
+      const data = await resp.json();
+      return {
+        id: generateId(),
+        role: 'assistant',
+        content: data.message || '',
+        products: data.products,
+        outfit: data.outfit,
+        timestamp: Date.now(),
+      };
+    } catch (e: any) {
+      if (e.name === 'AbortError') return null;
+      console.error('SmartCart error:', e);
+      return {
+        id: generateId(),
+        role: 'assistant',
+        content: 'Something went wrong. Please try again.',
+        timestamp: Date.now(),
+      };
+    }
+  }, []);
+
+  const sendMessage = useCallback(async (text: string, cartItems: CartItem[]) => {
+    const userMsg: ChatMessage = {
+      id: generateId(),
+      role: 'user',
+      content: text,
+      timestamp: Date.now(),
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    setIsLoading(true);
+
+    // Build message history for context
+    const history = [...messages, userMsg].map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    const response = await callAI(history, cartItems);
+    if (response) {
+      setMessages(prev => [...prev, response]);
+    }
+    setIsLoading(false);
+  }, [messages, callAI]);
+
+  const triggerProactive = useCallback(async (
+    mode: 'proactive_add' | 'proactive_review' | 'proactive_remove',
+    cartItems: CartItem[],
+    context?: string
+  ) => {
+    // Don't trigger if already loading or if there are recent proactive messages
+    if (isLoading) return;
+
+    const proactivePrompt = context
+      ? `[System: ${context}]`
+      : mode === 'proactive_add'
+        ? `[System: Shopper just added "${cartItems[cartItems.length - 1]?.title}" to cart. Suggest complementary items.]`
+        : mode === 'proactive_review'
+          ? '[System: Shopper is reviewing their cart. Suggest completing the look if appropriate.]'
+          : '[System: Shopper just removed an item. Suggest alternatives at different price points.]';
+
+    setIsLoading(true);
+    const response = await callAI(
+      [{ role: 'user', content: proactivePrompt }],
+      cartItems,
+      mode
+    );
+
+    if (response) {
+      setMessages(prev => [...prev, response]);
+      setHasUnread(true);
+    }
+    setIsLoading(false);
+  }, [isLoading, callAI]);
+
+  return (
+    <SmartCartContext.Provider value={{ messages, isLoading, hasUnread, clearUnread, sendMessage, triggerProactive, clearChat }}>
+      {children}
+    </SmartCartContext.Provider>
+  );
+}
+
+export function useSmartCart() {
+  const ctx = useContext(SmartCartContext);
+  if (!ctx) throw new Error('useSmartCart must be used within SmartCartProvider');
+  return ctx;
+}
