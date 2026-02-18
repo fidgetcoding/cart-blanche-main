@@ -21,10 +21,10 @@ export function HotzoneLayer({ hotzones, scale }: HotzoneLayerProps) {
             height: hz.position.height,
           }}
         >
-          {/* Background glow */}
+          {/* Subtle background — no border */}
           <div
-            className="absolute inset-0 rounded-2xl border border-border/20"
-            style={{ opacity: labelOpacity * 0.08, backgroundColor: hz.style_config.color }}
+            className="absolute inset-0 rounded-2xl"
+            style={{ opacity: labelOpacity * 0.04, backgroundColor: hz.style_config.color }}
           />
 
           {/* Label */}
