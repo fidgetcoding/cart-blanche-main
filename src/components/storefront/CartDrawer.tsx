@@ -357,7 +357,7 @@ export function CartDrawer() {
                   }`}
                 >
                   <Sparkles className="w-3 h-3" />
-                  STYLE ASSISTANT
+                  AI STYLE ASSISTANT
                   {hasUnread && activeTab !== 'assistant' && (
                     <span className="w-1.5 h-1.5 rounded-full bg-foreground animate-pulse" />
                   )}
