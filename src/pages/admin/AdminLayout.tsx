@@ -10,7 +10,6 @@ import {
   ShoppingCart,
   Warehouse,
   Settings,
-  LogOut,
   Store,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
@@ -45,10 +44,7 @@ export default function AdminLayout() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/auth');
-  };
+  // handleLogout removed — now in Settings page
 
   if (loading) {
     return (
@@ -96,15 +92,6 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        <div className="p-3 mt-auto space-y-0.5">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
       </aside>
 
       {/* Main content */}
