@@ -779,7 +779,7 @@ export function SpatialCanvas() {
             <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
               <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </a>
-            <a href="https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+            <a href="https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1&pp=ygUJcmljayByb2xsoAcB" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
               <Twitter className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </a>
           </div>
