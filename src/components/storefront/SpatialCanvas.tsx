@@ -469,6 +469,9 @@ export function SpatialCanvas() {
   // Drag to pan (mouse)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    // Don't start drag from interactive elements (links, buttons, inputs)
+    const target = e.target as HTMLElement;
+    if (target?.closest('a, button, input, textarea, select, [contenteditable], [role="textbox"]')) return;
     didDragRef.current = false;
     dragRef.current = {
       startX: e.clientX, startY: e.clientY,
@@ -522,7 +525,7 @@ export function SpatialCanvas() {
     if (!root) return;
     const refocus = (e: Event) => {
       const target = e.target as HTMLElement;
-      if (target?.closest('input, textarea, select, [contenteditable], [role="textbox"]')) return;
+      if (target?.closest('a, button, input, textarea, select, [contenteditable], [role="textbox"]')) return;
       setTimeout(() => root.focus(), 0);
     };
     root.addEventListener('click', refocus, true); // capture phase
