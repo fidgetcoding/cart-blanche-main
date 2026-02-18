@@ -621,7 +621,7 @@ export default function AdminInventory() {
                     className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
                 <div>
-                  <label className="text-xs font-display tracking-widest text-muted-foreground">CATEGORY</label>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">TAG</label>
                   <input value={addForm.category} onChange={e => setAddForm(f => ({ ...f, category: e.target.value }))}
                     placeholder="e.g. outerwear"
                     className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
