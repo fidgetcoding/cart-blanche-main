@@ -174,7 +174,7 @@ export function SpatialCanvas() {
         const dy = Math.abs(t.y - target.y);
         const ds = Math.abs(t.scale - target.scale);
 
-        // Only center canvas when scale is stable (not actively zooming)
+        // When scale is stable, apply boundary constraints
         if (ds < 0.001) {
           const container = containerRef.current;
           if (container) {
@@ -182,11 +182,27 @@ export function SpatialCanvas() {
             const scaledW = CANVAS_W * target.scale;
             const scaledH = CANVAS_H * target.scale;
 
-            if (scaledW <= rect.width) {
+            if (scaledW <= rect.width && scaledH <= rect.height) {
+              // Canvas fits entirely — center it
               target.x = (rect.width - scaledW) / 2;
-            }
-            if (scaledH <= rect.height) {
               target.y = (rect.height - scaledH) / 2;
+            } else {
+              // Canvas is larger than viewport — clamp so content doesn't drift off-screen
+              const pad = 80; // allow a bit of overscroll
+              if (scaledW > rect.width) {
+                const minX = rect.width - scaledW - pad;
+                const maxX = pad;
+                target.x = Math.max(minX, Math.min(maxX, target.x));
+              } else {
+                target.x = (rect.width - scaledW) / 2;
+              }
+              if (scaledH > rect.height) {
+                const minY = rect.height - scaledH - pad;
+                const maxY = pad;
+                target.y = Math.max(minY, Math.min(maxY, target.y));
+              } else {
+                target.y = (rect.height - scaledH) / 2;
+              }
             }
           }
         }
