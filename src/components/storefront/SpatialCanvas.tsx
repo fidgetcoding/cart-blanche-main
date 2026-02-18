@@ -57,7 +57,7 @@ export function SpatialCanvas() {
 
   useEffect(() => { rootRef.current?.focus(); }, []);
 
-  // Grid keyboard nav — only active when NOT in product view
+  // Grid keyboard nav with wrapping — only active when NOT in product view
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (selectedIndex !== null) return; // ProductView handles its own keys
 
@@ -65,24 +65,41 @@ export function SpatialCanvas() {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
       if (focusedIndex === -1) { setFocusedIndex(0); return; }
-      const current = products[focusedIndex];
-      const cx = current.grid_position.x;
-      const cy = current.grid_position.y;
-      let bestIdx = focusedIndex;
-      let bestDist = Infinity;
-      products.forEach((p, i) => {
-        if (i === focusedIndex) return;
-        const dx = p.grid_position.x - cx;
-        const dy = p.grid_position.y - cy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        let valid = false;
-        if (e.key === 'ArrowRight' && dx > 50 && Math.abs(dy) < Math.abs(dx)) valid = true;
-        if (e.key === 'ArrowLeft' && dx < -50 && Math.abs(dy) < Math.abs(dx)) valid = true;
-        if (e.key === 'ArrowDown' && dy > 50 && Math.abs(dx) < Math.abs(dy)) valid = true;
-        if (e.key === 'ArrowUp' && dy < -50 && Math.abs(dx) < Math.abs(dy)) valid = true;
-        if (valid && dist < bestDist) { bestDist = dist; bestIdx = i; }
-      });
-      setFocusedIndex(bestIdx);
+
+      // Build grid rows sorted by Y then X
+      const yPositions = [...new Set(products.map(p => p.grid_position.y))].sort((a, b) => a - b);
+      const rows: number[][] = yPositions.map(y =>
+        products
+          .map((p, i) => ({ i, p }))
+          .filter(({ p }) => p.grid_position.y === y)
+          .sort((a, b) => a.p.grid_position.x - b.p.grid_position.x)
+          .map(({ i }) => i)
+      );
+
+      let rowIdx = -1, colIdx = -1;
+      for (let r = 0; r < rows.length; r++) {
+        const c = rows[r].indexOf(focusedIndex);
+        if (c !== -1) { rowIdx = r; colIdx = c; break; }
+      }
+      if (rowIdx === -1) return;
+
+      const row = rows[rowIdx];
+      let newIdx = focusedIndex;
+      switch (e.key) {
+        case 'ArrowRight': newIdx = row[(colIdx + 1) % row.length]; break;
+        case 'ArrowLeft': newIdx = row[colIdx - 1 < 0 ? row.length - 1 : colIdx - 1]; break;
+        case 'ArrowDown': {
+          const nr = (rowIdx + 1) % rows.length;
+          newIdx = rows[nr][Math.min(colIdx, rows[nr].length - 1)];
+          break;
+        }
+        case 'ArrowUp': {
+          const nr = rowIdx - 1 < 0 ? rows.length - 1 : rowIdx - 1;
+          newIdx = rows[nr][Math.min(colIdx, rows[nr].length - 1)];
+          break;
+        }
+      }
+      setFocusedIndex(newIdx);
     }
 
     if (e.key === 'Enter' && focusedIndex >= 0) {
