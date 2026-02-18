@@ -382,7 +382,10 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
                       {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
                     </button>
                     <button
-                      onClick={() => openStyleKit(product)}
+                      onClick={() => {
+                        const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
+                        openStyleKit(product, 'counterparts', variantTitle);
+                      }}
                       className="px-4 py-3 border border-border font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center gap-2 hover:bg-secondary transition-colors"
                     >
                       <Layers className="w-4 h-4" />

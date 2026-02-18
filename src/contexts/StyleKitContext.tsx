@@ -7,11 +7,12 @@ interface StyleKitState {
   isOpen: boolean;
   anchorProduct: DemoProduct | null;
   mode: StyleKitMode;
-  lookItems: DemoProduct[]; // all items in the current look (anchor + additions)
+  lookItems: DemoProduct[];
+  initialAnchorSize: string | null;
 }
 
 interface StyleKitContextType extends StyleKitState {
-  openStyleKit: (product: DemoProduct, mode?: StyleKitMode) => void;
+  openStyleKit: (product: DemoProduct, mode?: StyleKitMode, initialSize?: string | null) => void;
   closeStyleKit: () => void;
   setMode: (mode: StyleKitMode) => void;
   addToLook: (product: DemoProduct) => void;
@@ -27,19 +28,21 @@ export function StyleKitProvider({ children }: { children: React.ReactNode }) {
     anchorProduct: null,
     mode: 'counterparts',
     lookItems: [],
+    initialAnchorSize: null,
   });
 
-  const openStyleKit = useCallback((product: DemoProduct, mode: StyleKitMode = 'counterparts') => {
+  const openStyleKit = useCallback((product: DemoProduct, mode: StyleKitMode = 'counterparts', initialSize?: string | null) => {
     setState({
       isOpen: true,
       anchorProduct: product,
       mode,
       lookItems: [product],
+      initialAnchorSize: initialSize ?? null,
     });
   }, []);
 
   const closeStyleKit = useCallback(() => {
-    setState(prev => ({ ...prev, isOpen: false, anchorProduct: null, lookItems: [] }));
+    setState(prev => ({ ...prev, isOpen: false, anchorProduct: null, lookItems: [], initialAnchorSize: null }));
   }, []);
 
   const setMode = useCallback((mode: StyleKitMode) => {
