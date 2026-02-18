@@ -202,7 +202,7 @@ export default function AdminPageEditor() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between p-6 pb-4 flex-shrink-0">
-        <h1 className="font-display text-2xl font-bold">Page Editor</h1>
+        <h1 className="font-display text-2xl font-bold">Smart Grid Editor</h1>
         <div className="flex items-center gap-2">
           {saved && (
             <span className="text-xs font-display text-success tracking-wider animate-fade-up">SAVED</span>
