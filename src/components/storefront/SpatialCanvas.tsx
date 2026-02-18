@@ -53,7 +53,7 @@ export function SpatialCanvas() {
   const { toggleCart, itemCount } = useCart();
   
   const { addItem } = useCart();
-  const { openStyleKit } = useStyleKit();
+  const { openStyleKit, isOpen: styleKitOpen } = useStyleKit();
   const navigate = useNavigate();
 
   // Touch gesture refs
@@ -66,6 +66,17 @@ export function SpatialCanvas() {
 
   // Keep ref in sync for animation loop
   useEffect(() => { activeCategoryRef.current = activeCategory; }, [activeCategory]);
+
+  // When StyleKit closes (e.g. after "ADD SET TO CART"), reset back to zoomed-out home view
+  const prevStyleKitOpen = useRef(styleKitOpen);
+  useEffect(() => {
+    if (prevStyleKitOpen.current && !styleKitOpen) {
+      setSelectedIndex(null);
+      maxZoomTriggeredRef.current = false;
+      requestAnimationFrame(() => rootRef.current?.focus());
+    }
+    prevStyleKitOpen.current = styleKitOpen;
+  }, [styleKitOpen]);
 
   // Compute reflowed positions when filtering by category
   const overridePositions = useMemo(() => {
