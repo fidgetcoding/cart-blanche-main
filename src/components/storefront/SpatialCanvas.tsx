@@ -37,8 +37,8 @@ export function SpatialCanvas() {
   const dragRef = useRef({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, dragging: false });
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState('ALL');
-  const hoveredIndexRef = useRef<number | null>(null);
   const maxZoomTriggeredRef = useRef(false);
   const { toggleCart, itemCount } = useCart();
   const { theme, toggleTheme } = useTheme();
@@ -345,6 +345,7 @@ export function SpatialCanvas() {
         }
       }
       setFocusedIndex(newIdx);
+      setHoveredIndex(null); // keyboard takes over from mouse
     }
 
     if (e.key === 'Enter' && focusedIndex >= 0) {
@@ -452,7 +453,11 @@ export function SpatialCanvas() {
             const posOverride = overridePositions ? overridePositions[i] : undefined;
             return (
               <ProductTile key={product.id} product={product} scale={scaleState}
-                isFocused={focusedIndex === i} onClick={() => setSelectedIndex(i)}
+                isFocused={focusedIndex === i && hoveredIndex === null}
+                isHovered={hoveredIndex === i}
+                onClick={() => setSelectedIndex(i)}
+                onHoverStart={() => { setHoveredIndex(i); setFocusedIndex(-1); }}
+                onHoverEnd={() => setHoveredIndex(null)}
                 positionOverride={posOverride} />
             );
           })}
