@@ -30,7 +30,7 @@ export function ProductTile({ product, scale, isFocused, onClick, positionOverri
     >
       <div className="w-full h-full flex flex-col">
         {/* Product image area */}
-          <div className="flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300 group-hover:shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)]">
+          <div className={`flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300 group-hover:shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)] ${isFocused ? 'shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)]' : ''}`}>
           <div className="w-3/4 h-3/4 bg-muted/60 rounded-md" />
         </div>
 
@@ -58,14 +58,7 @@ export function ProductTile({ product, scale, isFocused, onClick, positionOverri
         )}
       </div>
 
-      {/* Focus indicator */}
-      {isFocused && (
-        <motion.div
-          layoutId="tile-focus"
-          className="absolute inset-0 border border-foreground/20 pointer-events-none"
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        />
-      )}
+      {/* Focus uses glow on thumbnail, no outline */}
     </motion.div>
   );
 }
