@@ -405,7 +405,7 @@ export function SpatialCanvas() {
                     : 'text-muted-foreground hover:text-foreground/80 hover:bg-foreground/[0.05]'
                 }`}
               >
-                {cat === 'ALL' ? 'NEW' : cat.replace('-', ' ')}
+                {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
               </button>
             ))}
           </div>
