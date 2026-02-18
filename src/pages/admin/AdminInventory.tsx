@@ -69,6 +69,10 @@ export default function AdminInventory() {
   const [addingTagForId, setAddingTagForId] = useState<string | null>(null);
   const [modalNewTag, setModalNewTag] = useState('');
   const lowStockThreshold = 5;
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [addForm, setAddForm] = useState({ title: '', price: '', description: '', category: '' });
+  const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
+  const [addSaving, setAddSaving] = useState(false);
 
   useEffect(() => { fetchInventory(); }, []);
 
@@ -225,12 +229,52 @@ export default function AdminInventory() {
     ));
   }
 
+  async function handleAddProduct() {
+    if (!addForm.title.trim() || !addForm.price) return;
+    setAddSaving(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setAddSaving(false); return; }
+
+    const { data: product, error } = await supabase.from('products').insert({
+      merchant_id: session.user.id,
+      title: addForm.title.trim(),
+      price: parseFloat(addForm.price) || 0,
+      description: addForm.description.trim(),
+      category: addForm.category.trim().toLowerCase(),
+      status: 'active',
+      tags: addForm.category.trim() ? [addForm.category.trim().toLowerCase()] : [],
+    }).select().single();
+
+    if (!error && product) {
+      const validVariants = addVariants.filter(v => v.title.trim());
+      if (validVariants.length > 0) {
+        await supabase.from('product_variants').insert(
+          validVariants.map(v => ({
+            product_id: product.id,
+            title: v.title.trim(),
+            inventory_count: v.inventory_count,
+          }))
+        );
+      }
+    }
+
+    setAddSaving(false);
+    setShowAddProduct(false);
+    setAddForm({ title: '', price: '', description: '', category: '' });
+    setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
+    fetchInventory();
+  }
+
   return (
     <div className="p-8 max-w-[1200px]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl font-bold">Inventory</h1>
         <div className="flex gap-3">
+          <button onClick={() => setShowAddProduct(true)}
+            className="px-4 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+            <Plus className="w-4 h-4" /> ADD PRODUCT
+          </button>
           <span className="text-xs font-display px-3 py-1.5 bg-secondary rounded-lg text-muted-foreground">
             {totalItems} PRODUCTS
           </span>
@@ -469,6 +513,114 @@ export default function AdminInventory() {
           })}
         </div>
       )}
+
+      {/* Add product modal */}
+      <AnimatePresence>
+        {showAddProduct && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-8"
+            onClick={() => setShowAddProduct(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="liquid-glass rounded-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}
+            >
+              <h2 className="font-display text-lg font-bold">Add Product</h2>
+
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground">TITLE</label>
+                <input value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
+                  placeholder="Product name"
+                  className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">PRICE</label>
+                  <input type="number" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
+                    placeholder="0" min="0"
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">CATEGORY</label>
+                  <input value={addForm.category} onChange={e => setAddForm(f => ({ ...f, category: e.target.value }))}
+                    placeholder="e.g. outerwear"
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground">DESCRIPTION</label>
+                <textarea value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))} rows={3}
+                  placeholder="Product description..."
+                  className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">SIZES & INVENTORY</label>
+                  <button
+                    onClick={() => setAddVariants(v => [...v, { title: '', inventory_count: 0 }])}
+                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-display tracking-wider border border-border/50 rounded-md hover:bg-secondary/50 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" /> ADD SIZE
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {addVariants.map((v, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-background/30 border border-border/30 rounded-lg px-3 py-2">
+                      <input
+                        value={v.title}
+                        onChange={e => {
+                          const updated = [...addVariants];
+                          updated[i] = { ...updated[i], title: e.target.value };
+                          setAddVariants(updated);
+                        }}
+                        placeholder="Size (e.g. S, M, L)"
+                        className="flex-1 px-2 py-1.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded text-xs font-display focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground">QTY</span>
+                        <input
+                          type="number" min="0"
+                          value={v.inventory_count}
+                          onChange={e => {
+                            const updated = [...addVariants];
+                            updated[i] = { ...updated[i], inventory_count: parseInt(e.target.value) || 0 };
+                            setAddVariants(updated);
+                          }}
+                          className="w-16 px-2 py-1.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded text-xs text-center font-display focus:outline-none focus:ring-1 focus:ring-ring"
+                        />
+                      </div>
+                      <button onClick={() => setAddVariants(prev => prev.filter((_, idx) => idx !== i))}
+                        className="p-1 text-muted-foreground hover:text-destructive transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={handleAddProduct} disabled={addSaving || !addForm.title.trim() || !addForm.price}
+                  className="flex-1 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+                  {addSaving ? 'SAVING...' : 'ADD PRODUCT'}
+                </button>
+                <button onClick={() => setShowAddProduct(false)}
+                  className="px-6 py-2.5 border border-border rounded-lg text-sm hover:bg-secondary transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Edit product modal */}
       <AnimatePresence>
