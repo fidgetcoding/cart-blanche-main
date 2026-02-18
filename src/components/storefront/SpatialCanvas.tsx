@@ -2,14 +2,16 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Sun, Moon, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { DEMO_PRODUCTS } from '@/data/demo-data';
+import { DEMO_PRODUCTS, DEMO_HOTZONES } from '@/data/demo-data';
 import { ProductTile } from '@/components/storefront/ProductTile';
+import { HotzoneLayer } from '@/components/storefront/HotzoneLayer';
 import { ProductView } from '@/components/storefront/ProductView';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useALE } from '@/contexts/ALEContext';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -54,8 +56,10 @@ export function SpatialCanvas() {
   const { addItem } = useCart();
   const { openStyleKit } = useStyleKit();
   const navigate = useNavigate();
+  const { trackEvent, getAdjustment, getHotzoneEmphasis, isActive: aleActive } = useALE();
 
-  // Touch gesture refs
+  // Track hover durations for ALE
+  const hoverStartRef = useRef<{ index: number; time: number } | null>(null);
   const touchRef = useRef<{
     startX: number; startY: number;
     panStartX: number; panStartY: number;
@@ -251,6 +255,7 @@ export function SpatialCanvas() {
           maxZoomTriggeredRef.current = true;
           setSelectedIndex(idx);
           setFocusedIndex(idx);
+          trackEvent({ type: 'product_zoomed', product_id: DEMO_PRODUCTS[idx].id, metadata: { to_level: 3 } });
           return;
         }
       }
@@ -497,6 +502,10 @@ export function SpatialCanvas() {
       }
       setFocusedIndex(newIdx);
       setHoveredIndex(null);
+      // ALE: track skipped product (the one we navigated away from)
+      if (focusedIndex >= 0 && focusedIndex !== newIdx) {
+        trackEvent({ type: 'product_skipped', product_id: DEMO_PRODUCTS[focusedIndex].id });
+      }
     }
 
     if (e.key === 'Enter' && focusedIndex >= 0) {
@@ -510,13 +519,14 @@ export function SpatialCanvas() {
         targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * zoomScale;
         setScaleState(zoomScale);
         setTimeout(() => setSelectedIndex(focusedIndex), 350);
+        trackEvent({ type: 'product_zoomed', product_id: p.id, metadata: { to_level: 2 } });
       } else {
         setSelectedIndex(focusedIndex);
       }
     }
     if (e.key === '=' || e.key === '+') setScaleSmooth(Math.min(MAX_SCALE, targetTransformRef.current.scale * 1.15));
     if (e.key === '-') setScaleSmooth(Math.max(minScaleRef.current, targetTransformRef.current.scale * 0.85));
-  }, [focusedIndex, selectedIndex, setScaleSmooth]);
+  }, [focusedIndex, selectedIndex, setScaleSmooth, trackEvent]);
 
   // Pan to focused product when zoomed in
   useEffect(() => {
@@ -621,6 +631,7 @@ export function SpatialCanvas() {
             willChange: 'transform',
           }}
         >
+          <HotzoneLayer hotzones={DEMO_HOTZONES} scale={scaleState} getEmphasis={getHotzoneEmphasis} />
           {DEMO_PRODUCTS.map((product, i) => {
             const isInCategory = activeCategory === 'ALL' || product.category.toUpperCase() === activeCategory;
             // Hide non-matching products unless we're peeking
@@ -633,13 +644,32 @@ export function SpatialCanvas() {
                 isFocused={focusedIndex === i && hoveredIndex === null}
                 isHovered={hoveredIndex === i}
                 dimmed={isDimmed}
+                aleScaleFactor={getAdjustment(product.id)?.scale_factor}
                 onClick={() => setSelectedIndex(i)}
-                onHoverStart={() => { setHoveredIndex(i); setFocusedIndex(-1); }}
-                onHoverEnd={() => setHoveredIndex(null)}
+                onHoverStart={() => {
+                  setHoveredIndex(i); setFocusedIndex(-1);
+                  hoverStartRef.current = { index: i, time: Date.now() };
+                }}
+                onHoverEnd={() => {
+                  setHoveredIndex(null);
+                  // Track hover duration for ALE
+                  if (hoverStartRef.current?.index === i) {
+                    const duration = Date.now() - hoverStartRef.current.time;
+                    if (duration < 500) {
+                      trackEvent({ type: 'product_hover_bounce', product_id: product.id });
+                    } else if (duration > 1000) {
+                      trackEvent({ type: 'product_viewed', product_id: product.id, metadata: { duration } });
+                    }
+                    hoverStartRef.current = null;
+                  }
+                }}
                 onQuickAdd={(e) => {
                   e.stopPropagation();
                   const v = product.variants[0];
-                  if (v) addItem({ productId: product.id, variantId: v.id, title: product.title, variantTitle: v.title, price: v.price ?? product.price });
+                  if (v) {
+                    addItem({ productId: product.id, variantId: v.id, title: product.title, variantTitle: v.title, price: v.price ?? product.price });
+                    trackEvent({ type: 'product_added_to_cart', product_id: product.id });
+                  }
                 }}
                 onQuickStyleKit={(e) => {
                   e.stopPropagation();

@@ -8,6 +8,7 @@ interface ProductTileProps {
   isFocused: boolean;
   isHovered: boolean;
   dimmed?: boolean;
+  aleScaleFactor?: number;
   onClick: () => void;
   onHoverStart: () => void;
   onHoverEnd: () => void;
@@ -16,11 +17,12 @@ interface ProductTileProps {
   positionOverride?: { x: number; y: number };
 }
 
-export function ProductTile({ product, scale, isFocused, isHovered, dimmed, onClick, onHoverStart, onHoverEnd, onQuickAdd, onQuickStyleKit, positionOverride }: ProductTileProps) {
+export function ProductTile({ product, scale, isFocused, isHovered, dimmed, aleScaleFactor, onClick, onHoverStart, onHoverEnd, onQuickAdd, onQuickStyleKit, positionOverride }: ProductTileProps) {
   const pos = positionOverride || product.grid_position;
   const showLabel = scale > 0.45;
   const glowing = isFocused || isHovered;
   const showActions = glowing && scale > 0.4;
+  const aleScale = aleScaleFactor ?? 1.0;
 
   return (
     <motion.div
@@ -32,10 +34,10 @@ export function ProductTile({ product, scale, isFocused, isHovered, dimmed, onCl
       style={{
         left: pos.x,
         top: pos.y,
-        width: 220,
-        height: 280,
+        width: 220 * aleScale,
+        height: 280 * aleScale,
         opacity: dimmed ? 0.15 : 1,
-        transition: 'opacity 0.4s ease',
+        transition: 'opacity 0.4s ease, width 0.3s ease-out, height 0.3s ease-out',
       }}
       whileHover={dimmed ? undefined : { scale: 1.04, zIndex: 10 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
