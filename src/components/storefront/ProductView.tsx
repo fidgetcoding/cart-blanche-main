@@ -78,6 +78,7 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
   const { addItem } = useCart();
   const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(false);
@@ -88,6 +89,7 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
   useEffect(() => {
     setSelectedVariant(null);
     setExpandDetails(false);
+    setActiveImage(0);
   }, [productIndex]);
 
   const navigate = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
@@ -261,11 +263,17 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
             )}
           </div>
 
-          {/* Image dots placeholder */}
-          <div className="flex gap-1.5 mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
-            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+          {/* Image dots */}
+          <div className="flex gap-1.5 mb-4" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+            {[0, 1, 2].map((i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  activeImage === i ? 'bg-foreground' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                }`}
+              />
+            ))}
           </div>
 
           {/* Title + Price */}
