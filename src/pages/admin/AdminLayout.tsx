@@ -50,7 +50,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top ribbon header */}
-      <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-4 gap-1 flex-shrink-0 z-10">
+      <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-4 gap-1 flex-shrink-0 z-10 overflow-hidden">
         <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground mr-4">CART BLANCHE</h1>
 
         {/* Nav items */}
