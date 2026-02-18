@@ -476,8 +476,8 @@ export function SmartChatPanel() {
             <div className="space-y-4 pt-6">
               <div className="text-center space-y-2">
                 <Sparkles className="w-7 h-7 text-accent mx-auto" />
-                <h3 className="font-display text-xs font-semibold tracking-wider">AI STORE MANAGER</h3>
-                <p className="text-[11px] text-muted-foreground">Ask me anything about your store.</p>
+                <h3 className="font-display text-xs font-semibold tracking-wider">AI SHOP BOT</h3>
+                <p className="text-[11px] text-muted-foreground">Ask me anything about your shop.</p>
               </div>
               <div className="grid grid-cols-2 gap-1.5 pt-2">
                 {suggestedPrompts.map((prompt) => (
@@ -596,7 +596,7 @@ export function SmartChatPanel() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask your AI store manager..."
+              placeholder="Ask your AI shop bot..."
               rows={1}
               className="flex-1 resize-none bg-card border border-border rounded-lg px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent min-h-[36px] max-h-[100px]"
               style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}

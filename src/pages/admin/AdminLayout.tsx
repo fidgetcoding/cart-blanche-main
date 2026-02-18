@@ -49,7 +49,7 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="h-screen bg-background flex overflow-hidden">
+    <div className="h-screen dynamic-bg flex overflow-hidden">
       {/* Left side: brand header + chat panel */}
       <div className="flex flex-col flex-shrink-0 border-r border-sidebar-border h-full">
         {/* Brand section + chat toggle + store link — single ribbon */}
@@ -61,7 +61,7 @@ export default function AdminLayout() {
             className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
             title="Back to Store"
           >
-            <span className="hidden group-hover:inline text-[10px] tracking-wider opacity-80">BACK TO STORE</span>
+            <span className="hidden group-hover:inline text-[10px] tracking-wider opacity-80">SMART SHOP</span>
             <Store className="w-3.5 h-3.5" />
           </button>
         </div>
