@@ -317,19 +317,33 @@ export function SpatialCanvas() {
 
       // Two-stage zoom-out transition: peek → switch to ALL
       if (activeCategory !== 'ALL' && categoryZoomRef.current) {
-        const ratio = newScale / categoryZoomRef.current.scale;
-        if (ratio < 0.95 && !peekingAll) {
+        const zoomRatio = newScale / categoryZoomRef.current.scale;
+        
+        if (zoomRatio < 0.95 && !peekingAll) {
           // Stage 1: Start peeking — show all products dimmed
           setPeekingAll(true);
-        }
-        if (ratio < 0.78) {
-          // Stage 2: Commit to ALL view after sufficient zoom-out
+        } else if (zoomRatio >= 0.95 && peekingAll) {
+          // User reversed zoom direction — cancel peek
+          setPeekingAll(false);
           clearTimeout(peekTimerRef.current);
-          peekTimerRef.current = window.setTimeout(() => {
-            setActiveCategory('ALL');
-            categoryZoomRef.current = null;
-            setPeekingAll(false);
-          }, 400);
+        }
+        
+        if (zoomRatio < 0.78) {
+          // Stage 2: Commit to ALL view
+          if (!peekTimerRef.current) {
+            peekTimerRef.current = window.setTimeout(() => {
+              setActiveCategory('ALL');
+              categoryZoomRef.current = null;
+              setPeekingAll(false);
+              peekTimerRef.current = 0;
+            }, 350);
+          }
+        } else {
+          // Haven't crossed commit threshold — cancel any pending timer
+          if (peekTimerRef.current) {
+            clearTimeout(peekTimerRef.current);
+            peekTimerRef.current = 0;
+          }
         }
       }
 
