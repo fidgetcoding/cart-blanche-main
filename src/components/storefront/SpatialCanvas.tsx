@@ -608,7 +608,7 @@ export function SpatialCanvas() {
     targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * s;
   }, [focusedIndex]);
 
-  const compactHeader = isMobile || isTablet;
+  const compactHeader = isMobile;
 
   return (
     <div ref={rootRef} className="relative w-full h-screen overflow-hidden dynamic-bg select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={() => rootRef.current?.focus()}>
