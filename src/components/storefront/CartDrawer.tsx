@@ -439,12 +439,12 @@ export function CartDrawer() {
                             <X className="w-3.5 h-3.5" />
                           </button>
                           {/* Ask about this / Find Pairs */}
-                          <div className="absolute bottom-1.5 right-1.5 flex gap-1">
+                          <div className="absolute bottom-2 right-2 flex gap-1.5">
                             <button
                               onClick={() => handleAskAbout(item.title)}
-                              className="flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-colors"
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-md border border-border/40 transition-colors"
                             >
-                              <Sparkles className="w-2.5 h-2.5" />
+                              <Sparkles className="w-3 h-3" />
                               ASK AI
                             </button>
                             <button
@@ -455,9 +455,9 @@ export function CartDrawer() {
                                   openStyleKit(product);
                                 }
                               }}
-                              className="flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-colors"
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-md border border-border/40 transition-colors"
                             >
-                              <Layers className="w-2.5 h-2.5" />
+                              <Layers className="w-3 h-3" />
                               PAIRS
                             </button>
                           </div>
