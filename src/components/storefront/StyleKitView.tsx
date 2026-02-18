@@ -197,9 +197,9 @@ function AnchorPanel({
         direction === 'horizontal' ? 'border-b' : 'border-r'
       }`}
     >
-      <div className="flex-1 flex flex-col p-6 gap-4 overflow-y-auto">
+      <div className="flex-1 flex flex-col p-4 gap-3 overflow-y-auto">
         {/* Large image thumbnail */}
-        <div className="w-full aspect-[4/3] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-full aspect-[3/2] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[35%]">
           <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
             {anchorProduct.category.toUpperCase()}
           </span>
@@ -410,7 +410,7 @@ export function StyleKitView() {
           {/* Anchor panel position depends on smart orientation */}
           {splitDirection === 'horizontal' && orientation === 'top' && (
             <>
-              <div className="h-1/2 min-h-0 overflow-hidden">
+              <div className="h-1/2 min-h-0 overflow-y-auto">
                 <AnchorPanel direction="horizontal" />
               </div>
               <div className="h-1/2 min-h-0 relative">
@@ -434,7 +434,7 @@ export function StyleKitView() {
                   direction="horizontal"
                 />
               </div>
-              <div className="h-1/2 min-h-0 overflow-hidden">
+              <div className="h-1/2 min-h-0 overflow-y-auto">
                 <AnchorPanel direction="horizontal" />
               </div>
             </>
@@ -442,7 +442,7 @@ export function StyleKitView() {
 
           {splitDirection === 'vertical' && (
             <>
-              <div className="w-1/2 min-w-0 overflow-hidden">
+              <div className="w-1/2 min-w-0 overflow-y-auto">
                 <AnchorPanel direction="vertical" />
               </div>
               <div className="w-1/2 min-w-0 relative">
