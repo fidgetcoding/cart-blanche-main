@@ -20,7 +20,6 @@ const NAV_ITEMS = [
   { to: '/admin/flow', icon: GitBranch, label: 'Flow' },
   { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/admin/inventory', icon: Warehouse, label: 'Inventory' },
-  { to: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AdminLayout() {
@@ -56,7 +55,16 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top ribbon header — only spans the content area */}
         <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-5 flex-shrink-0 z-10 overflow-hidden">
-          <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground mr-6 flex-shrink-0">CART BLANCHE</h1>
+          <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground mr-4 flex-shrink-0">CART BLANCHE</h1>
+
+          {/* Store link */}
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0 mr-2"
+          >
+            <Store className="w-3.5 h-3.5" />
+            Store
+          </button>
 
           {/* Nav items */}
           <nav className="flex items-center gap-0.5">
@@ -79,15 +87,21 @@ export default function AdminLayout() {
             ))}
           </nav>
 
-          {/* Spacer + View Store */}
+          {/* Spacer + Settings */}
           <div className="flex-1" />
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
+          <NavLink
+            to="/admin/settings"
+            className={({ isActive }) =>
+              `flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap flex-shrink-0 ${
+                isActive
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+              }`
+            }
           >
-            <Store className="w-3.5 h-3.5" />
-            Store
-          </button>
+            <Settings className="w-3.5 h-3.5" />
+            Settings
+          </NavLink>
         </header>
 
         {/* Main content */}
