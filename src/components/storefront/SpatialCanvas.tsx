@@ -732,7 +732,7 @@ export function SpatialCanvas() {
           <div className={`text-[10px] md:text-xs font-display tracking-wider space-y-0.5 cursor-default transition-colors duration-500 hover:text-foreground/80 ${footerGlass ? 'text-muted-foreground/60' : 'text-muted-foreground/30'}`}>
             <p className="block md:hidden">PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
             <div className="hidden md:block space-y-0.5">
-              <p>SCROLL TO ZOOM · DRAG TO PAN</p>
+              <p>SCROLL TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
               <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
             </div>
           </div>
