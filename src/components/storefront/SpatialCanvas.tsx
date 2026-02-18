@@ -657,14 +657,13 @@ export function SpatialCanvas() {
         <div className="relative flex items-end justify-between px-4 md:px-6 py-3 md:py-5">
           {/* Hints */}
           <div className={`text-[10px] md:text-xs font-display tracking-wider space-y-0.5 cursor-default transition-colors duration-500 ${footerGlass ? 'text-muted-foreground/60' : 'text-muted-foreground/30'}`}>
-            {isMobile || isTablet ? (
-              <p>PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
-            ) : (
-              <>
-                <p>SCROLL TO ZOOM · DRAG TO PAN</p>
-                <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
-              </>
-            )}
+            {/* Touch hints — mobile/tablet only */}
+            <p className="block md:hidden">PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
+            {/* Desktop hints */}
+            <div className="hidden md:block space-y-0.5">
+              <p>SCROLL TO ZOOM · DRAG TO PAN</p>
+              <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
+            </div>
           </div>
           {/* Social icons */}
           <div className="flex items-center gap-2 md:gap-3">
