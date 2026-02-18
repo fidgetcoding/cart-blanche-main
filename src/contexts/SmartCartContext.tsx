@@ -2,16 +2,46 @@ import React, { createContext, useContext, useState, useCallback, useRef } from 
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import type { CartItem } from '@/contexts/CartContext';
 
+export interface BudgetSwap {
+  original_product_id: string;
+  original_title: string;
+  original_price: number;
+  suggested_product_id: string;
+  suggested_title: string;
+  suggested_price: number;
+  reason: string;
+}
+
+export interface BudgetComparison {
+  original_total: number;
+  suggested_total: number;
+  savings: number;
+  swaps: BudgetSwap[];
+  kept: { product_id: string; title: string; price: number; note?: string }[];
+}
+
+export interface OutfitItem {
+  product_id: string;
+  type?: 'store' | 'external';
+  role: string;
+  reason: string;
+  label?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  image_url?: string;
   products?: { product_id: string; reason: string }[] | null;
   outfit?: {
     name: string;
     total: number;
-    items: { product_id: string; role: string; reason: string }[];
+    budget?: number | null;
+    remaining?: number | null;
+    items: OutfitItem[];
   } | null;
+  budget_comparison?: BudgetComparison | null;
   timestamp: number;
 }
 
@@ -20,7 +50,7 @@ interface SmartCartContextType {
   isLoading: boolean;
   hasUnread: boolean;
   clearUnread: () => void;
-  sendMessage: (text: string, cartItems: CartItem[]) => Promise<void>;
+  sendMessage: (text: string, cartItems: CartItem[], imageUrl?: string) => Promise<void>;
   triggerProactive: (mode: 'proactive_add' | 'proactive_review' | 'proactive_remove', cartItems: CartItem[], context?: string) => Promise<void>;
   clearChat: () => void;
 }
@@ -59,7 +89,7 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
   const clearChat = useCallback(() => setMessages([]), []);
 
   const callAI = useCallback(async (
-    userMessages: { role: string; content: string }[],
+    userMessages: { role: string; content: string; image_url?: string }[],
     cartItems: CartItem[],
     mode?: string
   ): Promise<ChatMessage | null> => {
@@ -101,6 +131,7 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
         content: data.message || '',
         products: data.products,
         outfit: data.outfit,
+        budget_comparison: data.budget_comparison,
         timestamp: Date.now(),
       };
     } catch (e: any) {
@@ -115,21 +146,22 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const sendMessage = useCallback(async (text: string, cartItems: CartItem[]) => {
+  const sendMessage = useCallback(async (text: string, cartItems: CartItem[], imageUrl?: string) => {
     const userMsg: ChatMessage = {
       id: generateId(),
       role: 'user',
       content: text,
+      image_url: imageUrl,
       timestamp: Date.now(),
     };
 
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
-    // Build message history for context
     const history = [...messages, userMsg].map(m => ({
       role: m.role,
       content: m.content,
+      ...(m.image_url ? { image_url: m.image_url } : {}),
     }));
 
     const response = await callAI(history, cartItems);
@@ -144,7 +176,6 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
     cartItems: CartItem[],
     context?: string
   ) => {
-    // Don't trigger if already loading or if there are recent proactive messages
     if (isLoading) return;
 
     const proactivePrompt = context
