@@ -449,7 +449,7 @@ export function SmartChatPanel() {
       </AnimatePresence>
 
       {/* Main chat panel */}
-      <div className="flex-1 flex flex-col bg-sidebar border-r border-sidebar-border overflow-hidden">
+      <div className="flex-1 flex flex-col bg-sidebar overflow-hidden">
         {/* Header — toggle sidebar */}
         <div className="flex items-center gap-2 px-3 py-2.5 border-b border-sidebar-border">
           <div className="group flex items-center">
