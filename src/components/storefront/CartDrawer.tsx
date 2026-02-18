@@ -727,7 +727,7 @@ export function CartDrawer() {
                   )}
 
                   {/* Chat input */}
-                  <div className="border-t border-white/[0.06] p-3">
+                  <div className="relative z-10 border-t border-white/[0.06] p-3">
                     <div className="flex items-center gap-2 bg-white/[0.04] rounded-lg px-3 py-2">
                       {/* Image upload */}
                       <input
