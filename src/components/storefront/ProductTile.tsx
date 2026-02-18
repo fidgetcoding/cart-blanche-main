@@ -27,22 +27,31 @@ export function ProductTile({ product, scale, isFocused, onClick }: ProductTileP
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
       <div className="w-full h-full flex flex-col">
-        {/* Product image area — clean white like Yeezy */}
-        <div className="flex-1 bg-background flex items-center justify-center relative overflow-hidden">
-          {/* Placeholder silhouette — will be replaced with real images */}
-          <div className="w-3/4 h-3/4 bg-muted/40 rounded-sm" />
+        {/* Product image area */}
+        <div className="flex-1 bg-muted/40 flex items-center justify-center relative overflow-hidden">
+          <div className="w-3/4 h-3/4 bg-muted/60 rounded-sm" />
         </div>
 
-        {/* SKU label underneath — like Yeezy's product codes */}
+        {/* Product name + price */}
         {showLabel && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="pt-2 pb-1 text-center"
+            className="pt-2 pb-1 space-y-0.5"
           >
-            <p className="font-display text-[11px] font-medium tracking-[0.12em] text-foreground/70 uppercase">
-              {product.id.toUpperCase().replace('P', 'CB-')}
+            <p className="font-display text-[11px] font-medium tracking-[0.05em] text-foreground/80 truncate">
+              {product.title}
             </p>
+            <div className="flex items-center gap-2">
+              <span className="font-body text-[10px] text-foreground/60">
+                ${product.price}
+              </span>
+              {product.compare_at_price && (
+                <span className="font-body text-[10px] text-muted-foreground line-through">
+                  ${product.compare_at_price}
+                </span>
+              )}
+            </div>
           </motion.div>
         )}
       </div>
