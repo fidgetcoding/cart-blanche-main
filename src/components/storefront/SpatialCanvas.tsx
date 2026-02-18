@@ -609,10 +609,7 @@ export function SpatialCanvas() {
       {/* Hints — contextual for device */}
       <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20 text-[10px] md:text-xs text-muted-foreground/30 font-display tracking-wider space-y-0.5 md:space-y-1 transition-all duration-300 hover:text-foreground/80 cursor-default">
         {isMobile || isTablet ? (
-          <>
-            <p>PINCH TO ZOOM · DRAG TO PAN</p>
-            <p>TAP TO VIEW</p>
-          </>
+          <p>PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
         ) : (
           <>
             <p>SCROLL TO ZOOM · DRAG TO PAN</p>
