@@ -56,8 +56,10 @@ function CarouselRow({
       {/* Scrollable area */}
       <div
         ref={scrollRef}
-        className={`flex-1 overflow-auto no-scrollbar p-4 gap-3 flex items-start ${
-          direction === 'vertical' ? 'flex-col' : 'flex-row'
+        className={`flex-1 no-scrollbar p-4 gap-3 flex items-start ${
+          direction === 'vertical'
+            ? 'flex-col overflow-y-auto overflow-x-hidden'
+            : 'flex-row overflow-x-auto overflow-y-hidden'
         }`}
       >
         {products.map((product) => (
