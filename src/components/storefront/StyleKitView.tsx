@@ -92,33 +92,53 @@ function CarouselRow({
     ? (cardSize === 'large' ? 'w-[350px]' : 'w-[240px]')
     : 'w-full';
 
+  const scrollBy = (amount: number) => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({
+      [isHorizontal ? 'left' : 'top']: amount,
+      behavior: 'smooth',
+    });
+  };
+
   return (
     <div className="relative h-full w-full min-h-0 min-w-0">
       {isHorizontal ? (
         <>
-          <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none flex items-center justify-start pl-1">
-            <motion.div animate={{ x: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
-              <ChevronLeft className="w-5 h-5 text-muted-foreground/40" />
+          <button
+            onClick={() => scrollBy(-300)}
+            className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background via-background/60 to-transparent z-10 flex items-center justify-start pl-3 cursor-pointer hover:from-background/95 transition-colors"
+          >
+            <motion.div animate={{ x: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
+              <ChevronLeft className="w-8 h-8 text-muted-foreground/60" />
             </motion.div>
-          </div>
-          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none flex items-center justify-end pr-1">
-            <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
-              <ChevronRight className="w-5 h-5 text-muted-foreground/40" />
+          </button>
+          <button
+            onClick={() => scrollBy(300)}
+            className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background via-background/60 to-transparent z-10 flex items-center justify-end pr-3 cursor-pointer hover:from-background/95 transition-colors"
+          >
+            <motion.div animate={{ x: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
+              <ChevronRight className="w-8 h-8 text-muted-foreground/60" />
             </motion.div>
-          </div>
+          </button>
         </>
       ) : (
         <>
-          <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none flex items-start justify-center pt-1">
-            <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
-              <ChevronUp className="w-5 h-5 text-muted-foreground/40" />
+          <button
+            onClick={() => scrollBy(-300)}
+            className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-background via-background/60 to-transparent z-10 flex items-start justify-center pt-3 cursor-pointer hover:from-background/95 transition-colors"
+          >
+            <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
+              <ChevronUp className="w-8 h-8 text-muted-foreground/60" />
             </motion.div>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none flex items-end justify-center pb-1">
-            <motion.div animate={{ y: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
-              <ChevronDown className="w-5 h-5 text-muted-foreground/40" />
+          </button>
+          <button
+            onClick={() => scrollBy(300)}
+            className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background via-background/60 to-transparent z-10 flex items-end justify-center pb-3 cursor-pointer hover:from-background/95 transition-colors"
+          >
+            <motion.div animate={{ y: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
+              <ChevronDown className="w-8 h-8 text-muted-foreground/60" />
             </motion.div>
-          </div>
+          </button>
         </>
       )}
 
