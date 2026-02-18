@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, LogOut, Sun, Moon } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { Save, LogOut } from 'lucide-react';
 
 export default function AdminSettings() {
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
   const [storeName, setStoreName] = useState('');
   const [storeSlug, setStoreSlug] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
@@ -141,42 +139,6 @@ export default function AdminSettings() {
         </div>
       </section>
 
-      {/* Theme */}
-      <section className="mb-8">
-        <h2 className="font-display text-sm font-semibold tracking-wider mb-4">STOREFRONT THEME</h2>
-        <div className="liquid-glass rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-display text-sm font-medium">Default Theme</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Choose the default appearance for your shoppers</p>
-            </div>
-            <div className="flex items-center bg-secondary rounded-md p-0.5">
-              <button
-                onClick={() => setTheme('dark')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-display tracking-wider transition-colors ${
-                  theme === 'dark'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Moon className="w-3 h-3" />
-                DARK
-              </button>
-              <button
-                onClick={() => setTheme('light')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-display tracking-wider transition-colors ${
-                  theme === 'light'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Sun className="w-3 h-3" />
-                LIGHT
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ALE Settings */}
       <section className="mb-8">
