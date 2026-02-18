@@ -304,26 +304,14 @@ export function SpatialCanvas() {
         maxZoomTriggeredRef.current = false;
       }
 
-      // Peek-all: when zooming out with a category filter active
+      // When zooming out past threshold with a category filter, immediately switch to ALL
       if (activeCategory !== 'ALL' && categoryZoomRef.current) {
-        if (newScale < categoryZoomRef.current.scale * 0.9) {
-          setPeekingAll(true);
+        if (newScale < categoryZoomRef.current.scale * 0.92) {
+          setActiveCategory('ALL');
+          categoryZoomRef.current = null;
+          setPeekingAll(false);
         }
       }
-
-      // On scroll idle, commit to ALL if peeking
-      clearTimeout(peekTimerRef.current);
-      peekTimerRef.current = window.setTimeout(() => {
-        setScaleState(targetTransformRef.current.scale);
-        if (activeCategory !== 'ALL' && categoryZoomRef.current) {
-          if (targetTransformRef.current.scale < categoryZoomRef.current.scale * 0.9) {
-            // Commit to ALL view: reset category, clear peek state
-            setActiveCategory('ALL');
-            categoryZoomRef.current = null;
-            setPeekingAll(false);
-          }
-        }
-      }, 150);
 
       clearTimeout(scaleUpdateTimer);
       scaleUpdateTimer = window.setTimeout(() => {
