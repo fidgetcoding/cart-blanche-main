@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, LayoutDashboard } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, Instagram, Twitter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { ProductTile } from '@/components/storefront/ProductTile';
@@ -372,6 +372,16 @@ export function SpatialCanvas() {
       <div className="absolute bottom-6 left-6 z-20 text-xs text-muted-foreground/50 font-display tracking-wider space-y-1">
         <p>SCROLL TO ZOOM · DRAG TO PAN</p>
         <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
+      </div>
+
+      {/* Social icons */}
+      <div className="absolute bottom-6 right-6 z-20 flex items-center gap-3">
+        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+          <Instagram className="w-4 h-4" />
+        </a>
+        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+          <Twitter className="w-4 h-4" />
+        </a>
       </div>
 
       {/* Full-screen product view */}
