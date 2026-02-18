@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
-import { GripVertical, Save, RotateCcw } from 'lucide-react';
+import { GripVertical, Save, RotateCcw, Plus } from 'lucide-react';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -55,6 +55,8 @@ export default function AdminPageEditor() {
 
   const [hasChanges, setHasChanges] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [addingTab, setAddingTab] = useState(false);
+  const [newTabName, setNewTabName] = useState('');
 
   // --- Product drag (pointer-based, live reorder) ---
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -249,6 +251,39 @@ export default function AdminPageEditor() {
               {cat.toUpperCase().replace('-', ' ')}
             </div>
           ))}
+          {addingTab ? (
+            <div className="flex items-center gap-1">
+              <input
+                autoFocus
+                value={newTabName}
+                onChange={e => setNewTabName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newTabName.trim()) {
+                    const name = newTabName.trim().toLowerCase().replace(/\s+/g, '-');
+                    if (!categories.includes(name)) {
+                      setCategories(prev => [...prev, name]);
+                      setHasChanges(true);
+                    }
+                    setNewTabName('');
+                    setAddingTab(false);
+                  } else if (e.key === 'Escape') {
+                    setNewTabName('');
+                    setAddingTab(false);
+                  }
+                }}
+                onBlur={() => { setNewTabName(''); setAddingTab(false); }}
+                placeholder="tab name"
+                className="px-2 py-1 text-[11px] font-display tracking-wider bg-background/40 border border-border/50 rounded-lg w-24 focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setAddingTab(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-border/50 text-[11px] font-display tracking-wider text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+            >
+              <Plus className="w-3 h-3" /> ADD
+            </button>
+          )}
         </div>
       </div>
 
