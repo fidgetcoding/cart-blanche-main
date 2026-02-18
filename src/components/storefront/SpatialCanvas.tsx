@@ -618,31 +618,30 @@ export function SpatialCanvas() {
         </div>
       </div>
 
-      {/* Hints — contextual for device */}
-      <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20 rounded-lg px-3 py-2 -mx-3 -my-2">
-        <div className={`absolute inset-0 liquid-glass rounded-lg transition-opacity duration-500 pointer-events-none ${footerGlass ? 'opacity-100' : 'opacity-0'}`} />
-        <div className={`relative text-[10px] md:text-xs font-display tracking-wider space-y-0.5 md:space-y-1 cursor-default transition-colors duration-500 ${footerGlass ? 'text-muted-foreground/60' : 'text-muted-foreground/30'}`}>
-          {isMobile || isTablet ? (
-            <p>PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
-          ) : (
-            <>
-              <p>SCROLL TO ZOOM · DRAG TO PAN</p>
-              <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Social icons */}
-      <div className="absolute bottom-4 md:bottom-6 right-4 md:right-6 z-20 rounded-lg px-3 py-2 -mx-3 -my-2">
-        <div className={`absolute inset-0 liquid-glass rounded-lg transition-opacity duration-500 pointer-events-none ${footerGlass ? 'opacity-100' : 'opacity-0'}`} />
-        <div className="relative flex items-center gap-2 md:gap-3">
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
-            <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
-          </a>
-          <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
-            <Twitter className="w-3.5 md:w-4 h-3.5 md:h-4" />
-          </a>
+      {/* Unified bottom footer */}
+      <div className="absolute bottom-0 left-0 right-0 z-20">
+        <div className={`absolute inset-0 liquid-glass transition-opacity duration-500 pointer-events-none ${footerGlass ? 'opacity-100' : 'opacity-0'}`} />
+        <div className="relative flex items-end justify-between px-4 md:px-6 py-3 md:py-5">
+          {/* Hints */}
+          <div className={`text-[10px] md:text-xs font-display tracking-wider space-y-0.5 cursor-default transition-colors duration-500 ${footerGlass ? 'text-muted-foreground/60' : 'text-muted-foreground/30'}`}>
+            {isMobile || isTablet ? (
+              <p>PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
+            ) : (
+              <>
+                <p>SCROLL TO ZOOM · DRAG TO PAN</p>
+                <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
+              </>
+            )}
+          </div>
+          {/* Social icons */}
+          <div className="flex items-center gap-2 md:gap-3">
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+              <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+              <Twitter className="w-3.5 md:w-4 h-3.5 md:h-4" />
+            </a>
+          </div>
         </div>
       </div>
 
