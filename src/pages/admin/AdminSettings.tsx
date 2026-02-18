@@ -106,30 +106,30 @@ export default function AdminSettings() {
           <div>
             <label className="text-xs font-display tracking-widest text-muted-foreground">STORE NAME</label>
             <input value={storeName} onChange={e => setStoreName(e.target.value)}
-              className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
           <div>
             <label className="text-xs font-display tracking-widest text-muted-foreground">STORE SLUG</label>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm text-muted-foreground">/store/</span>
               <input value={storeSlug} onChange={e => setStoreSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                className="flex-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                className="flex-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
           <div>
             <label className="text-xs font-display tracking-widest text-muted-foreground">TAGLINE</label>
             <input value={storeTagline} onChange={e => setStoreTagline(e.target.value)}
-              className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
           <div>
             <label className="text-xs font-display tracking-widest text-muted-foreground">DESCRIPTION</label>
             <textarea value={storeDescription} onChange={e => setStoreDescription(e.target.value)} rows={3}
-              className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
           </div>
           <div>
             <label className="text-xs font-display tracking-widest text-muted-foreground">CATEGORY</label>
             <select value={storeCategory} onChange={e => setStoreCategory(e.target.value)}
-              className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none">
+              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none">
               <option value="">Select...</option>
               <option value="fashion">Fashion</option>
               <option value="beauty">Beauty</option>
@@ -210,7 +210,7 @@ export default function AdminSettings() {
           <div>
             <label className="text-xs font-display tracking-widest text-muted-foreground">LOW STOCK THRESHOLD</label>
             <input type="number" value={lowStockThreshold} onChange={e => setLowStockThreshold(parseInt(e.target.value) || 5)}
-              className="w-full mt-1 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
         </div>
       </section>
