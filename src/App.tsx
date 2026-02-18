@@ -12,6 +12,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminStylingGuide from "./pages/admin/AdminStylingGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="flow" element={<AdminPlaceholder title="Flow Editor" />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="inventory" element={<AdminInventory />} />
+            <Route path="styling-guide" element={<AdminStylingGuide />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
           <Route path="*" element={<NotFound />} />

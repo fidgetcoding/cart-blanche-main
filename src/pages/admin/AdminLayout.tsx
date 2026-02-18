@@ -11,6 +11,7 @@ import {
   Warehouse,
   Settings,
   Store,
+  Layers,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { to: '/admin/flow', icon: GitBranch, label: 'Flow' },
   { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/admin/inventory', icon: Warehouse, label: 'Inventory' },
+  { to: '/admin/styling-guide', icon: Layers, label: 'Styling Guide' },
 ];
 
 export default function AdminLayout() {
