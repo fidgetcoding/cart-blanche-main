@@ -332,10 +332,12 @@ function AnchorPanel({
   direction,
   selectedSize,
   setSelectedSize,
+  onRemove,
 }: {
   direction: 'horizontal' | 'vertical';
   selectedSize: string | null;
   setSelectedSize: (s: string | null) => void;
+  onRemove?: () => void;
 }) {
   const { anchorProduct, lookItems, closeStyleKit, changeAnchor, removeFromLook } = useStyleKit();
 
@@ -350,10 +352,18 @@ function AnchorPanel({
     return (
       <div className="flex flex-col bg-card/50 backdrop-blur-sm border-b border-border h-full">
         <div className="flex-1 flex flex-row overflow-hidden">
-          <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0">
+          <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0 relative">
             <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
               {anchorProduct.category.toUpperCase()}
             </span>
+            {onRemove && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
           </div>
           <div className="flex-1 flex flex-col p-5 overflow-y-auto">
             <ProductDetails
@@ -373,10 +383,18 @@ function AnchorPanel({
   return (
     <div className="flex flex-col bg-card/50 backdrop-blur-sm border-r border-border h-full overflow-y-auto">
       <div className="flex-1 flex flex-col p-4 gap-3">
-        <div className="w-full aspect-[4/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%]">
+        <div className="w-full aspect-[4/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%] relative">
           <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
             {anchorProduct.category.toUpperCase()}
           </span>
+          {onRemove && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
+            >
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          )}
         </div>
         <ProductDetails
           anchorProduct={anchorProduct}
@@ -420,7 +438,7 @@ function AnchorPanel({
 }
 
 export function StyleKitView() {
-  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, lookItems } = useStyleKit();
+  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, lookItems } = useStyleKit();
   const { items: cartItems, addItem } = useCart();
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);
   
@@ -517,6 +535,17 @@ export function StyleKitView() {
     }
   };
 
+  const handleRemoveAnchor = () => {
+    if (pairedProduct) {
+      // Swap: paired becomes new anchor, old anchor goes away
+      removeFromLook(anchorProduct.id);
+      changeAnchor(pairedProduct);
+      // Move paired size to anchor size, reset paired
+      setAnchorSize(pairedSize);
+      setPairedSize(null);
+    }
+  };
+
   const contextLabel = isCounterparts
     ? `Goes well with ${anchorProduct.title}`
     : `More like ${anchorProduct.title}`;
@@ -592,7 +621,7 @@ export function StyleKitView() {
           {splitDirection === 'horizontal' && orientation === 'top' && (
             <>
               <div className="h-1/2 min-h-0 overflow-y-auto">
-                <AnchorPanel direction="horizontal" selectedSize={anchorSize} setSelectedSize={setAnchorSize} />
+                <AnchorPanel direction="horizontal" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={pairedProduct ? handleRemoveAnchor : undefined} />
               </div>
               <div className="h-1/2 min-h-0 relative">
                 <AnimatePresence mode="wait">
@@ -642,7 +671,7 @@ export function StyleKitView() {
                 </AnimatePresence>
               </div>
               <div className="h-1/2 min-h-0 overflow-y-auto">
-                <AnchorPanel direction="horizontal" selectedSize={anchorSize} setSelectedSize={setAnchorSize} />
+                <AnchorPanel direction="horizontal" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={pairedProduct ? handleRemoveAnchor : undefined} />
               </div>
             </>
           )}
@@ -651,7 +680,7 @@ export function StyleKitView() {
           {splitDirection === 'vertical' && (
             <>
               <div className="w-1/2 min-w-0 overflow-y-auto">
-                <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} />
+                <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={pairedProduct ? handleRemoveAnchor : undefined} />
               </div>
               <div className="w-1/2 min-w-0 relative">
                 <AnimatePresence mode="wait">
