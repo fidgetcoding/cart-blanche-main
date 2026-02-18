@@ -37,6 +37,7 @@ export function SpatialCanvas() {
 
   // React state for UI that needs re-renders
   const [scaleState, setScaleState] = useState(0.5);
+  const [footerGlass, setFooterGlass] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, dragging: false });
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -186,6 +187,14 @@ export function SpatialCanvas() {
           t.scale = lerp(t.scale, target.scale, LERP_SPEED);
           applyTransform();
         }
+      }
+
+      // Check if canvas content extends into footer zone
+      const ctr = containerRef.current;
+      if (ctr) {
+        const r = ctr.getBoundingClientRect();
+        const canvasBottom = t.y + CANVAS_H * t.scale;
+        setFooterGlass(canvasBottom > r.height - 60);
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -607,7 +616,7 @@ export function SpatialCanvas() {
       </div>
 
       {/* Hints — contextual for device */}
-      <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20 text-[10px] md:text-xs text-muted-foreground/30 font-display tracking-wider space-y-0.5 md:space-y-1 transition-all duration-300 hover:text-foreground/80 cursor-default">
+      <div className={`absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20 text-[10px] md:text-xs text-muted-foreground/30 font-display tracking-wider space-y-0.5 md:space-y-1 cursor-default rounded-lg px-3 py-2 -mx-3 -my-2 transition-all duration-500 ${footerGlass ? 'liquid-glass text-muted-foreground/60' : ''}`}>
         {isMobile || isTablet ? (
           <p>PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
         ) : (
@@ -619,7 +628,7 @@ export function SpatialCanvas() {
       </div>
 
       {/* Social icons */}
-      <div className="absolute bottom-4 md:bottom-6 right-4 md:right-6 z-20 flex items-center gap-2 md:gap-3">
+      <div className={`absolute bottom-4 md:bottom-6 right-4 md:right-6 z-20 flex items-center gap-2 md:gap-3 rounded-lg px-3 py-2 -mx-3 -my-2 transition-all duration-500 ${footerGlass ? 'liquid-glass' : ''}`}>
         <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
           <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
         </a>
