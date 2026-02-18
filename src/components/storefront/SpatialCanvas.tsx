@@ -456,6 +456,39 @@ export function SpatialCanvas() {
 
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (selectedIndex !== null) {
+        // Close product detail overlay
+        setSelectedIndex(null);
+        maxZoomTriggeredRef.current = false;
+        return;
+      }
+      // Zoom out to fit-all view
+      const container = containerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const padX = isMobile ? 16 : 40;
+        const padY = isMobile ? 60 : 80;
+        const fitScale = Math.min(
+          (rect.width - padX * 2) / CANVAS_W,
+          (rect.height - padY * 2) / CANVAS_H
+        );
+        const s = Math.max(0.3, Math.min(1, fitScale));
+        const cx = (rect.width - CANVAS_W * s) / 2;
+        const cy = (rect.height - CANVAS_H * s) / 2;
+        targetTransformRef.current = { x: cx, y: cy, scale: s };
+        setScaleState(s);
+        setFocusedIndex(-1);
+        setHoveredIndex(null);
+        if (activeCategory !== 'ALL') {
+          setActiveCategory('ALL');
+          categoryZoomRef.current = null;
+          setPeekingAll(false);
+        }
+      }
+      return;
+    }
     if (selectedIndex !== null) return;
 
     const products = DEMO_PRODUCTS;
@@ -516,7 +549,7 @@ export function SpatialCanvas() {
     }
     if (e.key === '=' || e.key === '+') setScaleSmooth(Math.min(MAX_SCALE, targetTransformRef.current.scale * 1.15));
     if (e.key === '-') setScaleSmooth(Math.max(minScaleRef.current, targetTransformRef.current.scale * 0.85));
-  }, [focusedIndex, selectedIndex, setScaleSmooth]);
+  }, [focusedIndex, selectedIndex, setScaleSmooth, isMobile, activeCategory]);
 
   // Pan to focused product when zoomed in
   useEffect(() => {
