@@ -40,6 +40,7 @@ export function SpatialCanvas() {
   const [footerGlass, setFooterGlass] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, dragging: false });
+  const didDragRef = useRef(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -468,6 +469,7 @@ export function SpatialCanvas() {
   // Drag to pan (mouse)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    didDragRef.current = false;
     dragRef.current = {
       startX: e.clientX, startY: e.clientY,
       panStartX: transformRef.current.x, panStartY: transformRef.current.y,
@@ -479,9 +481,14 @@ export function SpatialCanvas() {
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const d = dragRef.current;
     if (!d.dragging) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      didDragRef.current = true;
+    }
     const t = transformRef.current;
-    t.x = d.panStartX + (e.clientX - d.startX);
-    t.y = d.panStartY + (e.clientY - d.startY);
+    t.x = d.panStartX + dx;
+    t.y = d.panStartY + dy;
     targetTransformRef.current.x = t.x;
     targetTransformRef.current.y = t.y;
     applyTransform();
@@ -729,7 +736,7 @@ export function SpatialCanvas() {
                 isFocused={focusedIndex === i && hoveredIndex === null}
                 isHovered={hoveredIndex === i}
                 dimmed={isDimmed}
-                onClick={() => setSelectedIndex(i)}
+                onClick={() => { if (!didDragRef.current) setSelectedIndex(i); }}
                 onHoverStart={() => { setHoveredIndex(i); setFocusedIndex(-1); }}
                 onHoverEnd={() => setHoveredIndex(null)}
                 onQuickAdd={(e) => {
