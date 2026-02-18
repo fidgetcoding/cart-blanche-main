@@ -619,25 +619,31 @@ export function SpatialCanvas() {
       </div>
 
       {/* Hints — contextual for device */}
-      <div className={`absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20 text-[10px] md:text-xs text-muted-foreground/30 font-display tracking-wider space-y-0.5 md:space-y-1 cursor-default rounded-lg px-3 py-2 -mx-3 -my-2 transition-all duration-500 ${footerGlass ? 'liquid-glass text-muted-foreground/60' : ''}`}>
-        {isMobile || isTablet ? (
-          <p>PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
-        ) : (
-          <>
-            <p>SCROLL TO ZOOM · DRAG TO PAN</p>
-            <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
-          </>
-        )}
+      <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20 rounded-lg px-3 py-2 -mx-3 -my-2">
+        <div className={`absolute inset-0 liquid-glass rounded-lg transition-opacity duration-500 pointer-events-none ${footerGlass ? 'opacity-100' : 'opacity-0'}`} />
+        <div className={`relative text-[10px] md:text-xs font-display tracking-wider space-y-0.5 md:space-y-1 cursor-default transition-colors duration-500 ${footerGlass ? 'text-muted-foreground/60' : 'text-muted-foreground/30'}`}>
+          {isMobile || isTablet ? (
+            <p>PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
+          ) : (
+            <>
+              <p>SCROLL TO ZOOM · DRAG TO PAN</p>
+              <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Social icons */}
-      <div className={`absolute bottom-4 md:bottom-6 right-4 md:right-6 z-20 flex items-center gap-2 md:gap-3 rounded-lg px-3 py-2 -mx-3 -my-2 transition-all duration-500 ${footerGlass ? 'liquid-glass' : ''}`}>
-        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
-          <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
-        </a>
-        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
-          <Twitter className="w-3.5 md:w-4 h-3.5 md:h-4" />
-        </a>
+      <div className="absolute bottom-4 md:bottom-6 right-4 md:right-6 z-20 rounded-lg px-3 py-2 -mx-3 -my-2">
+        <div className={`absolute inset-0 liquid-glass rounded-lg transition-opacity duration-500 pointer-events-none ${footerGlass ? 'opacity-100' : 'opacity-0'}`} />
+        <div className="relative flex items-center gap-2 md:gap-3">
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+            <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
+          </a>
+          <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+            <Twitter className="w-3.5 md:w-4 h-3.5 md:h-4" />
+          </a>
+        </div>
       </div>
 
       {/* Full-screen product view */}
@@ -668,7 +674,7 @@ function useIsTablet() {
   useEffect(() => {
     const check = () => {
       const w = window.innerWidth;
-      setIsTablet(w >= 768 && w <= 1024);
+      setIsTablet(w >= 768 && w < 1280);
     };
     check();
     window.addEventListener('resize', check);
