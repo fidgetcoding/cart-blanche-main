@@ -277,19 +277,19 @@ export function SpatialCanvas() {
         }
       }
 
-      // On scroll idle, snap back if peeking
+      // On scroll idle, commit to ALL if peeking
       clearTimeout(peekTimerRef.current);
       peekTimerRef.current = window.setTimeout(() => {
         setScaleState(targetTransformRef.current.scale);
         if (activeCategory !== 'ALL' && categoryZoomRef.current) {
-          const cz = categoryZoomRef.current;
-          if (targetTransformRef.current.scale < cz.scale * 0.85) {
-            targetTransformRef.current = { ...cz };
-            setScaleState(cz.scale);
+          if (targetTransformRef.current.scale < categoryZoomRef.current.scale * 0.85) {
+            // Commit to ALL view: reset category, clear peek state
+            setActiveCategory('ALL');
+            categoryZoomRef.current = null;
             setPeekingAll(false);
           }
         }
-      }, 400);
+      }, 300);
 
       clearTimeout(scaleUpdateTimer);
       scaleUpdateTimer = window.setTimeout(() => {

@@ -35,7 +35,7 @@ export function ProductTile({ product, scale, isFocused, isHovered, dimmed, onCl
         width: 220,
         height: 280,
         opacity: dimmed ? 0.15 : 1,
-        transition: 'opacity 0.4s ease',
+        transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       whileHover={dimmed ? undefined : { scale: 1.04, zIndex: 10 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
