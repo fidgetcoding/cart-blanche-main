@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, Check } from 'lucide-react';
+import { DEMO_PRODUCTS } from '@/data/demo-data';
 
 interface VariantRow {
   id: string;
@@ -9,6 +10,21 @@ interface VariantRow {
   sku: string | null;
   inventory_count: number;
   product_id: string;
+  isDemo?: boolean;
+}
+
+function buildDemoRows(): VariantRow[] {
+  return DEMO_PRODUCTS.flatMap(p =>
+    p.variants.map(v => ({
+      id: v.id,
+      product_title: p.title,
+      variant_title: v.title,
+      sku: null,
+      inventory_count: v.inventory_count,
+      product_id: p.id,
+      isDemo: true,
+    }))
+  );
 }
 
 export default function AdminInventory() {
@@ -24,30 +40,36 @@ export default function AdminInventory() {
 
   async function fetchInventory() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
 
-    const { data: products } = await supabase.from('products').select('id, title')
-      .eq('merchant_id', session.user.id);
-    if (!products) { setLoading(false); return; }
+    // Try DB first if logged in
+    if (session) {
+      const { data: products } = await supabase.from('products').select('id, title')
+        .eq('merchant_id', session.user.id);
 
-    const productMap = new Map(products.map(p => [p.id, p.title]));
-    const productIds = products.map(p => p.id);
+      if (products && products.length > 0) {
+        const productMap = new Map(products.map(p => [p.id, p.title]));
+        const productIds = products.map(p => p.id);
 
-    if (productIds.length === 0) { setLoading(false); return; }
+        const { data: variants } = await supabase.from('product_variants').select('*')
+          .in('product_id', productIds).order('created_at');
 
-    const { data: variants } = await supabase.from('product_variants').select('*')
-      .in('product_id', productIds).order('created_at');
-
-    if (variants) {
-      setRows(variants.map(v => ({
-        id: v.id,
-        product_title: productMap.get(v.product_id) || 'Unknown',
-        variant_title: v.title,
-        sku: v.sku,
-        inventory_count: v.inventory_count,
-        product_id: v.product_id,
-      })));
+        if (variants && variants.length > 0) {
+          setRows(variants.map(v => ({
+            id: v.id,
+            product_title: productMap.get(v.product_id) || 'Unknown',
+            variant_title: v.title,
+            sku: v.sku,
+            inventory_count: v.inventory_count ?? 0,
+            product_id: v.product_id,
+          })));
+          setLoading(false);
+          return;
+        }
+      }
     }
+
+    // Fall back to demo data
+    setRows(buildDemoRows());
     setLoading(false);
   }
 
