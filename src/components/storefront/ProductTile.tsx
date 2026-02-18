@@ -31,10 +31,7 @@ export function ProductTile({ product, scale, isFocused, onClick }: ProductTileP
         className="w-full h-full flex flex-col transition-opacity duration-200"
         style={{ opacity: isFocused ? 1 : 0.85 }}
       >
-        <div className="flex-1 bg-[hsl(0_0%_8%)] flex items-center justify-center relative overflow-hidden">
-          <span className="font-display text-[hsl(0_0%_20%)] text-[9px] tracking-[0.25em] uppercase">
-            {product.category}
-          </span>
+        <div className="flex-1 bg-[hsl(0_0%_8%)] relative overflow-hidden">
           {product.compare_at_price && (
             <div className="absolute top-2 left-2 bg-accent text-accent-foreground text-[9px] font-display font-bold px-1.5 py-0.5">
               SALE

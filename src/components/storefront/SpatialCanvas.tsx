@@ -2,15 +2,14 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { DEMO_PRODUCTS, DEMO_HOTZONES } from '@/data/demo-data';
+import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { ProductTile } from '@/components/storefront/ProductTile';
-import { HotzoneLayer } from '@/components/storefront/HotzoneLayer';
 import { ProductView } from '@/components/storefront/ProductView';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 
-const CANVAS_W = 2000;
-const CANVAS_H = 1600;
+const CANVAS_W = 1360;
+const CANVAS_H = 1230;
 const MAX_SCALE = 2;
 const ZOOM_SENSITIVITY = 0.0025;
 
@@ -303,7 +302,7 @@ export function SpatialCanvas() {
             willChange: 'transform',
           }}
         >
-          <HotzoneLayer hotzones={DEMO_HOTZONES} scale={scaleState} />
+          {/* No hotzone layer — clean grid */}
           {DEMO_PRODUCTS.map((product, i) => {
             // Filter by category — hide non-matching tiles
             if (activeCategory !== 'ALL' && product.category.toUpperCase() !== activeCategory) return null;
