@@ -8,6 +8,9 @@ import AuthPage from "./pages/AuthPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminInventory from "./pages/admin/AdminInventory";
+import AdminSettings from "./pages/admin/AdminSettings";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import NotFound from "./pages/NotFound";
 
@@ -27,9 +30,9 @@ const App = () => (
             <Route path="products" element={<AdminProducts />} />
             <Route path="grid" element={<AdminPlaceholder title="Grid Editor" />} />
             <Route path="flow" element={<AdminPlaceholder title="Flow Editor" />} />
-            <Route path="orders" element={<AdminPlaceholder title="Orders" />} />
-            <Route path="inventory" element={<AdminPlaceholder title="Inventory" />} />
-            <Route path="settings" element={<AdminPlaceholder title="Settings" />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="inventory" element={<AdminInventory />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
