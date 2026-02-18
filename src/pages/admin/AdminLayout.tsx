@@ -53,7 +53,7 @@ export default function AdminLayout() {
       {/* Left side: brand header + chat panel */}
       <div className="flex flex-col flex-shrink-0 border-r border-sidebar-border">
         {/* Brand section + chat toggle + store link — single ribbon */}
-        <div className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 gap-2">
+        <div className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 gap-2">
           <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">CARTE BLANCHE</h1>
           <div className="flex-1" />
           <button
@@ -71,7 +71,7 @@ export default function AdminLayout() {
       {/* Right side: nav header + content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Nav ribbon — same height as brand bar, inline */}
-        <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 overflow-hidden gap-0.5">
+        <header className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 overflow-hidden gap-0.5">
           {NAV_ITEMS.map(item => (
             <NavLink
               key={item.to}
