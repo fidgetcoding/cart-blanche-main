@@ -61,6 +61,7 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Nav ribbon — same height as brand bar, inline */}
         <header className="h-12 bg-sidebar border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 overflow-hidden gap-0.5">
+          <div className="w-px h-5 bg-sidebar-border mr-2 flex-shrink-0" />
           {/* Store link */}
           <button
             onClick={() => navigate('/')}
