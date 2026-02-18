@@ -450,23 +450,17 @@ export function SmartChatPanel() {
 
       {/* Main chat panel */}
       <div className="flex-1 flex flex-col bg-sidebar overflow-hidden">
-        {/* Header — toggle sidebar */}
-        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-sidebar-border">
-          <div className="group flex items-center">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
-            >
-              {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
-            </button>
-            {!sidebarOpen && (
-              <span className="ml-1.5 text-[10px] font-display tracking-wider text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                Chat History
-              </span>
-            )}
-          </div>
+        {/* Inline toolbar */}
+        <div className="flex items-center gap-2 px-3 py-1.5 flex-shrink-0">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
+            title="Chat History"
+          >
+            {sidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
+          </button>
           {activeConversationId && (
-            <span className="text-[11px] font-display tracking-wider text-muted-foreground truncate">
+            <span className="text-[10px] font-display tracking-wider text-muted-foreground truncate">
               {conversations.find(c => c.id === activeConversationId)?.title || ''}
             </span>
           )}
