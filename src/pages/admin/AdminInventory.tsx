@@ -67,6 +67,7 @@ export default function AdminInventory() {
   const [editVariantValue, setEditVariantValue] = useState('');
   const [newTag, setNewTag] = useState('');
   const [addingTagForId, setAddingTagForId] = useState<string | null>(null);
+  const [modalNewTag, setModalNewTag] = useState('');
   const lowStockThreshold = 5;
 
   useEffect(() => { fetchInventory(); }, []);
@@ -511,6 +512,57 @@ export default function AdminInventory() {
                 <label className="text-xs font-display tracking-widest text-muted-foreground">DESCRIPTION</label>
                 <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3}
                   className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">TAGS</label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {editingProduct.tags.map(tag => (
+                    <span key={tag} className={`text-[10px] font-display px-2 py-1 rounded border inline-flex items-center gap-1.5 ${getTagColor(tag)}`}>
+                      {tag.toUpperCase().replace('-', ' ')}
+                      <button onClick={() => {
+                        const updated = editingProduct.tags.filter(t => t !== tag);
+                        setEditingProduct({ ...editingProduct, tags: updated });
+                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, tags: updated } : p));
+                      }} className="hover:opacity-70">
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                  <div className="flex items-center gap-1">
+                    <input
+                      value={modalNewTag}
+                      onChange={e => setModalNewTag(e.target.value)}
+                      placeholder="Add tag..."
+                      className="w-24 px-2 py-1 bg-background/40 border border-border/50 backdrop-blur-sm rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-ring"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && modalNewTag.trim()) {
+                          const tag = modalNewTag.trim().toLowerCase();
+                          if (!editingProduct.tags.includes(tag)) {
+                            const updated = [...editingProduct.tags, tag];
+                            setEditingProduct({ ...editingProduct, tags: updated });
+                            setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, tags: updated } : p));
+                          }
+                          setModalNewTag('');
+                        }
+                      }}
+                    />
+                    {modalNewTag.trim() && (
+                      <button onClick={() => {
+                        const tag = modalNewTag.trim().toLowerCase();
+                        if (!editingProduct.tags.includes(tag)) {
+                          const updated = [...editingProduct.tags, tag];
+                          setEditingProduct({ ...editingProduct, tags: updated });
+                          setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, tags: updated } : p));
+                        }
+                        setModalNewTag('');
+                      }} className="p-0.5 text-success hover:bg-success/20 rounded">
+                        <Check className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Variant / Size Management */}
