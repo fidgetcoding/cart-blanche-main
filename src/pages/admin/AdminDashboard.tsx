@@ -41,7 +41,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {cards.map(c => (
-          <div key={c.label} className="bg-card border border-border rounded-xl p-6">
+          <div key={c.label} className="liquid-glass rounded-xl p-6">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-display tracking-widest text-muted-foreground whitespace-nowrap">{c.label}</p>
               <c.icon className="w-4 h-4 text-muted-foreground" />
@@ -54,11 +54,11 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-card border border-border rounded-xl p-6 min-h-[160px] flex flex-col">
+        <div className="liquid-glass rounded-xl p-6 min-h-[160px] flex flex-col">
           <h3 className="font-display text-xs font-semibold tracking-[0.15em] text-muted-foreground mb-auto">RECENT ORDERS</h3>
           <p className="text-sm text-muted-foreground/60 mt-6">No orders yet</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-6 min-h-[160px] flex flex-col">
+        <div className="liquid-glass rounded-xl p-6 min-h-[160px] flex flex-col">
           <h3 className="font-display text-xs font-semibold tracking-[0.15em] text-muted-foreground mb-auto">TOP PRODUCTS</h3>
           <p className="text-sm text-muted-foreground/60 mt-6">No sales data yet</p>
         </div>
