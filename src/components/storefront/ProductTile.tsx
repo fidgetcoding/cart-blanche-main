@@ -28,8 +28,8 @@ export function ProductTile({ product, scale, isFocused, onClick }: ProductTileP
     >
       <div className="w-full h-full flex flex-col">
         {/* Product image area */}
-        <div className="flex-1 bg-muted/40 flex items-center justify-center relative overflow-hidden">
-          <div className="w-3/4 h-3/4 bg-muted/60 rounded-sm" />
+          <div className="flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden">
+          <div className="w-3/4 h-3/4 bg-muted/60 rounded-md" />
         </div>
 
         {/* Product name + price */}
