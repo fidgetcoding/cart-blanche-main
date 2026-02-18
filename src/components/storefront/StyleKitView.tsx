@@ -11,11 +11,13 @@ function CarouselRow({
   onSelect,
   onAddToLook,
   direction,
+  cardSize = 'default',
 }: {
   products: DemoProduct[];
   onSelect: (p: DemoProduct) => void;
   onAddToLook: (p: DemoProduct) => void;
   direction: 'horizontal' | 'vertical';
+  cardSize?: 'default' | 'large';
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isHorizontal = direction === 'horizontal';
@@ -86,6 +88,8 @@ function CarouselRow({
     }
   }, [products.length, isHorizontal]);
 
+  const cardWidth = cardSize === 'large' ? 'w-[350px]' : 'w-[200px]';
+
   return (
     <div className="relative h-full w-full min-h-0 min-w-0">
       {/* Edge fade indicators */}
@@ -125,7 +129,7 @@ function CarouselRow({
             key={`${product.id}-${idx}`}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer w-[200px]"
+            className={`flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer ${cardWidth}`}
             onClick={() => { if (!hasDragged.current) onSelect(product); }}
           >
             <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full">
@@ -135,11 +139,11 @@ function CarouselRow({
             </div>
             <div className="p-3 flex flex-col justify-between flex-1">
               <div>
-                <p className="font-display text-xs font-medium tracking-wide truncate">
+                <p className={`font-display font-medium tracking-wide truncate ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>
                   {product.title}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs font-display">${product.price}</span>
+                  <span className={`font-display ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>${product.price}</span>
                   {product.compare_at_price && (
                     <span className="text-[10px] text-muted-foreground line-through">
                       ${product.compare_at_price}
@@ -171,97 +175,78 @@ function CarouselRow({
   );
 }
 
-function AnchorPanel({
-  direction,
-}: {
-  direction: 'horizontal' | 'vertical';
+function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, selectedVariant }: {
+  anchorProduct: DemoProduct;
+  sizes: string[];
+  selectedSize: string | null;
+  setSelectedSize: (s: string | null) => void;
+  selectedVariant: DemoProduct['variants'][0] | undefined;
 }) {
-  const { anchorProduct, lookItems, closeStyleKit, changeAnchor, removeFromLook } = useStyleKit();
-  const { addItem } = useCart();
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-
-  // Reset size when anchor changes
-  useEffect(() => {
-    setSelectedSize(null);
-  }, [anchorProduct?.id]);
-
-  if (!anchorProduct) return null;
-
-  const lookTotal = lookItems.reduce((sum, p) => sum + p.price, 0);
-  const sizes = anchorProduct.variants.map(v => v.title);
-  const selectedVariant = anchorProduct.variants.find(v => v.title === selectedSize);
-
   return (
-    <div
-      className={`flex flex-col bg-card/50 backdrop-blur-sm border-border overflow-y-auto h-full ${
-        direction === 'horizontal' ? 'border-b' : 'border-r'
-      }`}
-    >
-      <div className="flex-1 flex flex-col p-4 gap-3 overflow-y-auto">
-        {/* Large image thumbnail */}
-        <div className="w-full aspect-[3/2] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[35%]">
-          <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
-            {anchorProduct.category.toUpperCase()}
-          </span>
-        </div>
-
-        {/* Product details below thumbnail */}
-        <div className="flex flex-col gap-3">
-          <div>
-            <h3 className="font-display text-base font-bold tracking-wide">{anchorProduct.title}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="font-display text-sm text-muted-foreground">${anchorProduct.price}</span>
-              {anchorProduct.compare_at_price && (
-                <span className="text-xs text-muted-foreground/60 line-through">
-                  ${anchorProduct.compare_at_price}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {anchorProduct.description}
-          </p>
-
-          {/* Size selector */}
-          {sizes.length > 1 && (
-            <div>
-              <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-2">SIZE</p>
-              <div className="flex flex-wrap gap-1.5">
-                {sizes.map(size => {
-                  const variant = anchorProduct.variants.find(v => v.title === size);
-                  const outOfStock = variant && variant.inventory_count === 0;
-                  return (
-                    <button
-                      key={size}
-                      disabled={outOfStock}
-                      onClick={() => setSelectedSize(size === selectedSize ? null : size)}
-                      className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded border transition-colors ${
-                        size === selectedSize
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : outOfStock
-                            ? 'border-border/30 text-muted-foreground/30 cursor-not-allowed'
-                            : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground/40'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedVariant && (
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  {selectedVariant.inventory_count} in stock
-                </p>
-              )}
-            </div>
+    <div className="flex flex-col gap-3">
+      <div>
+        <h3 className="font-display text-base font-bold tracking-wide">{anchorProduct.title}</h3>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="font-display text-sm text-muted-foreground">${anchorProduct.price}</span>
+          {anchorProduct.compare_at_price && (
+            <span className="text-xs text-muted-foreground/60 line-through">
+              ${anchorProduct.compare_at_price}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Look items stacked */}
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {anchorProduct.description}
+      </p>
+
+      {/* Size selector */}
+      {sizes.length > 1 && (
+        <div>
+          <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-2">SIZE</p>
+          <div className="flex flex-wrap gap-1.5">
+            {sizes.map(size => {
+              const variant = anchorProduct.variants.find(v => v.title === size);
+              const outOfStock = variant && variant.inventory_count === 0;
+              return (
+                <button
+                  key={size}
+                  disabled={outOfStock}
+                  onClick={() => setSelectedSize(size === selectedSize ? null : size)}
+                  className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded border transition-colors ${
+                    size === selectedSize
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : outOfStock
+                        ? 'border-border/30 text-muted-foreground/30 cursor-not-allowed'
+                        : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground/40'
+                  }`}
+                >
+                  {size}
+                </button>
+              );
+            })}
+          </div>
+          {selectedVariant && (
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              {selectedVariant.inventory_count} in stock
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LookFooter({ anchorProduct, lookItems, removeFromLook, lookTotal }: {
+  anchorProduct: DemoProduct;
+  lookItems: DemoProduct[];
+  removeFromLook: (id: string) => void;
+  lookTotal: number;
+}) {
+  return (
+    <>
       {lookItems.length > 1 && (
-        <div className="px-6 pb-2">
+        <div className="px-4 pb-2">
           <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-2">YOUR LOOK</p>
           <div className="flex flex-wrap gap-2">
             {lookItems.map((item) => (
@@ -285,13 +270,81 @@ function AnchorPanel({
         </div>
       )}
 
-      {/* Look total */}
-      <div className="px-6 py-3 border-t border-border flex items-center gap-2">
+      <div className="px-4 py-3 border-t border-border flex items-center gap-2">
         <span className="text-[10px] font-display tracking-widest text-muted-foreground">
           LOOK TOTAL
         </span>
         <span className="font-display text-sm font-bold">${lookTotal}</span>
       </div>
+    </>
+  );
+}
+
+function AnchorPanel({
+  direction,
+}: {
+  direction: 'horizontal' | 'vertical';
+}) {
+  const { anchorProduct, lookItems, closeStyleKit, changeAnchor, removeFromLook } = useStyleKit();
+  const { addItem } = useCart();
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedSize(null);
+  }, [anchorProduct?.id]);
+
+  if (!anchorProduct) return null;
+
+  const lookTotal = lookItems.reduce((sum, p) => sum + p.price, 0);
+  const sizes = anchorProduct.variants.map(v => v.title);
+  const selectedVariant = anchorProduct.variants.find(v => v.title === selectedSize);
+
+  // PAIRS mode: horizontal direction → thumbnail LEFT, details RIGHT
+  if (direction === 'horizontal') {
+    return (
+      <div className="flex flex-col bg-card/50 backdrop-blur-sm border-b border-border h-full">
+        <div className="flex-1 flex flex-row overflow-hidden">
+          {/* Large thumbnail filling left side */}
+          <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0">
+            <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
+              {anchorProduct.category.toUpperCase()}
+            </span>
+          </div>
+          {/* Details on the right */}
+          <div className="flex-1 flex flex-col p-5 overflow-y-auto">
+            <ProductDetails
+              anchorProduct={anchorProduct}
+              sizes={sizes}
+              selectedSize={selectedSize}
+              setSelectedSize={setSelectedSize}
+              selectedVariant={selectedVariant}
+            />
+          </div>
+        </div>
+        <LookFooter anchorProduct={anchorProduct} lookItems={lookItems} removeFromLook={removeFromLook} lookTotal={lookTotal} />
+      </div>
+    );
+  }
+
+  // EXTRAS mode: vertical direction → very large tall thumbnail, details below
+  return (
+    <div className="flex flex-col bg-card/50 backdrop-blur-sm border-r border-border h-full overflow-y-auto">
+      <div className="flex-1 flex flex-col p-4 gap-3">
+        {/* Very large tall thumbnail */}
+        <div className="w-full aspect-[3/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
+            {anchorProduct.category.toUpperCase()}
+          </span>
+        </div>
+        <ProductDetails
+          anchorProduct={anchorProduct}
+          sizes={sizes}
+          selectedSize={selectedSize}
+          setSelectedSize={setSelectedSize}
+          selectedVariant={selectedVariant}
+        />
+      </div>
+      <LookFooter anchorProduct={anchorProduct} lookItems={lookItems} removeFromLook={removeFromLook} lookTotal={lookTotal} />
     </div>
   );
 }
@@ -451,6 +504,7 @@ export function StyleKitView() {
                   onSelect={setPreviewProduct}
                   onAddToLook={handleAddToLook}
                   direction="vertical"
+                  cardSize="large"
                 />
               </div>
             </>
