@@ -228,7 +228,12 @@ export function SpatialCanvas() {
       if (ctr) {
         const r = ctr.getBoundingClientRect();
         const canvasBottom = t.y + CANVAS_H * t.scale;
-        setFooterGlass(canvasBottom > r.height - 60);
+        const footerZone = r.height - 70;
+        // Use hysteresis: require more clearance to turn off than to turn on
+        const shouldGlass = canvasBottom > footerZone;
+        const shouldClear = canvasBottom < footerZone - 20;
+        if (shouldGlass) setFooterGlass(true);
+        else if (shouldClear) setFooterGlass(false);
       }
 
       rafRef.current = requestAnimationFrame(tick);
