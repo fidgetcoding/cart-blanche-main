@@ -55,7 +55,7 @@ function CarouselRow({
       {/* Scrollable area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto no-scrollbar p-4 gap-3 flex flex-row items-start flex-wrap content-start"
+        className="flex-1 overflow-auto no-scrollbar p-4 gap-3 flex flex-row items-start"
       >
         {products.map((product) => (
           <motion.div
@@ -265,7 +265,7 @@ export function StyleKitView() {
                 }`}
               >
                 <Layers className="w-3 h-3" />
-                COUNTERPARTS
+                PAIRS
               </button>
               <button
                 onClick={() => setMode('extras')}
