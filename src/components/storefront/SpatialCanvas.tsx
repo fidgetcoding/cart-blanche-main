@@ -79,7 +79,24 @@ export function SpatialCanvas() {
       const t = transformRef.current;
       const target = targetTransformRef.current;
 
+      // When zoomed out enough that the grid fits in the viewport, re-center
       if (!dragRef.current.dragging) {
+        const container = containerRef.current;
+        if (container) {
+          const rect = container.getBoundingClientRect();
+          const scaledW = CANVAS_W * target.scale;
+          const scaledH = CANVAS_H * target.scale;
+
+          // If canvas fits horizontally, center X
+          if (scaledW <= rect.width) {
+            target.x = (rect.width - scaledW) / 2;
+          }
+          // If canvas fits vertically, center Y
+          if (scaledH <= rect.height) {
+            target.y = (rect.height - scaledH) / 2;
+          }
+        }
+
         const dx = Math.abs(t.x - target.x);
         const dy = Math.abs(t.y - target.y);
         const ds = Math.abs(t.scale - target.scale);
