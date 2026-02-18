@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, LayoutDashboard, Instagram, Twitter } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { ProductTile } from '@/components/storefront/ProductTile';
 import { ProductView } from '@/components/storefront/ProductView';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const CANVAS_W = 1360;
 const CANVAS_H = 1230;
@@ -37,6 +38,7 @@ export function SpatialCanvas() {
   const hoveredIndexRef = useRef<number | null>(null);
   const maxZoomTriggeredRef = useRef(false);
   const { toggleCart, itemCount } = useCart();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   // Apply transform directly to DOM
@@ -344,6 +346,9 @@ export function SpatialCanvas() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <button onClick={toggleTheme} className="p-2 hover:opacity-70 transition-opacity" title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-foreground/70" /> : <Moon className="w-4 h-4 text-foreground/70" />}
+          </button>
           <button onClick={toggleCart} className="relative p-2 hover:opacity-70 transition-opacity">
             <ShoppingBag className="w-5 h-5 text-foreground/70" />
             {itemCount > 0 && (
