@@ -515,11 +515,16 @@ export function SpatialCanvas() {
   }, []);
 
   // Focus root on mount and refocus after any click within the canvas
+  // BUT skip refocusing when user clicks inside inputs, textareas, or other interactive elements
   useEffect(() => {
     rootRef.current?.focus();
     const root = rootRef.current;
     if (!root) return;
-    const refocus = () => { setTimeout(() => root.focus(), 0); };
+    const refocus = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target?.closest('input, textarea, select, [contenteditable], [role="textbox"]')) return;
+      setTimeout(() => root.focus(), 0);
+    };
     root.addEventListener('click', refocus, true); // capture phase
     return () => root.removeEventListener('click', refocus, true);
   }, []);
