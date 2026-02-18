@@ -182,10 +182,11 @@ function BudgetComparisonCard({ comparison, onSwapAll, onSwapOne }: {
   );
 }
 
-const PROMPT_CHIPS = [
-  "Complete this outfit",
-  "Find something like this",
-  "Rebuild my cart cheaper",
+const PROMPT_CARDS = [
+  { label: "Complete Outfit", text: "Complete this outfit", icon: Layers },
+  { label: "Find Similar", text: "Find something like this", icon: Sparkles },
+  { label: "Budget Rebuild", text: "Rebuild my cart cheaper", icon: DollarSign },
+  { label: "Style Advice", text: "What's trending right now?", icon: ShoppingBag },
 ];
 
 export function CartDrawer() {
@@ -495,9 +496,22 @@ export function CartDrawer() {
                     {messages.length === 0 && !isLoading ? (
                       <div className="flex flex-col items-center justify-center h-full text-center px-4">
                         <Sparkles className="w-8 h-8 mb-3 text-muted-foreground/40" />
-                        <p className="text-xs text-muted-foreground leading-relaxed max-w-[260px] whitespace-pre-line">
+                        <h3 className="font-display text-sm font-semibold tracking-[0.12em] mb-1.5">AI STYLE ASSISTANT</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed max-w-[260px] whitespace-pre-line mb-6">
                           {emptyAssistantMessage}
                         </p>
+                        <div className="grid grid-cols-2 gap-2 w-full max-w-[320px]">
+                          {PROMPT_CARDS.map(card => (
+                            <button
+                              key={card.label}
+                              onClick={() => { setInputValue(''); sendMessage(card.text, items); }}
+                              className="flex flex-col items-start gap-2 p-3 rounded-lg liquid-glass hover:brightness-125 text-left transition-all"
+                            >
+                              <card.icon className="w-4 h-4 text-muted-foreground/50" />
+                              <span className="text-xs font-display font-medium">{card.label}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     ) : (
                       messages.map((msg) => (
@@ -570,23 +584,6 @@ export function CartDrawer() {
                     <div ref={chatEndRef} />
                   </div>
 
-                  {/* Prompt chips */}
-                  {messages.length === 0 && !isLoading && (
-                    <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-                      {PROMPT_CHIPS.map(chip => (
-                        <button
-                          key={chip}
-                          onClick={() => {
-                            setInputValue('');
-                            sendMessage(chip, items);
-                          }}
-                          className="px-2.5 py-1 text-[10px] font-display tracking-wider text-muted-foreground border border-border/50 rounded-full hover:text-foreground hover:border-border transition-colors"
-                        >
-                          {chip}
-                        </button>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Pending image preview */}
                   {pendingImage && (
