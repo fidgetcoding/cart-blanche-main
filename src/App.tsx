@@ -13,6 +13,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminGridEditor from "./pages/admin/AdminGridEditor";
 import AdminStylingGuide from "./pages/admin/AdminStylingGuide";
 import NotFound from "./pages/NotFound";
 
@@ -31,7 +32,7 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="products" element={<AdminProducts />} />
-              <Route path="grid" element={<AdminPlaceholder title="Grid Editor" />} />
+              <Route path="grid" element={<AdminGridEditor />} />
               <Route path="flow" element={<AdminPlaceholder title="Flow Editor" />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="inventory" element={<AdminInventory />} />
