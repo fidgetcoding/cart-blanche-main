@@ -149,7 +149,7 @@ export default function AdminStylingGuide() {
         </div>
 
         {rules.map((rule, i) => (
-          <div key={i} className="bg-card border border-border rounded-lg p-4 space-y-3">
+          <div key={i} className="liquid-glass rounded-lg p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div className="flex-1 space-y-3">
                 {/* Anchor category */}

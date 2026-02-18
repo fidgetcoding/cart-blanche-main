@@ -102,7 +102,7 @@ export default function AdminSettings() {
       {/* Store Info */}
       <section className="mb-8">
         <h2 className="font-display text-sm font-semibold tracking-wider mb-4">STORE INFO</h2>
-        <div className="space-y-4 bg-card border border-border rounded-xl p-6">
+        <div className="space-y-4 liquid-glass rounded-xl p-6">
           <div>
             <label className="text-xs font-display tracking-widest text-muted-foreground">STORE NAME</label>
             <input value={storeName} onChange={e => setStoreName(e.target.value)}
@@ -144,7 +144,7 @@ export default function AdminSettings() {
       {/* Theme */}
       <section className="mb-8">
         <h2 className="font-display text-sm font-semibold tracking-wider mb-4">STOREFRONT THEME</h2>
-        <div className="bg-card border border-border rounded-xl p-6">
+        <div className="liquid-glass rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-display text-sm font-medium">Default Theme</p>
@@ -181,7 +181,7 @@ export default function AdminSettings() {
       {/* ALE Settings */}
       <section className="mb-8">
         <h2 className="font-display text-sm font-semibold tracking-wider mb-4">ADAPTIVE LAYOUT ENGINE</h2>
-        <div className="space-y-4 bg-card border border-border rounded-xl p-6">
+        <div className="space-y-4 liquid-glass rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-display text-sm font-medium">Enable ALE</p>
@@ -218,7 +218,7 @@ export default function AdminSettings() {
       {/* Payments */}
       <section>
         <h2 className="font-display text-sm font-semibold tracking-wider mb-4">PAYMENTS</h2>
-        <div className="bg-card border border-border rounded-xl p-6">
+        <div className="liquid-glass rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-display text-sm font-medium">Stripe Connect</p>
@@ -234,7 +234,7 @@ export default function AdminSettings() {
       {/* Account */}
       <section className="mt-8">
         <h2 className="font-display text-sm font-semibold tracking-wider mb-4">ACCOUNT</h2>
-        <div className="bg-card border border-border rounded-xl p-6">
+        <div className="liquid-glass rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-display text-sm font-medium">Sign Out</p>

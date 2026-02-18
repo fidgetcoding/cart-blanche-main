@@ -133,7 +133,7 @@ export default function AdminProducts() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..."
-            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            className="w-full pl-10 pr-4 py-2.5 liquid-glass rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="px-4 py-2.5 bg-card border border-border rounded-lg text-sm focus:outline-none">
@@ -147,7 +147,7 @@ export default function AdminProducts() {
       {/* Product form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-8" onClick={() => setShowForm(false)}>
-          <div className="bg-card border border-border rounded-xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="liquid-glass rounded-xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <h2 className="font-display text-lg font-bold">{editProduct ? 'Edit Product' : 'New Product'}</h2>
 
             <div>
@@ -209,7 +209,7 @@ export default function AdminProducts() {
       {loading ? (
         <div className="text-center py-20 text-muted-foreground font-display tracking-wider animate-pulse">LOADING...</div>
       ) : filtered.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
+        <div className="liquid-glass rounded-xl p-12 text-center">
           <p className="text-muted-foreground font-display tracking-wider text-sm mb-4">
             {products.length === 0 ? 'No products yet — add your first product to get started' : 'No products match your filters'}
           </p>
@@ -221,7 +221,7 @@ export default function AdminProducts() {
           )}
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="liquid-glass rounded-xl overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">

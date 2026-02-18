@@ -77,13 +77,13 @@ export default function AdminOrders() {
       {loading ? (
         <div className="text-center py-20 text-muted-foreground font-display tracking-wider animate-pulse">LOADING...</div>
       ) : filtered.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
+        <div className="liquid-glass rounded-xl p-12 text-center">
           <p className="text-muted-foreground font-display tracking-wider text-sm">
             {orders.length === 0 ? 'No orders yet — orders will appear here when customers checkout' : 'No orders match this filter'}
           </p>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="liquid-glass rounded-xl overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
