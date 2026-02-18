@@ -30,7 +30,7 @@ function CarouselRow({
   };
 
   return (
-    <div className="relative flex-1 flex flex-col">
+    <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
       {/* Scroll buttons */}
       <button
         onClick={() => scroll(-1)}
