@@ -5,20 +5,25 @@ interface ProductTileProps {
   product: DemoProduct;
   scale: number;
   isFocused: boolean;
+  isHovered: boolean;
   onClick: () => void;
+  onHoverStart: () => void;
+  onHoverEnd: () => void;
   positionOverride?: { x: number; y: number };
 }
 
-export function ProductTile({ product, scale, isFocused, onClick, positionOverride }: ProductTileProps) {
+export function ProductTile({ product, scale, isFocused, isHovered, onClick, onHoverStart, onHoverEnd, positionOverride }: ProductTileProps) {
   const pos = positionOverride || product.grid_position;
-  // Show SKU label at reasonable zoom
   const showLabel = scale > 0.45;
+  const glowing = isFocused || isHovered;
 
   return (
     <motion.div
       layout
       onClick={onClick}
-      className="absolute cursor-pointer group"
+      onHoverStart={onHoverStart}
+      onHoverEnd={onHoverEnd}
+      className="absolute cursor-pointer"
       style={{
         left: pos.x,
         top: pos.y,
@@ -29,8 +34,7 @@ export function ProductTile({ product, scale, isFocused, onClick, positionOverri
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
       <div className="w-full h-full flex flex-col">
-        {/* Product image area */}
-          <div className={`flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300 group-hover:shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)] ${isFocused ? 'shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)]' : ''}`}>
+          <div className={`flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300 ${glowing ? 'shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)]' : ''}`}>
           <div className="w-3/4 h-3/4 bg-muted/60 rounded-md" />
         </div>
 
