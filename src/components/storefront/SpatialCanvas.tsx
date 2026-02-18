@@ -163,23 +163,26 @@ export function SpatialCanvas() {
       const target = targetTransformRef.current;
 
       if (!dragRef.current.dragging && !touchRef.current.touching) {
-        const container = containerRef.current;
-        if (container) {
-          const rect = container.getBoundingClientRect();
-          const scaledW = CANVAS_W * target.scale;
-          const scaledH = CANVAS_H * target.scale;
-
-          if (scaledW <= rect.width) {
-            target.x = (rect.width - scaledW) / 2;
-          }
-          if (scaledH <= rect.height) {
-            target.y = (rect.height - scaledH) / 2;
-          }
-        }
-
         const dx = Math.abs(t.x - target.x);
         const dy = Math.abs(t.y - target.y);
         const ds = Math.abs(t.scale - target.scale);
+
+        // Only center canvas when scale is stable (not actively zooming)
+        if (ds < 0.001) {
+          const container = containerRef.current;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const scaledW = CANVAS_W * target.scale;
+            const scaledH = CANVAS_H * target.scale;
+
+            if (scaledW <= rect.width) {
+              target.x = (rect.width - scaledW) / 2;
+            }
+            if (scaledH <= rect.height) {
+              target.y = (rect.height - scaledH) / 2;
+            }
+          }
+        }
 
         if (dx > 0.1 || dy > 0.1 || ds > 0.0001) {
           t.x = lerp(t.x, target.x, LERP_SPEED);
