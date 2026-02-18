@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShoppingBag, Plus, ArrowLeftRight, ChevronLeft, ChevronRight, Layers, Copy } from 'lucide-react';
+import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy } from 'lucide-react';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
@@ -18,70 +18,82 @@ function CarouselRow({
   direction: 'horizontal' | 'vertical';
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isHorizontal = direction === 'horizontal';
 
-  const scroll = (dir: number) => {
-    if (!scrollRef.current) return;
-    const amount = direction === 'horizontal' ? 260 : 320;
-    if (direction === 'horizontal') {
-      scrollRef.current.scrollBy({ left: amount * dir, behavior: 'smooth' });
-    } else {
-      scrollRef.current.scrollBy({ top: amount * dir, behavior: 'smooth' });
+  // Triple the products for infinite loop illusion
+  const loopedProducts = products.length > 0
+    ? [...products, ...products, ...products]
+    : [];
+
+  // Center on middle set on mount
+  useEffect(() => {
+    if (!scrollRef.current || products.length === 0) return;
+    const el = scrollRef.current;
+    // Jump to middle third without animation
+    requestAnimationFrame(() => {
+      if (isHorizontal) {
+        el.scrollLeft = el.scrollWidth / 3;
+      } else {
+        el.scrollTop = el.scrollHeight / 3;
+      }
+    });
+  }, [products.length, isHorizontal]);
+
+  // Infinite loop: when scroll nears edges, jump to middle set
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || products.length === 0) return;
+    const third = isHorizontal ? el.scrollWidth / 3 : el.scrollHeight / 3;
+    const pos = isHorizontal ? el.scrollLeft : el.scrollTop;
+    const max = isHorizontal ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight;
+    if (pos < third * 0.25) {
+      if (isHorizontal) el.scrollLeft += third;
+      else el.scrollTop += third;
+    } else if (pos > max - third * 0.25) {
+      if (isHorizontal) el.scrollLeft -= third;
+      else el.scrollTop -= third;
     }
-  };
+  }, [products.length, isHorizontal]);
 
   return (
     <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
-      {/* Scroll buttons */}
-      <button
-        onClick={() => scroll(-1)}
-        className={`absolute z-10 p-2 bg-card/80 backdrop-blur-sm border border-border rounded-full hover:bg-secondary transition-colors ${
-          direction === 'horizontal'
-            ? 'left-2 top-1/2 -translate-y-1/2'
-            : 'top-2 left-1/2 -translate-x-1/2 rotate-90'
-        }`}
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => scroll(1)}
-        className={`absolute z-10 p-2 bg-card/80 backdrop-blur-sm border border-border rounded-full hover:bg-secondary transition-colors ${
-          direction === 'horizontal'
-            ? 'right-2 top-1/2 -translate-y-1/2'
-            : 'bottom-2 left-1/2 -translate-x-1/2 rotate-90'
-        }`}
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
+      {/* Edge fade indicators */}
+      {isHorizontal ? (
+        <>
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        </>
+      ) : (
+        <>
+          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none" />
+        </>
+      )}
 
-      {/* Scrollable area */}
+      {/* Scrollable area with native touch swiping */}
       <div
         ref={scrollRef}
+        onScroll={handleScroll}
         className={`flex-1 no-scrollbar p-4 gap-3 flex items-start ${
-          direction === 'vertical'
-            ? 'flex-col overflow-y-auto overflow-x-hidden'
-            : 'flex-row overflow-x-auto overflow-y-hidden'
+          isHorizontal
+            ? 'flex-row overflow-x-auto overflow-y-hidden'
+            : 'flex-col overflow-y-auto overflow-x-hidden'
         }`}
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        {products.map((product) => (
+        {loopedProducts.map((product, idx) => (
           <motion.div
-            key={product.id}
+            key={`${product.id}-${idx}`}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer ${
-              direction === 'horizontal' ? 'w-[160px]' : 'w-[160px]'
-            }`}
+            className="flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer w-[200px]"
             onClick={() => onSelect(product)}
           >
-            {/* Square image placeholder */}
-            <div
-              className="aspect-square bg-secondary/50 flex items-center justify-center w-full"
-            >
+            <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full">
               <span className="font-display text-muted-foreground/20 text-[10px] tracking-widest">
                 {product.category.toUpperCase()}
               </span>
             </div>
-
-            {/* Info */}
             <div className="p-3 flex flex-col justify-between flex-1">
               <div>
                 <p className="font-display text-xs font-medium tracking-wide truncate">
