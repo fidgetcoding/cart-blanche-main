@@ -49,9 +49,9 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-screen bg-background flex overflow-hidden">
       {/* Left side: brand header + chat panel */}
-      <div className="flex flex-col flex-shrink-0 border-r border-sidebar-border">
+      <div className="flex flex-col flex-shrink-0 border-r border-sidebar-border h-full">
         {/* Brand section + chat toggle + store link — single ribbon */}
         <div className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 gap-2">
           <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">CARTE BLANCHE</h1>
