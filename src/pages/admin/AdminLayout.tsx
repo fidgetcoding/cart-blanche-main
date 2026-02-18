@@ -62,9 +62,18 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <aside className="w-60 bg-sidebar border-r border-sidebar-border flex flex-col">
-        <div className="p-6">
-          <h1 className="font-display text-sm font-bold tracking-[0.2em] text-sidebar-foreground">CART BLANCHE</h1>
-          <p className="text-[10px] text-text-dim mt-1 tracking-widest">MERCHANT PORTAL</p>
+        <div className="p-6 flex items-center gap-3">
+          <div>
+            <h1 className="font-display text-sm font-bold tracking-[0.2em] text-sidebar-foreground">CART BLANCHE</h1>
+            <p className="text-[10px] text-text-dim mt-1 tracking-widest">MERCHANT PORTAL</p>
+          </div>
+          <button
+            onClick={() => navigate('/')}
+            className="ml-auto p-1.5 rounded-md text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+            title="View Store"
+          >
+            <Store className="w-4 h-4" />
+          </button>
         </div>
 
         <nav className="flex-1 px-3 space-y-0.5">
@@ -88,13 +97,6 @@ export default function AdminLayout() {
         </nav>
 
         <div className="p-3 mt-auto space-y-0.5">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-          >
-            <Store className="w-4 h-4" />
-            View Store
-          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
