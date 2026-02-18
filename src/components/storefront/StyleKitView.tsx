@@ -139,35 +139,90 @@ function AnchorPanel({
 }) {
   const { anchorProduct, lookItems, closeStyleKit, changeAnchor, removeFromLook } = useStyleKit();
   const { addItem } = useCart();
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+
+  // Reset size when anchor changes
+  useEffect(() => {
+    setSelectedSize(null);
+  }, [anchorProduct?.id]);
 
   if (!anchorProduct) return null;
 
   const lookTotal = lookItems.reduce((sum, p) => sum + p.price, 0);
+  const sizes = anchorProduct.variants.map(v => v.title);
+  const selectedVariant = anchorProduct.variants.find(v => v.title === selectedSize);
 
   return (
     <div
-      className={`flex flex-col bg-card/50 backdrop-blur-sm border-border ${
+      className={`flex flex-col bg-card/50 backdrop-blur-sm border-border overflow-y-auto ${
         direction === 'horizontal' ? 'border-b' : 'border-r'
       }`}
     >
-      {/* Anchor product display */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4">
+      <div className="flex-1 flex flex-col md:flex-row gap-4 p-6">
         {/* Image placeholder */}
-        <div className="w-full max-w-[280px] aspect-square bg-secondary/30 rounded-lg flex items-center justify-center">
+        <div className="w-full md:w-1/2 max-w-[320px] aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 mx-auto md:mx-0">
           <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
             {anchorProduct.category.toUpperCase()}
           </span>
         </div>
 
-        <div className="text-center">
-          <h3 className="font-display text-sm font-bold tracking-wide">{anchorProduct.title}</h3>
-          <span className="font-display text-sm text-muted-foreground">${anchorProduct.price}</span>
+        {/* Product details */}
+        <div className="flex-1 flex flex-col justify-center gap-3 min-w-0">
+          <div>
+            <h3 className="font-display text-base font-bold tracking-wide">{anchorProduct.title}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="font-display text-sm text-muted-foreground">${anchorProduct.price}</span>
+              {anchorProduct.compare_at_price && (
+                <span className="text-xs text-muted-foreground/60 line-through">
+                  ${anchorProduct.compare_at_price}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {anchorProduct.description}
+          </p>
+
+          {/* Size selector */}
+          {sizes.length > 1 && (
+            <div>
+              <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-2">SIZE</p>
+              <div className="flex flex-wrap gap-1.5">
+                {sizes.map(size => {
+                  const variant = anchorProduct.variants.find(v => v.title === size);
+                  const outOfStock = variant && variant.inventory_count === 0;
+                  return (
+                    <button
+                      key={size}
+                      disabled={outOfStock}
+                      onClick={() => setSelectedSize(size === selectedSize ? null : size)}
+                      className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded border transition-colors ${
+                        size === selectedSize
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : outOfStock
+                            ? 'border-border/30 text-muted-foreground/30 cursor-not-allowed'
+                            : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground/40'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedVariant && (
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  {selectedVariant.inventory_count} in stock
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Look items stacked */}
       {lookItems.length > 1 && (
-        <div className="px-4 pb-2">
+        <div className="px-6 pb-2">
           <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-2">YOUR LOOK</p>
           <div className="flex flex-wrap gap-2">
             {lookItems.map((item) => (
@@ -192,7 +247,7 @@ function AnchorPanel({
       )}
 
       {/* Look total */}
-      <div className="px-4 py-3 border-t border-border flex items-center justify-between">
+      <div className="px-6 py-3 border-t border-border flex items-center justify-between">
         <span className="text-[10px] font-display tracking-widest text-muted-foreground">
           LOOK TOTAL
         </span>
