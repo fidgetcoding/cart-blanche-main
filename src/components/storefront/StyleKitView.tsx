@@ -168,7 +168,7 @@ function CarouselRow({
             className={`flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer ${cardWidthClass}`}
             onClick={() => { if (!hasDragged.current) onSelect(product); }}
           >
-            <div className={`${cardSize === 'large' ? 'aspect-square' : 'aspect-[4/5]'} bg-secondary/50 flex items-center justify-center w-full`}>
+            <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full">
               <span className="font-display text-muted-foreground/20 text-[10px] tracking-widest">
                 {product.category.toUpperCase()}
               </span>
@@ -301,7 +301,7 @@ function LockedPairPanel({
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="flex-1 flex flex-col p-4 gap-3">
-          <div className="w-full aspect-[4/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%] relative">
+          <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%] relative">
             <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
               {product.category.toUpperCase()}
             </span>
@@ -421,7 +421,7 @@ function AnchorPanel({
   return (
     <div className="flex flex-col bg-card/50 backdrop-blur-sm border-r border-border h-full overflow-y-auto">
       <div className="flex-1 flex flex-col p-4 gap-3">
-        <div className="w-full aspect-[4/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%] relative">
+        <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%] relative">
           <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
             {anchorProduct.category.toUpperCase()}
           </span>
@@ -484,6 +484,11 @@ export function StyleKitView() {
   const [anchorSize, setAnchorSize] = useState<string | null>(null);
   const [pairedSize, setPairedSize] = useState<string | null>(null);
 
+  // Track which side the carousel should appear on in extras mode
+  // 'right' = default (anchor left, carousel right)
+  // 'left' = anchor was dismissed (carousel left, paired stays right)
+  const [carouselSide, setCarouselSide] = useState<'left' | 'right'>('right');
+
   // The locked paired product (non-anchor item in lookItems) — works for both modes
   const pairedProduct = lookItems.length > 1
     ? lookItems.find(p => p.id !== anchorProduct?.id) ?? null
@@ -530,6 +535,7 @@ export function StyleKitView() {
       }
     });
     addToLook(product);
+    setCarouselSide('right'); // reset carousel side when adding a new pair
   };
 
   const handleAddSetToCart = () => {
@@ -566,10 +572,11 @@ export function StyleKitView() {
     closeStyleKit();
   };
 
-  const handleRemovePaired = () => {
+  const handleRemovePairedDirect = () => {
     if (pairedProduct) {
       removeFromLook(pairedProduct.id);
       setPairedSize(null);
+      setCarouselSide('right');
     }
   };
 
@@ -581,6 +588,17 @@ export function StyleKitView() {
       // Move paired size to anchor size, reset paired
       setAnchorSize(pairedSize);
       setPairedSize(null);
+      // Carousel should appear on the LEFT (where anchor was)
+      setCarouselSide('left');
+    }
+  };
+
+  const handleRemovePaired = () => {
+    if (pairedProduct) {
+      removeFromLook(pairedProduct.id);
+      setPairedSize(null);
+      // Carousel stays/returns to the RIGHT (where paired was)
+      setCarouselSide('right');
     }
   };
 
@@ -669,7 +687,7 @@ export function StyleKitView() {
                       product={pairedProduct}
                       selectedSize={pairedSize}
                       setSelectedSize={setPairedSize}
-                      onRemove={handleRemovePaired}
+                      onRemove={handleRemovePairedDirect}
                     />
                   ) : (
                     <CarouselRow
@@ -695,7 +713,7 @@ export function StyleKitView() {
                       product={pairedProduct}
                       selectedSize={pairedSize}
                       setSelectedSize={setPairedSize}
-                      onRemove={handleRemovePaired}
+                      onRemove={handleRemovePairedDirect}
                     />
                   ) : (
                     <CarouselRow
@@ -717,9 +735,22 @@ export function StyleKitView() {
           {/* EXTRAS MODE */}
           {splitDirection === 'vertical' && (
             <>
-              <div className="w-1/2 min-w-0 overflow-y-auto">
-                <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={pairedProduct ? handleRemoveAnchor : undefined} />
+              {/* Left side: anchor or carousel (if anchor was dismissed) */}
+              <div className="w-1/2 min-w-0 relative overflow-y-auto">
+                {carouselSide === 'left' && !pairedProduct ? (
+                  <CarouselRow
+                    key="carousel-left"
+                    products={suggestions}
+                    onSelect={setPreviewProduct}
+                    onAddToLook={handleAddToLook}
+                    direction="vertical"
+                    cardSize="large"
+                  />
+                ) : (
+                  <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={pairedProduct ? handleRemoveAnchor : undefined} />
+                )}
               </div>
+              {/* Right side: paired/carousel (default) */}
               <div className="w-1/2 min-w-0 relative">
                 <AnimatePresence mode="wait">
                   {pairedProduct ? (
@@ -728,18 +759,21 @@ export function StyleKitView() {
                       product={pairedProduct}
                       selectedSize={pairedSize}
                       setSelectedSize={setPairedSize}
-                      onRemove={handleRemovePaired}
+                      onRemove={handleRemovePairedDirect}
                       direction="vertical"
                     />
-                  ) : (
+                  ) : carouselSide === 'right' ? (
                     <CarouselRow
-                      key="carousel"
+                      key="carousel-right"
                       products={suggestions}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="vertical"
                       cardSize="large"
                     />
+                  ) : (
+                    /* Right side shows the "new anchor" (formerly paired) as static panel */
+                    <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={undefined} />
                   )}
                 </AnimatePresence>
               </div>
