@@ -6,7 +6,8 @@ interface HotzoneLayerProps {
 }
 
 export function HotzoneLayer({ hotzones, scale }: HotzoneLayerProps) {
-  const labelOpacity = scale < 0.5 ? 1 : scale < 0.7 ? 1 - (scale - 0.5) / 0.2 : 0;
+  // Labels visible when zoomed out, fade as you zoom in
+  const labelOpacity = scale < 0.6 ? 0.2 : scale < 0.8 ? 0.2 * (1 - (scale - 0.6) / 0.2) : 0;
 
   return (
     <>
@@ -21,20 +22,14 @@ export function HotzoneLayer({ hotzones, scale }: HotzoneLayerProps) {
             height: hz.position.height,
           }}
         >
-          {/* Subtle background — no border */}
-          <div
-            className="absolute inset-0 rounded-2xl"
-            style={{ opacity: labelOpacity * 0.04, backgroundColor: hz.style_config.color }}
-          />
-
-          {/* Label */}
+          {/* Category label — just text, no box */}
           <div
             className="absolute inset-0 flex items-center justify-center"
             style={{ opacity: labelOpacity }}
           >
             <span
-              className="font-display text-3xl font-bold tracking-[0.3em] select-none"
-              style={{ color: hz.style_config.color, opacity: 0.25 }}
+              className="font-display text-2xl font-bold tracking-[0.35em] select-none"
+              style={{ color: hz.style_config.color }}
             >
               {hz.name}
             </span>
