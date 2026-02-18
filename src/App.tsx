@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProducts from "./pages/admin/AdminProducts";
+import AdminDiscounts from "./pages/admin/AdminDiscounts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -31,7 +31,7 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<AdminProducts />} />
+              <Route path="discounts" element={<AdminDiscounts />} />
               <Route path="grid" element={<AdminPageEditor />} />
               <Route path="flow" element={<AdminPlaceholder title="Flow Editor" />} />
               <Route path="orders" element={<AdminOrders />} />

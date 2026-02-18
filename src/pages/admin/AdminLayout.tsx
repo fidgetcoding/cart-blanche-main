@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SmartChatPanel } from '@/components/admin/SmartChatPanel';
 import {
   LayoutDashboard,
-  Package,
+  Tag,
   Grid3X3,
   GitBranch,
   ShoppingCart,
@@ -16,7 +16,7 @@ import {
 
 const NAV_ITEMS = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/admin/products', icon: Package, label: 'Products' },
+  { to: '/admin/discounts', icon: Tag, label: 'Discounts' },
   { to: '/admin/grid', icon: Grid3X3, label: 'Page Editor' },
   { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/admin/inventory', icon: Warehouse, label: 'Inventory' },

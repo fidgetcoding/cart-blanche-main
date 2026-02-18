@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minus, Plus, ShoppingBag, Send, Sparkles, Layers, Loader2, Image as ImageIcon, DollarSign, ArrowRight } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, Send, Sparkles, Layers, Loader2, Image as ImageIcon, DollarSign, ArrowRight, Tag, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useCart } from '@/contexts/CartContext';
 import { useSmartCart } from '@/contexts/SmartCartContext';
@@ -182,6 +182,138 @@ function BudgetComparisonCard({ comparison, onSwapAll, onSwapOne }: {
   );
 }
 
+import type { AppliedDiscount } from '@/contexts/CartContext';
+
+function CartFooter({ subtotal, discount, discountAmount, total, applyDiscount, removeDiscount, closeCart }: {
+  subtotal: number;
+  discount: AppliedDiscount | null;
+  discountAmount: number;
+  total: number;
+  applyDiscount: (d: AppliedDiscount) => void;
+  removeDiscount: () => void;
+  closeCart: () => void;
+}) {
+  const [promoInput, setPromoInput] = useState('');
+  const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoError('');
+    setPromoLoading(true);
+
+    const { data, error } = await supabase
+      .from('discount_codes')
+      .select('*')
+      .ilike('code', code)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    setPromoLoading(false);
+
+    if (error || !data) {
+      setPromoError('Invalid discount code');
+      return;
+    }
+
+    // Check expiry
+    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      setPromoError('This code has expired');
+      return;
+    }
+
+    // Check max uses
+    if (data.max_uses && data.times_used >= data.max_uses) {
+      setPromoError('This code has been fully redeemed');
+      return;
+    }
+
+    // Check minimum spend
+    if (data.minimum_spend && subtotal < data.minimum_spend) {
+      setPromoError(`Minimum spend of $${data.minimum_spend} required`);
+      return;
+    }
+
+    applyDiscount({
+      code: data.code,
+      discount_type: data.discount_type,
+      discount_value: data.discount_value,
+      description: data.description,
+    });
+    setPromoInput('');
+  };
+
+  return (
+    <div className="border-t border-border p-4 space-y-3">
+      {/* Promo code input */}
+      {!discount ? (
+        <div>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                value={promoInput}
+                onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
+                placeholder="Discount code"
+                className="w-full pl-9 pr-3 py-2 bg-secondary/50 border border-border/50 rounded-lg text-xs font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-ring uppercase"
+              />
+            </div>
+            <button
+              onClick={handleApplyPromo}
+              disabled={promoLoading || !promoInput.trim()}
+              className="px-4 py-2 bg-secondary text-foreground font-display text-[10px] tracking-wider rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            >
+              {promoLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'APPLY'}
+            </button>
+          </div>
+          {promoError && (
+            <p className="text-[10px] text-destructive mt-1.5 font-display tracking-wider">{promoError}</p>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-between py-1.5 px-3 bg-success/10 border border-success/20 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Check className="w-3.5 h-3.5 text-success" />
+            <span className="text-[10px] font-mono tracking-wider text-success">{discount.code}</span>
+            <span className="text-[10px] text-muted-foreground">
+              {discount.discount_type === 'percentage' ? `${discount.discount_value}% off` :
+               discount.discount_type === 'fixed' ? `$${discount.discount_value} off` : 'Free shipping'}
+            </span>
+          </div>
+          <button onClick={removeDiscount} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        <div className="flex justify-between font-display">
+          <span className="text-muted-foreground tracking-wide text-xs">SUBTOTAL</span>
+          <span className="text-sm">${subtotal.toFixed(0)}</span>
+        </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between font-display">
+            <span className="text-success tracking-wide text-xs">DISCOUNT</span>
+            <span className="text-sm text-success">-${discountAmount.toFixed(0)}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-display pt-1 border-t border-border/30">
+          <span className="text-foreground tracking-wide text-xs font-semibold">TOTAL</span>
+          <span className="text-base font-semibold">${total.toFixed(0)}</span>
+        </div>
+      </div>
+      <button className="w-full py-2.5 bg-primary text-primary-foreground font-display font-semibold tracking-wider text-xs rounded-lg hover:opacity-90 transition-opacity">
+        CHECKOUT
+      </button>
+      <button onClick={closeCart} className="w-full py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+        Continue Shopping
+      </button>
+    </div>
+  );
+}
+
 const PROMPT_CARDS = [
   { label: "What's On Sale", text: "What items are on sale right now?", icon: DollarSign },
   { label: "Best Sellers", text: "Show me the best sellers", icon: ShoppingBag },
@@ -190,7 +322,7 @@ const PROMPT_CARDS = [
 ];
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, updateQuantity, itemCount, subtotal, addItem } = useCart();
+  const { items, isOpen, closeCart, removeItem, updateQuantity, itemCount, subtotal, addItem, discount, discountAmount, total, applyDiscount, removeDiscount } = useCart();
   const { messages, isLoading, hasUnread, clearUnread, sendMessage, triggerProactive, clearChat } = useSmartCart();
   const { openStyleKit } = useStyleKit();
   const [activeTab, setActiveTab] = useState<Tab>(items.length > 0 ? 'cart' : 'assistant');
@@ -468,18 +600,15 @@ export function CartDrawer() {
 
                   {/* Cart footer */}
                   {items.length > 0 && (
-                    <div className="border-t border-border p-4 space-y-3">
-                      <div className="flex justify-between font-display">
-                        <span className="text-muted-foreground tracking-wide text-xs">SUBTOTAL</span>
-                        <span className="text-base font-semibold">${subtotal.toFixed(0)}</span>
-                      </div>
-                      <button className="w-full py-2.5 bg-primary text-primary-foreground font-display font-semibold tracking-wider text-xs rounded-lg hover:opacity-90 transition-opacity">
-                        CHECKOUT
-                      </button>
-                      <button onClick={closeCart} className="w-full py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                        Continue Shopping
-                      </button>
-                    </div>
+                    <CartFooter
+                      subtotal={subtotal}
+                      discount={discount}
+                      discountAmount={discountAmount}
+                      total={total}
+                      applyDiscount={applyDiscount}
+                      removeDiscount={removeDiscount}
+                      closeCart={closeCart}
+                    />
                   )}
                 </motion.div>
               ) : (
