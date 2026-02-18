@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check } from 'lucide-react';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
@@ -22,7 +22,6 @@ function CarouselRow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const isHorizontal = direction === 'horizontal';
 
-  // Mouse/pointer drag scrolling
   const isDragging = useRef(false);
   const dragStartPos = useRef(0);
   const scrollStartPos = useRef(0);
@@ -54,12 +53,10 @@ function CarouselRow({
     isDragging.current = false;
   };
 
-  // Triple the products for infinite loop illusion
   const loopedProducts = products.length > 0
     ? [...products, ...products, ...products]
     : [];
 
-  // Center on middle set on mount
   useEffect(() => {
     if (!scrollRef.current || products.length === 0) return;
     const el = scrollRef.current;
@@ -72,7 +69,6 @@ function CarouselRow({
     });
   }, [products.length, isHorizontal]);
 
-  // Infinite loop: when scroll nears edges, jump to middle set
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el || products.length === 0) return;
@@ -92,7 +88,6 @@ function CarouselRow({
 
   return (
     <div className="relative h-full w-full min-h-0 min-w-0">
-      {/* Edge fade indicators */}
       {isHorizontal ? (
         <>
           <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none flex items-center justify-start pl-1">
@@ -121,7 +116,6 @@ function CarouselRow({
         </>
       )}
 
-      {/* Scrollable area with drag + native scroll */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -216,7 +210,6 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
         {anchorProduct.description}
       </p>
 
-      {/* Size selector */}
       {sizes.length > 1 && (
         <div>
           <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-2">SIZE</p>
@@ -253,14 +246,119 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
   );
 }
 
-function LookFooter({ anchorProduct, lookItems, removeFromLook, lookTotal }: {
-  anchorProduct: DemoProduct;
-  lookItems: DemoProduct[];
-  removeFromLook: (id: string) => void;
-  lookTotal: number;
+/** Locked pair panel — shows the paired product in the same layout as the anchor */
+function LockedPairPanel({
+  product,
+  selectedSize,
+  setSelectedSize,
+  onRemove,
+}: {
+  product: DemoProduct;
+  selectedSize: string | null;
+  setSelectedSize: (s: string | null) => void;
+  onRemove: () => void;
 }) {
+  const sizes = product.variants.map(v => v.title);
+  const selectedVariant = product.variants.find(v => v.title === selectedSize);
+
   return (
-    <>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      className="flex flex-col bg-card/50 backdrop-blur-sm border-t border-border h-full"
+    >
+      <div className="flex-1 flex flex-row overflow-hidden">
+        {/* Thumbnail */}
+        <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0 relative">
+          <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
+            {product.category.toUpperCase()}
+          </span>
+          {/* Remove button */}
+          <button
+            onClick={onRemove}
+            className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
+          >
+            <X className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+        </div>
+        {/* Details */}
+        <div className="flex-1 flex flex-col p-5 overflow-y-auto">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-display tracking-widest text-primary">PAIRED ITEM</span>
+          </div>
+          <ProductDetails
+            anchorProduct={product}
+            sizes={sizes}
+            selectedSize={selectedSize}
+            setSelectedSize={setSelectedSize}
+            selectedVariant={selectedVariant}
+          />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function AnchorPanel({
+  direction,
+  selectedSize,
+  setSelectedSize,
+}: {
+  direction: 'horizontal' | 'vertical';
+  selectedSize: string | null;
+  setSelectedSize: (s: string | null) => void;
+}) {
+  const { anchorProduct, lookItems, closeStyleKit, changeAnchor, removeFromLook } = useStyleKit();
+
+  if (!anchorProduct) return null;
+
+  const lookTotal = lookItems.reduce((sum, p) => sum + p.price, 0);
+  const sizes = anchorProduct.variants.map(v => v.title);
+  const selectedVariant = anchorProduct.variants.find(v => v.title === selectedSize);
+
+  // PAIRS mode: horizontal direction → thumbnail LEFT, details RIGHT
+  if (direction === 'horizontal') {
+    return (
+      <div className="flex flex-col bg-card/50 backdrop-blur-sm border-b border-border h-full">
+        <div className="flex-1 flex flex-row overflow-hidden">
+          <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0">
+            <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
+              {anchorProduct.category.toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1 flex flex-col p-5 overflow-y-auto">
+            <ProductDetails
+              anchorProduct={anchorProduct}
+              sizes={sizes}
+              selectedSize={selectedSize}
+              setSelectedSize={setSelectedSize}
+              selectedVariant={selectedVariant}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // EXTRAS mode: vertical direction → very large tall thumbnail, details below
+  return (
+    <div className="flex flex-col bg-card/50 backdrop-blur-sm border-r border-border h-full overflow-y-auto">
+      <div className="flex-1 flex flex-col p-4 gap-3">
+        <div className="w-full aspect-[4/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%]">
+          <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
+            {anchorProduct.category.toUpperCase()}
+          </span>
+        </div>
+        <ProductDetails
+          anchorProduct={anchorProduct}
+          sizes={sizes}
+          selectedSize={selectedSize}
+          setSelectedSize={setSelectedSize}
+          selectedVariant={selectedVariant}
+        />
+      </div>
+      {/* Look footer for extras mode */}
       {lookItems.length > 1 && (
         <div className="px-4 pb-2">
           <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-2">YOUR LOOK</p>
@@ -285,90 +383,38 @@ function LookFooter({ anchorProduct, lookItems, removeFromLook, lookTotal }: {
           </div>
         </div>
       )}
-
       <div className="px-4 py-3 border-t border-border flex items-center gap-2">
-        <span className="text-[10px] font-display tracking-widest text-muted-foreground">
-          LOOK TOTAL
-        </span>
+        <span className="text-[10px] font-display tracking-widest text-muted-foreground">LOOK TOTAL</span>
         <span className="font-display text-sm font-bold">${lookTotal}</span>
       </div>
-    </>
-  );
-}
-
-function AnchorPanel({
-  direction,
-}: {
-  direction: 'horizontal' | 'vertical';
-}) {
-  const { anchorProduct, lookItems, closeStyleKit, changeAnchor, removeFromLook } = useStyleKit();
-  const { addItem } = useCart();
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-
-  useEffect(() => {
-    setSelectedSize(null);
-  }, [anchorProduct?.id]);
-
-  if (!anchorProduct) return null;
-
-  const lookTotal = lookItems.reduce((sum, p) => sum + p.price, 0);
-  const sizes = anchorProduct.variants.map(v => v.title);
-  const selectedVariant = anchorProduct.variants.find(v => v.title === selectedSize);
-
-  // PAIRS mode: horizontal direction → thumbnail LEFT, details RIGHT
-  if (direction === 'horizontal') {
-    return (
-      <div className="flex flex-col bg-card/50 backdrop-blur-sm border-b border-border h-full">
-        <div className="flex-1 flex flex-row overflow-hidden">
-          {/* Large thumbnail filling left side */}
-          <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0">
-            <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
-              {anchorProduct.category.toUpperCase()}
-            </span>
-          </div>
-          {/* Details on the right */}
-          <div className="flex-1 flex flex-col p-5 overflow-y-auto">
-            <ProductDetails
-              anchorProduct={anchorProduct}
-              sizes={sizes}
-              selectedSize={selectedSize}
-              setSelectedSize={setSelectedSize}
-              selectedVariant={selectedVariant}
-            />
-          </div>
-        </div>
-        <LookFooter anchorProduct={anchorProduct} lookItems={lookItems} removeFromLook={removeFromLook} lookTotal={lookTotal} />
-      </div>
-    );
-  }
-
-  // EXTRAS mode: vertical direction → very large tall thumbnail, details below
-  return (
-    <div className="flex flex-col bg-card/50 backdrop-blur-sm border-r border-border h-full overflow-y-auto">
-      <div className="flex-1 flex flex-col p-4 gap-3">
-        {/* Very large tall thumbnail */}
-        <div className="w-full aspect-[4/5] bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 max-h-[50%]">
-          <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
-            {anchorProduct.category.toUpperCase()}
-          </span>
-        </div>
-        <ProductDetails
-          anchorProduct={anchorProduct}
-          sizes={sizes}
-          selectedSize={selectedSize}
-          setSelectedSize={setSelectedSize}
-          selectedVariant={selectedVariant}
-        />
-      </div>
-      <LookFooter anchorProduct={anchorProduct} lookItems={lookItems} removeFromLook={removeFromLook} lookTotal={lookTotal} />
     </div>
   );
 }
 
 export function StyleKitView() {
-  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, lookItems } = useStyleKit();
+  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, lookItems } = useStyleKit();
   const { items: cartItems, addItem } = useCart();
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);
+  
+  // Size selections: anchor + paired
+  const [anchorSize, setAnchorSize] = useState<string | null>(null);
+  const [pairedSize, setPairedSize] = useState<string | null>(null);
+
+  // The locked paired product (non-anchor item in lookItems for PAIRS mode)
+  const pairedProduct = mode === 'counterparts' && lookItems.length > 1
+    ? lookItems.find(p => p.id !== anchorProduct?.id) ?? null
+    : null;
+
+  // Reset sizes when anchor changes
+  useEffect(() => {
+    setAnchorSize(null);
+    setPairedSize(null);
+  }, [anchorProduct?.id]);
+
+  // Reset paired size when paired product changes
+  useEffect(() => {
+    setPairedSize(null);
+  }, [pairedProduct?.id]);
 
   // Close on Escape
   useEffect(() => {
@@ -383,11 +429,7 @@ export function StyleKitView() {
 
   const orientation = getSmartOrientation(anchorProduct.category);
   const isCounterparts = mode === 'counterparts';
-
-  // For counterparts: horizontal split (top/bottom based on smart orientation)
-  // For extras: vertical split (left/right)
   const splitDirection = isCounterparts ? 'horizontal' : 'vertical';
-  const carouselDirection = isCounterparts ? 'horizontal' : 'vertical';
 
   const suggestions = getSuggestedProducts({
     anchor: anchorProduct,
@@ -397,23 +439,70 @@ export function StyleKitView() {
   });
 
   const handleAddToLook = (product: DemoProduct) => {
-    addToLook(product);
-    // Also add to cart
-    const v = product.variants[0];
-    if (v) {
-      addItem({
-        productId: product.id,
-        variantId: v.id,
-        title: product.title,
-        variantTitle: v.title,
-        price: v.price ?? product.price,
+    // In PAIRS mode: only keep one paired product at a time
+    if (isCounterparts) {
+      // Remove any existing paired product first
+      lookItems.forEach(item => {
+        if (item.id !== anchorProduct.id) {
+          removeFromLook(item.id);
+        }
       });
+    }
+    addToLook(product);
+    // Don't add to cart yet — wait for "ADD SET TO CART"
+  };
+
+  const handleAddSetToCart = () => {
+    // Add anchor product with selected size
+    const anchorVariant = anchorSize
+      ? anchorProduct.variants.find(v => v.title === anchorSize)
+      : anchorProduct.variants[0];
+    if (anchorVariant) {
+      addItem({
+        productId: anchorProduct.id,
+        variantId: anchorVariant.id,
+        title: anchorProduct.title,
+        variantTitle: anchorVariant.title,
+        price: anchorVariant.price ?? anchorProduct.price,
+      });
+    }
+
+    // Add paired product with selected size
+    if (pairedProduct) {
+      const pairedVariant = pairedSize
+        ? pairedProduct.variants.find(v => v.title === pairedSize)
+        : pairedProduct.variants[0];
+      if (pairedVariant) {
+        addItem({
+          productId: pairedProduct.id,
+          variantId: pairedVariant.id,
+          title: pairedProduct.title,
+          variantTitle: pairedVariant.title,
+          price: pairedVariant.price ?? pairedProduct.price,
+        });
+      }
+    }
+
+    closeStyleKit();
+  };
+
+  const handleRemovePaired = () => {
+    if (pairedProduct) {
+      removeFromLook(pairedProduct.id);
+      setPairedSize(null);
     }
   };
 
   const contextLabel = isCounterparts
     ? `Goes well with ${anchorProduct.title}`
     : `More like ${anchorProduct.title}`;
+
+  const setTotal = (anchorProduct?.price ?? 0) + (pairedProduct?.price ?? 0);
+
+  // Check if both sizes are selected (or products only have 1 variant)
+  const anchorSizeReady = anchorProduct.variants.length <= 1 || anchorSize !== null;
+  const pairedSizeReady = !pairedProduct || pairedProduct.variants.length <= 1 || pairedSize !== null;
+  const canAddSet = pairedProduct && anchorSizeReady && pairedSizeReady;
 
   return (
     <AnimatePresence>
@@ -435,7 +524,6 @@ export function StyleKitView() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Mode toggle */}
             <div className="flex items-center bg-secondary rounded-md p-0.5">
               <button
                 onClick={() => setMode('counterparts')}
@@ -476,19 +564,32 @@ export function StyleKitView() {
             splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'
           }`}
         >
-          {/* Anchor panel position depends on smart orientation */}
+          {/* PAIRS MODE */}
           {splitDirection === 'horizontal' && orientation === 'top' && (
             <>
               <div className="h-1/2 min-h-0 overflow-y-auto">
-                <AnchorPanel direction="horizontal" />
+                <AnchorPanel direction="horizontal" selectedSize={anchorSize} setSelectedSize={setAnchorSize} />
               </div>
               <div className="h-1/2 min-h-0 relative">
-                <CarouselRow
-                  products={suggestions}
-                  onSelect={setPreviewProduct}
-                  onAddToLook={handleAddToLook}
-                  direction="horizontal"
-                />
+                <AnimatePresence mode="wait">
+                  {pairedProduct ? (
+                    <LockedPairPanel
+                      key="locked"
+                      product={pairedProduct}
+                      selectedSize={pairedSize}
+                      setSelectedSize={setPairedSize}
+                      onRemove={handleRemovePaired}
+                    />
+                  ) : (
+                    <CarouselRow
+                      key="carousel"
+                      products={suggestions}
+                      onSelect={setPreviewProduct}
+                      onAddToLook={handleAddToLook}
+                      direction="horizontal"
+                    />
+                  )}
+                </AnimatePresence>
               </div>
             </>
           )}
@@ -496,23 +597,37 @@ export function StyleKitView() {
           {splitDirection === 'horizontal' && orientation === 'bottom' && (
             <>
               <div className="h-1/2 min-h-0 relative">
-                <CarouselRow
-                  products={suggestions}
-                  onSelect={setPreviewProduct}
-                  onAddToLook={handleAddToLook}
-                  direction="horizontal"
-                />
+                <AnimatePresence mode="wait">
+                  {pairedProduct ? (
+                    <LockedPairPanel
+                      key="locked"
+                      product={pairedProduct}
+                      selectedSize={pairedSize}
+                      setSelectedSize={setPairedSize}
+                      onRemove={handleRemovePaired}
+                    />
+                  ) : (
+                    <CarouselRow
+                      key="carousel"
+                      products={suggestions}
+                      onSelect={setPreviewProduct}
+                      onAddToLook={handleAddToLook}
+                      direction="horizontal"
+                    />
+                  )}
+                </AnimatePresence>
               </div>
               <div className="h-1/2 min-h-0 overflow-y-auto">
-                <AnchorPanel direction="horizontal" />
+                <AnchorPanel direction="horizontal" selectedSize={anchorSize} setSelectedSize={setAnchorSize} />
               </div>
             </>
           )}
 
+          {/* EXTRAS MODE */}
           {splitDirection === 'vertical' && (
             <>
               <div className="w-1/2 min-w-0 overflow-y-auto">
-                <AnchorPanel direction="vertical" />
+                <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} />
               </div>
               <div className="w-1/2 min-w-0 relative">
                 <CarouselRow
@@ -526,6 +641,49 @@ export function StyleKitView() {
             </>
           )}
         </div>
+
+        {/* ADD SET TO CART — big floating button when a pair is locked */}
+        <AnimatePresence>
+          {isCounterparts && pairedProduct && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              className="flex-shrink-0 border-t border-border bg-card/80 backdrop-blur-sm px-6 py-4"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${anchorSizeReady ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                    <span className="text-[10px] font-display tracking-wider text-muted-foreground">
+                      {anchorProduct.title} {anchorSize ? `· ${anchorSize}` : '· Select size'}
+                    </span>
+                  </div>
+                  <span className="text-muted-foreground/30">+</span>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${pairedSizeReady ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                    <span className="text-[10px] font-display tracking-wider text-muted-foreground">
+                      {pairedProduct.title} {pairedSize ? `· ${pairedSize}` : '· Select size'}
+                    </span>
+                  </div>
+                </div>
+                <span className="font-display text-sm font-bold">${setTotal}</span>
+              </div>
+              <button
+                onClick={handleAddSetToCart}
+                disabled={!canAddSet}
+                className={`w-full py-3.5 rounded-lg font-display text-sm font-bold tracking-[0.15em] flex items-center justify-center gap-2 transition-all ${
+                  canAddSet
+                    ? 'bg-primary text-primary-foreground hover:opacity-90'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
+                }`}
+              >
+                <ShoppingBag className="w-4 h-4" />
+                {canAddSet ? 'ADD SET TO CART' : 'SELECT SIZES TO CONTINUE'}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </AnimatePresence>
   );
