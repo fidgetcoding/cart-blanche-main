@@ -396,9 +396,6 @@ export function SpatialCanvas() {
           <span className="font-display text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
             CART BLANCHE
           </span>
-          <button onClick={() => navigate('/admin')} className="p-2 hover:opacity-70 transition-opacity">
-            <LayoutDashboard className="w-4 h-4 text-foreground/50" />
-          </button>
         </div>
 
         {/* Centered category nav */}
@@ -423,6 +420,9 @@ export function SpatialCanvas() {
         <div className="flex items-center gap-3">
           <button onClick={toggleTheme} className="p-2 hover:opacity-70 transition-opacity" title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
             {theme === 'dark' ? <Sun className="w-4 h-4 text-foreground/70" /> : <Moon className="w-4 h-4 text-foreground/70" />}
+          </button>
+          <button onClick={() => navigate('/admin')} className="p-2 hover:opacity-70 transition-opacity" title="Dashboard">
+            <LayoutDashboard className="w-4 h-4 text-foreground/70" />
           </button>
           <button onClick={toggleCart} className="relative p-2 hover:opacity-70 transition-opacity">
             <ShoppingBag className="w-5 h-5 text-foreground/70" />
