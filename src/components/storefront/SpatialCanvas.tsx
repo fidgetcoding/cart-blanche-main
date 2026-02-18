@@ -44,6 +44,7 @@ export function SpatialCanvas() {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const activeCategoryRef = useRef('ALL');
   const [peekingAll, setPeekingAll] = useState(false);
   const categoryZoomRef = useRef<{ x: number; y: number; scale: number } | null>(null);
   const peekTimerRef = useRef<number>(0);
@@ -62,6 +63,9 @@ export function SpatialCanvas() {
     lastDist: number; lastScale: number;
     touching: boolean; pinching: boolean;
   }>({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, lastDist: 0, lastScale: 1, touching: false, pinching: false });
+
+  // Keep ref in sync for animation loop
+  useEffect(() => { activeCategoryRef.current = activeCategory; }, [activeCategory]);
 
   // Compute reflowed positions when filtering by category
   const overridePositions = useMemo(() => {
@@ -98,7 +102,7 @@ export function SpatialCanvas() {
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const padX = isMobile ? 16 : 40;
-    const headerPad = 80;
+    const headerPad = isMobile ? 90 : 100;
     const bottomPad = isMobile ? 60 : 80;
     const fitScale = Math.min(
       (rect.width - padX * 2) / CANVAS_W,
@@ -138,17 +142,19 @@ export function SpatialCanvas() {
 
     const bboxW = maxX - minX;
     const bboxH = maxY - minY;
-    const padX = isMobile ? 20 : 60;
-    const headerPad = 80; // gap below header ribbon
-    const bottomPad = isMobile ? 70 : 90;
+    const padX = isMobile ? 20 : 120;
+    const headerPad = isMobile ? 90 : 120;
+    const bottomPad = isMobile ? 70 : 100;
     const fitScale = Math.min(
       (rect.width - padX * 2) / bboxW,
       (rect.height - headerPad - bottomPad) / bboxH
     );
-    const s = Math.max(0.15, Math.min(MAX_SCALE, fitScale));
-    const cx = (rect.width - bboxW * s) / 2 - minX * s;
-    const availH = rect.height - headerPad - bottomPad;
-    const cy = headerPad + (availH - bboxH * s) / 2 - minY * s;
+    // Cap at 1.0 so filtered views don't blow up too large
+    const s = Math.max(0.15, Math.min(1, fitScale));
+    const scaledW = bboxW * s;
+    const scaledH = bboxH * s;
+    const cx = (rect.width - scaledW) / 2 - minX * s;
+    const cy = headerPad + ((rect.height - headerPad - bottomPad) - scaledH) / 2 - minY * s;
 
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     if (activeCategory !== 'ALL') {
@@ -178,24 +184,23 @@ export function SpatialCanvas() {
         const dy = Math.abs(t.y - target.y);
         const ds = Math.abs(t.scale - target.scale);
 
-        // When scale is stable, apply boundary constraints
-        if (ds < 0.001) {
+        // When scale is stable, apply boundary constraints (only for ALL view)
+        // For filtered views, fitToVisibleProducts already computed the correct centered position
+        if (ds < 0.001 && activeCategoryRef.current === 'ALL') {
           const container = containerRef.current;
           if (container) {
             const rect = container.getBoundingClientRect();
             const scaledW = CANVAS_W * target.scale;
             const scaledH = CANVAS_H * target.scale;
-            const headerPad = 80;
+            const headerPad = 100;
             const bottomPad = 80;
             const sidePad = 80;
 
             if (scaledW <= rect.width && scaledH <= rect.height - headerPad) {
-              // Canvas fits entirely — center horizontally, push below header
               target.x = (rect.width - scaledW) / 2;
               const availH = rect.height - headerPad - bottomPad;
               target.y = headerPad + (availH - scaledH) / 2;
             } else {
-              // Canvas is larger than viewport — clamp so content doesn't drift off-screen
               if (scaledW > rect.width) {
                 const minX = rect.width - scaledW - sidePad;
                 const maxX = sidePad;
