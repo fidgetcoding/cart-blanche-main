@@ -28,6 +28,9 @@ function CarouselRow({
   const hasDragged = useRef(false);
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    // Don't capture pointer if the user clicked a button (ADD, etc.)
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
     isDragging.current = true;
     hasDragged.current = false;
     dragStartPos.current = isHorizontal ? e.clientX : e.clientY;
