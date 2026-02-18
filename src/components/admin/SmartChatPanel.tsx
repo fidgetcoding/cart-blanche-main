@@ -484,7 +484,7 @@ export function SmartChatPanel() {
                   <button
                     key={prompt.label}
                     onClick={() => sendMessage(prompt.text)}
-                    className="flex flex-col items-start gap-1 p-2.5 rounded-lg border border-border bg-card/50 hover:bg-card text-left transition-colors"
+                    className="flex flex-col items-start gap-1 p-2.5 rounded-lg liquid-glass hover:brightness-125 text-left transition-all"
                   >
                     <prompt.icon className="w-3.5 h-3.5 text-accent" />
                     <span className="text-[10px] font-medium">{prompt.label}</span>
