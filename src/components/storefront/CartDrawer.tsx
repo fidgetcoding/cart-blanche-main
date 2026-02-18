@@ -161,7 +161,7 @@ export function CartDrawer() {
 
   const emptyAssistantMessage = items.length > 0
     ? "I see you've got some great picks. Want me to suggest pieces that go with them?"
-    : "Hey! I know every item in this store. Tell me what you're looking for and I'll help you find it.";
+    : "Hey! I know every item in this store.\nTell me what you're looking for and I'll help you find it.";
 
   return (
     <AnimatePresence>
@@ -347,7 +347,7 @@ export function CartDrawer() {
                     {messages.length === 0 && !isLoading ? (
                       <div className="flex flex-col items-center justify-center h-full text-center px-4">
                         <Sparkles className="w-8 h-8 mb-3 text-muted-foreground/40" />
-                        <p className="text-xs text-muted-foreground leading-relaxed max-w-[260px]">
+                        <p className="text-xs text-muted-foreground leading-relaxed max-w-[260px] whitespace-pre-line">
                           {emptyAssistantMessage}
                         </p>
                       </div>
