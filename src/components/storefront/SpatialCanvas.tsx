@@ -668,8 +668,8 @@ export function SpatialCanvas() {
             <LayoutDashboard className="w-4 h-4 text-foreground/70" />
             <span className="overflow-hidden max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out text-[10px] font-display tracking-wider text-foreground/60 whitespace-nowrap">SMART PORTAL</span>
           </button>
-          <button onClick={toggleCart} className="relative p-2 md:p-2.5 rounded-xl bg-foreground/10 border border-foreground/10 hover:bg-foreground/20 hover:border-foreground/20 transition-all">
-            <ShoppingBag className="w-4 md:w-5 h-4 md:h-5 text-foreground" />
+          <button onClick={toggleCart} className="relative p-2 md:p-2.5 rounded-xl bg-white/90 backdrop-blur-md border border-white/20 shadow-lg hover:bg-white hover:shadow-xl transition-all">
+            <ShoppingBag className="w-4 md:w-5 h-4 md:h-5 text-background" />
             {itemCount > 0 && (
               <motion.span key={itemCount} initial={{ scale: 0 }} animate={{ scale: 1 }}
                 className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-foreground text-background text-[9px] font-bold rounded-full flex items-center justify-center">
