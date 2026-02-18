@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minus, Plus, ShoppingBag, Send, Sparkles, Layers, Loader2 } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, Send, Sparkles, Layers, Loader2, Image as ImageIcon, DollarSign, ArrowRight } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useCart } from '@/contexts/CartContext';
 import { useSmartCart } from '@/contexts/SmartCartContext';
+import type { BudgetComparison, OutfitItem } from '@/contexts/SmartCartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
+import { supabase } from '@/integrations/supabase/client';
 
 type Tab = 'cart' | 'assistant';
 
@@ -40,18 +42,51 @@ function ProductCard({ productId, reason, onAddToCart }: {
 }
 
 function OutfitCard({ outfit, onAddAll, onAddToCart }: {
-  outfit: { name: string; total: number; items: { product_id: string; role: string; reason: string }[] };
+  outfit: { name: string; total: number; budget?: number | null; remaining?: number | null; items: OutfitItem[] };
   onAddAll: () => void;
   onAddToCart: (productId: string) => void;
 }) {
+  const storeItems = outfit.items.filter(i => i.type !== 'external');
+  
   return (
     <div className="rounded-lg border border-border/50 overflow-hidden bg-secondary/30">
       <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
         <span className="font-display text-xs font-semibold tracking-wide">{outfit.name.toUpperCase()}</span>
         <span className="font-display text-xs text-muted-foreground">${outfit.total}</span>
       </div>
+      
+      {/* Budget bar */}
+      {outfit.budget && (
+        <div className="px-3 py-1.5 border-b border-border/20">
+          <div className="flex items-center justify-between text-[9px] font-display tracking-wider text-muted-foreground mb-1">
+            <span>${outfit.total} of ${outfit.budget} used</span>
+            <span>${outfit.remaining ?? 0} remaining</span>
+          </div>
+          <div className="h-1 bg-secondary rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all"
+              style={{ width: `${Math.min(100, (outfit.total / outfit.budget) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+      
       <div className="p-2 space-y-1.5">
-        {outfit.items.map(item => {
+        {outfit.items.map((item, idx) => {
+          if (item.type === 'external') {
+            return (
+              <div key={`ext-${idx}`} className="flex items-center gap-2 px-2 py-1.5 rounded bg-muted/30 border border-dashed border-border/40">
+                <div className="w-8 h-8 rounded bg-muted/50 flex items-center justify-center text-muted-foreground flex-shrink-0">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-display font-medium text-muted-foreground truncate">{item.label || 'Your item'}</p>
+                  <p className="text-[9px] text-muted-foreground/60">{item.role} · not from store</p>
+                </div>
+              </div>
+            );
+          }
+          
           const product = DEMO_PRODUCTS.find(p => p.id === item.product_id);
           if (!product) return null;
           return (
@@ -78,7 +113,69 @@ function OutfitCard({ outfit, onAddAll, onAddToCart }: {
           onClick={onAddAll}
           className="w-full py-1.5 text-[10px] font-display font-semibold tracking-wider bg-primary text-primary-foreground rounded hover:opacity-90 transition-opacity"
         >
-          ADD FULL LOOK TO CART
+          ADD STORE ITEMS TO CART
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BudgetComparisonCard({ comparison, onSwapAll, onSwapOne }: {
+  comparison: BudgetComparison;
+  onSwapAll: () => void;
+  onSwapOne: (originalProductId: string, suggestedProductId: string) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-border/50 overflow-hidden bg-secondary/30">
+      <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
+        <span className="font-display text-[10px] font-semibold tracking-wider">BUDGET REBUILD</span>
+        <span className="font-display text-xs text-green-400">Save ${comparison.savings}</span>
+      </div>
+      
+      {/* Totals */}
+      <div className="px-3 py-2 flex items-center justify-between text-[10px] font-display border-b border-border/20">
+        <span className="text-muted-foreground line-through">${comparison.original_total}</span>
+        <ArrowRight className="w-3 h-3 text-muted-foreground" />
+        <span className="font-semibold">${comparison.suggested_total}</span>
+      </div>
+      
+      {/* Swaps */}
+      <div className="p-2 space-y-2">
+        {comparison.swaps.map((swap) => (
+          <div key={swap.original_product_id} className="rounded bg-secondary/40 p-2">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] text-muted-foreground line-through truncate">{swap.original_title} — ${swap.original_price}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-display font-medium truncate">{swap.suggested_title} — ${swap.suggested_price}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{swap.reason}</p>
+              </div>
+              <button
+                onClick={() => onSwapOne(swap.original_product_id, swap.suggested_product_id)}
+                className="px-1.5 py-0.5 text-[8px] font-display tracking-wider text-muted-foreground hover:text-foreground border border-border rounded transition-colors flex-shrink-0"
+              >
+                SWAP
+              </button>
+            </div>
+          </div>
+        ))}
+        
+        {comparison.kept && comparison.kept.length > 0 && (
+          <div className="text-[9px] text-muted-foreground px-1">
+            Keeping: {comparison.kept.map(k => k.title).join(', ')}
+          </div>
+        )}
+      </div>
+      
+      <div className="px-3 py-2 border-t border-border/30">
+        <button
+          onClick={onSwapAll}
+          className="w-full py-1.5 text-[10px] font-display font-semibold tracking-wider bg-primary text-primary-foreground rounded hover:opacity-90 transition-opacity"
+        >
+          SWAP ALL — SAVE ${comparison.savings}
         </button>
       </div>
     </div>
@@ -87,8 +184,8 @@ function OutfitCard({ outfit, onAddAll, onAddToCart }: {
 
 const PROMPT_CHIPS = [
   "Complete this outfit",
-  "Find something similar but cheaper",
-  "What's trending?",
+  "Find something like this",
+  "Rebuild my cart cheaper",
 ];
 
 export function CartDrawer() {
@@ -97,8 +194,11 @@ export function CartDrawer() {
   const { openStyleKit } = useStyleKit();
   const [activeTab, setActiveTab] = useState<Tab>('cart');
   const [inputValue, setInputValue] = useState('');
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const prevItemCountRef = useRef(itemCount);
 
   // Proactive: on add-to-cart, trigger suggestion
@@ -123,11 +223,30 @@ export function CartDrawer() {
     }
   }, [activeTab, hasUnread, clearUnread]);
 
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) return;
+    setIsUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('chat-uploads').upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('chat-uploads').getPublicUrl(path);
+      setPendingImage(publicUrl);
+    } catch (e) {
+      console.error('Upload failed:', e);
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
   const handleSend = () => {
     const text = inputValue.trim();
-    if (!text || isLoading) return;
+    if ((!text && !pendingImage) || isLoading) return;
+    const msg = text || (pendingImage ? 'What do you see in this image?' : '');
     setInputValue('');
-    sendMessage(text, items);
+    sendMessage(msg, items, pendingImage || undefined);
+    setPendingImage(null);
   };
 
   const handleAddToCart = (productId: string) => {
@@ -145,10 +264,32 @@ export function CartDrawer() {
     }
   };
 
-  const handleAddOutfitToCart = (outfitItems: { product_id: string }[]) => {
+  const handleAddOutfitToCart = (outfitItems: OutfitItem[]) => {
     for (const item of outfitItems) {
+      if (item.type === 'external') continue;
       handleAddToCart(item.product_id);
     }
+  };
+
+  const handleSwapAll = (comparison: BudgetComparison) => {
+    for (const swap of comparison.swaps) {
+      // Remove old, add new
+      const oldProduct = DEMO_PRODUCTS.find(p => p.id === swap.original_product_id);
+      if (oldProduct) {
+        const oldVariant = oldProduct.variants[0];
+        if (oldVariant) removeItem(oldProduct.id, oldVariant.id);
+      }
+      handleAddToCart(swap.suggested_product_id);
+    }
+  };
+
+  const handleSwapOne = (originalProductId: string, suggestedProductId: string) => {
+    const oldProduct = DEMO_PRODUCTS.find(p => p.id === originalProductId);
+    if (oldProduct) {
+      const oldVariant = oldProduct.variants[0];
+      if (oldVariant) removeItem(oldProduct.id, oldVariant.id);
+    }
+    handleAddToCart(suggestedProductId);
   };
 
   const handleAskAbout = (productTitle: string) => {
@@ -360,7 +501,14 @@ export function CartDrawer() {
                               : 'space-y-2'
                           }`}>
                             {msg.role === 'user' ? (
-                              <p className="text-xs">{msg.content}</p>
+                              <div>
+                                {msg.image_url && (
+                                  <div className="mb-2 rounded-lg overflow-hidden">
+                                    <img src={msg.image_url} alt="Uploaded" className="w-full max-h-40 object-cover rounded-lg" />
+                                  </div>
+                                )}
+                                <p className="text-xs">{msg.content}</p>
+                              </div>
                             ) : (
                               <>
                                 {msg.content && (
@@ -386,6 +534,15 @@ export function CartDrawer() {
                                       outfit={msg.outfit}
                                       onAddAll={() => handleAddOutfitToCart(msg.outfit!.items)}
                                       onAddToCart={handleAddToCart}
+                                    />
+                                  </div>
+                                )}
+                                {msg.budget_comparison && (
+                                  <div className="mt-2">
+                                    <BudgetComparisonCard
+                                      comparison={msg.budget_comparison}
+                                      onSwapAll={() => handleSwapAll(msg.budget_comparison!)}
+                                      onSwapOne={handleSwapOne}
                                     />
                                   </div>
                                 )}
@@ -424,9 +581,49 @@ export function CartDrawer() {
                     </div>
                   )}
 
+                  {/* Pending image preview */}
+                  {pendingImage && (
+                    <div className="px-3 pb-1">
+                      <div className="relative inline-block">
+                        <img src={pendingImage} alt="Upload preview" className="h-16 rounded-lg border border-border/50" />
+                        <button
+                          onClick={() => setPendingImage(null)}
+                          className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Chat input */}
                   <div className="border-t border-border p-3">
                     <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
+                      {/* Image upload */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageUpload(file);
+                          e.target.value = '';
+                        }}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading || isLoading}
+                        className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-all"
+                        title="Upload an image"
+                      >
+                        {isUploading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <ImageIcon className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      
                       <input
                         ref={inputRef}
                         type="text"
@@ -438,13 +635,13 @@ export function CartDrawer() {
                             handleSend();
                           }
                         }}
-                        placeholder="Ask about products, pairings, outfits..."
+                        placeholder={pendingImage ? "Describe what you want..." : "Ask about products, upload a photo..."}
                         className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
                         disabled={isLoading}
                       />
                       <button
                         onClick={handleSend}
-                        disabled={!inputValue.trim() || isLoading}
+                        disabled={(!inputValue.trim() && !pendingImage) || isLoading}
                         className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-all"
                       >
                         <Send className="w-3.5 h-3.5" />
