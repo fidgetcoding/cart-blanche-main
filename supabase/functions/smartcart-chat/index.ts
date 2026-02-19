@@ -6,6 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// In-memory rate limiting store
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
 // Tool definitions for structured output
 const tools = [
   {
@@ -119,13 +122,58 @@ serve(async (req) => {
   }
 
   try {
+    // Simple in-memory rate limiting per IP
+    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const now = Date.now();
+    const windowMs = 60_000; // 1 minute
+    const maxRequests = 20;
+
+    if (!rateLimitMap.has(clientIP)) {
+      rateLimitMap.set(clientIP, { count: 1, resetAt: now + windowMs });
+    } else {
+      const entry = rateLimitMap.get(clientIP)!;
+      if (now > entry.resetAt) {
+        entry.count = 1;
+        entry.resetAt = now + windowMs;
+      } else {
+        entry.count++;
+        if (entry.count > maxRequests) {
+          return new Response(
+            JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+
+    // Cleanup old entries periodically
+    if (rateLimitMap.size > 1000) {
+      for (const [key, val] of rateLimitMap) {
+        if (now > val.resetAt) rateLimitMap.delete(key);
+      }
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { messages, catalog, cart_items, mode, image_url } = await req.json();
+    const body = await req.json();
+    const { messages, catalog, cart_items, mode, image_url } = body;
 
-    if (!messages || !Array.isArray(messages)) {
-      throw new Error("messages array is required");
+    if (!messages || !Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Invalid messages: must be a non-empty array with at most 50 items." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate message content length
+    for (const msg of messages) {
+      if (typeof msg.content === "string" && msg.content.length > 10000) {
+        return new Response(
+          JSON.stringify({ error: "Message content too long." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Build catalog context string
