@@ -415,6 +415,17 @@ serve(async (req) => {
         if (error) throw error;
         result = { success: true, message: `Created "${actionArgs.product.title}" successfully.` };
       } else if (action === "update_inventory") {
+        // Re-verify merchant ownership before updating
+        const { data: variant } = await supabaseAdmin
+          .from("product_variants")
+          .select("id, product_id, products!inner(merchant_id)")
+          .eq("id", actionArgs.variant_id)
+          .single();
+
+        if (!variant || (variant as any).products?.merchant_id !== merchantId) {
+          throw new Error("Unauthorized: variant not found or not owned by merchant");
+        }
+
         const { error } = await supabaseAdmin
           .from("product_variants")
           .update({ inventory_count: actionArgs.new_count })
