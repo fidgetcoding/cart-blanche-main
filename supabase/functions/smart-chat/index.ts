@@ -393,7 +393,35 @@ serve(async (req) => {
       .eq("id", merchantId)
       .single();
 
-    const { messages, confirm_action } = await req.json();
+    const body = await req.json();
+    const { messages, confirm_action } = body;
+
+    // Input validation
+    if (confirm_action) {
+      if (typeof confirm_action !== "object" || !confirm_action.action) {
+        return new Response(
+          JSON.stringify({ error: "Invalid confirm_action payload." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else if (!messages || !Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Invalid messages: must be a non-empty array with at most 50 items." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate message content lengths
+    if (messages && Array.isArray(messages)) {
+      for (const msg of messages) {
+        if (typeof msg.content === "string" && msg.content.length > 10000) {
+          return new Response(
+            JSON.stringify({ error: "Message content too long." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
 
     // Handle action confirmation
     if (confirm_action) {
@@ -664,7 +692,7 @@ Guidelines:
   } catch (e) {
     console.error("smart-chat error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "Something went wrong. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
