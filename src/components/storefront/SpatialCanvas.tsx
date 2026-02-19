@@ -571,30 +571,42 @@ export function SpatialCanvas() {
     }
     if (selectedIndex !== null) return;
 
-    // Build filtered indices based on active category
-    const filteredIndices = DEMO_PRODUCTS
-      .map((p, i) => ({ p, i }))
-      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory)
-      .map(({ i }) => i);
-
+    const products = DEMO_PRODUCTS;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
-      if (focusedIndex === -1) { setFocusedIndex(filteredIndices[0] ?? 0); return; }
+      if (focusedIndex === -1) { setFocusedIndex(0); return; }
 
-      // Navigate within filtered list using simple linear wrapping
-      const pos = filteredIndices.indexOf(focusedIndex);
-      if (pos === -1) { setFocusedIndex(filteredIndices[0] ?? 0); return; }
+      const yPositions = [...new Set(products.map(p => p.grid_position.y))].sort((a, b) => a - b);
+      const rows: number[][] = yPositions.map(y =>
+        products
+          .map((p, i) => ({ i, p }))
+          .filter(({ p }) => p.grid_position.y === y)
+          .sort((a, b) => a.p.grid_position.x - b.p.grid_position.x)
+          .map(({ i }) => i)
+      );
 
+      let rowIdx = -1, colIdx = -1;
+      for (let r = 0; r < rows.length; r++) {
+        const c = rows[r].indexOf(focusedIndex);
+        if (c !== -1) { rowIdx = r; colIdx = c; break; }
+      }
+      if (rowIdx === -1) return;
+
+      const row = rows[rowIdx];
       let newIdx = focusedIndex;
       switch (e.key) {
-        case 'ArrowRight':
-        case 'ArrowDown':
-          newIdx = filteredIndices[(pos + 1) % filteredIndices.length];
+        case 'ArrowRight': newIdx = row[(colIdx + 1) % row.length]; break;
+        case 'ArrowLeft': newIdx = row[colIdx - 1 < 0 ? row.length - 1 : colIdx - 1]; break;
+        case 'ArrowDown': {
+          const nr = (rowIdx + 1) % rows.length;
+          newIdx = rows[nr][Math.min(colIdx, rows[nr].length - 1)];
           break;
-        case 'ArrowLeft':
-        case 'ArrowUp':
-          newIdx = filteredIndices[(pos - 1 + filteredIndices.length) % filteredIndices.length];
+        }
+        case 'ArrowUp': {
+          const nr = rowIdx - 1 < 0 ? rows.length - 1 : rowIdx - 1;
+          newIdx = rows[nr][Math.min(colIdx, rows[nr].length - 1)];
           break;
+        }
       }
       setFocusedIndex(newIdx);
       setHoveredIndex(null);
@@ -779,19 +791,6 @@ export function SpatialCanvas() {
         {selectedIndex !== null && (
           <ProductView
             productIndex={selectedIndex}
-            filteredIndices={DEMO_PRODUCTS
-              .map((p, i) => ({ p, i }))
-              .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory)
-              .map(({ i }) => i)}
-            activeCategory={activeCategory}
-            onCategoryChange={(cat) => {
-              setActiveCategory(cat);
-              const newFiltered = DEMO_PRODUCTS
-                .map((p, i) => ({ p, i }))
-                .filter(({ p }) => cat === 'ALL' || p.category.toUpperCase() === cat)
-                .map(({ i }) => i);
-              if (newFiltered.length > 0) setSelectedIndex(newFiltered[0]);
-            }}
             onClose={() => {
               setFocusedIndex(selectedIndex);
               setSelectedIndex(null);
