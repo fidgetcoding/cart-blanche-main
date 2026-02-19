@@ -7,7 +7,7 @@ import { ProductTile } from '@/components/storefront/ProductTile';
 import { ProductView } from '@/components/storefront/ProductView';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
-import { loadLayout, getOrderedProducts, getOrderedCategories } from '@/lib/layout-store';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,15 +15,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const TILE_W = 220;
 const TILE_H = 300;
 const TILE_GAP = 6;
-const CANVAS_W = 1360;
-const CANVAS_H = 1230;
 const MAX_SCALE = 2;
 const MAX_ZOOM_THRESHOLD = 1.9;
 const ZOOM_SENSITIVITY = 0.0025;
 const COLS = 6;
-
-const DEMO_PRODUCTS = getOrderedProducts();
-const CATEGORIES = getOrderedCategories();
 
 export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -31,6 +26,17 @@ export function SpatialCanvas() {
   const rootRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+
+  // Load layout from Supabase
+  const { loading: layoutLoading, getOrderedProducts, getOrderedCategories } = useGridLayout();
+  const DEMO_PRODUCTS = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
+  const CATEGORIES = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
+  const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
+  const CANVAS_H = Math.max(1, Math.ceil(DEMO_PRODUCTS.length / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
+
+  // Keep canvas dimensions in refs for the animation loop
+  const canvasDimsRef = useRef({ w: CANVAS_W, h: CANVAS_H });
+  canvasDimsRef.current = { w: CANVAS_W, h: CANVAS_H };
 
   // Transform refs for high-frequency updates
   const transformRef = useRef({ x: 0, y: 0, scale: 0.5 });
@@ -205,8 +211,8 @@ export function SpatialCanvas() {
           const container = containerRef.current;
           if (container) {
             const rect = container.getBoundingClientRect();
-            const scaledW = CANVAS_W * target.scale;
-            const scaledH = CANVAS_H * target.scale;
+            const scaledW = canvasDimsRef.current.w * target.scale;
+            const scaledH = canvasDimsRef.current.h * target.scale;
             const headerPad = 100;
             const bottomPad = 80;
             const sidePad = 80;
@@ -247,7 +253,7 @@ export function SpatialCanvas() {
       const ctr = containerRef.current;
       if (ctr) {
         const r = ctr.getBoundingClientRect();
-        const canvasBottom = t.y + CANVAS_H * t.scale;
+        const canvasBottom = t.y + canvasDimsRef.current.h * t.scale;
         const footerZone = r.height - 70;
         // Use hysteresis: require more clearance to turn off than to turn on
         const shouldGlass = canvasBottom > footerZone;

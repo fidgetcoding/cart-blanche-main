@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
-import { getOrderedProducts, getOrderedCategories } from '@/lib/layout-store';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 
 interface ProductViewProps {
   productIndex: number;
@@ -13,9 +13,6 @@ interface ProductViewProps {
   activeCategory: string;
   onCategoryChange: (cat: string) => void;
 }
-
-const DEMO_PRODUCTS = getOrderedProducts();
-const CATEGORIES = getOrderedCategories();
 
 function getWrappingNeighbor(
   currentIndex: number,
@@ -80,6 +77,10 @@ function getWrappingNeighbor(
 }
 
 export function ProductView({ productIndex, onClose, onNavigate, activeCategory, onCategoryChange }: ProductViewProps) {
+  const { getOrderedProducts, getOrderedCategories } = useGridLayout();
+  const DEMO_PRODUCTS = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
+  const CATEGORIES = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
+
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);

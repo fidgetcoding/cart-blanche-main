@@ -241,6 +241,33 @@ export type Database = {
           },
         ]
       }
+      grid_layouts: {
+        Row: {
+          category_order: string[]
+          id: string
+          layout_type: string
+          merchant_id: string
+          product_order: string[]
+          updated_at: string | null
+        }
+        Insert: {
+          category_order?: string[]
+          id?: string
+          layout_type?: string
+          merchant_id: string
+          product_order?: string[]
+          updated_at?: string | null
+        }
+        Update: {
+          category_order?: string[]
+          id?: string
+          layout_type?: string
+          merchant_id?: string
+          product_order?: string[]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       hotzones: {
         Row: {
           created_at: string | null
