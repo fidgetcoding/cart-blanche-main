@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
-import { GripVertical, Save, RotateCcw, Plus } from 'lucide-react';
-import { saveLayout, loadLayout, clearLayout } from '@/lib/layout-store';
+import { GripVertical, Save, RotateCcw, Plus, Loader2 } from 'lucide-react';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -48,35 +48,33 @@ function getGridPos(index: number) {
 }
 
 export default function AdminPageEditor() {
-  const [products, setProducts] = useState<GridProduct[]>(() => {
-    // Restore saved order if available
-    const saved = loadLayout();
-    if (saved && saved.productOrder.length > 0) {
-      const all = buildGridProducts();
-      const ordered: GridProduct[] = [];
-      for (const id of saved.productOrder) {
-        const found = all.find(p => p.id === id);
-        if (found) ordered.push(found);
-      }
-      // Append any products not in the saved order (new products)
-      for (const p of all) {
-        if (!ordered.find(o => o.id === p.id)) ordered.push(p);
-      }
-      return ordered;
+  const { loading, saveLayout: saveToSupabase, resetLayout, getOrderedProducts, getOrderedCategories } = useGridLayout();
+
+  const [products, setProducts] = useState<GridProduct[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialize from Supabase layout once loaded
+  useEffect(() => {
+    if (!loading && !initialized) {
+      const ordered = getOrderedProducts();
+      setProducts(ordered.map(p => ({
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        compare_at_price: p.compare_at_price,
+        category: p.category,
+        images: p.images,
+      })));
+      const cats = getOrderedCategories();
+      setCategories(cats.map(c => c.toLowerCase()));
+      setInitialized(true);
     }
-    return buildGridProducts();
-  });
-  const [categories, setCategories] = useState<string[]>(() => {
-    const saved = loadLayout();
-    if (saved && saved.categoryOrder.length > 0) {
-      return saved.categoryOrder;
-    }
-    const cats = new Set(DEMO_PRODUCTS.map(p => p.category));
-    return ['all', ...Array.from(cats)];
-  });
+  }, [loading, initialized, getOrderedProducts, getOrderedCategories]);
 
   const [hasChanges, setHasChanges] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [addingTab, setAddingTab] = useState(false);
   const [newTabName, setNewTabName] = useState('');
 
@@ -145,7 +143,6 @@ export default function AdminPageEditor() {
     const newY = e.clientY / scale - dragOffset.y;
     setDragPos({ x: newX, y: newY });
 
-    // Determine hovered slot and live-reorder
     const hoverSlot = pointToSlot(e.clientX, e.clientY);
     if (hoverSlot !== null && hoverSlot !== dragIdx) {
       setLiveOrder(prev => {
@@ -165,7 +162,7 @@ export default function AdminPageEditor() {
     setHasChanges(true);
   }, [dragIdx, liveOrder]);
 
-  // --- Category drag (same pointer approach) ---
+  // --- Category drag ---
   const [catDragIdx, setCatDragIdx] = useState<number | null>(null);
   const [liveCats, setLiveCats] = useState<string[]>(categories);
   const catRibbonRef = useRef<HTMLDivElement>(null);
@@ -185,7 +182,6 @@ export default function AdminPageEditor() {
     if (catDragIdx === null || !catRibbonRef.current) return;
     e.preventDefault();
 
-    // Find which tab we're over
     const children = Array.from(catRibbonRef.current.children) as HTMLElement[];
     for (let i = 1; i < liveCats.length; i++) {
       const rect = children[i].getBoundingClientRect();
@@ -209,23 +205,38 @@ export default function AdminPageEditor() {
     setHasChanges(true);
   }, [catDragIdx, liveCats]);
 
-  const handleSave = () => {
-    saveLayout({
-      productOrder: products.map(p => p.id),
-      categoryOrder: categories,
-    });
-    setHasChanges(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setSaving(true);
+    const productOrder = products.map(p => p.id);
+    const categoryOrder = categories;
+    const success = await saveToSupabase(productOrder, categoryOrder);
+    setSaving(false);
+    if (success) {
+      setHasChanges(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
   };
 
-  const handleReset = () => {
-    setProducts(buildGridProducts());
-    const cats = new Set(DEMO_PRODUCTS.map(p => p.category));
-    setCategories(['all', ...Array.from(cats)]);
-    clearLayout();
-    setHasChanges(false);
+  const handleReset = async () => {
+    setSaving(true);
+    const success = await resetLayout();
+    setSaving(false);
+    if (success) {
+      setProducts(buildGridProducts());
+      const cats = new Set(DEMO_PRODUCTS.map(p => p.category));
+      setCategories(['all', ...Array.from(cats)]);
+      setHasChanges(false);
+    }
   };
+
+  if (loading || !initialized) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -238,16 +249,17 @@ export default function AdminPageEditor() {
           )}
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-display tracking-wider border border-border rounded-lg hover:bg-secondary transition-colors"
+            disabled={saving}
+            className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-display tracking-wider border border-border rounded-lg hover:bg-secondary transition-colors disabled:opacity-40"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> RESET
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} RESET
           </button>
           <button
             onClick={handleSave}
-            disabled={!hasChanges}
+            disabled={!hasChanges || saving}
             className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[11px] font-display tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
           >
-            <Save className="w-3.5 h-3.5" /> SAVE LAYOUT
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} SAVE LAYOUT
           </button>
         </div>
       </div>
@@ -357,7 +369,6 @@ export default function AdminPageEditor() {
                     top: isBeingDragged ? dragPos.y : pos.y,
                     width: TILE_W,
                     height: TILE_H,
-                    // Only transition when NOT being dragged (so others animate to new slots)
                     ...(isBeingDragged ? {} : { transition: 'left 300ms ease-out, top 300ms ease-out' }),
                   }}
                 >
