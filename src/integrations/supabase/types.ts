@@ -655,7 +655,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      merchant_storefronts: {
+        Row: {
+          brand_config: Json | null
+          store_category: string | null
+          store_description: string | null
+          store_name: string | null
+          store_slug: string | null
+          store_tagline: string | null
+        }
+        Insert: {
+          brand_config?: Json | null
+          store_category?: string | null
+          store_description?: string | null
+          store_name?: string | null
+          store_slug?: string | null
+          store_tagline?: string | null
+        }
+        Update: {
+          brand_config?: Json | null
+          store_category?: string | null
+          store_description?: string | null
+          store_name?: string | null
+          store_slug?: string | null
+          store_tagline?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
