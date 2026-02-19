@@ -15,6 +15,8 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminPageEditor from "./pages/admin/AdminPageEditor";
 import AdminStylingGuide from "./pages/admin/AdminStylingGuide";
+import LabIndex from "./pages/admin/lab/LabIndex";
+import LabExperiment from "./pages/admin/lab/LabExperiment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,8 @@ const App = () => (
               <Route path="inventory" element={<AdminInventory />} />
               <Route path="styling-guide" element={<AdminStylingGuide />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="lab" element={<LabIndex />} />
+              <Route path="lab/:id" element={<LabExperiment />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
