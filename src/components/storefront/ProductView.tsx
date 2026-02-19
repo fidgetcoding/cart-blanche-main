@@ -2,9 +2,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Heart, X, ShoppingBag, Layers } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
-import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
+import { getOrderedProducts, getOrderedCategories } from '@/lib/layout-store';
 
 interface ProductViewProps {
   productIndex: number;
@@ -14,7 +14,8 @@ interface ProductViewProps {
   onCategoryChange: (cat: string) => void;
 }
 
-const CATEGORIES = ['ALL', ...new Set(DEMO_PRODUCTS.map(p => p.category.toUpperCase()))];
+const DEMO_PRODUCTS = getOrderedProducts();
+const CATEGORIES = getOrderedCategories();
 
 function getWrappingNeighbor(
   currentIndex: number,
