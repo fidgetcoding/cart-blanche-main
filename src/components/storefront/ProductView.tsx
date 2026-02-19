@@ -237,7 +237,7 @@ export function ProductView({ productIndex, onClose, onNavigate, activeCategory,
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
 
         {/* Category tabs — top left */}
-        <div className="absolute top-4 left-4 z-50 pointer-events-auto flex items-center gap-0.5 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1 py-0.5">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-0.5 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1 py-0.5">
           {CATEGORIES.map(cat => (
             <button
               key={cat}
