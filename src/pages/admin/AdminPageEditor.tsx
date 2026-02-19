@@ -165,7 +165,7 @@ export default function AdminPageEditor() {
 
     // Find which tab we're over
     const children = Array.from(catRibbonRef.current.children) as HTMLElement[];
-    for (let i = 1; i < children.length; i++) {
+    for (let i = 1; i < liveCats.length; i++) {
       const rect = children[i].getBoundingClientRect();
       if (e.clientX >= rect.left && e.clientX <= rect.right && i !== catDragIdx) {
         setLiveCats(prev => {
