@@ -571,17 +571,34 @@ export function SpatialCanvas() {
     }
     if (selectedIndex !== null) return;
 
-    const products = DEMO_PRODUCTS;
+    const visibleWithIndex = DEMO_PRODUCTS
+      .map((p, i) => ({ p, i }))
+      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
+
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
-      if (focusedIndex === -1) { setFocusedIndex(0); return; }
+      if (focusedIndex === -1) {
+        setFocusedIndex(visibleWithIndex.length > 0 ? visibleWithIndex[0].i : 0);
+        return;
+      }
 
-      const yPositions = [...new Set(products.map(p => p.grid_position.y))].sort((a, b) => a - b);
+      const positions = overridePositions;
+      const yPositions = [...new Set(visibleWithIndex.map(({ p, i }) => {
+        const pos = positions?.[i] ?? p.grid_position;
+        return pos.y;
+      }))].sort((a, b) => a - b);
+
       const rows: number[][] = yPositions.map(y =>
-        products
-          .map((p, i) => ({ i, p }))
-          .filter(({ p }) => p.grid_position.y === y)
-          .sort((a, b) => a.p.grid_position.x - b.p.grid_position.x)
+        visibleWithIndex
+          .filter(({ p, i }) => {
+            const pos = positions?.[i] ?? p.grid_position;
+            return pos.y === y;
+          })
+          .sort((a, b) => {
+            const posA = positions?.[a.i] ?? a.p.grid_position;
+            const posB = positions?.[b.i] ?? b.p.grid_position;
+            return posA.x - posB.x;
+          })
           .map(({ i }) => i)
       );
 
@@ -590,7 +607,11 @@ export function SpatialCanvas() {
         const c = rows[r].indexOf(focusedIndex);
         if (c !== -1) { rowIdx = r; colIdx = c; break; }
       }
-      if (rowIdx === -1) return;
+      if (rowIdx === -1) {
+        // focusedIndex not in current category — jump to first visible
+        setFocusedIndex(visibleWithIndex.length > 0 ? visibleWithIndex[0].i : 0);
+        return;
+      }
 
       const row = rows[rowIdx];
       let newIdx = focusedIndex;
@@ -629,7 +650,7 @@ export function SpatialCanvas() {
     }
     if (e.key === '=' || e.key === '+') setScaleSmooth(Math.min(MAX_SCALE, targetTransformRef.current.scale * 1.15));
     if (e.key === '-') setScaleSmooth(Math.max(minScaleRef.current, targetTransformRef.current.scale * 0.85));
-  }, [focusedIndex, selectedIndex, setScaleSmooth, isMobile, activeCategory]);
+  }, [focusedIndex, selectedIndex, setScaleSmooth, isMobile, activeCategory, overridePositions, fitToVisibleProducts]);
 
   // Pan to focused product when zoomed in
   useEffect(() => {
@@ -799,6 +820,8 @@ export function SpatialCanvas() {
               setTimeout(() => rootRef.current?.focus(), 50);
             }}
             onNavigate={(newIdx) => setSelectedIndex(newIdx)}
+            activeCategory={activeCategory}
+            onCategoryChange={(cat) => setActiveCategory(cat)}
           />
         )}
       </AnimatePresence>

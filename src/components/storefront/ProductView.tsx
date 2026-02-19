@@ -1,37 +1,42 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Heart, X, ShoppingBag, Layers } from 'lucide-react';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
+
 interface ProductViewProps {
   productIndex: number;
   onClose: () => void;
   onNavigate: (newIndex: number) => void;
+  activeCategory: string;
+  onCategoryChange: (cat: string) => void;
 }
 
-// Build a grid-aware navigation system
-function buildNavGrid(products: DemoProduct[]) {
-  // Sort products into rows by Y position, then by X within each row
-  const yPositions = [...new Set(products.map(p => p.grid_position.y))].sort((a, b) => a - b);
-  const rows: number[][] = yPositions.map(y => {
-    return products
-      .map((p, i) => ({ i, p }))
-      .filter(({ p }) => p.grid_position.y === y)
-      .sort((a, b) => a.p.grid_position.x - b.p.grid_position.x)
-      .map(({ i }) => i);
-  });
-
-  return { rows, yPositions };
-}
+const CATEGORIES = ['ALL', ...new Set(DEMO_PRODUCTS.map(p => p.category.toUpperCase()))];
 
 function getWrappingNeighbor(
   currentIndex: number,
   direction: 'up' | 'down' | 'left' | 'right',
-  products: DemoProduct[]
+  products: DemoProduct[],
+  activeCategory: string
 ): number {
-  const { rows } = buildNavGrid(products);
+  // Filter to category but keep original indices
+  const visible = products
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
+
+  if (visible.length === 0) return currentIndex;
+
+  // Build grid from filtered products using their grid_position
+  const yPositions = [...new Set(visible.map(({ p }) => p.grid_position.y))].sort((a, b) => a - b);
+  const rows: number[][] = yPositions.map(y =>
+    visible
+      .filter(({ p }) => p.grid_position.y === y)
+      .sort((a, b) => a.p.grid_position.x - b.p.grid_position.x)
+      .map(({ i }) => i)
+  );
 
   // Find which row/col the current product is in
   let rowIdx = -1;
@@ -73,14 +78,14 @@ function getWrappingNeighbor(
   }
 }
 
-export function ProductView({ productIndex, onClose, onNavigate }: ProductViewProps) {
+export function ProductView({ productIndex, onClose, onNavigate, activeCategory, onCategoryChange }: ProductViewProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
-  const scrollCooldown = useRef(true); // Start with cooldown to absorb momentum from zoom-in
+  const scrollCooldown = useRef(true);
 
   // Release initial cooldown after mount
   useEffect(() => {
@@ -90,6 +95,16 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
 
   const product = DEMO_PRODUCTS[productIndex];
 
+  // Filtered visible indices for counter
+  const visibleIndices = useMemo(() =>
+    DEMO_PRODUCTS
+      .map((p, i) => ({ p, i }))
+      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory)
+      .map(({ i }) => i),
+    [activeCategory]
+  );
+  const posInFiltered = visibleIndices.indexOf(productIndex) + 1;
+
   // Reset variant selection when product changes
   useEffect(() => {
     setSelectedVariant(null);
@@ -98,9 +113,9 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
   }, [productIndex]);
 
   const navigate = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-    const newIndex = getWrappingNeighbor(productIndex, direction, DEMO_PRODUCTS);
+    const newIndex = getWrappingNeighbor(productIndex, direction, DEMO_PRODUCTS, activeCategory);
     onNavigate(newIndex);
-  }, [productIndex, onNavigate]);
+  }, [productIndex, onNavigate, activeCategory]);
 
   // Scroll wheel navigation (strict one-per-swipe)
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -210,215 +225,243 @@ export function ProductView({ productIndex, onClose, onNavigate }: ProductViewPr
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-30 bg-background flex flex-col items-center justify-center"
+      className="fixed inset-0 z-30"
     >
-      {/* Top-right: cart button (always visible) */}
-      <div className="absolute top-6 right-6 z-40">
-        <button
-          onClick={(e) => { e.stopPropagation(); openCart(); }}
-          className="relative p-2 md:p-2.5 rounded-xl bg-white/90 backdrop-blur-md border border-white/20 shadow-lg hover:bg-white hover:shadow-xl transition-all"
-        >
-          <ShoppingBag className="w-4 md:w-5 h-4 md:h-5 text-background" />
-          {itemCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-foreground text-background text-[9px] font-bold rounded-full flex items-center justify-center">
-              {itemCount}
-            </span>
-          )}
-        </button>
-      </div>
+      {/* Backdrop — click to close */}
+      <div
+        className="absolute inset-0 bg-background"
+        onClick={onClose}
+      />
 
-      {/* Navigation arrows — always visible on all 4 sides */}
-      <button
-        onClick={() => navigate('left')}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group"
-      >
-        <ChevronLeft className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
-      </button>
-      <button
-        onClick={() => navigate('right')}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group"
-      >
-        <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
-      </button>
-      <button
-        onClick={() => navigate('up')}
-        className="absolute top-4 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group"
-      >
-        <ChevronUp className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
-      </button>
-      <button
-        onClick={() => navigate('down')}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group"
-      >
-        <ChevronDown className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
-      </button>
+      {/* Content layer — pointer-events-none container, auto on interactive children */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
 
-      {/* Product content — Yeezy style: big image centered, info below */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={product.id}
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.97 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="flex flex-col items-center max-w-lg w-full px-6"
-        >
-          {/* Product image area */}
-          <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 relative">
-            {/* Close button — anchored to thumbnail */}
+        {/* Category tabs — top left */}
+        <div className="absolute top-4 left-4 z-50 pointer-events-auto flex items-center gap-0.5 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1 py-0.5">
+          {CATEGORIES.map(cat => (
             <button
-              onClick={onClose}
-              className="absolute top-3 right-3 z-10 p-1.5 bg-background/60 backdrop-blur-sm hover:bg-secondary rounded-lg transition-colors"
+              key={cat}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCategoryChange(cat);
+                const firstInCat = DEMO_PRODUCTS.findIndex(p =>
+                  cat === 'ALL' || p.category.toUpperCase() === cat
+                );
+                if (firstInCat >= 0) onNavigate(firstInCat);
+              }}
+              className={`text-[10px] font-display tracking-[0.12em] uppercase rounded-md px-2.5 py-1 transition-colors ${
+                activeCategory === cat
+                  ? 'bg-foreground/[0.12] text-foreground font-medium'
+                  : 'text-muted-foreground/50 hover:text-foreground/70'
+              }`}
             >
-              <X className="w-4 h-4" />
+              {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
             </button>
-            <span className="font-display text-muted-foreground/15 text-lg tracking-[0.3em]">
-              {product.category.toUpperCase()}
-            </span>
-            {product.compare_at_price && (
-              <div className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-display font-bold px-2 py-1 rounded">
-                SALE
-              </div>
-            )}
+          ))}
+        </div>
 
-            {/* Image selector zones — 3 segments at bottom of thumbnail */}
-            <div className="absolute bottom-0 left-0 right-0 flex h-12 z-10" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-              {[0, 1, 2].map((i) => (
-                <button
-                  key={i}
-                  onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
-                  onMouseEnter={() => setActiveImage(i)}
-                  className="flex-1 relative group"
-                >
-                  <div className={`absolute bottom-2 left-1 right-1 h-1 rounded-full transition-all duration-200 ${
-                    activeImage === i 
-                      ? 'bg-foreground/80' 
-                      : 'bg-foreground/15 group-hover:bg-foreground/30'
-                  }`} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Title + Price */}
-          <h2 className="font-display text-lg font-bold text-center tracking-wide">{product.title}</h2>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="font-display text-base">${product.price}</span>
-            {product.compare_at_price && (
-              <span className="text-sm text-muted-foreground line-through">${product.compare_at_price}</span>
-            )}
-          </div>
-
-          {/* Expand button to show details */}
+        {/* Top-right: cart button */}
+        <div className="absolute top-6 right-6 z-40 pointer-events-auto">
           <button
-            onClick={() => setExpandDetails(!expandDetails)}
-            onMouseEnter={() => setExpandDetails(true)}
-            className="mt-3 p-2 hover:bg-secondary rounded-full transition-colors"
+            onClick={(e) => { e.stopPropagation(); openCart(); }}
+            className="relative p-2 md:p-2.5 rounded-xl bg-white/90 backdrop-blur-md border border-white/20 shadow-lg hover:bg-white hover:shadow-xl transition-all"
           >
-            <Plus className={`w-5 h-5 transition-transform duration-200 ${expandDetails ? 'rotate-45' : ''}`} />
-          </button>
-
-          {/* Expandable details */}
-          <AnimatePresence>
-            {expandDetails && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                className="overflow-hidden w-full"
-              >
-                <div className="pt-4 pb-2 space-y-4">
-                  <p className="text-sm text-muted-foreground text-center leading-relaxed">
-                    {product.description}
-                  </p>
-
-                  {/* Variants */}
-                  {product.variants.length > 1 && (
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {product.variants.map(v => (
-                        <button
-                          key={v.id}
-                          onClick={() => setSelectedVariant(v.id)}
-                          className={`px-4 py-2 text-sm font-display rounded-md border transition-all ${
-                            selectedVariant === v.id
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : v.inventory_count === 0
-                              ? 'border-border text-muted-foreground/40 cursor-not-allowed'
-                              : 'border-border hover:border-muted-foreground'
-                          }`}
-                          disabled={v.inventory_count === 0}
-                        >
-                          {v.title}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Stock */}
-                  {variant && (
-                    <p className={`text-xs text-center ${
-                      variant.inventory_count === 0 ? 'text-destructive' :
-                      variant.inventory_count <= 5 ? 'text-warning' : 'text-success'
-                    }`}>
-                      {variant.inventory_count === 0 ? 'Out of Stock' :
-                       variant.inventory_count <= 5 ? `Low Stock — ${variant.inventory_count} left` :
-                       'In Stock'}
-                    </p>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex justify-center gap-3">
-                    <button
-                      onClick={handleAddToCart}
-                      disabled={!canAdd || isOutOfStock}
-                      className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center gap-2 transition-all ${
-                        !canAdd || isOutOfStock
-                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                          : 'bg-primary text-primary-foreground hover:opacity-90'
-                      }`}
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                      {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
-                        openStyleKit(product, 'counterparts', variantTitle);
-                      }}
-                      className="px-4 py-3 border border-border font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center gap-2 hover:bg-secondary transition-colors"
-                    >
-                      <Layers className="w-4 h-4" />
-                      BUILD A SET
-                    </button>
-                    <button
-                      onClick={() => setIsSaved(!isSaved)}
-                      className={`p-3 border rounded-lg transition-colors ${
-                        isSaved ? 'border-accent text-accent' : 'border-border hover:border-muted-foreground'
-                      }`}
-                    >
-                      <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+            <ShoppingBag className="w-4 md:w-5 h-4 md:h-5 text-background" />
+            {itemCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-foreground text-background text-[9px] font-bold rounded-full flex items-center justify-center">
+                {itemCount}
+              </span>
             )}
-          </AnimatePresence>
-        </motion.div>
-      </AnimatePresence>
+          </button>
+        </div>
 
-      {/* Category label at bottom */}
-      <div className="absolute bottom-14 left-6">
-        <span className="text-[10px] font-display tracking-[0.3em] text-muted-foreground/40">
-          {product.category.toUpperCase()}
-        </span>
-      </div>
+        {/* Navigation arrows */}
+        <button
+          onClick={() => navigate('left')}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group pointer-events-auto"
+        >
+          <ChevronLeft className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </button>
+        <button
+          onClick={() => navigate('right')}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group pointer-events-auto"
+        >
+          <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </button>
+        <button
+          onClick={() => navigate('up')}
+          className="absolute top-14 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group pointer-events-auto"
+        >
+          <ChevronUp className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </button>
+        <button
+          onClick={() => navigate('down')}
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group pointer-events-auto"
+        >
+          <ChevronDown className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </button>
 
-      {/* Position indicator */}
-      <div className="absolute bottom-14 right-6">
-        <span className="text-[10px] font-display tracking-widest text-muted-foreground/40">
-          {productIndex + 1} / {DEMO_PRODUCTS.length}
-        </span>
+        {/* Product content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={product.id}
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="flex flex-col items-center max-w-lg w-full px-6 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Product image area */}
+            <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 relative">
+              {/* Close button */}
+              <button
+                onClick={onClose}
+                className="absolute top-3 right-3 z-10 p-1.5 bg-background/60 backdrop-blur-sm hover:bg-secondary rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <span className="font-display text-muted-foreground/15 text-lg tracking-[0.3em]">
+                {product.category.toUpperCase()}
+              </span>
+              {product.compare_at_price && (
+                <div className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-display font-bold px-2 py-1 rounded">
+                  SALE
+                </div>
+              )}
+
+              {/* Image selector zones */}
+              <div className="absolute bottom-0 left-0 right-0 flex h-12 z-10" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                {[0, 1, 2].map((i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
+                    onMouseEnter={() => setActiveImage(i)}
+                    className="flex-1 relative group"
+                  >
+                    <div className={`absolute bottom-2 left-1 right-1 h-1 rounded-full transition-all duration-200 ${
+                      activeImage === i
+                        ? 'bg-foreground/80'
+                        : 'bg-foreground/15 group-hover:bg-foreground/30'
+                    }`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Title + Price */}
+            <h2 className="font-display text-lg font-bold text-center tracking-wide">{product.title}</h2>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="font-display text-base">${product.price}</span>
+              {product.compare_at_price && (
+                <span className="text-sm text-muted-foreground line-through">${product.compare_at_price}</span>
+              )}
+            </div>
+
+            {/* Expand button */}
+            <button
+              onClick={() => setExpandDetails(!expandDetails)}
+              onMouseEnter={() => setExpandDetails(true)}
+              className="mt-3 p-2 hover:bg-secondary rounded-full transition-colors"
+            >
+              <Plus className={`w-5 h-5 transition-transform duration-200 ${expandDetails ? 'rotate-45' : ''}`} />
+            </button>
+
+            {/* Expandable details */}
+            <AnimatePresence>
+              {expandDetails && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden w-full"
+                >
+                  <div className="pt-4 pb-2 space-y-4">
+                    <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                      {product.description}
+                    </p>
+
+                    {/* Variants */}
+                    {product.variants.length > 1 && (
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {product.variants.map(v => (
+                          <button
+                            key={v.id}
+                            onClick={() => setSelectedVariant(v.id)}
+                            className={`px-4 py-2 text-sm font-display rounded-md border transition-all ${
+                              selectedVariant === v.id
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : v.inventory_count === 0
+                                ? 'border-border text-muted-foreground/40 cursor-not-allowed'
+                                : 'border-border hover:border-muted-foreground'
+                            }`}
+                            disabled={v.inventory_count === 0}
+                          >
+                            {v.title}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Stock */}
+                    {variant && (
+                      <p className={`text-xs text-center ${
+                        variant.inventory_count === 0 ? 'text-destructive' :
+                        variant.inventory_count <= 5 ? 'text-warning' : 'text-success'
+                      }`}>
+                        {variant.inventory_count === 0 ? 'Out of Stock' :
+                         variant.inventory_count <= 5 ? `Low Stock — ${variant.inventory_count} left` :
+                         'In Stock'}
+                      </p>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex justify-center gap-3">
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={!canAdd || isOutOfStock}
+                        className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center gap-2 transition-all ${
+                          !canAdd || isOutOfStock
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                            : 'bg-primary text-primary-foreground hover:opacity-90'
+                        }`}
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
+                          openStyleKit(product, 'counterparts', variantTitle);
+                        }}
+                        className="px-4 py-3 border border-border font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center gap-2 hover:bg-secondary transition-colors"
+                      >
+                        <Layers className="w-4 h-4" />
+                        BUILD A SET
+                      </button>
+                      <button
+                        onClick={() => setIsSaved(!isSaved)}
+                        className={`p-3 border rounded-lg transition-colors ${
+                          isSaved ? 'border-accent text-accent' : 'border-border hover:border-muted-foreground'
+                        }`}
+                      >
+                        <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Position indicator — bottom right */}
+        <div className="absolute bottom-14 right-6 pointer-events-auto">
+          <span className="text-[10px] font-display tracking-widest text-muted-foreground/40">
+            {posInFiltered} / {visibleIndices.length}
+          </span>
+        </div>
       </div>
     </motion.div>
   );
