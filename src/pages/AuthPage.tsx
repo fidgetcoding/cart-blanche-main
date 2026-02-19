@@ -71,7 +71,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-primary text-primary-foreground font-display font-semibold text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full py-3 bg-foreground/10 text-foreground backdrop-blur-xl border border-foreground/10 hover:bg-foreground/20 shadow-[inset_0_1px_0_hsla(0,0%,100%,0.1),0_4px_12px_hsla(0,0%,0%,0.2)] font-display font-semibold text-sm tracking-wider rounded-lg transition-all disabled:opacity-50"
             >
               {loading ? '...' : isLogin ? 'SIGN IN' : 'CREATE ACCOUNT'}
             </button>
