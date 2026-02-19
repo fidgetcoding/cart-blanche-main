@@ -33,7 +33,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="discounts" element={<AdminDiscounts />} />
               <Route path="grid" element={<AdminPageEditor />} />
-              <Route path="flow" element={<AdminPlaceholder title="Flow Editor" />} />
+              
               <Route path="orders" element={<AdminOrders />} />
               <Route path="inventory" element={<AdminInventory />} />
               <Route path="styling-guide" element={<AdminStylingGuide />} />

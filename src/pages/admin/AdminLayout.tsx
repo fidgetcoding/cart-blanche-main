@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Tag,
   Grid3X3,
-  GitBranch,
   ShoppingCart,
   Warehouse,
   Settings,
@@ -21,7 +20,6 @@ const NAV_ITEMS = [
   { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/admin/discounts', icon: Tag, label: 'Discounts' },
   { to: '/admin/styling-guide', icon: Layers, label: 'Style Guide' },
-  { to: '/admin/flow', icon: GitBranch, label: 'Flow' },
 ];
 
 export default function AdminLayout() {
