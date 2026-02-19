@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { GripVertical, Save, RotateCcw, Plus } from 'lucide-react';
+import { saveLayout, loadLayout, clearLayout } from '@/lib/layout-store';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -47,8 +48,29 @@ function getGridPos(index: number) {
 }
 
 export default function AdminPageEditor() {
-  const [products, setProducts] = useState<GridProduct[]>(buildGridProducts);
+  const [products, setProducts] = useState<GridProduct[]>(() => {
+    // Restore saved order if available
+    const saved = loadLayout();
+    if (saved && saved.productOrder.length > 0) {
+      const all = buildGridProducts();
+      const ordered: GridProduct[] = [];
+      for (const id of saved.productOrder) {
+        const found = all.find(p => p.id === id);
+        if (found) ordered.push(found);
+      }
+      // Append any products not in the saved order (new products)
+      for (const p of all) {
+        if (!ordered.find(o => o.id === p.id)) ordered.push(p);
+      }
+      return ordered;
+    }
+    return buildGridProducts();
+  });
   const [categories, setCategories] = useState<string[]>(() => {
+    const saved = loadLayout();
+    if (saved && saved.categoryOrder.length > 0) {
+      return saved.categoryOrder;
+    }
     const cats = new Set(DEMO_PRODUCTS.map(p => p.category));
     return ['all', ...Array.from(cats)];
   });
@@ -188,6 +210,10 @@ export default function AdminPageEditor() {
   }, [catDragIdx, liveCats]);
 
   const handleSave = () => {
+    saveLayout({
+      productOrder: products.map(p => p.id),
+      categoryOrder: categories,
+    });
     setHasChanges(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -197,6 +223,7 @@ export default function AdminPageEditor() {
     setProducts(buildGridProducts());
     const cats = new Set(DEMO_PRODUCTS.map(p => p.category));
     setCategories(['all', ...Array.from(cats)]);
+    clearLayout();
     setHasChanges(false);
   };
 

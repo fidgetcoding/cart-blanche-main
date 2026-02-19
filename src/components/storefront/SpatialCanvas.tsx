@@ -2,11 +2,12 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { DEMO_PRODUCTS } from '@/data/demo-data';
+
 import { ProductTile } from '@/components/storefront/ProductTile';
 import { ProductView } from '@/components/storefront/ProductView';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
+import { loadLayout, getOrderedProducts, getOrderedCategories } from '@/lib/layout-store';
 
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,8 +20,10 @@ const CANVAS_H = 1230;
 const MAX_SCALE = 2;
 const MAX_ZOOM_THRESHOLD = 1.9;
 const ZOOM_SENSITIVITY = 0.0025;
+const COLS = 6;
 
-const CATEGORIES = ['ALL', ...new Set(DEMO_PRODUCTS.map(p => p.category.toUpperCase()))];
+const DEMO_PRODUCTS = getOrderedProducts();
+const CATEGORIES = getOrderedCategories();
 
 export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
