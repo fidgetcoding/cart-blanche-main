@@ -787,11 +787,10 @@ export function SpatialCanvas() {
       </div>
 
       {/* Unified bottom footer */}
-      <div className="absolute bottom-0 left-0 right-0 z-20">
-        <div className={`absolute inset-0 liquid-glass transition-opacity duration-500 pointer-events-none ${footerGlass ? 'opacity-100' : 'opacity-0'}`} />
-        <div className="relative flex items-end justify-between px-4 md:px-6 py-3 md:py-5">
+      <div className={`absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-500 ${footerGlass ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className="flex items-end justify-between px-4 md:px-6 py-3 md:py-5">
           {/* Hints */}
-          <div className={`text-[10px] md:text-xs font-display tracking-wider space-y-0.5 cursor-default transition-colors duration-500 hover:text-foreground/80 ${footerGlass ? 'text-muted-foreground/60' : 'text-muted-foreground/30'}`}>
+          <div className="text-[10px] md:text-xs font-display tracking-wider space-y-0.5 cursor-default text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">
             <p className="block md:hidden">PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
             <div className="hidden md:block space-y-0.5">
               <p>SCROLL TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
