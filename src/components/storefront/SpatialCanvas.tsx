@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Menu, X } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Menu, X, FlaskConical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { ProductTile } from '@/components/storefront/ProductTile';
@@ -732,6 +732,10 @@ export function SpatialCanvas() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
+          <button onClick={() => navigate('/admin/lab')} className="group flex items-center gap-1.5 p-1.5 md:p-2 hover:opacity-70 transition-opacity" title="The Lab">
+            <FlaskConical className="w-4 h-4 text-foreground/70" />
+            <span className="overflow-hidden max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out text-[10px] font-display tracking-wider text-foreground/60 whitespace-nowrap">THE LAB</span>
+          </button>
           <button onClick={() => navigate('/admin')} className="group flex items-center gap-1.5 p-1.5 md:p-2 hover:opacity-70 transition-opacity" title="Smart Portal">
             <LayoutDashboard className="w-4 h-4 text-foreground/70" />
             <span className="overflow-hidden max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out text-[10px] font-display tracking-wider text-foreground/60 whitespace-nowrap">SMART PORTAL</span>
