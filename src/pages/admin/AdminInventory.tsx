@@ -71,7 +71,9 @@ export default function AdminInventory() {
   const [modalNewTag, setModalNewTag] = useState('');
   const lowStockThreshold = 5;
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [addForm, setAddForm] = useState({ title: '', price: '', description: '', category: '' });
+  const [addForm, setAddForm] = useState({ title: '', price: '', description: '' });
+  const [addTags, setAddTags] = useState<string[]>([]);
+  const [addTagInput, setAddTagInput] = useState('');
   const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
   const [addImages, setAddImages] = useState<string[]>([]);
@@ -297,9 +299,9 @@ export default function AdminInventory() {
       title: addForm.title.trim(),
       price: parseFloat(addForm.price) || 0,
       description: addForm.description.trim(),
-      category: addForm.category.trim().toLowerCase(),
+      category: addTags.length > 0 ? addTags[0] : '',
       status: 'active',
-      tags: addForm.category.trim() ? [addForm.category.trim().toLowerCase()] : [],
+      tags: addTags,
       images,
     }).select().single();
 
@@ -318,7 +320,9 @@ export default function AdminInventory() {
 
     setAddSaving(false);
     setShowAddProduct(false);
-    setAddForm({ title: '', price: '', description: '', category: '' });
+    setAddForm({ title: '', price: '', description: '' });
+    setAddTags([]);
+    setAddTagInput('');
     setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
     setAddImages([]);
     setAddVideo(null);
@@ -644,18 +648,48 @@ export default function AdminInventory() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-display tracking-widest text-muted-foreground">PRICE</label>
-                  <input type="number" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
-                    placeholder="0" min="0"
-                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-                </div>
-                <div>
-                  <label className="text-xs font-display tracking-widest text-muted-foreground">TAG</label>
-                  <input value={addForm.category} onChange={e => setAddForm(f => ({ ...f, category: e.target.value }))}
-                    placeholder="e.g. outerwear"
-                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground">PRICE</label>
+                <input type="number" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
+                  placeholder="0" min="0"
+                  className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">TAGS</label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {addTags.map(tag => (
+                    <span key={tag} className={`text-[10px] font-display px-2 py-1 rounded border inline-flex items-center gap-1.5 ${getTagColor(tag)}`}>
+                      {tag.toUpperCase().replace('-', ' ')}
+                      <button onClick={() => setAddTags(prev => prev.filter(t => t !== tag))} className="hover:opacity-70">
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                  <div className="flex items-center gap-1">
+                    <input
+                      value={addTagInput}
+                      onChange={e => setAddTagInput(e.target.value)}
+                      placeholder="Add tag..."
+                      className="w-24 px-2 py-1 bg-background/40 border border-border/50 backdrop-blur-sm rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-ring"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && addTagInput.trim()) {
+                          const tag = addTagInput.trim().toLowerCase();
+                          if (!addTags.includes(tag)) setAddTags(prev => [...prev, tag]);
+                          setAddTagInput('');
+                        }
+                      }}
+                    />
+                    {addTagInput.trim() && (
+                      <button onClick={() => {
+                        const tag = addTagInput.trim().toLowerCase();
+                        if (!addTags.includes(tag)) setAddTags(prev => [...prev, tag]);
+                        setAddTagInput('');
+                      }} className="p-0.5 text-success hover:bg-success/20 rounded">
+                        <Check className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
