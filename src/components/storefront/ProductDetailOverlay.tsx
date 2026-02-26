@@ -51,10 +51,18 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
           onClick={e => e.stopPropagation()}
         >
           {/* Image */}
-          <div className="w-1/2 bg-secondary flex items-center justify-center relative">
-            <span className="font-display text-muted-foreground/20 text-sm tracking-widest">
-              {product.category.toUpperCase()}
-            </span>
+          <div className="w-1/2 bg-secondary flex items-center justify-center relative overflow-hidden">
+            {product.images && product.images.length > 0 ? (
+              <img
+                src={product.images[0]}
+                alt={product.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="font-display text-muted-foreground/20 text-sm tracking-widest">
+                {product.category.toUpperCase()}
+              </span>
+            )}
             {product.compare_at_price && (
               <div className="absolute top-4 left-4 bg-accent text-accent-foreground text-xs font-display font-bold px-2 py-1 rounded">
                 SALE
