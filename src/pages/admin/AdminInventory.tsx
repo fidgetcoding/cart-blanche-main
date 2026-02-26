@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2 } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2 } from 'lucide-react';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -214,6 +214,18 @@ export default function AdminInventory() {
     }
 
     setEditingProduct(null);
+  }
+  async function deleteProduct(p: ProductRow) {
+    if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
+    if (!p.isDemo) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.from('product_variants').delete().eq('product_id', p.id);
+        await supabase.from('products').delete().eq('id', p.id);
+      }
+    }
+    setProducts(prev => prev.filter(pr => pr.id !== p.id));
+    if (expandedId === p.id) setExpandedId(null);
   }
 
   function saveVariantStock(productId: string, variantId: string) {
