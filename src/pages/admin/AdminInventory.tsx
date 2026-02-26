@@ -83,6 +83,8 @@ export default function AdminInventory() {
   useEffect(() => { fetchInventory(); }, []);
 
   async function fetchInventory() {
+    // Always start with demo products
+    const demoRows = buildProductRows();
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
@@ -101,7 +103,7 @@ export default function AdminInventory() {
           variantMap.set(v.product_id, list);
         });
 
-        setProducts(dbProducts.map(p => {
+        const dbRows: ProductRow[] = dbProducts.map(p => {
           const pvs = variantMap.get(p.id) || [];
           return {
             id: p.id,
@@ -121,13 +123,16 @@ export default function AdminInventory() {
             totalStock: pvs.reduce((sum, v) => sum + (v.inventory_count ?? 0), 0),
             isDemo: false,
           };
-        }));
+        });
+
+        // Merge: DB products first, then demo products
+        setProducts([...dbRows, ...demoRows]);
         setLoading(false);
         return;
       }
     }
 
-    setProducts(buildProductRows());
+    setProducts(demoRows);
     setLoading(false);
   }
 

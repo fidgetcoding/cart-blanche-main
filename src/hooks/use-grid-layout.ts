@@ -15,32 +15,82 @@ export interface GridLayout {
 
 export function useGridLayout() {
   const [layout, setLayout] = useState<GridLayout | null>(null);
+  const [dbProducts, setDbProducts] = useState<DemoProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch saved layout on mount
+  // Fetch saved layout and DB products on mount
   useEffect(() => {
-    async function fetchLayout() {
+    async function fetchData() {
       try {
-        const { data, error } = await supabase
+        // Fetch layout
+        const { data: layoutData } = await supabase
           .from('grid_layouts')
           .select('product_order, category_order')
           .eq('layout_type', 'default')
           .limit(1)
           .maybeSingle();
 
-        if (data && !error) {
+        if (layoutData) {
           setLayout({
-            productOrder: (data.product_order as string[])?.length > 0 ? (data.product_order as string[]) : [],
-            categoryOrder: (data.category_order as string[])?.length > 0 ? (data.category_order as string[]) : [],
+            productOrder: (layoutData.product_order as string[])?.length > 0 ? (layoutData.product_order as string[]) : [],
+            categoryOrder: (layoutData.category_order as string[])?.length > 0 ? (layoutData.category_order as string[]) : [],
           });
+        }
+
+        // Fetch DB products (active ones, publicly readable)
+        const { data: products } = await supabase
+          .from('products')
+          .select('*')
+          .eq('status', 'active');
+
+        if (products && products.length > 0) {
+          const productIds = products.map(p => p.id);
+          const { data: variants } = await supabase
+            .from('product_variants')
+            .select('*')
+            .in('product_id', productIds);
+
+          const variantMap = new Map<string, any[]>();
+          variants?.forEach(v => {
+            const list = variantMap.get(v.product_id) || [];
+            list.push(v);
+            variantMap.set(v.product_id, list);
+          });
+
+          setDbProducts(products.map(p => {
+            const pvs = variantMap.get(p.id) || [];
+            return {
+              id: p.id,
+              title: p.title,
+              price: p.price,
+              compare_at_price: p.compare_at_price ?? undefined,
+              images: p.images || [],
+              category: p.category || 'uncategorized',
+              status: 'active' as const,
+              grid_position: { x: 0, y: 0 },
+              description: p.description || '',
+              variants: pvs.map(v => ({
+                id: v.id,
+                title: v.title,
+                options: v.options as Record<string, string> || {},
+                inventory_count: v.inventory_count ?? 0,
+                price: v.price ?? undefined,
+              })),
+            };
+          }));
         }
       } catch {
         // fallback to defaults
       }
       setLoading(false);
     }
-    fetchLayout();
+    fetchData();
   }, []);
+
+  // Merge demo + DB products (DB products won't have demo IDs so no dupes)
+  const allProducts = useCallback((): DemoProduct[] => {
+    return [...DEMO_PRODUCTS, ...dbProducts];
+  }, [dbProducts]);
 
   // Save layout to Supabase (requires auth)
   const saveLayout = useCallback(async (productOrder: string[], categoryOrder: string[]) => {
@@ -65,37 +115,52 @@ export function useGridLayout() {
 
   // Get products in saved order (with grid positions recalculated)
   const getOrderedProducts = useCallback((): DemoProduct[] => {
+    const all = allProducts();
+
     if (!layout || layout.productOrder.length === 0) {
-      return DEMO_PRODUCTS;
+      // No saved order — return all with recalculated positions
+      return all.map((p, i) => ({
+        ...p,
+        grid_position: {
+          x: (i % COLS) * (TILE_W + TILE_GAP),
+          y: Math.floor(i / COLS) * (TILE_H + TILE_GAP),
+        },
+      }));
     }
 
-    const idToProduct = new Map(DEMO_PRODUCTS.map(p => [p.id, p]));
+    const idToProduct = new Map(all.map(p => [p.id, p]));
     const ordered = layout.productOrder
       .map(id => idToProduct.get(id))
       .filter(Boolean) as DemoProduct[];
 
     // Append any new products not in saved order
     const savedIds = new Set(layout.productOrder);
-    const unsaved = DEMO_PRODUCTS.filter(p => !savedIds.has(p.id));
-    const allOrdered = [...ordered, ...unsaved];
+    const unsaved = all.filter(p => !savedIds.has(p.id));
+    const finalOrder = [...ordered, ...unsaved];
 
-    return allOrdered.map((p, i) => ({
+    return finalOrder.map((p, i) => ({
       ...p,
       grid_position: {
         x: (i % COLS) * (TILE_W + TILE_GAP),
         y: Math.floor(i / COLS) * (TILE_H + TILE_GAP),
       },
     }));
-  }, [layout]);
+  }, [layout, allProducts]);
 
   // Get categories in saved order
   const getOrderedCategories = useCallback((): string[] => {
     if (!layout || layout.categoryOrder.length === 0) {
-      const cats = new Set(DEMO_PRODUCTS.map(p => p.category));
+      const all = allProducts();
+      const cats = new Set(all.map(p => p.category));
       return ['ALL', ...Array.from(cats).map(c => c.toUpperCase())];
     }
-    return layout.categoryOrder.map(c => c.toUpperCase());
-  }, [layout]);
+    // Also include any new categories from DB products not in saved order
+    const savedCats = layout.categoryOrder.map(c => c.toUpperCase());
+    const all = allProducts();
+    const allCats = new Set(all.map(p => p.category.toUpperCase()));
+    const missing = Array.from(allCats).filter(c => !savedCats.includes(c) && c !== 'ALL');
+    return [...savedCats.map(c => c.toUpperCase()), ...missing];
+  }, [layout, allProducts]);
 
   // Reset layout (clear saved order)
   const resetLayout = useCallback(async () => {
