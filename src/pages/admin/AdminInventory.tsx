@@ -73,12 +73,14 @@ export default function AdminInventory() {
   const [addForm, setAddForm] = useState({ title: '', price: '', description: '', category: '' });
   const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
-  const [addThumbnail, setAddThumbnail] = useState<string | null>(null);
+  const [addImages, setAddImages] = useState<string[]>([]);
   const [addVideo, setAddVideo] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const editImageInputRef = useRef<HTMLInputElement>(null);
+  const [editUploadingImage, setEditUploadingImage] = useState(false);
 
   useEffect(() => { fetchInventory(); }, []);
 
@@ -176,7 +178,7 @@ export default function AdminInventory() {
     // Update local state
     setProducts(prev => prev.map(p =>
       p.id === editingProduct.id
-        ? { ...p, title: editForm.title, price: parseFloat(editForm.price) || p.price, description: editForm.description, category: editForm.category, variants: editingProduct.variants, totalStock: editingProduct.variants.reduce((s, v) => s + v.inventory_count, 0) }
+        ? { ...p, title: editForm.title, price: parseFloat(editForm.price) || p.price, description: editForm.description, category: editForm.category, images: editingProduct.images, variants: editingProduct.variants, totalStock: editingProduct.variants.reduce((s, v) => s + v.inventory_count, 0) }
         : p
     ));
 
@@ -189,6 +191,7 @@ export default function AdminInventory() {
           price: parseFloat(editForm.price) || editingProduct.price,
           description: editForm.description,
           category: editForm.category,
+          images: editingProduct.images,
         }).eq('id', editingProduct.id);
 
         // Update variants
@@ -240,8 +243,8 @@ export default function AdminInventory() {
     ));
   }
 
-  async function handleMediaUpload(file: File, type: 'image' | 'video') {
-    if (type === 'image') setUploadingImage(true);
+  async function handleMediaUpload(file: File, type: 'image' | 'video', target: 'add' | 'edit' = 'add') {
+    if (type === 'image') { if (target === 'edit') setEditUploadingImage(true); else setUploadingImage(true); }
     else setUploadingVideo(true);
     try {
       const ext = file.name.split('.').pop() || (type === 'image' ? 'jpg' : 'mp4');
@@ -249,12 +252,21 @@ export default function AdminInventory() {
       const { error } = await supabase.storage.from('product-media').upload(path, file);
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
-      if (type === 'image') setAddThumbnail(publicUrl);
-      else setAddVideo(publicUrl);
+      if (type === 'image') {
+        if (target === 'edit' && editingProduct) {
+          const updatedImages = [...editingProduct.images, publicUrl];
+          setEditingProduct({ ...editingProduct, images: updatedImages });
+          setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, images: updatedImages } : p));
+        } else {
+          setAddImages(prev => [...prev, publicUrl]);
+        }
+      } else {
+        setAddVideo(publicUrl);
+      }
     } catch (e) {
       console.error(`Upload ${type} failed:`, e);
     } finally {
-      if (type === 'image') setUploadingImage(false);
+      if (type === 'image') { if (target === 'edit') setEditUploadingImage(false); else setUploadingImage(false); }
       else setUploadingVideo(false);
     }
   }
@@ -265,7 +277,7 @@ export default function AdminInventory() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setAddSaving(false); return; }
 
-    const images = addThumbnail ? [addThumbnail] : [];
+    const images = addImages.length > 0 ? addImages : [];
     const { data: product, error } = await supabase.from('products').insert({
       merchant_id: session.user.id,
       title: addForm.title.trim(),
@@ -294,7 +306,7 @@ export default function AdminInventory() {
     setShowAddProduct(false);
     setAddForm({ title: '', price: '', description: '', category: '' });
     setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
-    setAddThumbnail(null);
+    setAddImages([]);
     setAddVideo(null);
     fetchInventory();
   }
@@ -574,48 +586,48 @@ export default function AdminInventory() {
                   className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
 
-              {/* Thumbnail & Video Upload */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">THUMBNAIL IMAGE</label>
-                  <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image'); e.target.value = ''; }} />
-                  {addThumbnail ? (
-                    <div className="relative aspect-square rounded-lg overflow-hidden border border-border/50 bg-background/40">
-                      <img src={addThumbnail} alt="Thumbnail" className="w-full h-full object-cover" />
-                      <button onClick={() => setAddThumbnail(null)}
-                        className="absolute top-1.5 right-1.5 p-1 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
-                        <X className="w-3 h-3" />
+              {/* Images & Video Upload */}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT IMAGES</label>
+                <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image', 'add'); e.target.value = ''; }} />
+                <div className="flex flex-wrap gap-2">
+                  {addImages.map((img, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/50 bg-background/40">
+                      <img src={img} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
+                      <button onClick={() => setAddImages(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute top-1 right-1 p-0.5 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
+                        <X className="w-2.5 h-2.5" />
                       </button>
                     </div>
-                  ) : (
-                    <button onClick={() => imageInputRef.current?.click()} disabled={uploadingImage}
-                      className="w-full aspect-square rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
-                      {uploadingImage ? <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" /> : <ImageIcon className="w-6 h-6 text-muted-foreground/50" />}
-                      <span className="text-[10px] font-display tracking-wider text-muted-foreground">{uploadingImage ? 'UPLOADING...' : 'ADD IMAGE'}</span>
-                    </button>
-                  )}
+                  ))}
+                  <button onClick={() => imageInputRef.current?.click()} disabled={uploadingImage}
+                    className="w-20 h-20 rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
+                    {uploadingImage ? <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" /> : <Plus className="w-4 h-4 text-muted-foreground/50" />}
+                    <span className="text-[8px] font-display tracking-wider text-muted-foreground">{uploadingImage ? 'UPLOADING' : 'ADD'}</span>
+                  </button>
                 </div>
-                <div>
-                  <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT VIDEO</label>
-                  <input ref={videoInputRef} type="file" accept="video/*" className="hidden"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'video'); e.target.value = ''; }} />
-                  {addVideo ? (
-                    <div className="relative aspect-square rounded-lg overflow-hidden border border-border/50 bg-background/40">
-                      <video src={addVideo} className="w-full h-full object-cover" muted />
-                      <button onClick={() => setAddVideo(null)}
-                        className="absolute top-1.5 right-1.5 p-1 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button onClick={() => videoInputRef.current?.click()} disabled={uploadingVideo}
-                      className="w-full aspect-square rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
-                      {uploadingVideo ? <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" /> : <Video className="w-6 h-6 text-muted-foreground/50" />}
-                      <span className="text-[10px] font-display tracking-wider text-muted-foreground">{uploadingVideo ? 'UPLOADING...' : 'ADD VIDEO'}</span>
+              </div>
+
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT VIDEO</label>
+                <input ref={videoInputRef} type="file" accept="video/*" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'video', 'add'); e.target.value = ''; }} />
+                {addVideo ? (
+                  <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/50 bg-background/40">
+                    <video src={addVideo} className="w-full h-full object-cover" muted />
+                    <button onClick={() => setAddVideo(null)}
+                      className="absolute top-1 right-1 p-0.5 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
+                      <X className="w-2.5 h-2.5" />
                     </button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <button onClick={() => videoInputRef.current?.click()} disabled={uploadingVideo}
+                    className="w-20 h-20 rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
+                    {uploadingVideo ? <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" /> : <Video className="w-4 h-4 text-muted-foreground/50" />}
+                    <span className="text-[8px] font-display tracking-wider text-muted-foreground">{uploadingVideo ? 'UPLOADING' : 'ADD'}</span>
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -724,6 +736,35 @@ export default function AdminInventory() {
                 <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
                   className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
+
+              {/* Images management */}
+              {!editingProduct.isDemo && (
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT IMAGES</label>
+                  <input ref={editImageInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image', 'edit'); e.target.value = ''; }} />
+                  <div className="flex flex-wrap gap-2">
+                    {editingProduct.images.map((img, i) => (
+                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border/50 bg-background/40">
+                        <img src={img} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
+                        <button onClick={() => {
+                          const updatedImages = editingProduct.images.filter((_, idx) => idx !== i);
+                          setEditingProduct({ ...editingProduct, images: updatedImages });
+                          setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, images: updatedImages } : p));
+                        }}
+                          className="absolute top-0.5 right-0.5 p-0.5 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
+                          <X className="w-2 h-2" />
+                        </button>
+                      </div>
+                    ))}
+                    <button onClick={() => editImageInputRef.current?.click()} disabled={editUploadingImage}
+                      className="w-16 h-16 rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
+                      {editUploadingImage ? <Loader2 className="w-3 h-3 text-muted-foreground animate-spin" /> : <Plus className="w-3 h-3 text-muted-foreground/50" />}
+                      <span className="text-[7px] font-display tracking-wider text-muted-foreground">{editUploadingImage ? '...' : 'ADD'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
