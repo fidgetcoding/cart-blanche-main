@@ -717,7 +717,7 @@ export default function AdminInventory() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="liquid-glass rounded-xl w-full max-w-lg p-6 space-y-4"
+              className="liquid-glass rounded-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
               <h2 className="font-display text-lg font-bold">Edit Product</h2>
@@ -729,23 +729,21 @@ export default function AdminInventory() {
               </div>
 
               {/* Images management */}
-              {!editingProduct.isDemo && (
-                <div>
-                  <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT IMAGES</label>
-                  <input ref={editImageInputRef} type="file" accept="image/*" className="hidden"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image', 'edit'); e.target.value = ''; }} />
-                  <DraggableImageGrid
-                    images={editingProduct.images}
-                    onChange={(newImages) => {
-                      setEditingProduct({ ...editingProduct, images: newImages });
-                      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, images: newImages } : p));
-                    }}
-                    onUpload={() => editImageInputRef.current?.click()}
-                    uploading={editUploadingImage}
-                    size="sm"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT IMAGES</label>
+                <input ref={editImageInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image', 'edit'); e.target.value = ''; }} />
+                <DraggableImageGrid
+                  images={editingProduct.images}
+                  onChange={(newImages) => {
+                    setEditingProduct({ ...editingProduct, images: newImages });
+                    setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, images: newImages } : p));
+                  }}
+                  onUpload={() => editImageInputRef.current?.click()}
+                  uploading={editUploadingImage}
+                  size="sm"
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
