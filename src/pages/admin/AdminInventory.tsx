@@ -193,6 +193,7 @@ export default function AdminInventory() {
           description: editForm.description,
           category: editForm.category,
           images: editingProduct.images,
+          tags: editingProduct.tags,
         }).eq('id', editingProduct.id);
 
         // Update variants
@@ -471,12 +472,22 @@ export default function AdminInventory() {
                             <p className="text-xs text-muted-foreground font-display tracking-widest">DESCRIPTION</p>
                             <p className="text-sm text-foreground/70 leading-relaxed">{p.description}</p>
                           </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
-                            className="px-4 py-2 text-xs font-display tracking-wider border border-border rounded-lg hover:bg-secondary transition-colors flex-shrink-0"
-                          >
-                            EDIT PRODUCT
-                          </button>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
+                              className="px-4 py-2 text-xs font-display tracking-wider border border-border rounded-lg hover:bg-secondary transition-colors"
+                            >
+                              EDIT
+                            </button>
+                            {!p.isDemo && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); deleteProduct(p); }}
+                                className="px-3 py-2 text-xs font-display tracking-wider border border-destructive/30 rounded-lg hover:bg-destructive/20 text-destructive transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {/* Tags management */}
