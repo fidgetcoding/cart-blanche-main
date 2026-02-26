@@ -315,7 +315,7 @@ export function ProductView({ productIndex, onClose, onNavigate, activeCategory,
             onClick={(e) => e.stopPropagation()}
           >
             {/* Product image area */}
-            <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 relative">
+            <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 relative overflow-hidden">
               {/* Close button */}
               <button
                 onClick={onClose}
@@ -323,32 +323,41 @@ export function ProductView({ productIndex, onClose, onNavigate, activeCategory,
               >
                 <X className="w-4 h-4" />
               </button>
-              <span className="font-display text-muted-foreground/15 text-lg tracking-[0.3em]">
-                {product.category.toUpperCase()}
-              </span>
+              {product.images && product.images.length > 0 ? (
+                <img
+                  src={product.images[Math.min(activeImage, product.images.length - 1)]}
+                  alt={product.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="font-display text-muted-foreground/15 text-lg tracking-[0.3em]">
+                  {product.category.toUpperCase()}
+                </span>
+              )}
               {product.compare_at_price && (
                 <div className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-display font-bold px-2 py-1 rounded">
                   SALE
                 </div>
               )}
 
-              {/* Image selector zones */}
-              <div className="absolute bottom-0 left-0 right-0 flex h-12 z-10" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-                {[0, 1, 2].map((i) => (
-                  <button
-                    key={i}
-                    onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
-                    onMouseEnter={() => setActiveImage(i)}
-                    className="flex-1 relative group"
-                  >
-                    <div className={`absolute bottom-2 left-1 right-1 h-1 rounded-full transition-all duration-200 ${
-                      activeImage === i
-                        ? 'bg-foreground/80'
-                        : 'bg-foreground/15 group-hover:bg-foreground/30'
-                    }`} />
-                  </button>
-                ))}
-              </div>
+              {product.images && product.images.length > 1 && (
+                <div className="absolute bottom-0 left-0 right-0 flex h-12 z-10" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                  {product.images.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
+                      onMouseEnter={() => setActiveImage(i)}
+                      className="flex-1 relative group"
+                    >
+                      <div className={`absolute bottom-2 left-1 right-1 h-1 rounded-full transition-all duration-200 ${
+                        activeImage === i
+                          ? 'bg-foreground/80'
+                          : 'bg-foreground/15 group-hover:bg-foreground/30'
+                      }`} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Title + Price */}
