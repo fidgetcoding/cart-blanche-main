@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2 } from 'lucide-react';
+import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -591,22 +592,12 @@ export default function AdminInventory() {
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT IMAGES</label>
                 <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
                   onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image', 'add'); e.target.value = ''; }} />
-                <div className="flex flex-wrap gap-2">
-                  {addImages.map((img, i) => (
-                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/50 bg-background/40">
-                      <img src={img} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
-                      <button onClick={() => setAddImages(prev => prev.filter((_, idx) => idx !== i))}
-                        className="absolute top-1 right-1 p-0.5 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </div>
-                  ))}
-                  <button onClick={() => imageInputRef.current?.click()} disabled={uploadingImage}
-                    className="w-20 h-20 rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
-                    {uploadingImage ? <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" /> : <Plus className="w-4 h-4 text-muted-foreground/50" />}
-                    <span className="text-[8px] font-display tracking-wider text-muted-foreground">{uploadingImage ? 'UPLOADING' : 'ADD'}</span>
-                  </button>
-                </div>
+                <DraggableImageGrid
+                  images={addImages}
+                  onChange={setAddImages}
+                  onUpload={() => imageInputRef.current?.click()}
+                  uploading={uploadingImage}
+                />
               </div>
 
               <div>
@@ -743,26 +734,16 @@ export default function AdminInventory() {
                   <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">PRODUCT IMAGES</label>
                   <input ref={editImageInputRef} type="file" accept="image/*" className="hidden"
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image', 'edit'); e.target.value = ''; }} />
-                  <div className="flex flex-wrap gap-2">
-                    {editingProduct.images.map((img, i) => (
-                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border/50 bg-background/40">
-                        <img src={img} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
-                        <button onClick={() => {
-                          const updatedImages = editingProduct.images.filter((_, idx) => idx !== i);
-                          setEditingProduct({ ...editingProduct, images: updatedImages });
-                          setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, images: updatedImages } : p));
-                        }}
-                          className="absolute top-0.5 right-0.5 p-0.5 bg-background/80 rounded-full hover:bg-destructive/80 transition-colors">
-                          <X className="w-2 h-2" />
-                        </button>
-                      </div>
-                    ))}
-                    <button onClick={() => editImageInputRef.current?.click()} disabled={editUploadingImage}
-                      className="w-16 h-16 rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50">
-                      {editUploadingImage ? <Loader2 className="w-3 h-3 text-muted-foreground animate-spin" /> : <Plus className="w-3 h-3 text-muted-foreground/50" />}
-                      <span className="text-[7px] font-display tracking-wider text-muted-foreground">{editUploadingImage ? '...' : 'ADD'}</span>
-                    </button>
-                  </div>
+                  <DraggableImageGrid
+                    images={editingProduct.images}
+                    onChange={(newImages) => {
+                      setEditingProduct({ ...editingProduct, images: newImages });
+                      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, images: newImages } : p));
+                    }}
+                    onUpload={() => editImageInputRef.current?.click()}
+                    uploading={editUploadingImage}
+                    size="sm"
+                  />
                 </div>
               )}
 
