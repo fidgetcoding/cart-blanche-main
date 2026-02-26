@@ -41,8 +41,16 @@ export function ProductTile({ product, scale, isFocused, isHovered, dimmed, onCl
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
       <div className="w-full h-full flex flex-col">
-        <div className={`flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative transition-shadow duration-300 ${glowing ? 'shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)]' : ''}`}>
-          <div className="w-3/4 h-3/4 bg-muted/60 rounded-md pointer-events-none" />
+        <div className={`flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300 ${glowing ? 'shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)]' : ''}`}>
+          {product.images && product.images.length > 0 ? (
+            <img
+              src={product.images[0]}
+              alt={product.title}
+              className="w-full h-full object-cover rounded-lg pointer-events-none"
+            />
+          ) : (
+            <div className="w-3/4 h-3/4 bg-muted/60 rounded-md pointer-events-none" />
+          )}
 
           {/* Quick action buttons — bottom-right of thumbnail */}
           <AnimatePresence>
