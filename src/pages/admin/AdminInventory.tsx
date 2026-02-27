@@ -370,16 +370,49 @@ export default function AdminInventory() {
             }`}>
             ALL
           </button>
-          {allTags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setActiveFilter(tag === activeFilter ? 'all' : tag)}
-              className={`px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
-                activeFilter === tag ? getTagColor(tag) : 'bg-card text-muted-foreground border-border hover:bg-secondary'
-              }`}>
-              {tag.toUpperCase().replace('-', ' ')}
-            </button>
-          ))}
+          {allTags.map(tag => {
+            const isDefault = tag in CATEGORY_COLORS;
+            return (
+              <div key={tag} className="relative group flex items-center">
+                <button
+                  onClick={() => setActiveFilter(tag === activeFilter ? 'all' : tag)}
+                  className={`px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
+                    activeFilter === tag ? getTagColor(tag) : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+                  } ${!isDefault ? 'pr-7' : ''}`}>
+                  {tag.toUpperCase().replace('-', ' ')}
+                </button>
+                {!isDefault && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!confirm(`Remove tag "${tag}" from all products?`)) return;
+                      setProducts(prev => prev.map(p => ({
+                        ...p,
+                        tags: p.tags.filter(t => t !== tag),
+                        category: p.category === tag ? (p.tags.filter(t => t !== tag)[0] || '') : p.category,
+                      })));
+                      if (activeFilter === tag) setActiveFilter('all');
+                      // Persist removal to DB
+                      (async () => {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) return;
+                        const affected = products.filter(p => !p.isDemo && p.tags.includes(tag));
+                        for (const p of affected) {
+                          const newTags = p.tags.filter(t => t !== tag);
+                          const newCategory = p.category === tag ? (newTags[0] || '') : p.category;
+                          await supabase.from('products').update({ tags: newTags, category: newCategory }).eq('id', p.id);
+                        }
+                      })();
+                    }}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full bg-destructive/80 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                    title={`Delete tag "${tag}"`}
+                  >
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
