@@ -412,7 +412,7 @@ export default function AdminInventory() {
           <button
             onClick={() => setTagEditMode(prev => !prev)}
             className={`ml-1 px-2.5 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
-              tagEditMode ? 'bg-destructive/15 text-destructive border-destructive/30' : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+              tagEditMode ? 'bg-success/15 text-success border-success/30' : 'bg-card text-muted-foreground border-border hover:bg-secondary'
             }`}
             title={tagEditMode ? 'Done editing tags' : 'Edit tags'}
           >
