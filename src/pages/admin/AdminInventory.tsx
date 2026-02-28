@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil } from 'lucide-react';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -416,7 +416,7 @@ export default function AdminInventory() {
             }`}
             title={tagEditMode ? 'Done editing tags' : 'Edit tags'}
           >
-            {tagEditMode ? <Check className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
+            {tagEditMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
