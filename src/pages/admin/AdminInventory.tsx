@@ -67,6 +67,7 @@ export default function AdminInventory() {
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [editVariantValue, setEditVariantValue] = useState('');
   const [newTag, setNewTag] = useState('');
+  const [tagEditMode, setTagEditMode] = useState(false);
   const [addingTagForId, setAddingTagForId] = useState<string | null>(null);
   const [modalNewTag, setModalNewTag] = useState('');
   const lowStockThreshold = 5;
@@ -362,7 +363,7 @@ export default function AdminInventory() {
             </span>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           <button
             onClick={() => setActiveFilter('all')}
             className={`px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
@@ -379,34 +380,44 @@ export default function AdminInventory() {
                   }`}>
                   {tag.toUpperCase().replace('-', ' ')}
                 </button>
-                <button
-                  onClick={() => {
-                    if (!confirm(`Remove tag "${tag}" from all products?`)) return;
-                    setProducts(prev => prev.map(p => ({
-                      ...p,
-                      tags: p.tags.filter(t => t !== tag),
-                      category: p.category === tag ? (p.tags.filter(t => t !== tag)[0] || '') : p.category,
-                    })));
-                    if (activeFilter === tag) setActiveFilter('all');
-                    (async () => {
-                      const { data: { session } } = await supabase.auth.getSession();
-                      if (!session) return;
-                      const affected = products.filter(p => !p.isDemo && p.tags.includes(tag));
-                      for (const p of affected) {
-                        const newTags = p.tags.filter(t => t !== tag);
-                        const newCategory = p.category === tag ? (newTags[0] || '') : p.category;
-                        await supabase.from('products').update({ tags: newTags, category: newCategory }).eq('id', p.id);
-                      }
-                    })();
-                  }}
-                  className="w-5 h-5 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                  title={`Delete tag "${tag}"`}
-                  aria-label={`Delete tag ${tag}`}
-                >
-                  <X className="w-3 h-3" />
-                </button>
+                {tagEditMode && (
+                  <button
+                    onClick={() => {
+                      if (!confirm(`Remove tag "${tag}" from all products?`)) return;
+                      setProducts(prev => prev.map(p => ({
+                        ...p,
+                        tags: p.tags.filter(t => t !== tag),
+                        category: p.category === tag ? (p.tags.filter(t => t !== tag)[0] || '') : p.category,
+                      })));
+                      if (activeFilter === tag) setActiveFilter('all');
+                      (async () => {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) return;
+                        const affected = products.filter(p => !p.isDemo && p.tags.includes(tag));
+                        for (const p of affected) {
+                          const newTags = p.tags.filter(t => t !== tag);
+                          const newCategory = p.category === tag ? (newTags[0] || '') : p.category;
+                          await supabase.from('products').update({ tags: newTags, category: newCategory }).eq('id', p.id);
+                        }
+                      })();
+                    }}
+                    className="w-5 h-5 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    title={`Delete tag "${tag}"`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
               </div>
           ))}
+          <button
+            onClick={() => setTagEditMode(prev => !prev)}
+            className={`ml-1 px-2.5 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
+              tagEditMode ? 'bg-destructive/15 text-destructive border-destructive/30' : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+            }`}
+            title={tagEditMode ? 'Done editing tags' : 'Edit tags'}
+          >
+            {tagEditMode ? <Check className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
 
