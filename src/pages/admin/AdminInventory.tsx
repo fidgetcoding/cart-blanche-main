@@ -45,15 +45,36 @@ function buildProductRows(): ProductRow[] {
   }));
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  outerwear: 'bg-blue-500/15 text-blue-400 border-blue-500/20',
-  streetwear: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-  essentials: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20',
-  'new-arrivals': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  outerwear: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/20' },
+  streetwear: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' },
+  essentials: { bg: 'bg-zinc-500/15', text: 'text-zinc-400', border: 'border-zinc-500/20' },
+  'new-arrivals': { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
 };
 
+const EXTRA_TAG_COLORS = [
+  { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/20' },
+  { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/20' },
+  { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/20' },
+  { bg: 'bg-teal-500/15', text: 'text-teal-400', border: 'border-teal-500/20' },
+  { bg: 'bg-indigo-500/15', text: 'text-indigo-400', border: 'border-indigo-500/20' },
+  { bg: 'bg-pink-500/15', text: 'text-pink-400', border: 'border-pink-500/20' },
+];
+
+function getTagColorObj(tag: string) {
+  if (CATEGORY_COLORS[tag]) return CATEGORY_COLORS[tag];
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  return EXTRA_TAG_COLORS[Math.abs(hash) % EXTRA_TAG_COLORS.length];
+}
+
 function getTagColor(tag: string) {
-  return CATEGORY_COLORS[tag] || 'bg-primary/10 text-primary border-primary/20';
+  const c = getTagColorObj(tag);
+  return `${c.bg} ${c.text} ${c.border}`;
+}
+
+function getTagTextColor(tag: string) {
+  return getTagColorObj(tag).text;
 }
 
 export default function AdminInventory() {
@@ -375,8 +396,8 @@ export default function AdminInventory() {
               <div key={tag} className="flex items-center gap-1">
                 <button
                   onClick={() => setActiveFilter(tag === activeFilter ? 'all' : tag)}
-                  className={`px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
-                    activeFilter === tag ? getTagColor(tag) : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+                  className={`px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${getTagColor(tag)} ${
+                    activeFilter === tag ? 'ring-1 ring-foreground/30' : 'opacity-50 hover:opacity-80'
                   }`}>
                   {tag.toUpperCase().replace('-', ' ')}
                 </button>
@@ -695,6 +716,21 @@ export default function AdminInventory() {
 
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">TAGS</label>
+                {/* Existing tags as toggleable chips */}
+                {allTags.filter(t => !addTags.includes(t)).length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    {allTags.filter(t => !addTags.includes(t)).map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => setAddTags(prev => [...prev, tag])}
+                        className={`text-[10px] font-display px-2 py-1 rounded border opacity-50 hover:opacity-100 transition-opacity ${getTagColor(tag)}`}
+                      >
+                        {tag.toUpperCase().replace('-', ' ')}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Selected tags */}
                 <div className="flex items-center gap-2 flex-wrap">
                   {addTags.map(tag => (
                     <span key={tag} className={`text-[10px] font-display px-2 py-1 rounded border inline-flex items-center gap-1.5 ${getTagColor(tag)}`}>
@@ -708,7 +744,7 @@ export default function AdminInventory() {
                     <input
                       value={addTagInput}
                       onChange={e => setAddTagInput(e.target.value)}
-                      placeholder="Add tag..."
+                      placeholder="New tag..."
                       className="w-24 px-2 py-1 bg-background/40 border border-border/50 backdrop-blur-sm rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-ring"
                       onKeyDown={e => {
                         if (e.key === 'Enter' && addTagInput.trim()) {
@@ -862,6 +898,25 @@ export default function AdminInventory() {
               {/* Tags */}
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">TAGS</label>
+                {/* Existing tags as toggleable chips */}
+                {allTags.filter(t => !editingProduct.tags.includes(t)).length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    {allTags.filter(t => !editingProduct.tags.includes(t)).map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => {
+                          const updated = [...editingProduct.tags, tag];
+                          setEditingProduct({ ...editingProduct, tags: updated });
+                          setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, tags: updated } : p));
+                        }}
+                        className={`text-[10px] font-display px-2 py-1 rounded border opacity-50 hover:opacity-100 transition-opacity ${getTagColor(tag)}`}
+                      >
+                        {tag.toUpperCase().replace('-', ' ')}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Selected tags */}
                 <div className="flex items-center gap-2 flex-wrap">
                   {editingProduct.tags.map(tag => (
                     <span key={tag} className={`text-[10px] font-display px-2 py-1 rounded border inline-flex items-center gap-1.5 ${getTagColor(tag)}`}>
@@ -879,7 +934,7 @@ export default function AdminInventory() {
                     <input
                       value={modalNewTag}
                       onChange={e => setModalNewTag(e.target.value)}
-                      placeholder="Add tag..."
+                      placeholder="New tag..."
                       className="w-24 px-2 py-1 bg-background/40 border border-border/50 backdrop-blur-sm rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-ring"
                       onKeyDown={e => {
                         if (e.key === 'Enter' && modalNewTag.trim()) {
