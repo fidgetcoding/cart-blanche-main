@@ -370,9 +370,7 @@ export default function AdminInventory() {
             }`}>
             ALL
           </button>
-          {allTags.map(tag => {
-            const isDefault = tag in CATEGORY_COLORS;
-            return (
+          {allTags.map(tag => (
               <div key={tag} className="flex items-center gap-1">
                 <button
                   onClick={() => setActiveFilter(tag === activeFilter ? 'all' : tag)}
@@ -381,38 +379,34 @@ export default function AdminInventory() {
                   }`}>
                   {tag.toUpperCase().replace('-', ' ')}
                 </button>
-                {!isDefault && (
-                  <button
-                    onClick={() => {
-                      if (!confirm(`Remove tag "${tag}" from all products?`)) return;
-                      setProducts(prev => prev.map(p => ({
-                        ...p,
-                        tags: p.tags.filter(t => t !== tag),
-                        category: p.category === tag ? (p.tags.filter(t => t !== tag)[0] || '') : p.category,
-                      })));
-                      if (activeFilter === tag) setActiveFilter('all');
-                      // Persist removal to DB
-                      (async () => {
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (!session) return;
-                        const affected = products.filter(p => !p.isDemo && p.tags.includes(tag));
-                        for (const p of affected) {
-                          const newTags = p.tags.filter(t => t !== tag);
-                          const newCategory = p.category === tag ? (newTags[0] || '') : p.category;
-                          await supabase.from('products').update({ tags: newTags, category: newCategory }).eq('id', p.id);
-                        }
-                      })();
-                    }}
-                    className="w-6 h-6 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
-                    title={`Delete tag "${tag}"`}
-                    aria-label={`Delete tag ${tag}`}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    if (!confirm(`Remove tag "${tag}" from all products?`)) return;
+                    setProducts(prev => prev.map(p => ({
+                      ...p,
+                      tags: p.tags.filter(t => t !== tag),
+                      category: p.category === tag ? (p.tags.filter(t => t !== tag)[0] || '') : p.category,
+                    })));
+                    if (activeFilter === tag) setActiveFilter('all');
+                    (async () => {
+                      const { data: { session } } = await supabase.auth.getSession();
+                      if (!session) return;
+                      const affected = products.filter(p => !p.isDemo && p.tags.includes(tag));
+                      for (const p of affected) {
+                        const newTags = p.tags.filter(t => t !== tag);
+                        const newCategory = p.category === tag ? (newTags[0] || '') : p.category;
+                        await supabase.from('products').update({ tags: newTags, category: newCategory }).eq('id', p.id);
+                      }
+                    })();
+                  }}
+                  className="w-5 h-5 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  title={`Delete tag "${tag}"`}
+                  aria-label={`Delete tag ${tag}`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </div>
-            );
-          })}
+          ))}
         </div>
       </div>
 
