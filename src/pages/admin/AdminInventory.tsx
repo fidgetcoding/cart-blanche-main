@@ -373,18 +373,17 @@ export default function AdminInventory() {
           {allTags.map(tag => {
             const isDefault = tag in CATEGORY_COLORS;
             return (
-              <div key={tag} className="relative group flex items-center">
+              <div key={tag} className="flex items-center gap-1">
                 <button
                   onClick={() => setActiveFilter(tag === activeFilter ? 'all' : tag)}
                   className={`px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
                     activeFilter === tag ? getTagColor(tag) : 'bg-card text-muted-foreground border-border hover:bg-secondary'
-                  } ${!isDefault ? 'pr-7' : ''}`}>
+                  }`}>
                   {tag.toUpperCase().replace('-', ' ')}
                 </button>
                 {!isDefault && (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={() => {
                       if (!confirm(`Remove tag "${tag}" from all products?`)) return;
                       setProducts(prev => prev.map(p => ({
                         ...p,
@@ -404,10 +403,11 @@ export default function AdminInventory() {
                         }
                       })();
                     }}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full bg-destructive/80 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                    className="w-6 h-6 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
                     title={`Delete tag "${tag}"`}
+                    aria-label={`Delete tag ${tag}`}
                   >
-                    <X className="w-2.5 h-2.5" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
