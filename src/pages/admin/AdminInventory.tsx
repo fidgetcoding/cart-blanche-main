@@ -507,6 +507,17 @@ export default function AdminInventory() {
                           category: p.category === tag ? (p.tags.filter(t => t !== tag)[0] || '') : p.category,
                         })));
                         if (activeFilter === tag) setActiveFilter('all');
+                        // Remove from grid layout categoryOrder too
+                        const currentCatOrder = gridLayout?.categoryOrder || [];
+                        const newCatOrder = currentCatOrder.filter(c => c.toLowerCase() !== tag.toLowerCase());
+                        const currentProductOrder = gridLayout?.productOrder || [];
+                        saveLayout(currentProductOrder, newCatOrder);
+                        // Also remove from hiddenTags if present
+                        if (hiddenTags.includes(tag)) {
+                          const newHidden = hiddenTags.filter(t => t !== tag);
+                          setHiddenTags(newHidden);
+                          saveHiddenTags(newHidden);
+                        }
                         (async () => {
                           const { data: { session } } = await supabase.auth.getSession();
                           if (!session) return;
