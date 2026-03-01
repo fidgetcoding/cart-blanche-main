@@ -12,17 +12,12 @@ import imgP10 from '@/assets/products/p10-track-jacket.jpg';
 import imgP11 from '@/assets/products/p11-mesh-shorts.jpg';
 import imgP12 from '@/assets/products/p12-logo-cap.jpg';
 import imgP13 from '@/assets/products/p13-core-crewneck.jpg';
-import imgP14 from '@/assets/products/p14-slim-jogger.jpg';
 import imgP15 from '@/assets/products/p15-tank-top.jpg';
 import imgP16 from '@/assets/products/p16-basic-tee-3pack.jpg';
 import imgP17 from '@/assets/products/p17-sweat-shorts.jpg';
 import imgP18 from '@/assets/products/p18-long-sleeve.jpg';
 import imgP19 from '@/assets/products/p19-deconstructed-blazer.jpg';
 import imgP20 from '@/assets/products/p20-knit-polo.jpg';
-import imgP21 from '@/assets/products/p21-wide-leg-trouser.jpg';
-import imgP22 from '@/assets/products/p22-zip-vest.jpg';
-import imgP23 from '@/assets/products/p23-cashmere-beanie.jpg';
-import imgP24 from '@/assets/products/p24-scarf-wrap.jpg';
 import imgP1Worn from '@/assets/products/p1-cloud-puffer-worn.jpg';
 import imgP2Worn from '@/assets/products/p2-stealth-trench-worn.jpg';
 import imgP3Worn from '@/assets/products/p3-bomber-worn.jpg';
@@ -36,17 +31,12 @@ import imgP10Worn from '@/assets/products/p10-track-jacket-worn.jpg';
 import imgP11Worn from '@/assets/products/p11-mesh-shorts-worn.jpg';
 import imgP12Worn from '@/assets/products/p12-logo-cap-worn.jpg';
 import imgP13Worn from '@/assets/products/p13-core-crewneck-worn.jpg';
-import imgP14Worn from '@/assets/products/p14-slim-jogger-worn.jpg';
 import imgP15Worn from '@/assets/products/p15-tank-top-worn.jpg';
 import imgP16Worn from '@/assets/products/p16-basic-tee-worn.jpg';
 import imgP17Worn from '@/assets/products/p17-sweat-shorts-worn.jpg';
 import imgP18Worn from '@/assets/products/p18-long-sleeve-worn.jpg';
 import imgP19Worn from '@/assets/products/p19-deconstructed-blazer-worn.jpg';
 import imgP20Worn from '@/assets/products/p20-knit-polo-worn.jpg';
-import imgP21Worn from '@/assets/products/p21-wide-leg-trouser-worn.jpg';
-import imgP22Worn from '@/assets/products/p22-zip-vest-worn.jpg';
-import imgP23Worn from '@/assets/products/p23-cashmere-beanie-worn.jpg';
-import imgP24Worn from '@/assets/products/p24-scarf-wrap-worn.jpg';
 
 export interface DemoProduct {
   id: string;
@@ -143,15 +133,10 @@ export const DEMO_PRODUCTS: DemoProduct[] = [
   { id: 'p11', title: 'Mesh Shorts', price: 85, images: [imgP11, imgP11Worn], category: 'streetwear', status: 'active', grid_position: gridPos(10), variants: makeVariants('p11'), description: 'Double-layer mesh with elastic waist. Practice-ready.' },
   { id: 'p12', title: 'Logo Cap', price: 45, images: [imgP12, imgP12Worn], category: 'streetwear', status: 'active', grid_position: gridPos(11), variants: [{ id: 'p12-os', title: 'One Size', options: { size: 'OS' }, inventory_count: 30 }], description: 'Washed cotton dad cap with embroidered logo.' },
   { id: 'p13', title: 'Core Crewneck', price: 95, images: [imgP13, imgP13Worn], category: 'essentials', status: 'active', grid_position: gridPos(12), variants: makeVariants('p13'), description: 'Mid-weight french terry crewneck. The foundation.' },
-  { id: 'p14', title: 'Slim Jogger', price: 120, images: [imgP14, imgP14Worn], category: 'essentials', status: 'active', grid_position: gridPos(13), variants: makeVariants('p14'), description: 'Tapered jogger with zip pockets. Brushed fleece interior.' },
-  { id: 'p15', title: 'Tank Top', price: 40, images: [imgP15, imgP15Worn], category: 'essentials', status: 'active', grid_position: gridPos(14), variants: makeVariants('p15'), description: 'Ribbed cotton tank. Elongated hem.' },
-  { id: 'p16', title: 'Basic Tee 3-Pack', price: 110, images: [imgP16, imgP16Worn], category: 'essentials', status: 'active', grid_position: gridPos(15), variants: makeVariants('p16'), description: 'Three essential tees in black, white, and grey.' },
-  { id: 'p17', title: 'Sweat Shorts', price: 75, images: [imgP17, imgP17Worn], category: 'essentials', status: 'active', grid_position: gridPos(16), variants: makeVariants('p17'), description: 'French terry shorts with raw hem.' },
-  { id: 'p18', title: 'Long Sleeve Base', price: 70, images: [imgP18, imgP18Worn], category: 'essentials', status: 'active', grid_position: gridPos(17), variants: makeVariants('p18'), description: 'Fitted long sleeve in premium cotton. Layer or wear alone.' },
-  { id: 'p19', title: 'Deconstructed Blazer', price: 340, images: [imgP19, imgP19Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(18), variants: makeVariants('p19'), description: 'Unstructured blazer with raw edge details.' },
-  { id: 'p20', title: 'Knit Polo', price: 125, images: [imgP20, imgP20Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(19), variants: makeVariants('p20'), description: 'Textured knit polo. Open collar. Relaxed fit.' },
-  { id: 'p21', title: 'Wide Leg Trouser', price: 195, images: [imgP21, imgP21Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(20), variants: makeVariants('p21'), description: 'High-waisted wide leg in crisp wool blend.' },
-  { id: 'p22', title: 'Zip Vest', price: 155, images: [imgP22, imgP22Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(21), variants: makeVariants('p22'), description: 'Quilted vest with hidden zip. Technical warmth.' },
-  { id: 'p23', title: 'Cashmere Beanie', price: 85, images: [imgP23, imgP23Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(22), variants: [{ id: 'p23-os', title: 'One Size', options: { size: 'OS' }, inventory_count: 25 }], description: '100% cashmere ribbed beanie. Exceptionally soft.' },
-  { id: 'p24', title: 'Scarf Wrap', price: 110, images: [imgP24, imgP24Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(23), variants: [{ id: 'p24-os', title: 'One Size', options: { size: 'OS' }, inventory_count: 15 }], description: 'Oversized merino scarf. Can be worn as shawl or wrap.' },
+  { id: 'p15', title: 'Tank Top', price: 40, images: [imgP15, imgP15Worn], category: 'essentials', status: 'active', grid_position: gridPos(13), variants: makeVariants('p15'), description: 'Ribbed cotton tank. Elongated hem.' },
+  { id: 'p16', title: 'Basic Tee 3-Pack', price: 110, images: [imgP16, imgP16Worn], category: 'essentials', status: 'active', grid_position: gridPos(14), variants: makeVariants('p16'), description: 'Three essential tees in black, white, and grey.' },
+  { id: 'p17', title: 'Sweat Shorts', price: 75, images: [imgP17, imgP17Worn], category: 'essentials', status: 'active', grid_position: gridPos(15), variants: makeVariants('p17'), description: 'French terry shorts with raw hem.' },
+  { id: 'p18', title: 'Long Sleeve Base', price: 70, images: [imgP18, imgP18Worn], category: 'essentials', status: 'active', grid_position: gridPos(16), variants: makeVariants('p18'), description: 'Fitted long sleeve in premium cotton. Layer or wear alone.' },
+  { id: 'p19', title: 'Deconstructed Blazer', price: 340, images: [imgP19, imgP19Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(17), variants: makeVariants('p19'), description: 'Unstructured blazer with raw edge details.' },
+  { id: 'p20', title: 'Knit Polo', price: 125, images: [imgP20, imgP20Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(18), variants: makeVariants('p20'), description: 'Textured knit polo. Open collar. Relaxed fit.' },
 ];
