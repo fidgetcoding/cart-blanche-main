@@ -17,7 +17,8 @@ const TILE_H = 300;
 const TILE_GAP = 6;
 const MAX_SCALE = 2;
 const MAX_ZOOM_THRESHOLD = 1.9;
-const ZOOM_SENSITIVITY = 0.003;
+const ZOOM_SENSITIVITY = 0.004;
+const PINCH_ZOOM_SENSITIVITY = 0.012;
 const COLS = 6;
 
 export function SpatialCanvas() {
@@ -314,9 +315,12 @@ export function SpatialCanvas() {
       const rect = container.getBoundingClientRect();
       const cursorX = e.clientX - rect.left;
       const cursorY = e.clientY - rect.top;
-      const delta = -e.deltaY * ZOOM_SENSITIVITY;
+      // Trackpad pinch fires ctrlKey + small deltaY; scroll wheel fires larger deltaY
+      const isPinch = e.ctrlKey;
+      const sensitivity = isPinch ? PINCH_ZOOM_SENSITIVITY : ZOOM_SENSITIVITY;
+      const delta = -e.deltaY * sensitivity;
       const oldScale = target.scale;
-      const newScale = Math.max(minScaleRef.current, Math.min(MAX_SCALE, oldScale * (1 + delta)));
+      const newScale = Math.max(minScaleRef.current, Math.min(MAX_SCALE, oldScale * Math.exp(delta)));
       const ratio = newScale / oldScale;
       target.x = cursorX - (cursorX - target.x) * ratio;
       target.y = cursorY - (cursorY - target.y) * ratio;
