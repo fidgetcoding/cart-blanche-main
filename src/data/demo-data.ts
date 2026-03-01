@@ -18,6 +18,7 @@ import imgP17 from '@/assets/products/p17-sweat-shorts.jpg';
 import imgP18 from '@/assets/products/p18-long-sleeve.jpg';
 import imgP19 from '@/assets/products/p19-deconstructed-blazer.jpg';
 import imgP20 from '@/assets/products/p20-knit-polo.jpg';
+import imgP25 from '@/assets/products/p25-utility-pant.jpg';
 import imgP1Worn from '@/assets/products/p1-cloud-puffer-worn.jpg';
 import imgP2Worn from '@/assets/products/p2-stealth-trench-worn.jpg';
 import imgP3Worn from '@/assets/products/p3-bomber-worn.jpg';
@@ -37,6 +38,7 @@ import imgP17Worn from '@/assets/products/p17-sweat-shorts-worn.jpg';
 import imgP18Worn from '@/assets/products/p18-long-sleeve-worn.jpg';
 import imgP19Worn from '@/assets/products/p19-deconstructed-blazer-worn.jpg';
 import imgP20Worn from '@/assets/products/p20-knit-polo-worn.jpg';
+import imgP25Worn from '@/assets/products/p25-utility-pant-worn.jpg';
 
 export interface DemoProduct {
   id: string;
@@ -139,4 +141,5 @@ export const DEMO_PRODUCTS: DemoProduct[] = [
   { id: 'p18', title: 'Long Sleeve Base', price: 70, images: [imgP18, imgP18Worn], category: 'essentials', status: 'active', grid_position: gridPos(16), variants: makeVariants('p18'), description: 'Fitted long sleeve in premium cotton. Layer or wear alone.' },
   { id: 'p19', title: 'Deconstructed Blazer', price: 340, images: [imgP19, imgP19Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(17), variants: makeVariants('p19'), description: 'Unstructured blazer with raw edge details.' },
   { id: 'p20', title: 'Knit Polo', price: 125, images: [imgP20, imgP20Worn], category: 'new-arrivals', status: 'active', grid_position: gridPos(18), variants: makeVariants('p20'), description: 'Textured knit polo. Open collar. Relaxed fit.' },
+  { id: 'p25', title: 'Utility Pant', price: 165, images: [imgP25, imgP25Worn], category: 'streetwear', status: 'active', grid_position: gridPos(19), variants: makeVariants('p25'), description: 'Slim tapered utility pant with zippered cargo pockets. Matte black technical fabric.' },
 ];
