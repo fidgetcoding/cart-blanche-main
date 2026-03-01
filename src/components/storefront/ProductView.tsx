@@ -316,6 +316,10 @@ export function ProductView({ productIndex, onClose, onNavigate, activeCategory,
           >
             {/* Product image area */}
             <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 relative overflow-hidden">
+              {/* Preload all images for instant switching */}
+              {product.images && product.images.map((img, i) => (
+                <img key={`preload-${i}`} src={img} alt="" className="hidden" aria-hidden="true" />
+              ))}
               {/* Close button */}
               <button
                 onClick={onClose}
@@ -325,9 +329,11 @@ export function ProductView({ productIndex, onClose, onNavigate, activeCategory,
               </button>
               {product.images && product.images.length > 0 ? (
                 <img
+                  key={activeImage}
                   src={product.images[Math.min(activeImage, product.images.length - 1)]}
                   alt={product.title}
                   className="w-full h-full object-cover"
+                  draggable={false}
                 />
               ) : (
                 <span className="font-display text-muted-foreground/15 text-lg tracking-[0.3em]">
