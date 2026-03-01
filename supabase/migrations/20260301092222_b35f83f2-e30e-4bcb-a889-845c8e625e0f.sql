@@ -1,0 +1,1 @@
+ALTER TABLE public.grid_layouts ADD COLUMN hidden_tags text[] NOT NULL DEFAULT '{}'::text[];

@@ -11,6 +11,7 @@ const COLS = 6;
 export interface GridLayout {
   productOrder: string[];
   categoryOrder: string[];
+  hiddenTags: string[];
 }
 
 export function useGridLayout() {
@@ -25,7 +26,7 @@ export function useGridLayout() {
         // Fetch layout
         const { data: layoutData } = await supabase
           .from('grid_layouts')
-          .select('product_order, category_order')
+          .select('product_order, category_order, hidden_tags')
           .eq('layout_type', 'default')
           .limit(1)
           .maybeSingle();
@@ -34,6 +35,7 @@ export function useGridLayout() {
           setLayout({
             productOrder: (layoutData.product_order as string[])?.length > 0 ? (layoutData.product_order as string[]) : [],
             categoryOrder: (layoutData.category_order as string[])?.length > 0 ? (layoutData.category_order as string[]) : [],
+            hiddenTags: (layoutData.hidden_tags as string[]) || [],
           });
         }
 
@@ -108,7 +110,27 @@ export function useGridLayout() {
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      setLayout({ productOrder, categoryOrder });
+      setLayout(prev => ({ productOrder, categoryOrder, hiddenTags: prev?.hiddenTags || [] }));
+    }
+    return !error;
+  }, []);
+
+  // Save hidden tags
+  const saveHiddenTags = useCallback(async (hiddenTags: string[]) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { error } = await supabase
+      .from('grid_layouts')
+      .upsert({
+        merchant_id: user.id,
+        layout_type: 'default',
+        hidden_tags: hiddenTags,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'merchant_id,layout_type' });
+
+    if (!error) {
+      setLayout(prev => prev ? { ...prev, hiddenTags } : { productOrder: [], categoryOrder: [], hiddenTags });
     }
     return !error;
   }, []);
@@ -118,7 +140,6 @@ export function useGridLayout() {
     const all = allProducts();
 
     if (!layout || layout.productOrder.length === 0) {
-      // No saved order — return all with recalculated positions
       return all.map((p, i) => ({
         ...p,
         grid_position: {
@@ -133,7 +154,6 @@ export function useGridLayout() {
       .map(id => idToProduct.get(id))
       .filter(Boolean) as DemoProduct[];
 
-    // Append any new products not in saved order
     const savedIds = new Set(layout.productOrder);
     const unsaved = all.filter(p => !savedIds.has(p.id));
     const finalOrder = [...ordered, ...unsaved];
@@ -147,19 +167,20 @@ export function useGridLayout() {
     }));
   }, [layout, allProducts]);
 
-  // Get categories in saved order
+  // Get categories in saved order — excludes hidden tags
   const getOrderedCategories = useCallback((): string[] => {
+    const hidden = new Set((layout?.hiddenTags || []).map(t => t.toUpperCase()));
+    
     if (!layout || layout.categoryOrder.length === 0) {
       const all = allProducts();
       const cats = new Set(all.map(p => p.category));
-      return ['ALL', ...Array.from(cats).map(c => c.toUpperCase())];
+      return ['ALL', ...Array.from(cats).map(c => c.toUpperCase()).filter(c => !hidden.has(c))];
     }
-    // Also include any new categories from DB products not in saved order
     const savedCats = layout.categoryOrder.map(c => c.toUpperCase());
     const all = allProducts();
     const allCats = new Set(all.map(p => p.category.toUpperCase()));
     const missing = Array.from(allCats).filter(c => !savedCats.includes(c) && c !== 'ALL');
-    return [...savedCats.map(c => c.toUpperCase()), ...missing];
+    return [...savedCats, ...missing].filter(c => !hidden.has(c));
   }, [layout, allProducts]);
 
   // Reset layout (clear saved order)
@@ -174,14 +195,15 @@ export function useGridLayout() {
         layout_type: 'default',
         product_order: [],
         category_order: [],
+        hidden_tags: [],
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      setLayout({ productOrder: [], categoryOrder: [] });
+      setLayout({ productOrder: [], categoryOrder: [], hiddenTags: [] });
     }
     return !error;
   }, []);
 
-  return { layout, loading, saveLayout, resetLayout, getOrderedProducts, getOrderedCategories };
+  return { layout, loading, saveLayout, saveHiddenTags, resetLayout, getOrderedProducts, getOrderedCategories };
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff } from 'lucide-react';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -78,6 +79,7 @@ function getTagTextColor(tag: string) {
 }
 
 export default function AdminInventory() {
+  const { layout: gridLayout, saveHiddenTags } = useGridLayout();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -106,6 +108,22 @@ export default function AdminInventory() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
+  const [hiddenTags, setHiddenTags] = useState<string[]>([]);
+
+  // Sync hiddenTags from gridLayout once loaded
+  useEffect(() => {
+    if (gridLayout?.hiddenTags) {
+      setHiddenTags(gridLayout.hiddenTags);
+    }
+  }, [gridLayout]);
+
+  const toggleTagVisibility = async (tag: string) => {
+    const newHidden = hiddenTags.includes(tag)
+      ? hiddenTags.filter(t => t !== tag)
+      : [...hiddenTags, tag];
+    setHiddenTags(newHidden);
+    await saveHiddenTags(newHidden);
+  };
 
   useEffect(() => { fetchInventory(); }, []);
 
@@ -398,35 +416,48 @@ export default function AdminInventory() {
                   onClick={() => setActiveFilter(tag === activeFilter ? 'all' : tag)}
                   className={`px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${getTagColor(tag)} ${
                     activeFilter === tag ? 'ring-1 ring-foreground/30' : 'opacity-50 hover:opacity-80'
-                  }`}>
+                  } ${hiddenTags.includes(tag) ? 'line-through decoration-1' : ''}`}>
                   {tag.toUpperCase().replace('-', ' ')}
                 </button>
                 {tagEditMode && (
-                  <button
-                    onClick={() => {
-                      if (!confirm(`Remove tag "${tag}" from all products?`)) return;
-                      setProducts(prev => prev.map(p => ({
-                        ...p,
-                        tags: p.tags.filter(t => t !== tag),
-                        category: p.category === tag ? (p.tags.filter(t => t !== tag)[0] || '') : p.category,
-                      })));
-                      if (activeFilter === tag) setActiveFilter('all');
-                      (async () => {
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (!session) return;
-                        const affected = products.filter(p => !p.isDemo && p.tags.includes(tag));
-                        for (const p of affected) {
-                          const newTags = p.tags.filter(t => t !== tag);
-                          const newCategory = p.category === tag ? (newTags[0] || '') : p.category;
-                          await supabase.from('products').update({ tags: newTags, category: newCategory }).eq('id', p.id);
-                        }
-                      })();
-                    }}
-                    className="w-5 h-5 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                    title={`Delete tag "${tag}"`}
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => toggleTagVisibility(tag)}
+                      className={`w-5 h-5 inline-flex items-center justify-center rounded border transition-colors ${
+                        hiddenTags.includes(tag)
+                          ? 'border-warning/40 bg-warning/15 text-warning hover:bg-warning/30'
+                          : 'border-success/40 bg-success/15 text-success hover:bg-success/30'
+                      }`}
+                      title={hiddenTags.includes(tag) ? `Show "${tag}" on storefront` : `Hide "${tag}" from storefront`}
+                    >
+                      {hiddenTags.includes(tag) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!confirm(`Remove tag "${tag}" from all products?`)) return;
+                        setProducts(prev => prev.map(p => ({
+                          ...p,
+                          tags: p.tags.filter(t => t !== tag),
+                          category: p.category === tag ? (p.tags.filter(t => t !== tag)[0] || '') : p.category,
+                        })));
+                        if (activeFilter === tag) setActiveFilter('all');
+                        (async () => {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          if (!session) return;
+                          const affected = products.filter(p => !p.isDemo && p.tags.includes(tag));
+                          for (const p of affected) {
+                            const newTags = p.tags.filter(t => t !== tag);
+                            const newCategory = p.category === tag ? (newTags[0] || '') : p.category;
+                            await supabase.from('products').update({ tags: newTags, category: newCategory }).eq('id', p.id);
+                          }
+                        })();
+                      }}
+                      className="w-5 h-5 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      title={`Delete tag "${tag}"`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </>
                 )}
               </div>
           ))}
