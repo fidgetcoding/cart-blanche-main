@@ -416,14 +416,16 @@ export function SpatialCanvas() {
       if (tr.pinching && e.touches.length === 2) {
         e.preventDefault();
         const dist = getTouchDist(e.touches);
+        if (dist === 0 || tr.lastDist === 0) { tr.lastDist = dist; return; }
         const center = getTouchCenter(e.touches);
         const rect = container.getBoundingClientRect();
         const cx = center.x - rect.left;
         const cy = center.y - rect.top;
 
+        // Incremental: compare to previous frame's distance, not initial
         const scaleFactor = dist / tr.lastDist;
         const oldScale = targetTransformRef.current.scale;
-        const newScale = Math.max(minScaleRef.current, Math.min(MAX_SCALE, tr.lastScale * scaleFactor));
+        const newScale = Math.max(minScaleRef.current, Math.min(MAX_SCALE, oldScale * scaleFactor));
         const ratio = newScale / oldScale;
 
         const target = targetTransformRef.current;
@@ -431,7 +433,10 @@ export function SpatialCanvas() {
         target.y = cy - (cy - target.y) * ratio;
         target.scale = newScale;
 
-        // Also apply pan during pinch
+        // Update lastDist for next frame
+        tr.lastDist = dist;
+
+        // Apply immediately for responsiveness
         transformRef.current.x = target.x;
         transformRef.current.y = target.y;
         transformRef.current.scale = target.scale;
