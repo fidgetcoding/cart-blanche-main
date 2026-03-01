@@ -113,7 +113,7 @@ export const DEMO_HOTZONES: DemoHotzone[] = [
 const TILE_W = 220;
 const TILE_H = 300;
 const GAP = 6;
-const COLS = 6;
+const COLS = 4;
 const gridPos = (i: number) => ({
   x: (i % COLS) * (TILE_W + GAP),
   y: Math.floor(i / COLS) * (TILE_H + GAP),

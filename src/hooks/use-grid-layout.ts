@@ -6,7 +6,7 @@ import type { DemoProduct } from '@/data/demo-data';
 const TILE_W = 220;
 const TILE_H = 300;
 const TILE_GAP = 6;
-const COLS = 6;
+const COLS = 4;
 
 export interface GridLayout {
   productOrder: string[];

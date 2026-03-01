@@ -19,7 +19,7 @@ const MAX_SCALE = 2;
 const MAX_ZOOM_THRESHOLD = 1.9;
 const ZOOM_SENSITIVITY = 0.004;
 const PINCH_ZOOM_SENSITIVITY = 0.012;
-const COLS = 6;
+const COLS = 4;
 
 export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
