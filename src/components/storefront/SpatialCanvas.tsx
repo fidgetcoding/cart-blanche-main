@@ -17,7 +17,7 @@ const TILE_H = 300;
 const TILE_GAP = 6;
 const MAX_SCALE = 2;
 const MAX_ZOOM_THRESHOLD = 1.9;
-const ZOOM_SENSITIVITY = 0.0025;
+const ZOOM_SENSITIVITY = 0.003;
 const COLS = 6;
 
 export function SpatialCanvas() {
@@ -71,8 +71,9 @@ export function SpatialCanvas() {
     startX: number; startY: number;
     panStartX: number; panStartY: number;
     lastDist: number; lastScale: number;
+    lastCenterX: number; lastCenterY: number;
     touching: boolean; pinching: boolean;
-  }>({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, lastDist: 0, lastScale: 1, touching: false, pinching: false });
+  }>({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, lastDist: 0, lastScale: 1, lastCenterX: 0, lastCenterY: 0, touching: false, pinching: false });
 
   // Keep ref in sync for animation loop
   useEffect(() => { activeCategoryRef.current = activeCategory; }, [activeCategory]);
@@ -399,13 +400,17 @@ export function SpatialCanvas() {
           startX: t.clientX, startY: t.clientY,
           panStartX: transformRef.current.x, panStartY: transformRef.current.y,
           lastDist: 0, lastScale: targetTransformRef.current.scale,
+          lastCenterX: t.clientX, lastCenterY: t.clientY,
           touching: true, pinching: false,
         };
       } else if (e.touches.length === 2) {
         e.preventDefault();
+        const center = getTouchCenter(e.touches);
         touchRef.current.pinching = true;
         touchRef.current.lastDist = getTouchDist(e.touches);
         touchRef.current.lastScale = targetTransformRef.current.scale;
+        touchRef.current.lastCenterX = center.x;
+        touchRef.current.lastCenterY = center.y;
       }
     };
 
@@ -422,21 +427,28 @@ export function SpatialCanvas() {
         const cx = center.x - rect.left;
         const cy = center.y - rect.top;
 
-        // Incremental: compare to previous frame's distance, not initial
+        // Pan: track center movement
+        const panDx = center.x - tr.lastCenterX;
+        const panDy = center.y - tr.lastCenterY;
+
+        // Incremental scale
         const scaleFactor = dist / tr.lastDist;
         const oldScale = targetTransformRef.current.scale;
         const newScale = Math.max(minScaleRef.current, Math.min(MAX_SCALE, oldScale * scaleFactor));
         const ratio = newScale / oldScale;
 
         const target = targetTransformRef.current;
-        target.x = cx - (cx - target.x) * ratio;
-        target.y = cy - (cy - target.y) * ratio;
+        // Apply pan + zoom around center
+        target.x = cx - (cx - target.x - panDx) * ratio;
+        target.y = cy - (cy - target.y - panDy) * ratio;
         target.scale = newScale;
 
-        // Update lastDist for next frame
+        // Update tracking for next frame
         tr.lastDist = dist;
+        tr.lastCenterX = center.x;
+        tr.lastCenterY = center.y;
 
-        // Apply immediately for responsiveness
+        // Apply immediately
         transformRef.current.x = target.x;
         transformRef.current.y = target.y;
         transformRef.current.scale = target.scale;
@@ -445,7 +457,7 @@ export function SpatialCanvas() {
         clearTimeout(scaleUpdateTimer);
         scaleUpdateTimer = window.setTimeout(() => {
           setScaleState(targetTransformRef.current.scale);
-        }, 80);
+        }, 50);
       } else if (e.touches.length === 1 && !tr.pinching) {
         const t = e.touches[0];
         const dx = t.clientX - tr.startX;
