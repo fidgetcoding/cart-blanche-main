@@ -457,7 +457,7 @@ export function CartDrawer() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md z-50 liquid-glass border-l border-white/[0.06] flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-sm z-50 liquid-glass border-l border-white/[0.06] flex flex-col"
           >
             {/* Header with tabs */}
             <div className="border-b border-white/[0.06]">
