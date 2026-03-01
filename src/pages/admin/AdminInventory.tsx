@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
@@ -79,7 +79,7 @@ function getTagTextColor(tag: string) {
 }
 
 export default function AdminInventory() {
-  const { layout: gridLayout, saveHiddenTags } = useGridLayout();
+  const { layout: gridLayout, saveHiddenTags, saveLayout } = useGridLayout();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -125,7 +125,66 @@ export default function AdminInventory() {
     await saveHiddenTags(newHidden);
   };
 
+  // Drag-and-drop state for product reordering
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
   useEffect(() => { fetchInventory(); }, []);
+
+  // Reorder products when gridLayout loads
+  useEffect(() => {
+    if (gridLayout?.productOrder && gridLayout.productOrder.length > 0 && products.length > 0) {
+      const idMap = new Map(products.map(p => [p.id, p]));
+      const ordered: ProductRow[] = [];
+      const usedIds = new Set<string>();
+      for (const id of gridLayout.productOrder) {
+        const p = idMap.get(id);
+        if (p) { ordered.push(p); usedIds.add(id); }
+      }
+      // Append any products not in saved order
+      for (const p of products) {
+        if (!usedIds.has(p.id)) ordered.push(p);
+      }
+      // Only update if order actually differs
+      const currentIds = products.map(p => p.id).join(',');
+      const newIds = ordered.map(p => p.id).join(',');
+      if (currentIds !== newIds) {
+        setProducts(ordered);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gridLayout?.productOrder]);
+
+  const handleDragStart = useCallback((idx: number) => {
+    setDragIdx(idx);
+  }, []);
+
+  const handleDragOver = useCallback((idx: number) => {
+    if (dragIdx === null || idx === dragIdx) return;
+    setDragOverIdx(idx);
+  }, [dragIdx]);
+
+  const handleDragEnd = useCallback(() => {
+    if (dragIdx === null || dragOverIdx === null || dragIdx === dragOverIdx) {
+      setDragIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+
+    setProducts(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIdx, 1);
+      next.splice(dragOverIdx, 0, moved);
+      // Save the new order
+      const productOrder = next.map(p => p.id);
+      const categoryOrder = gridLayout?.categoryOrder || [];
+      saveLayout(productOrder, categoryOrder);
+      return next;
+    });
+
+    setDragIdx(null);
+    setDragOverIdx(null);
+  }, [dragIdx, dragOverIdx, gridLayout?.categoryOrder, saveLayout]);
 
   async function fetchInventory() {
     // Always start with demo products
@@ -489,19 +548,42 @@ export default function AdminInventory() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map(p => {
+          {filtered.map((p, filteredIdx) => {
             const avgStock = p.variants.length > 0 ? p.totalStock / p.variants.length : 0;
             const isLow = avgStock > 0 && avgStock <= lowStockThreshold;
             const isOut = p.totalStock === 0;
             const isExpanded = expandedId === p.id;
+            // Get the actual index in the full products array for drag reordering
+            const realIdx = products.findIndex(pp => pp.id === p.id);
+            const isDragging = dragIdx === realIdx;
+            const isDragOver = dragOverIdx === realIdx;
 
             return (
-              <div key={p.id} className="liquid-glass rounded-xl overflow-hidden transition-colors">
+              <div
+                key={p.id}
+                draggable={activeFilter === 'all' && !isExpanded}
+                onDragStart={() => handleDragStart(realIdx)}
+                onDragOver={(e) => { e.preventDefault(); handleDragOver(realIdx); }}
+                onDragEnd={handleDragEnd}
+                className={`liquid-glass rounded-xl overflow-hidden transition-all ${
+                  isDragging ? 'opacity-40 scale-[0.98]' : ''
+                } ${isDragOver ? 'ring-2 ring-primary/50 translate-y-[-2px]' : ''}`}
+              >
                 {/* Product row */}
                 <div
                   className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}
                 >
+                  {/* Drag handle */}
+                  {activeFilter === 'all' && (
+                    <div
+                      className="text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors flex-shrink-0"
+                      onMouseDown={e => e.stopPropagation()}
+                    >
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+                  )}
+
                   {/* Expand chevron */}
                   <div className="text-muted-foreground">
                     {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
