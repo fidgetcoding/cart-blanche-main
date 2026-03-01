@@ -187,8 +187,15 @@ export default function AdminInventory() {
       if (p.category) tags.add(p.category);
       p.tags?.forEach(t => tags.add(t));
     });
+    // Also include categories from grid layout (added via Grid Editor)
+    if (gridLayout?.categoryOrder) {
+      gridLayout.categoryOrder.forEach(c => {
+        const lower = c.toLowerCase();
+        if (lower !== 'all') tags.add(lower);
+      });
+    }
     return Array.from(tags).sort();
-  }, [products]);
+  }, [products, gridLayout]);
 
   const filtered = useMemo(() => {
     return products.filter(p => {

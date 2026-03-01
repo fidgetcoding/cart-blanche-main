@@ -29,15 +29,29 @@ function buildGridProducts(): GridProduct[] {
   }));
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  outerwear: 'border-blue-500/40 bg-blue-500/10 text-blue-400',
-  streetwear: 'border-amber-500/40 bg-amber-500/10 text-amber-400',
-  essentials: 'border-zinc-400/40 bg-zinc-400/10 text-zinc-400',
-  'new-arrivals': 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400',
+const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  outerwear: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/40' },
+  streetwear: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/40' },
+  essentials: { bg: 'bg-zinc-400/10', text: 'text-zinc-400', border: 'border-zinc-400/40' },
+  'new-arrivals': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/40' },
 };
 
+const EXTRA_TAG_COLORS = [
+  { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/40' },
+  { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/40' },
+  { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/40' },
+  { bg: 'bg-teal-500/10', text: 'text-teal-400', border: 'border-teal-500/40' },
+  { bg: 'bg-indigo-500/10', text: 'text-indigo-400', border: 'border-indigo-500/40' },
+  { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/40' },
+];
+
 function getCatColor(cat: string) {
-  return CATEGORY_COLORS[cat] || 'border-border bg-secondary text-muted-foreground';
+  const c = CATEGORY_COLORS[cat];
+  if (c) return `${c.border} ${c.bg} ${c.text}`;
+  let hash = 0;
+  for (let i = 0; i < cat.length; i++) hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+  const extra = EXTRA_TAG_COLORS[Math.abs(hash) % EXTRA_TAG_COLORS.length];
+  return `${extra.border} ${extra.bg} ${extra.text}`;
 }
 
 function getGridPos(index: number) {
