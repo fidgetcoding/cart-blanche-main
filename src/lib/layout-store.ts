@@ -11,7 +11,7 @@ const CATEGORY_ORDER_KEY = 'cb-layout-category-order';
 const TILE_W = 220;
 const TILE_H = 300;
 const TILE_GAP = 6;
-const COLS = 6;
+const COLS = 4;
 
 export interface SavedLayout {
   productOrder: string[];

@@ -6,7 +6,7 @@ import { useGridLayout } from '@/hooks/use-grid-layout';
 const TILE_W = 220;
 const TILE_H = 300;
 const GAP = 6;
-const COLS = 6;
+const COLS = 4;
 const CANVAS_W = COLS * (TILE_W + GAP) - GAP;
 
 interface GridProduct {
