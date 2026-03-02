@@ -162,7 +162,7 @@ function ThemeControls() {
           <div className="space-y-2">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">ASSET SIZES</label>
             <div className="space-y-2">
-              <SizeSlider label="Display Fonts" value={themeSettings.displayFontSize} min={8} max={18} onChange={v => updateTheme({ displayFontSize: v })} />
+              <SizeSlider label="Display Font" value={themeSettings.displayFontSize} min={8} max={18} onChange={v => updateTheme({ displayFontSize: v })} />
               <SizeSlider label="Navigator" value={themeSettings.bodyFontSize} min={8} max={16} onChange={v => updateTheme({ bodyFontSize: v })} />
               <SizeSlider label="Numeral" value={themeSettings.numeralFontSize} min={8} max={16} onChange={v => updateTheme({ numeralFontSize: v })} />
             </div>
