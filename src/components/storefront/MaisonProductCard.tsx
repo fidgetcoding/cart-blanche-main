@@ -163,7 +163,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
       onMouseLeave={() => {
         setIsHovered(false);
         if (currentImage !== 0) {
-          resetTimer.current = setTimeout(() => { setCurrentImage(0); }, 5000);
+          resetTimer.current = setTimeout(() => { setCurrentImage(0); }, 3000);
         }
       }}
       onKeyDown={handleKeyDown}
