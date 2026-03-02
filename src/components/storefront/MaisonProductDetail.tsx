@@ -63,12 +63,14 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); scroll('left'); }}
+            onMouseEnter={(e) => { e.stopPropagation(); scroll('left'); }}
             className="p-1.5 transition-colors text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); scroll('right'); }}
+            onMouseEnter={(e) => { e.stopPropagation(); scroll('right'); }}
             className="p-1.5 transition-colors text-muted-foreground hover:text-foreground"
           >
             <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
