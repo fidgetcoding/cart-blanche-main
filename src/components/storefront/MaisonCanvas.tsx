@@ -22,6 +22,20 @@ export function MaisonCanvas() {
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
   const typeCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastChangedFilter = useRef<'ribbon' | 'dropdown'>('ribbon');
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Block browser back/forward gesture on horizontal swipes across the entire storefront
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.preventDefault();
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
 
   const openTypeDropdown = useCallback(() => {
     if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
@@ -90,7 +104,7 @@ export function MaisonCanvas() {
   }
 
   return (
-    <div className={`min-h-screen w-full bg-background text-foreground ${themeSettings.mode === 'light' ? 'light' : ''}`}>
+    <div ref={canvasRef} className={`min-h-screen w-full bg-background text-foreground ${themeSettings.mode === 'light' ? 'light' : ''}`}>
       {/* Sticky header with integrated category nav */}
       <header
         className="sticky top-0 z-30 flex items-center px-6 py-3 bg-background border-b border-border"
