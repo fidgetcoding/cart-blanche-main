@@ -6,6 +6,7 @@ const TEMPLATES = [
   {
     id: 'yz',
     name: 'YZ Template',
+    subtitle: 'Spatial product grid. Built for streetwear and fashion.',
     activeDescription: 'Your active storefront template. Customize in the visual builder.',
     inactiveDescription: 'Stripped-back brutalist grid. No chrome, no noise.',
     to: '/admin/lab/yz',
@@ -13,6 +14,7 @@ const TEMPLATES = [
   {
     id: 'sl',
     name: 'SL Template',
+    subtitle: 'High-fashion editorial. Cinematic pacing, full-bleed imagery.',
     activeDescription: 'Your active storefront template. Cinematic editorial layout.',
     inactiveDescription: 'High-fashion editorial. Cinematic pacing, full-bleed imagery.',
     to: '/admin/lab/sl',
@@ -61,7 +63,7 @@ export default function LabIndex() {
                     </button>
                   </div>
                   <span className="text-[11px] text-muted-foreground/70">
-                    {isActive ? tmpl.activeDescription : tmpl.inactiveDescription}
+                    {tmpl.subtitle}
                   </span>
                 </div>
               </div>
