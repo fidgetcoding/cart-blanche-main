@@ -93,7 +93,6 @@ export function MaisonCanvas() {
           {categories.map(cat => (
             <button
               key={cat}
-              onMouseEnter={() => handleRibbonChange(cat)}
               onClick={() => handleRibbonChange(cat)}
               className="relative py-1 transition-colors"
               style={{
@@ -141,7 +140,7 @@ export function MaisonCanvas() {
           <button
             className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
           >
-            {activeType === 'ALL' ? 'ALL TYPES' : activeType}
+            {activeType === 'ALL' ? 'FILTER' : activeType}
             <motion.span
               animate={{ rotate: typeDropdownOpen ? 90 : 0 }}
               transition={{ duration: 0.2 }}
@@ -164,7 +163,6 @@ export function MaisonCanvas() {
                   {productTypes.map(type => (
                     <button
                       key={type}
-                      onMouseEnter={() => handleTypeChange(type)}
                       onClick={() => { handleTypeChange(type); setTypeDropdownOpen(false); }}
                       className={`text-[11px] tracking-[0.15em] uppercase whitespace-nowrap transition-colors ${
                         activeType === type ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
@@ -190,7 +188,6 @@ export function MaisonCanvas() {
               className="flex items-center gap-3 overflow-hidden"
             >
               <button
-                onMouseEnter={() => setViewMode(3)}
                 onClick={() => setViewMode(3)}
                 className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
                 style={{
@@ -201,7 +198,6 @@ export function MaisonCanvas() {
                 View by 3
               </button>
               <button
-                onMouseEnter={() => setViewMode(6)}
                 onClick={() => setViewMode(6)}
                 className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
                 style={{
