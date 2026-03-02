@@ -17,6 +17,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const [currentImage, setCurrentImage] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [showSizes, setShowSizes] = useState(false);
+  const [showCompactSizes, setShowCompactSizes] = useState(false);
   const { addItem } = useCart();
   
   const cooldown = useRef(false);
@@ -163,6 +164,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       }}
       onMouseLeave={() => {
         setIsHovered(false);
+        setShowCompactSizes(false);
         if (currentImage !== 0) {
           resetTimer.current = setTimeout(() => { setCurrentImage(0); }, 3000);
         }
@@ -209,35 +211,119 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
         {/* Hover overlay — view by 6 only: frosted overlay revealing product info */}
         {isCompact && isHovered && (
           <div
-            className="absolute inset-0 backdrop-blur-sm flex flex-col items-center justify-end pb-4 transition-opacity duration-200 z-[1]"
+            className="absolute inset-0 backdrop-blur-sm flex flex-col items-center justify-end transition-opacity duration-200 z-[1]"
             style={{ backgroundColor: 'hsl(var(--background) / 0.65)' }}
           >
-            <p
-              className="tracking-[0.12em] uppercase leading-relaxed text-center px-3"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'var(--font-size-display)',
-                color: themeSettings.displayFontColor || undefined,
-              }}
+            {/* Title + Price — slide up when sizes are shown */}
+            <motion.div
+              animate={{ y: showCompactSizes ? -8 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-center px-3"
             >
-              {product.title}
-            </p>
-            <p
-              className="tracking-[0.08em] text-muted-foreground mt-1"
-              style={{
-                fontFamily: 'var(--font-numeral)',
-                fontSize: 'var(--font-size-numeral)',
-                color: themeSettings.numeralFontColor || undefined,
-              }}
+              <p
+                className="tracking-[0.12em] uppercase leading-relaxed text-center"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-display)',
+                  color: themeSettings.displayFontColor || undefined,
+                }}
+              >
+                {product.title}
+              </p>
+              <p
+                className="tracking-[0.08em] text-muted-foreground mt-1"
+                style={{
+                  fontFamily: 'var(--font-numeral)',
+                  fontSize: 'var(--font-size-numeral)',
+                  color: themeSettings.numeralFontColor || undefined,
+                }}
+              >
+                ${product.price}
+              </p>
+            </motion.div>
+
+            {/* CTA area — hover to reveal sizes */}
+            <div
+              className="w-full px-4 pb-4 mt-1.5"
+              onMouseEnter={() => setShowCompactSizes(true)}
+              onMouseLeave={() => setShowCompactSizes(false)}
             >
-              ${product.price}
-            </p>
-            <p
-              className="text-[9px] tracking-[0.15em] uppercase mt-1.5"
-              style={{ fontFamily: 'var(--font-body)', color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))' }}
-            >
-              {product.variants.some(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
-            </p>
+              <AnimatePresence mode="wait">
+                {!showCompactSizes ? (
+                  <motion.p
+                    key="cta"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.12 }}
+                    className="text-[9px] tracking-[0.15em] uppercase text-center cursor-pointer"
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))',
+                    }}
+                  >
+                    {product.variants.every(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
+                  </motion.p>
+                ) : (
+                  <motion.div
+                    key="sizes-set"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.12 }}
+                    className="flex flex-col items-center gap-0"
+                  >
+                    {/* Divider */}
+                    <div className="w-8 h-px bg-border mb-2" />
+
+                    {/* Sizes row */}
+                    <div className="flex items-center justify-center gap-2">
+                      {product.variants.map(v => (
+                        <button
+                          key={v.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (v.inventory_count === 0) return;
+                            addItem({
+                              productId: product.id,
+                              variantId: v.id,
+                              title: product.title,
+                              variantTitle: v.title,
+                              price: v.price ?? product.price,
+                              image: product.images[0],
+                            });
+                          }}
+                          disabled={v.inventory_count === 0}
+                          className={`text-[8px] tracking-[0.1em] uppercase transition-colors ${
+                            v.inventory_count === 0
+                              ? 'text-muted-foreground/30 line-through cursor-not-allowed'
+                              : 'text-muted-foreground hover:text-foreground cursor-pointer'
+                          }`}
+                          style={{ fontFamily: 'var(--font-body)' }}
+                        >
+                          {v.title}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="w-8 h-px bg-border my-2" />
+
+                    {/* Build a Set */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBuildSet(product);
+                      }}
+                      className="text-[8px] tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      BUILD A SET
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         )}
 
