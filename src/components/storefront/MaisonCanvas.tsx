@@ -93,6 +93,7 @@ export function MaisonCanvas() {
           {categories.map(cat => (
             <button
               key={cat}
+              onMouseEnter={() => handleRibbonChange(cat)}
               onClick={() => handleRibbonChange(cat)}
               className={`relative py-1 transition-all duration-200 ${
                 activeCategory === cat ? 'opacity-100' : 'opacity-50 hover:opacity-80'
@@ -164,6 +165,7 @@ export function MaisonCanvas() {
                   {productTypes.map(type => (
                     <button
                       key={type}
+                      onMouseEnter={() => handleTypeChange(type)}
                       onClick={() => { handleTypeChange(type); setTypeDropdownOpen(false); }}
                       className={`text-[11px] tracking-[0.15em] uppercase whitespace-nowrap transition-all duration-200 ${
                         activeType === type ? 'text-foreground opacity-100' : 'text-muted-foreground opacity-50 hover:opacity-80 hover:text-foreground'
@@ -181,6 +183,7 @@ export function MaisonCanvas() {
         {/* View toggle — always visible */}
         <div className="flex items-center gap-3 flex-shrink-0">
           <button
+            onMouseEnter={() => setViewMode(3)}
             onClick={() => setViewMode(3)}
             className={`text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1 ${
               viewMode === 3 ? 'opacity-100 border-b border-current' : 'opacity-50 hover:opacity-80 border-b border-transparent'
@@ -189,6 +192,7 @@ export function MaisonCanvas() {
             View by 3
           </button>
           <button
+            onMouseEnter={() => setViewMode(6)}
             onClick={() => setViewMode(6)}
             className={`text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1 ${
               viewMode === 6 ? 'opacity-100 border-b border-current' : 'opacity-50 hover:opacity-80 border-b border-transparent'
