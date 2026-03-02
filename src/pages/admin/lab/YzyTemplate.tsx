@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare } from 'lucide-react';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
@@ -309,6 +309,7 @@ export default function YzyTemplate() {
   const navigate = useNavigate();
   const { themeSettings, updateTheme } = useTheme();
   const [chatInput, setChatInput] = useState('');
+  const [sidebarTab, setSidebarTab] = useState<'ai' | 'settings'>('ai');
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'system', text: "Hey — I'm your Template Builder AI. Tell me how you want your storefront to look and I'll make it happen. I can change fonts, colors, hover effects, sizes, and background mode." },
   ]);
@@ -351,7 +352,7 @@ export default function YzyTemplate() {
       {/* LEFT: Chat Sidebar */}
       <div className="w-[380px] flex-shrink-0 flex flex-col border-r border-border/50 bg-card">
         {/* Header */}
-        <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 flex-shrink-0">
+        <div className="h-12 flex items-center px-4 border-b border-border/50 flex-shrink-0">
           <button
             onClick={() => navigate('/admin/lab')}
             className="flex items-center gap-1.5 text-[11px] font-display tracking-wider text-muted-foreground hover:text-foreground transition-colors"
@@ -361,71 +362,101 @@ export default function YzyTemplate() {
           </button>
         </div>
 
-        {/* Theme Controls */}
-        <ThemeControls />
+        {/* Tab Toggle */}
+        <div className="flex border-b border-border/50 flex-shrink-0">
+          <button
+            onClick={() => setSidebarTab('ai')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
+              sidebarTab === 'ai'
+                ? 'text-foreground border-b-2 border-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Sparkles className="w-3 h-3" />
+            AI TEMPLATE BUILDER
+          </button>
+          <button
+            onClick={() => setSidebarTab('settings')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
+              sidebarTab === 'settings'
+                ? 'text-foreground border-b-2 border-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Settings className="w-3 h-3" />
+            TEMPLATE SETTINGS
+          </button>
+        </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-          {messages.length <= 1 && suggestions.length > 0 && (
-            <div className="space-y-4 pt-6">
-              <div className="text-center space-y-2">
-                <Sparkles className="w-7 h-7 text-accent mx-auto" />
-                <p className="text-[11px] text-muted-foreground">Tell me how you want your storefront to look.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 pt-2">
-                {suggestions.map((s, i) => (
-                  <button
+        {/* Tab Content */}
+        {sidebarTab === 'settings' ? (
+          <div className="flex-1 overflow-y-auto">
+            <ThemeControls />
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {messages.length <= 1 && suggestions.length > 0 && (
+                <div className="space-y-4 pt-6">
+                  <div className="text-center space-y-2">
+                    <Sparkles className="w-7 h-7 text-accent mx-auto" />
+                    <p className="text-[11px] text-muted-foreground">Tell me how you want your storefront to look.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 pt-2">
+                    {suggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSend(s)}
+                        className="flex flex-col items-start gap-1 p-2.5 rounded-lg liquid-glass hover:brightness-125 text-left transition-all"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-accent" />
+                        <span className="text-[10px] font-medium">{s}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {messages.map((msg, i) => {
+                if (i === 0 && msg.role === 'system' && messages.length <= 1) return null;
+                return (
+                  <div
                     key={i}
-                    onClick={() => handleSend(s)}
-                    className="flex flex-col items-start gap-1 p-2.5 rounded-lg liquid-glass hover:brightness-125 text-left transition-all"
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-0 slide-in-from-bottom-2 duration-200`}
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-[10px] font-medium">{s}</span>
-                  </button>
-                ))}
+                    <div className={`max-w-[90%] rounded-xl px-3 py-2 text-[11px] leading-relaxed whitespace-pre-line ${
+                      msg.role === 'user'
+                        ? 'bg-accent text-accent-foreground'
+                        : 'bg-card border border-border'
+                    }`}>
+                      {msg.text}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="liquid-glass border-t border-border/50 p-3 rounded-t-xl">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+                  placeholder="Describe a change..."
+                  className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent font-display tracking-wider"
+                />
+                <button
+                  onClick={() => handleSend()}
+                  className="h-9 w-9 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 flex-shrink-0 flex items-center justify-center transition-colors"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
-          )}
-
-          {messages.map((msg, i) => {
-            if (i === 0 && msg.role === 'system' && messages.length <= 1) return null;
-            return (
-              <div
-                key={i}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-0 slide-in-from-bottom-2 duration-200`}
-              >
-                <div className={`max-w-[90%] rounded-xl px-3 py-2 text-[11px] leading-relaxed whitespace-pre-line ${
-                  msg.role === 'user'
-                    ? 'bg-accent text-accent-foreground'
-                    : 'bg-card border border-border'
-                }`}>
-                  {msg.text}
-                </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Chat Input */}
-        <div className="liquid-glass border-t border-border/50 p-3 rounded-t-xl">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
-              placeholder="Describe a change..."
-              className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent font-display tracking-wider"
-            />
-            <button
-              onClick={() => handleSend()}
-              className="h-9 w-9 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 flex-shrink-0 flex items-center justify-center transition-colors"
-            >
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       {/* RIGHT: Live Preview */}
