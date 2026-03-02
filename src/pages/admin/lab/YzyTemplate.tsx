@@ -247,7 +247,7 @@ export default function YzyTemplate() {
 
         {/* Live storefront */}
         <div className="flex-1 rounded-b-xl border border-border/30 overflow-hidden relative">
-          <div className="absolute inset-0 origin-top-left" style={{ transform: 'scale(0.85)', width: '117.65%', height: '117.65%' }}>
+          <div className="absolute inset-0">
             <CartProvider>
               <SmartCartProvider>
                 <StyleKitProvider>
