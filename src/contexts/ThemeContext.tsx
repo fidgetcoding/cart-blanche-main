@@ -21,7 +21,7 @@ export interface ThemeSettings {
 }
 
 const DEFAULT_SETTINGS: ThemeSettings = {
-  mode: 'dark',
+  mode: 'light',
   storeName: 'CART BLANCHE',
   tileHoverGlow: 'hsla(0,0%,100%,0.08)',
   tileHoverScale: 1.04,
