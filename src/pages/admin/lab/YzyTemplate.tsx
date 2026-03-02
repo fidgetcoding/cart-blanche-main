@@ -373,7 +373,7 @@ export default function YzyTemplate() {
             <div className="space-y-4 pt-6">
               <div className="text-center space-y-2">
                 <Sparkles className="w-7 h-7 text-accent mx-auto" />
-                <h3 className="font-display text-xs font-semibold tracking-wider">TEMPLATE BUILDER AI</h3>
+                
                 <p className="text-[11px] text-muted-foreground">Tell me how you want your storefront to look.</p>
               </div>
               <div className="grid grid-cols-2 gap-1.5 pt-2">
