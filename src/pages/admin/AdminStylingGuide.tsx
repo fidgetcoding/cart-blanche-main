@@ -414,7 +414,21 @@ export default function AdminStylingGuide() {
             LIST
           </button>
           <button
-            onClick={() => setActiveView('canvas')}
+            onClick={() => {
+              setActiveView('canvas');
+              // If a product is selected in list view, auto-add it to canvas after mount
+              if (selectedProductId && activeView === 'list') {
+                const product = DEMO_PRODUCTS.find(p => p.id === selectedProductId);
+                if (product) {
+                  // Delay to let canvas mount
+                  setTimeout(() => {
+                    if (!canvasNodeIds.has(selectedProductId)) {
+                      canvasRef.current?.addProduct(product);
+                    }
+                  }, 100);
+                }
+              }
+            }}
             className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
               activeView === 'canvas' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
             }`}
