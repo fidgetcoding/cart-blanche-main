@@ -18,7 +18,7 @@ import imgP17 from '@/assets/products/p17-sweat-shorts.png';
 import imgP18 from '@/assets/products/p18-long-sleeve.png';
 import imgP19 from '@/assets/products/p19-deconstructed-blazer.png';
 import imgP20 from '@/assets/products/p20-knit-polo.png';
-import imgP25 from '@/assets/products/p25-utility-pant.jpg';
+import imgP25 from '@/assets/products/p25-utility-pant.png';
 import imgP1Worn from '@/assets/products/p1-cloud-puffer-worn.png';
 import imgP2Worn from '@/assets/products/p2-stealth-trench-worn.png';
 import imgP3Worn from '@/assets/products/p3-bomber-worn.png';
@@ -38,7 +38,7 @@ import imgP17Worn from '@/assets/products/p17-sweat-shorts-worn.png';
 import imgP18Worn from '@/assets/products/p18-long-sleeve-worn.png';
 import imgP19Worn from '@/assets/products/p19-deconstructed-blazer-worn.png';
 import imgP20Worn from '@/assets/products/p20-knit-polo-worn.png';
-import imgP25Worn from '@/assets/products/p25-utility-pant-worn.jpg';
+import imgP25Worn from '@/assets/products/p25-utility-pant-worn.png';
 
 export type ProductCategory = 'shirt' | 'pants' | 'jacket' | 'hat' | 'accessory' | 'shorts' | '';
 
