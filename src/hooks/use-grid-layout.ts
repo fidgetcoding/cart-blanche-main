@@ -68,6 +68,7 @@ export function useGridLayout() {
               compare_at_price: p.compare_at_price ?? undefined,
               images: p.images || [],
               category: p.category || 'uncategorized',
+              product_category: '' as const,
               status: 'active' as const,
               grid_position: { x: 0, y: 0 },
               description: p.description || '',

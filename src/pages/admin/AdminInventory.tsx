@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
-import { type DemoProduct } from '@/data/demo-data';
+import { type DemoProduct, PRODUCT_CATEGORIES, type ProductCategory } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProductRow {
@@ -12,6 +12,7 @@ interface ProductRow {
   price: number;
   compare_at_price?: number;
   category: string;
+  product_category: ProductCategory;
   images: string[];
   description: string;
   tags: string[];
@@ -32,6 +33,7 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     price: p.price,
     compare_at_price: p.compare_at_price,
     category: p.category,
+    product_category: p.product_category || '',
     images: p.images,
     description: p.description,
     tags: [p.category],
@@ -49,7 +51,7 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   outerwear: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/20' },
   streetwear: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' },
-  essentials: { bg: 'bg-zinc-500/15', text: 'text-zinc-400', border: 'border-zinc-500/20' },
+  essentials: { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' },
   'new-arrivals': { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
 };
 
@@ -83,6 +85,7 @@ export default function AdminInventory() {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
@@ -98,6 +101,7 @@ export default function AdminInventory() {
   const [addForm, setAddForm] = useState({ title: '', price: '', description: '' });
   const [addTags, setAddTags] = useState<string[]>([]);
   const [addTagInput, setAddTagInput] = useState('');
+  const [addProductCategory, setAddProductCategory] = useState<ProductCategory>('');
   const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
   const [addImages, setAddImages] = useState<string[]>([]);
@@ -204,6 +208,7 @@ export default function AdminInventory() {
             price: p.price,
             compare_at_price: p.compare_at_price ?? undefined,
             category: p.category || '',
+            product_category: '' as ProductCategory,
             images: p.images || [],
             description: p.description || '',
             tags: p.tags || [p.category || ''].filter(Boolean),
@@ -260,10 +265,19 @@ export default function AdminInventory() {
     return Array.from(tags).sort();
   }, [products, gridLayout]);
 
+  const allProductCategories = useMemo(() => {
+    const cats = new Set<string>();
+    products.forEach(p => { if (p.product_category) cats.add(p.product_category); });
+    return Array.from(cats).sort();
+  }, [products]);
+
   const filtered = useMemo(() => {
     return products.filter(p => {
       if (activeFilter !== 'all') {
         if (p.category !== activeFilter && !p.tags?.includes(activeFilter)) return false;
+      }
+      if (activeCategoryFilter !== 'all') {
+        if (p.product_category !== activeCategoryFilter) return false;
       }
       if (search) {
         const q = search.toLowerCase();
@@ -271,7 +285,7 @@ export default function AdminInventory() {
       }
       return true;
     });
-  }, [products, activeFilter, search]);
+  }, [products, activeFilter, activeCategoryFilter, search]);
 
   const totalItems = filtered.length;
   const lowStockProducts = filtered.filter(p => {
@@ -433,6 +447,7 @@ export default function AdminInventory() {
     setAddForm({ title: '', price: '', description: '' });
     setAddTags([]);
     setAddTagInput('');
+    setAddProductCategory('');
     setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
     setAddImages([]);
     setAddVideo(null);
@@ -552,6 +567,26 @@ export default function AdminInventory() {
             {tagEditMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
           </button>
         </div>
+        {/* Secondary category strip */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <button
+            onClick={() => setActiveCategoryFilter('all')}
+            className={`px-3 py-1 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+              activeCategoryFilter === 'all' ? 'bg-foreground/5 text-foreground/70 border-foreground/15' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+            }`}>
+            ALL TYPES
+          </button>
+          {(allProductCategories.length > 0 ? allProductCategories : PRODUCT_CATEGORIES).map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategoryFilter(cat === activeCategoryFilter ? 'all' : cat)}
+              className={`px-3 py-1 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                activeCategoryFilter === cat ? 'bg-foreground/5 text-foreground/70 border-foreground/15' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+              }`}>
+              {cat.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Product list */}
@@ -617,6 +652,11 @@ export default function AdminInventory() {
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-sm font-medium truncate">{p.title}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {p.product_category && (
+                        <span className="text-[10px] font-display px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground/70">
+                          {p.product_category.toUpperCase()}
+                        </span>
+                      )}
                       {p.tags.map(tag => (
                         <span key={tag} className={`text-[10px] font-display px-1.5 py-0.5 rounded border ${getTagColor(tag)}`}>
                           {tag.toUpperCase().replace('-', ' ')}
@@ -849,6 +889,26 @@ export default function AdminInventory() {
                   className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
 
+              {/* Category type */}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">CATEGORY</label>
+                <div className="flex flex-wrap gap-2">
+                  {PRODUCT_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setAddProductCategory(addProductCategory === cat ? '' : cat)}
+                      className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                        addProductCategory === cat
+                          ? 'bg-foreground/10 text-foreground border-foreground/20'
+                          : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                      }`}
+                    >
+                      {cat.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">TAGS</label>
                 {/* Existing tags as toggleable chips */}
@@ -1009,6 +1069,30 @@ export default function AdminInventory() {
                   uploading={editUploadingImage}
                   size="sm"
                 />
+              </div>
+
+              {/* Category type */}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">CATEGORY</label>
+                <div className="flex flex-wrap gap-2">
+                  {PRODUCT_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        const newCat = editingProduct.product_category === cat ? '' as ProductCategory : cat;
+                        setEditingProduct({ ...editingProduct, product_category: newCat });
+                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, product_category: newCat } : p));
+                      }}
+                      className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                        editingProduct.product_category === cat
+                          ? 'bg-foreground/10 text-foreground border-foreground/20'
+                          : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                      }`}
+                    >
+                      {cat.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
