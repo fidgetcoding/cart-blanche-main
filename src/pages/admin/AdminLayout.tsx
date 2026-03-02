@@ -29,6 +29,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const isLab = location.pathname.startsWith('/admin/lab');
+  const isLabSub = isLab && location.pathname !== '/admin/lab';
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -58,13 +59,23 @@ export default function AdminLayout() {
           <FlaskConical className="w-3.5 h-3.5 text-sidebar-foreground/50" />
           <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">THE LAB</h1>
           <div className="flex-1" />
-          <button
-            onClick={() => navigate('/admin')}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">BACK TO PORTAL</span>
-          </button>
+          {isLabSub ? (
+            <button
+              onClick={() => navigate('/admin/lab')}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">ALL EXPERIMENTS</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">BACK TO PORTAL</span>
+            </button>
+          )}
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
