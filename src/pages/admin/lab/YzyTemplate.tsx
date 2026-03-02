@@ -78,6 +78,18 @@ function ThemeControls() {
 
   return (
     <div className="px-4 py-4 space-y-5">
+          {/* Store Name */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">STORE NAME</label>
+            <input
+              type="text"
+              value={themeSettings.storeName}
+              onChange={e => updateTheme({ storeName: e.target.value })}
+              placeholder="YOUR STORE"
+              className="w-full bg-muted/50 border border-border/50 rounded-md px-2.5 py-1.5 text-[11px] text-foreground font-display tracking-wider focus:outline-none focus:ring-1 focus:ring-ring uppercase"
+            />
+          </div>
+
           {/* Mode */}
           <div className="space-y-2">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">BACKGROUND MODE</label>
