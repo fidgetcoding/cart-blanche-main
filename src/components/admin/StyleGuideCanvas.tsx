@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   addEdge,
@@ -350,13 +349,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           deleteKeyCode={['Backspace', 'Delete']}
           fitView={nodes.length > 0}
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(var(--foreground) / 0.05)" />
-          <Controls className="!bg-card !border-border !rounded-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground" />
-          <MiniMap
-            className="!bg-card !border-border !rounded-lg"
-            nodeColor="hsl(var(--foreground) / 0.2)"
-            maskColor="hsl(var(--background) / 0.8)"
-          />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.04)" />
+          <Controls className="!bg-[#141414] !border-[#2a2a2a] !rounded-lg !shadow-lg [&>button]:!bg-[#141414] [&>button]:!border-[#2a2a2a] [&>button]:!text-[#888] [&>button:hover]:!bg-[#1e1e1e] [&>button:hover]:!text-white [&>button]:!fill-[#888] [&>button:hover]:!fill-white" />
         </ReactFlow>
 
         {/* Empty state */}
