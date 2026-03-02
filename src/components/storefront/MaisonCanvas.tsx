@@ -94,14 +94,15 @@ export function MaisonCanvas() {
             <button
               key={cat}
               onClick={() => handleRibbonChange(cat)}
-              className="relative py-1 transition-colors"
+              className={`relative py-1 transition-all duration-200 ${
+                activeCategory === cat ? 'opacity-100' : 'opacity-50 hover:opacity-80'
+              }`}
               style={{
                 fontSize: 'var(--font-size-body)',
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
                 color: activeCategory === cat ? (themeSettings.bodyFontColor || undefined) : undefined,
                 fontWeight: activeCategory === cat ? 600 : 400,
-                opacity: activeCategory === cat ? 1 : 0.5,
               }}
             >
               {cat}
