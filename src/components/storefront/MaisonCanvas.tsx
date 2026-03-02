@@ -182,21 +182,17 @@ export function MaisonCanvas() {
         <div className="flex items-center gap-3 flex-shrink-0">
           <button
             onClick={() => setViewMode(3)}
-            className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
-            style={{
-              opacity: viewMode === 3 ? 1 : 0.5,
-              borderBottom: viewMode === 3 ? '1px solid currentColor' : '1px solid transparent',
-            }}
+            className={`text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1 ${
+              viewMode === 3 ? 'opacity-100 border-b border-current' : 'opacity-50 hover:opacity-80 border-b border-transparent'
+            }`}
           >
             View by 3
           </button>
           <button
             onClick={() => setViewMode(6)}
-            className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
-            style={{
-              opacity: viewMode === 6 ? 1 : 0.5,
-              borderBottom: viewMode === 6 ? '1px solid currentColor' : '1px solid transparent',
-            }}
+            className={`text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1 ${
+              viewMode === 6 ? 'opacity-100 border-b border-current' : 'opacity-50 hover:opacity-80 border-b border-transparent'
+            }`}
           >
             View by 6
           </button>
