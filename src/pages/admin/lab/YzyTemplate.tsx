@@ -361,7 +361,7 @@ export default function YzyTemplate() {
             }`}
           >
             <Settings className="w-3 h-3" />
-            TEMPLATE SETTINGS
+            SETTINGS
           </button>
           <button
             onClick={() => setSidebarTab('ai')}
