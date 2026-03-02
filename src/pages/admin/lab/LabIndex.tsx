@@ -23,10 +23,10 @@ export default function LabIndex() {
   const [activeId, setActiveId] = useState('yz');
 
   return (
-    <div className="p-6 md:p-10 max-w-2xl mx-auto flex flex-col gap-8">
+    <div className="p-6 md:p-10 max-w-2xl mx-auto flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h2 className="font-display text-sm tracking-[0.25em] text-foreground/80">TEMPLATES</h2>
-        <p className="text-xs text-muted-foreground font-display tracking-wider">Storefront templates in development</p>
+        <p className="text-[11px] text-muted-foreground font-display tracking-wider">Storefront templates in development</p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -36,12 +36,14 @@ export default function LabIndex() {
             <Link
               key={tmpl.id}
               to={tmpl.to}
-              className="group flex items-center justify-between gap-4 p-5 rounded-lg border border-sidebar-border bg-card hover:bg-sidebar-accent/40 transition-colors"
+              className="group relative flex items-center justify-between gap-4 p-5 rounded-xl liquid-glass hover:border-foreground/15 transition-all duration-300"
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                <FlaskConical className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground/70 transition-colors flex-shrink-0" />
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center">
+                  <FlaskConical className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground/80 transition-colors" />
+                </div>
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <span className="font-display text-xs tracking-[0.15em] text-foreground">{tmpl.name}</span>
                     <button
                       onClick={(e) => {
@@ -49,21 +51,21 @@ export default function LabIndex() {
                         e.stopPropagation();
                         setActiveId(tmpl.id);
                       }}
-                      className={`px-2 py-0.5 rounded-full text-[9px] font-display tracking-wider transition-all ${
+                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-display tracking-wider transition-all backdrop-blur-sm ${
                         isActive
-                          ? 'bg-success/20 text-[hsl(var(--success))] cursor-default'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer'
+                          ? 'bg-success/15 text-[hsl(var(--success))] border border-[hsl(var(--success))]/20 cursor-default'
+                          : 'bg-foreground/5 text-muted-foreground border border-foreground/10 hover:bg-foreground/10 hover:text-foreground cursor-pointer'
                       }`}
                     >
                       {isActive ? 'ACTIVE' : 'SET ACTIVE'}
                     </button>
                   </div>
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-[11px] text-muted-foreground/70">
                     {isActive ? tmpl.activeDescription : tmpl.inactiveDescription}
                   </span>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-foreground/60 transition-colors flex-shrink-0" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-foreground/50 transition-colors flex-shrink-0" />
             </Link>
           );
         })}
