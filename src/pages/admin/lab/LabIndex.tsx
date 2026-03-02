@@ -5,14 +5,16 @@ const EXPERIMENTS = [
   {
     id: 'yzy',
     name: 'YZY Template',
-    description: 'Stripped-back brutalist grid. No chrome, no noise.',
+    description: 'Your active storefront template. Customize in the visual builder.',
     to: '/admin/lab/yzy',
+    active: true,
   },
   {
     id: 'sl',
     name: 'SL Template',
     description: 'High-fashion editorial. Cinematic pacing, full-bleed imagery.',
     to: '/admin/lab/sl',
+    active: false,
   },
 ];
 
@@ -34,7 +36,12 @@ export default function LabIndex() {
             <div className="flex items-center gap-4">
               <FlaskConical className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground/70 transition-colors" />
               <div className="flex flex-col gap-0.5">
-                <span className="font-display text-xs tracking-[0.15em] text-foreground">{exp.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-xs tracking-[0.15em] text-foreground">{exp.name}</span>
+                  {exp.active && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-display tracking-wider bg-success/20 text-[hsl(var(--success))]">ACTIVE</span>
+                  )}
+                </div>
                 <span className="text-[11px] text-muted-foreground">{exp.description}</span>
               </div>
             </div>
