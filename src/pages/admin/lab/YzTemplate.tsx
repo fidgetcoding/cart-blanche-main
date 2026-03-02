@@ -112,6 +112,32 @@ function ThemeControls() {
             </div>
           </div>
 
+          {/* Thumbnail Background */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">THUMBNAIL BACKGROUND</label>
+            <div className="flex gap-1.5">
+              {(['default', 'transparent'] as const).map(mode => {
+                const isActive = themeSettings.tileBgMode === mode;
+                const label = mode === 'default'
+                  ? (themeSettings.mode === 'light' ? '#ECECEC' : '#151515')
+                  : 'TRANSPARENT';
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => updateTheme({ tileBgMode: mode })}
+                    className={`flex-1 py-1.5 rounded-md text-[10px] font-display tracking-wider transition-colors ${
+                      isActive
+                        ? 'bg-foreground/15 text-foreground border border-foreground/30'
+                        : 'bg-muted/50 text-muted-foreground border border-border/50 hover:border-foreground/30'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Tile Hover Glow */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">TILE HOVER GLOW</label>
@@ -214,31 +240,6 @@ function ThemeControls() {
           />
 
           {/* Font Sizes */}
-          {/* Thumbnail Background */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">THUMBNAIL BACKGROUND</label>
-            <div className="flex gap-1.5">
-              {(['default', 'transparent'] as const).map(mode => {
-                const isActive = themeSettings.tileBgMode === mode;
-                const label = mode === 'default'
-                  ? (themeSettings.mode === 'light' ? '#ECECEC' : '#151515')
-                  : 'TRANSPARENT';
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => updateTheme({ tileBgMode: mode })}
-                    className={`flex-1 py-1.5 rounded-md text-[10px] font-display tracking-wider transition-colors ${
-                      isActive
-                        ? 'bg-foreground/15 text-foreground border border-foreground/30'
-                        : 'bg-muted/50 text-muted-foreground border border-border/50 hover:border-foreground/30'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           <div className="space-y-2">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">ASSET SIZES</label>
