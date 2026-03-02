@@ -88,15 +88,15 @@ export const ProductTile = memo(function ProductTile({
         {/* Product name + price */}
         {showLabel && (
           <div className="pt-2 pb-1 space-y-0.5">
-            <p style={{ fontFamily: 'var(--font-display)', fontSize: `${themeSettings.displayFontSize}px` }} className="font-medium tracking-[0.05em] text-foreground/80 truncate">
+            <p style={{ fontFamily: `'${themeSettings.displayFont}', sans-serif`, fontSize: `${themeSettings.displayFontSize}px` }} className="font-medium tracking-[0.05em] text-foreground/80 truncate">
               {product.title}
             </p>
             <div className="flex items-center gap-2">
-              <span style={{ fontFamily: 'var(--font-numeral)', fontSize: `${themeSettings.numeralFontSize}px` }} className="text-foreground/60">
+              <span style={{ fontFamily: `'${themeSettings.numeralFont}', monospace`, fontSize: `${themeSettings.numeralFontSize}px` }} className="text-foreground/60">
                 ${product.price}
               </span>
               {product.compare_at_price && (
-                <span style={{ fontFamily: 'var(--font-numeral)', fontSize: `${themeSettings.numeralFontSize}px` }} className="text-muted-foreground line-through">
+                <span style={{ fontFamily: `'${themeSettings.numeralFont}', monospace`, fontSize: `${themeSettings.numeralFontSize}px` }} className="text-muted-foreground line-through">
                   ${product.compare_at_price}
                 </span>
               )}
