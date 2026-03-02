@@ -92,7 +92,7 @@ function presetsToEdges(presets: ProductPreset[]): Edge[] {
         target: targetId,
         sourceHandle: 'source',
         targetHandle: 'target',
-        style: { stroke: '#93c5fd', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(147, 197, 253, 0.5))' },
+        style: { stroke: '#60a5fa', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.5))' },
         type: 'default',
         data: { type: 'pairs' },
       });
@@ -104,7 +104,7 @@ function presetsToEdges(presets: ProductPreset[]): Edge[] {
         target: targetId,
         sourceHandle: 'source',
         targetHandle: 'target',
-        style: { stroke: '#67e8f9', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(103, 232, 249, 0.5))' },
+        style: { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' },
         type: 'default',
         data: { type: 'extras' },
       });
@@ -195,8 +195,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       ...connection,
       id: `${connectionType}-${connection.source}-${connection.target}`,
       style: connectionType === 'pairs'
-        ? { stroke: '#93c5fd', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(147, 197, 253, 0.5))' }
-        : { stroke: '#67e8f9', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(103, 232, 249, 0.5))' },
+        ? { stroke: '#60a5fa', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.5))' }
+        : { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' },
       data: { type: connectionType },
       type: 'default' as const,
     };
@@ -283,8 +283,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     setEdges(eds => {
       const otherEdges = eds.filter(e => !(e.source === selectedNodeId && (e.data as any)?.type === type));
       const style = type === 'pairs'
-        ? { stroke: '#93c5fd', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(147, 197, 253, 0.5))' }
-        : { stroke: '#67e8f9', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(103, 232, 249, 0.5))' };
+        ? { stroke: '#60a5fa', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.5))' }
+        : { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' };
       const newEdges = items.map(targetId => ({
         id: `${type}-${selectedNodeId}-${targetId}`,
         source: selectedNodeId!,
@@ -327,11 +327,11 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           {/* Legend */}
           <div className="flex items-center gap-3 ml-3 text-[9px] text-muted-foreground font-display tracking-wider">
             <span className="flex items-center gap-1.5">
-              <span className="w-5 h-0.5 rounded" style={{ background: '#93c5fd', boxShadow: '0 0 6px rgba(147, 197, 253, 0.6)' }} />
+              <span className="w-5 h-0.5 rounded" style={{ background: '#60a5fa', boxShadow: '0 0 6px rgba(96, 165, 250, 0.6)' }} />
               PAIRS
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-5 h-0.5 rounded" style={{ background: '#67e8f9', backgroundImage: 'repeating-linear-gradient(90deg, #67e8f9 0 4px, transparent 4px 7px)', boxShadow: '0 0 6px rgba(103, 232, 249, 0.6)' }} />
+              <span className="w-5 h-0.5 rounded" style={{ background: '#f472b6', backgroundImage: 'repeating-linear-gradient(90deg, #f472b6 0 4px, transparent 4px 7px)', boxShadow: '0 0 6px rgba(244, 114, 182, 0.6)' }} />
               EXTRAS
             </span>
           </div>
@@ -401,7 +401,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
             {/* Pairs */}
             <div>
-              <p className="text-[9px] font-display tracking-[0.2em] text-[#93c5fd] mb-2">PAIRS</p>
+              <p className="text-[9px] font-display tracking-[0.2em] text-[#60a5fa] mb-2">PAIRS</p>
               {(selectedPreset?.pairs ?? []).length === 0 ? (
                 <p className="text-[10px] text-muted-foreground/50 italic">No pairs connections</p>
               ) : (
@@ -427,7 +427,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
             {/* Extras */}
             <div>
-              <p className="text-[9px] font-display tracking-[0.2em] text-[#67e8f9] mb-2">EXTRAS</p>
+              <p className="text-[9px] font-display tracking-[0.2em] text-[#f472b6] mb-2">EXTRAS</p>
               {(selectedPreset?.extras ?? []).length === 0 ? (
                 <p className="text-[10px] text-muted-foreground/50 italic">No extras connections</p>
               ) : (
