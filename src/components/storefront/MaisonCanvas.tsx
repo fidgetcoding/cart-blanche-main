@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { MaisonProductCard } from './MaisonProductCard';
 import { MaisonProductDetail } from './MaisonProductDetail';
@@ -127,35 +127,47 @@ export function MaisonCanvas() {
         </button>
       </header>
 
-      {/* Sub-header: type dropdown + view toggle */}
+      {/* Sub-header: type selector + view toggle */}
       <div
         className="sticky top-[49px] z-20 flex items-center justify-between px-6 py-3 border-b border-border bg-background"
         style={{ fontFamily: 'var(--font-body)' }}
       >
-        {/* Product type dropdown */}
-        <div className="relative" onMouseEnter={() => setTypeDropdownOpen(true)} onMouseLeave={() => setTypeDropdownOpen(false)}>
+        {/* Product type horizontal reveal */}
+        <div
+          className="flex items-center gap-0 overflow-hidden"
+          onMouseEnter={() => setTypeDropdownOpen(true)}
+          onMouseLeave={() => setTypeDropdownOpen(false)}
+        >
           <button
-            className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
           >
             {activeType === 'ALL' ? 'ALL TYPES' : activeType}
-            <ChevronDown className="w-3.5 h-3.5" />
+            <motion.span
+              animate={{ rotate: typeDropdownOpen ? 90 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="inline-flex"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </motion.span>
           </button>
           <AnimatePresence>
             {typeDropdownOpen && (
               <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                className="absolute top-full left-0 pt-1 z-20"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 'auto', opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                className="flex items-center overflow-hidden ml-2"
               >
-                <div className="py-2 min-w-[160px] bg-background border border-border">
+                <div className="w-px h-4 bg-border/60 mr-3 flex-shrink-0" />
+                <div className="flex items-center gap-4 flex-nowrap">
                   {productTypes.map(type => (
                     <button
                       key={type}
                       onMouseEnter={() => handleTypeChange(type)}
                       onClick={() => { handleTypeChange(type); setTypeDropdownOpen(false); }}
-                      className={`block w-full text-left px-4 py-2 text-[11px] tracking-[0.15em] uppercase hover:bg-muted/40 transition-colors ${
-                        activeType === type ? 'text-foreground' : 'text-muted-foreground'
+                      className={`text-[11px] tracking-[0.15em] uppercase whitespace-nowrap transition-colors ${
+                        activeType === type ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {type}
@@ -167,31 +179,41 @@ export function MaisonCanvas() {
           </AnimatePresence>
         </div>
 
-        {/* View toggle */}
-        <div className="flex items-center gap-3">
-          <button
-            onMouseEnter={() => setViewMode(3)}
-            onClick={() => setViewMode(3)}
-            className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
-            style={{
-              opacity: viewMode === 3 ? 1 : 0.5,
-              borderBottom: viewMode === 3 ? '1px solid currentColor' : '1px solid transparent',
-            }}
-          >
-            View by 3
-          </button>
-          <button
-            onMouseEnter={() => setViewMode(6)}
-            onClick={() => setViewMode(6)}
-            className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
-            style={{
-              opacity: viewMode === 6 ? 1 : 0.5,
-              borderBottom: viewMode === 6 ? '1px solid currentColor' : '1px solid transparent',
-            }}
-          >
-            View by 6
-          </button>
-        </div>
+        {/* View toggle — hidden when type selector is expanded */}
+        <AnimatePresence>
+          {!typeDropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-3 overflow-hidden"
+            >
+              <button
+                onMouseEnter={() => setViewMode(3)}
+                onClick={() => setViewMode(3)}
+                className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
+                style={{
+                  opacity: viewMode === 3 ? 1 : 0.5,
+                  borderBottom: viewMode === 3 ? '1px solid currentColor' : '1px solid transparent',
+                }}
+              >
+                View by 3
+              </button>
+              <button
+                onMouseEnter={() => setViewMode(6)}
+                onClick={() => setViewMode(6)}
+                className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
+                style={{
+                  opacity: viewMode === 6 ? 1 : 0.5,
+                  borderBottom: viewMode === 6 ? '1px solid currentColor' : '1px solid transparent',
+                }}
+              >
+                View by 6
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
 
