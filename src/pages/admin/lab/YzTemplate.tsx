@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare, Save, RotateCcw } from 'lucide-react';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
@@ -451,25 +452,31 @@ export default function YzTemplate() {
         <div className="flex border-b border-border/50 flex-shrink-0">
           <button
             onClick={() => setSidebarTab('settings')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
               sidebarTab === 'settings'
-                ? 'text-foreground border-b-2 border-accent'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground/70'
             }`}
           >
             <Settings className="w-3 h-3" />
             SETTINGS
+            {sidebarTab === 'settings' && (
+              <motion.div layoutId="yz-tab-indicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
+            )}
           </button>
           <button
             onClick={() => setSidebarTab('ai')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
               sidebarTab === 'ai'
-                ? 'text-foreground border-b-2 border-accent'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground/70'
             }`}
           >
             <Sparkles className="w-3 h-3" />
             AI TEMPLATE BUILDER
+            {sidebarTab === 'ai' && (
+              <motion.div layoutId="yz-tab-indicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
+            )}
           </button>
         </div>
 
