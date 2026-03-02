@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Layers, Save, Plus, X, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
+import { Layers, Save, Plus, X, ChevronUp, ChevronDown, GripVertical, Search } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import type { DemoProduct } from '@/data/demo-data';
@@ -144,15 +144,21 @@ export default function AdminStylingGuide() {
   const [guideId, setGuideId] = useState<string | null>(null);
   const [presets, setPresets] = useState<ProductPreset[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterGroup, setFilterGroup] = useState<'ALL' | BodyZoneGroup>('ALL');
 
-  // Group products by body zone
+  // Group products by body zone, filtered by search and category
   const grouped = useMemo(() => {
     const groups: Record<BodyZoneGroup, DemoProduct[]> = { TOPS: [], BOTTOMS: [], ACCESSORIES: [] };
+    const q = searchQuery.toLowerCase();
     DEMO_PRODUCTS.forEach(p => {
-      groups[classifyGroup(p)].push(p);
+      if (q && !p.title.toLowerCase().includes(q)) return;
+      const group = classifyGroup(p);
+      if (filterGroup !== 'ALL' && group !== filterGroup) return;
+      groups[group].push(p);
     });
     return groups;
-  }, []);
+  }, [searchQuery, filterGroup]);
 
   const selectedProduct = DEMO_PRODUCTS.find(p => p.id === selectedProductId) ?? null;
   const currentPreset = presets.find(p => p.anchorProductId === selectedProductId);
@@ -293,8 +299,35 @@ export default function AdminStylingGuide() {
       <div className="flex-1 flex min-h-0">
         {/* LEFT: Product list */}
         <div className="w-72 border-r border-border overflow-y-auto flex-shrink-0">
-          <div className="px-4 py-3">
-            <p className="text-[10px] font-display tracking-widest text-muted-foreground">SELECT A PRODUCT</p>
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-3">SELECT A PRODUCT</p>
+            {/* Search */}
+            <div className="relative mb-3">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 bg-secondary/50 border border-border rounded-md text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+            {/* Category pills */}
+            <div className="flex flex-wrap gap-1.5">
+              {(['ALL', 'TOPS', 'BOTTOMS', 'ACCESSORIES'] as const).map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setFilterGroup(cat)}
+                  className={`px-2.5 py-1 rounded-full text-[9px] font-display tracking-wider transition-colors ${
+                    filterGroup === cat
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary/50 text-muted-foreground border border-border hover:bg-secondary'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
           {(['TOPS', 'BOTTOMS', 'ACCESSORIES'] as BodyZoneGroup[]).map(group => (
             <div key={group}>
