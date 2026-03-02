@@ -274,6 +274,7 @@ export default function AdminStylingGuide() {
 
   return (
     <div className="flex flex-col h-full">
+      <h1 className="font-display text-2xl font-bold tracking-wide px-6 pt-6 pb-4 flex-shrink-0">Style Guide</h1>
 
       {/* Two-column layout */}
       <div className="flex-1 flex min-h-0">
