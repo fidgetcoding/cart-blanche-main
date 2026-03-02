@@ -11,9 +11,6 @@ export default function AdminSettings() {
   const [storeTagline, setStoreTagline] = useState('');
   const [storeCategory, setStoreCategory] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [aleEnabled, setAleEnabled] = useState(true);
-  const [aleIntensity, setAleIntensity] = useState('medium');
-  const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -32,13 +29,6 @@ export default function AdminSettings() {
         setStoreTagline(merchant.store_tagline || '');
         setStoreCategory(merchant.store_category || '');
         setContactEmail(merchant.email || '');
-      }
-
-      const { data: config } = await supabase.from('store_config').select('*').eq('merchant_id', uid).single();
-      if (config) {
-        setAleEnabled(config.ale_enabled);
-        setAleIntensity(config.ale_intensity);
-        setLowStockThreshold(config.low_stock_threshold);
       }
       setLoading(false);
     }
@@ -60,15 +50,7 @@ export default function AdminSettings() {
       store_category: storeCategory || null,
     }).eq('id', uid);
 
-    // Upsert store config
-    const { error: configErr } = await supabase.from('store_config').upsert({
-      merchant_id: uid,
-      ale_enabled: aleEnabled,
-      ale_intensity: aleIntensity,
-      low_stock_threshold: lowStockThreshold,
-    }, { onConflict: 'merchant_id' });
-
-    if (merchantErr || configErr) {
+    if (merchantErr) {
       setMessage('Error saving settings');
     } else {
       setMessage('Settings saved!');
@@ -140,42 +122,6 @@ export default function AdminSettings() {
       </section>
 
 
-      {/* ALE Settings */}
-      <section className="mb-8">
-        <h2 className="font-display text-sm font-semibold tracking-wider mb-4">ADAPTIVE LAYOUT ENGINE</h2>
-        <div className="space-y-4 liquid-glass rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-display text-sm font-medium">Enable ALE</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Automatically adjust grid based on shopper behavior</p>
-            </div>
-            <button onClick={() => setAleEnabled(!aleEnabled)}
-              className={`w-12 h-6 rounded-full transition-colors relative ${aleEnabled ? 'bg-success' : 'bg-muted'}`}>
-              <span className={`absolute top-0.5 w-5 h-5 bg-foreground rounded-full transition-transform ${aleEnabled ? 'left-[26px]' : 'left-0.5'}`} />
-            </button>
-          </div>
-          {aleEnabled && (
-            <div>
-              <label className="text-xs font-display tracking-widest text-muted-foreground">INTENSITY</label>
-              <div className="flex gap-2 mt-2">
-                {['low', 'medium', 'high'].map(level => (
-                  <button key={level} onClick={() => setAleIntensity(level)}
-                    className={`flex-1 py-2 text-sm font-display rounded-lg border transition-all ${
-                      aleIntensity === level ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:border-muted-foreground'
-                    }`}>
-                    {level.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <div>
-            <label className="text-xs font-display tracking-widest text-muted-foreground">LOW STOCK THRESHOLD</label>
-            <input type="number" value={lowStockThreshold} onChange={e => setLowStockThreshold(parseInt(e.target.value) || 5)}
-              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
-        </div>
-      </section>
 
       {/* Payments */}
       <section>
