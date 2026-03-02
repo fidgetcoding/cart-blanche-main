@@ -276,12 +276,11 @@ export default function AdminStylingGuide() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Layers className="w-5 h-5 text-muted-foreground" />
           <h1 className="font-display text-lg font-bold tracking-wide">STYLE GUIDE</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Tab toggle */}
+          <div className="h-5 w-px bg-border" />
+          {/* Tab toggle — inline with title */}
           <div className="flex items-center bg-secondary rounded-md p-0.5">
             <button className="px-3 py-1.5 rounded text-[10px] font-display tracking-wider bg-primary text-primary-foreground">
               PRESETS
@@ -294,15 +293,15 @@ export default function AdminStylingGuide() {
               <span className="absolute -top-1.5 -right-1 text-[7px] text-muted-foreground/50 font-display">SOON</span>
             </button>
           </div>
-          <button
-            onClick={saveGuide}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? 'SAVING...' : 'SAVE'}
-          </button>
         </div>
+        <button
+          onClick={saveGuide}
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          <Save className="w-4 h-4" />
+          {saving ? 'SAVING...' : 'SAVE'}
+        </button>
       </div>
 
       {/* Two-column layout */}
