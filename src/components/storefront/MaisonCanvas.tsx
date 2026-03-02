@@ -70,6 +70,7 @@ export function MaisonCanvas() {
           {categories.map(cat => (
             <button
               key={cat}
+              onMouseEnter={() => setActiveCategory(cat)}
               onClick={() => setActiveCategory(cat)}
               className="relative py-1 transition-colors"
               style={{
