@@ -365,17 +365,6 @@ export default function YzyTemplate() {
         {/* Tab Toggle */}
         <div className="flex border-b border-border/50 flex-shrink-0">
           <button
-            onClick={() => setSidebarTab('ai')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
-              sidebarTab === 'ai'
-                ? 'text-foreground border-b-2 border-accent'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Sparkles className="w-3 h-3" />
-            AI TEMPLATE BUILDER
-          </button>
-          <button
             onClick={() => setSidebarTab('settings')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
               sidebarTab === 'settings'
@@ -385,6 +374,17 @@ export default function YzyTemplate() {
           >
             <Settings className="w-3 h-3" />
             TEMPLATE SETTINGS
+          </button>
+          <button
+            onClick={() => setSidebarTab('ai')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-display tracking-[0.15em] transition-colors ${
+              sidebarTab === 'ai'
+                ? 'text-foreground border-b-2 border-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Sparkles className="w-3 h-3" />
+            AI TEMPLATE BUILDER
           </button>
         </div>
 
