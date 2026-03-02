@@ -38,11 +38,11 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   storeNameColor: '',
 };
 
-const STORAGE_KEY = 'cb-theme-settings';
+const DEFAULT_STORAGE_KEY = 'cb-theme-settings';
 
-function loadSaved(): ThemeSettings | null {
+function loadSaved(key: string = DEFAULT_STORAGE_KEY): ThemeSettings | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
   } catch {}
   return null;
@@ -71,9 +71,10 @@ function buildGoogleFontsUrl(families: string[]): string {
   return `https://fonts.googleapis.com/css2?${params}&display=swap`;
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<ThemeSettings>(() => loadSaved() || DEFAULT_SETTINGS);
-  const [savedSnapshot, setSavedSnapshot] = useState<ThemeSettings>(() => loadSaved() || DEFAULT_SETTINGS);
+export function ThemeProvider({ children, storageKey }: { children: React.ReactNode; storageKey?: string }) {
+  const key = storageKey || DEFAULT_STORAGE_KEY;
+  const [settings, setSettings] = useState<ThemeSettings>(() => loadSaved(key) || DEFAULT_SETTINGS);
+  const [savedSnapshot, setSavedSnapshot] = useState<ThemeSettings>(() => loadSaved(key) || DEFAULT_SETTINGS);
   const linkRef = useRef<HTMLLinkElement | null>(null);
 
   const hasUnsavedChanges = JSON.stringify(settings) !== JSON.stringify(savedSnapshot);
@@ -83,9 +84,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const saveTheme = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    localStorage.setItem(key, JSON.stringify(settings));
     setSavedSnapshot({ ...settings });
-  }, [settings]);
+  }, [settings, key]);
 
   const revertTheme = useCallback(() => {
     setSettings({ ...savedSnapshot });

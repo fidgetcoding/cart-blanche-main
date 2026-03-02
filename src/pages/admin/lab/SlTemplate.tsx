@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare, Save, RotateCcw } from 'lucide-react';
-import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
+import { useTheme, ThemeProvider, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
 import { StyleKitProvider } from '@/contexts/StyleKitContext';
@@ -387,7 +387,7 @@ function ColorInput({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-export default function SlTemplate() {
+function SlTemplateInner() {
   const navigate = useNavigate();
   const { themeSettings, updateTheme } = useTheme();
   const [chatInput, setChatInput] = useState('');
@@ -575,5 +575,13 @@ export default function SlTemplate() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SlTemplate() {
+  return (
+    <ThemeProvider storageKey="cb-theme-sl">
+      <SlTemplateInner />
+    </ThemeProvider>
   );
 }
