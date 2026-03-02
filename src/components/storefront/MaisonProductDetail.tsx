@@ -124,7 +124,6 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const isScrolling = useRef(false);
   const { addItem } = useCart();
   const { themeSettings } = useTheme();
 
@@ -147,31 +146,51 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     return () => window.removeEventListener('keydown', handler);
   }, [product, onClose]);
 
-  // One scroll gesture = one image toggle (wrapping)
+  // One scroll gesture = one image toggle (wrapping) with strict debounce
+  const isScrolling = useRef(false);
+  const accumulatedDelta = useRef(0);
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const goToImage = useCallback((dir: 1 | -1) => {
     if (isScrolling.current) return;
     isScrolling.current = true;
+    accumulatedDelta.current = 0;
     setCurrentVisibleImage(prev => {
       const next = prev + dir;
       if (next < 0) return images.length - 1;
       if (next >= images.length) return 0;
       return next;
     });
-    setTimeout(() => { isScrolling.current = false; }, 400);
+    // Lock out for 800ms to absorb all inertia events from one gesture
+    setTimeout(() => { isScrolling.current = false; accumulatedDelta.current = 0; }, 800);
   }, [images.length]);
 
-  // Wheel handler: one stroke = one toggle
+  // Wheel handler: accumulate delta, trigger only once per gesture
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el || images.length <= 1) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && Math.abs(e.deltaY) > 5) {
-        goToImage(e.deltaY > 0 ? 1 : -1);
-      }
+      if (isScrolling.current) return; // completely ignore during cooldown
+
+      accumulatedDelta.current += e.deltaY;
+
+      // Clear previous timeout — wait for gesture to settle
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+      scrollTimeout.current = setTimeout(() => {
+        const delta = accumulatedDelta.current;
+        if (Math.abs(delta) > 20) {
+          goToImage(delta > 0 ? 1 : -1);
+        } else {
+          accumulatedDelta.current = 0;
+        }
+      }, 50);
     };
     el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    };
   }, [goToImage, images.length]);
 
   if (!product) return null;
