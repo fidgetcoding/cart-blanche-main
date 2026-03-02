@@ -4,6 +4,7 @@ import { Save, Plus, X, ChevronUp, ChevronDown, GripVertical, Search } from 'luc
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import type { DemoProduct } from '@/data/demo-data';
+import type { StyleGuideCanvasHandle } from '@/components/admin/StyleGuideCanvas';
 
 const StyleGuideCanvas = lazy(() => import('@/components/admin/StyleGuideCanvas'));
 
@@ -32,7 +33,7 @@ function ProductPicker({
         <button
           key={p.id}
           onClick={() => { onSelect(p); onClose(); }}
-          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary transition-colors text-left"
+          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-foreground/5 transition-colors text-left"
         >
           <img
             src={getImageUrl(p.images[0], 'thumb')}
@@ -82,7 +83,7 @@ function PresetList({
 
       <div className="space-y-1">
         {items.map((product, idx) => (
-          <div key={product.id} className="flex items-center gap-2 bg-secondary/50 rounded-md px-2 py-1.5">
+          <div key={product.id} className="flex items-center gap-2 bg-foreground/5 rounded-md px-2 py-1.5">
             <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
             <span className="text-[10px] font-display text-muted-foreground w-4">{idx + 1}.</span>
             <img
@@ -123,7 +124,7 @@ function PresetList({
       <div className="mt-2">
         <button
           onClick={() => setPickerOpen(!pickerOpen)}
-          className="flex items-center gap-1 px-3 py-1.5 border border-border rounded-md text-[10px] font-display tracking-wider hover:bg-secondary transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/5 transition-colors"
         >
           <Plus className="w-3 h-3" />
           ADD PRODUCT
@@ -150,10 +151,11 @@ export default function AdminStylingGuide() {
   const [filterGroup, setFilterGroup] = useState<'ALL' | BodyZoneGroup>('ALL');
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
+  const [blankNodeActive, setBlankNodeActive] = useState(false);
 
   // Track which product IDs are on the canvas
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
-  const canvasRef = useRef<{ addProduct: (p: DemoProduct) => void; selectProduct: (id: string) => void } | null>(null);
+  const canvasRef = useRef<StyleGuideCanvasHandle | null>(null);
 
   // Group products by body zone, filtered by search and category
   const grouped = useMemo(() => {
@@ -280,19 +282,33 @@ export default function AdminStylingGuide() {
   const handleProductClick = (productId: string) => {
     if (activeView === 'list') {
       setSelectedProductId(productId);
-    } else {
-      // Canvas mode
-      const product = DEMO_PRODUCTS.find(p => p.id === productId);
-      if (!product) return;
+      return;
+    }
+
+    // Canvas mode
+    const product = DEMO_PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+
+    // If blank node is active, fill it with this product
+    if (blankNodeActive) {
       if (canvasNodeIds.has(productId)) {
-        // Already on canvas — select and pan to it
-        canvasRef.current?.selectProduct(productId);
+        // Product already on canvas — connect pending to existing node and remove blank
+        // The fillBlankNode handles this by just completing with the product
+        canvasRef.current?.fillBlankNode(product);
       } else {
-        // Not on canvas — add it
-        canvasRef.current?.addProduct(product);
+        canvasRef.current?.fillBlankNode(product);
       }
       setSelectedProductId(productId);
+      return;
     }
+
+    // Normal canvas click behavior
+    if (canvasNodeIds.has(productId)) {
+      canvasRef.current?.selectProduct(productId);
+    } else {
+      canvasRef.current?.addProduct(product);
+    }
+    setSelectedProductId(productId);
   };
 
   if (loading) {
@@ -333,6 +349,13 @@ export default function AdminStylingGuide() {
       <div className="flex-1 flex min-h-0">
         {/* LEFT: Product list — shared between both views */}
         <div className="w-72 border-r border-foreground/5 overflow-y-auto flex-shrink-0 liquid-glass">
+          {/* Blank node banner */}
+          {activeView === 'canvas' && blankNodeActive && (
+            <div className="px-4 py-2.5 border-b border-foreground/5 bg-primary/5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0" />
+              <p className="text-[10px] font-display tracking-wider text-primary">SELECT A PRODUCT FOR THE NEW NODE</p>
+            </div>
+          )}
           <div className="px-4 py-3 border-b border-foreground/5">
             {/* Search */}
             <div className="relative mb-3">
@@ -376,7 +399,9 @@ export default function AdminStylingGuide() {
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ease-out border-b border-foreground/3 ${
                       selectedProductId === product.id
                         ? 'bg-foreground/8 border-l-2 border-l-primary/60 scale-[1.01]'
-                        : 'hover:bg-foreground/5 border-l-2 border-l-transparent'
+                        : blankNodeActive && activeView === 'canvas'
+                          ? 'hover:bg-primary/10 border-l-2 border-l-transparent cursor-pointer'
+                          : 'hover:bg-foreground/5 border-l-2 border-l-transparent'
                     }`}
                   >
                     <img
@@ -416,6 +441,7 @@ export default function AdminStylingGuide() {
                 onSave={saveGuide}
                 saving={saving}
                 onCanvasNodeIdsChange={setCanvasNodeIds}
+                onBlankNodeChange={setBlankNodeActive}
               />
             </Suspense>
           ) : (
