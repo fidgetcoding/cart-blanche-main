@@ -68,7 +68,7 @@ function ProductNode({ data, selected }: NodeProps) {
         <Handle type="target" position={Position.Left} id="target" className="!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20" />
         <Handle type="source" position={Position.Right} id="source" className="!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20" />
         <Plus className="w-6 h-6 text-muted-foreground/40" />
-        <span className="text-[8px] text-muted-foreground/50 font-display tracking-widest">SELECT PRODUCT</span>
+        <span className="text-[8px] text-muted-foreground/50 font-display tracking-widest">SELECT PRODUCT FROM PANEL</span>
       </div>
     );
   }
