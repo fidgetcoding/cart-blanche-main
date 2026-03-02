@@ -364,7 +364,7 @@ function ColorInput({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-export default function YzyTemplate() {
+export default function YzTemplate() {
   const navigate = useNavigate();
   const { themeSettings, updateTheme } = useTheme();
   const [chatInput, setChatInput] = useState('');

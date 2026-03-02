@@ -4,11 +4,11 @@ import { Link } from 'react-router-dom';
 
 const TEMPLATES = [
   {
-    id: 'yzy',
-    name: 'YZY Template',
+    id: 'yz',
+    name: 'YZ Template',
     activeDescription: 'Your active storefront template. Customize in the visual builder.',
     inactiveDescription: 'Stripped-back brutalist grid. No chrome, no noise.',
-    to: '/admin/lab/yzy',
+    to: '/admin/lab/yz',
   },
   {
     id: 'sl',
@@ -20,7 +20,7 @@ const TEMPLATES = [
 ];
 
 export default function LabIndex() {
-  const [activeId, setActiveId] = useState('yzy');
+  const [activeId, setActiveId] = useState('yz');
 
   return (
     <div className="p-6 md:p-10 max-w-2xl mx-auto flex flex-col gap-8">
