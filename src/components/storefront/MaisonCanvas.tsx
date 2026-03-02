@@ -37,10 +37,7 @@ export function MaisonCanvas() {
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
-  const openTypeDropdown = useCallback(() => {
-    if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
-    setTypeDropdownOpen(true);
-  }, []);
+  // No longer used — dropdown opens on click, not hover
 
   const scheduleCloseTypeDropdown = useCallback(() => {
     if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
@@ -166,10 +163,13 @@ export function MaisonCanvas() {
         {/* Product type horizontal reveal */}
         <div
           className="flex items-center gap-0 overflow-hidden"
-          onMouseEnter={openTypeDropdown}
+          onMouseEnter={() => {
+            if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
+          }}
           onMouseLeave={scheduleCloseTypeDropdown}
         >
           <button
+            onClick={() => setTypeDropdownOpen(prev => !prev)}
             className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
           >
             {activeType === 'ALL' ? 'CATEGORY' : activeType}
