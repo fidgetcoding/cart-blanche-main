@@ -326,7 +326,7 @@ export function MaisonCanvas() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-              className="relative z-10 w-[90%] max-w-[1000px] h-[70vh] rounded-xl border border-border overflow-hidden shadow-2xl"
+              className="relative z-10 w-[92%] max-w-[1100px] h-[82vh] rounded-xl border border-border overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}
               style={{ contain: 'paint layout' }}
             >
