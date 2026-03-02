@@ -728,6 +728,67 @@ export default function AdminInventory() {
                           </div>
                         </div>
 
+                        {/* Thumbnails quick-edit */}
+                        <div>
+                          <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">IMAGES ({p.images?.length || 0})</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {p.images?.map((img, imgIdx) => (
+                              <div key={imgIdx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-border/50 bg-secondary/30 flex-shrink-0">
+                                <img src={img} alt={`${p.title} ${imgIdx + 1}`} className="w-full h-full object-cover" />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setProducts(prev => prev.map(pr =>
+                                      pr.id === p.id ? { ...pr, images: pr.images.filter((_, i) => i !== imgIdx) } : pr
+                                    ));
+                                  }}
+                                  className="absolute top-0.5 right-0.5 p-0.5 bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/80"
+                                >
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              </div>
+                            ))}
+                            <input
+                              ref={expandedId === p.id ? editImageInputRef : undefined}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={e => {
+                                const f = e.target.files?.[0];
+                                if (f) {
+                                  // Quick inline upload
+                                  const setUploading = (v: boolean) => setEditUploadingImage(v);
+                                  setUploading(true);
+                                  const ext = f.name.split('.').pop() || 'jpg';
+                                  const path = `images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+                                  supabase.storage.from('product-media').upload(path, f).then(({ error }) => {
+                                    if (!error) {
+                                      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
+                                      setProducts(prev => prev.map(pr =>
+                                        pr.id === p.id ? { ...pr, images: [...pr.images, publicUrl] } : pr
+                                      ));
+                                    }
+                                    setUploading(false);
+                                  });
+                                }
+                                e.target.value = '';
+                              }}
+                            />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); editImageInputRef.current?.click(); }}
+                              disabled={editUploadingImage}
+                              className="w-16 h-16 rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50 flex-shrink-0"
+                            >
+                              {editUploadingImage ? (
+                                <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                              ) : (
+                                <Plus className="w-4 h-4 text-muted-foreground/50" />
+                              )}
+                              <span className="text-[7px] font-display tracking-wider text-muted-foreground">{editUploadingImage ? 'WAIT' : 'ADD'}</span>
+                            </button>
+                          </div>
+                        </div>
+
                         {/* Tags management */}
                         <div>
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">TAGS</p>
