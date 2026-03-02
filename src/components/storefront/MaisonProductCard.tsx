@@ -26,14 +26,16 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     if (cooldown.current) return;
     cooldown.current = true;
     setCurrentImage(prev => (prev + 1) % images.length);
-    setTimeout(() => { cooldown.current = false; }, 200);
+    wheelAccumulator.current = 0;
+    setTimeout(() => { cooldown.current = false; wheelAccumulator.current = 0; }, 450);
   }, [images.length]);
 
   const prevImage = useCallback(() => {
     if (cooldown.current) return;
     cooldown.current = true;
     setCurrentImage(prev => (prev - 1 + images.length) % images.length);
-    setTimeout(() => { cooldown.current = false; }, 200);
+    wheelAccumulator.current = 0;
+    setTimeout(() => { cooldown.current = false; wheelAccumulator.current = 0; }, 450);
   }, [images.length]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -42,12 +44,14 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     if (!isHorizontal) return;
     e.preventDefault();
     e.stopPropagation();
-    if (cooldown.current) return;
+    if (cooldown.current) {
+      wheelAccumulator.current = 0;
+      return;
+    }
     wheelAccumulator.current += e.deltaX;
     if (Math.abs(wheelAccumulator.current) > 50) {
       if (wheelAccumulator.current > 0) nextImage();
       else prevImage();
-      wheelAccumulator.current = 0;
     }
   }, [hasMultiple, nextImage, prevImage]);
 
