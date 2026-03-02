@@ -1,0 +1,171 @@
+import { describe, it, expect } from 'vitest';
+import { getSuggestedProducts, getBodyZone, type ProductPreset } from '../pairing-logic';
+import { DEMO_PRODUCTS } from '@/data/demo-data';
+
+const findProduct = (id: string) => DEMO_PRODUCTS.find(p => p.id === id)!;
+
+describe('getBodyZone', () => {
+  it('classifies jackets as top', () => {
+    expect(getBodyZone(findProduct('p1'))).toBe('top'); // Cloud Puffer Jacket
+  });
+
+  it('classifies pants as bottom', () => {
+    expect(getBodyZone(findProduct('p5'))).toBe('bottom'); // Cargo Pants
+  });
+
+  it('classifies shorts as bottom', () => {
+    expect(getBodyZone(findProduct('p11'))).toBe('bottom'); // Mesh Shorts
+  });
+
+  it('classifies shirts as top', () => {
+    expect(getBodyZone(findProduct('p6'))).toBe('top'); // Oversized Tee
+  });
+});
+
+describe('getSuggestedProducts — counterparts (pairs) mode', () => {
+  it('suggests bottoms when anchor is a top', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p1'), // jacket (top)
+      mode: 'counterparts',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    results.forEach(p => {
+      expect(getBodyZone(p)).toBe('bottom');
+    });
+  });
+
+  it('suggests tops when anchor is a bottom', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p5'), // pants (bottom)
+      mode: 'counterparts',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    results.forEach(p => {
+      expect(getBodyZone(p)).toBe('top');
+    });
+  });
+
+  it('excludes anchor product from results', () => {
+    const anchor = findProduct('p1');
+    const results = getSuggestedProducts({ anchor, mode: 'counterparts' });
+    expect(results.find(p => p.id === anchor.id)).toBeUndefined();
+  });
+
+  it('excludes cart and look products', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p1'),
+      mode: 'counterparts',
+      cartProductIds: ['p5'],
+      lookProductIds: ['p16'],
+    });
+    expect(results.find(p => p.id === 'p5')).toBeUndefined();
+    expect(results.find(p => p.id === 'p16')).toBeUndefined();
+  });
+});
+
+describe('getSuggestedProducts — extras mode', () => {
+  it('suggests same zone (tops) when anchor is a top', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p1'), // jacket (top)
+      mode: 'extras',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    results.forEach(p => {
+      expect(getBodyZone(p)).toBe('top');
+    });
+  });
+
+  it('suggests same zone (bottoms) when anchor is a bottom', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p5'), // pants (bottom)
+      mode: 'extras',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    results.forEach(p => {
+      expect(getBodyZone(p)).toBe('bottom');
+    });
+  });
+});
+
+describe('getSuggestedProducts — preset integration', () => {
+  const presets: ProductPreset[] = [
+    {
+      anchorProductId: 'p1', // Cloud Puffer (top)
+      pairs: ['p5', 'p16', 'p25'],  // Cargo, Joggers, Utility
+      extras: ['p2', 'p3'],         // Trench, Bomber
+    },
+  ];
+
+  it('preset products appear first in counterparts mode', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p1'),
+      mode: 'counterparts',
+      presets,
+    });
+    // First three should be the preset products in order
+    expect(results[0].id).toBe('p5');  // Cargo Pants
+    expect(results[1].id).toBe('p16'); // Crème Joggers
+    expect(results[2].id).toBe('p25'); // Utility Pant
+  });
+
+  it('preset products appear first in extras mode', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p1'),
+      mode: 'extras',
+      presets,
+    });
+    expect(results[0].id).toBe('p2'); // Stealth Trench
+    expect(results[1].id).toBe('p3'); // Bomber
+  });
+
+  it('automatic suggestions follow after preset products (deduped)', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p1'),
+      mode: 'counterparts',
+      presets,
+    });
+    // After the 3 presets, remaining products should NOT include them again
+    const afterPresets = results.slice(3);
+    expect(afterPresets.find(p => p.id === 'p5')).toBeUndefined();
+    expect(afterPresets.find(p => p.id === 'p16')).toBeUndefined();
+    expect(afterPresets.find(p => p.id === 'p25')).toBeUndefined();
+  });
+
+  it('excludes preset products that are in cart', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p1'),
+      mode: 'counterparts',
+      presets,
+      cartProductIds: ['p5'], // Cargo Pants in cart
+    });
+    expect(results[0].id).toBe('p16'); // Joggers first since Cargo excluded
+    expect(results[1].id).toBe('p25'); // Utility second
+  });
+
+  it('falls back to automatic when no preset exists for anchor', () => {
+    const results = getSuggestedProducts({
+      anchor: findProduct('p5'), // No preset for Cargo Pants
+      mode: 'counterparts',
+      presets,
+    });
+    // Should still get results (automatic logic)
+    expect(results.length).toBeGreaterThan(0);
+    // All should be tops (opposite of bottom)
+    results.forEach(p => {
+      expect(getBodyZone(p)).toBe('top');
+    });
+  });
+
+  it('empty presets array behaves same as no presets', () => {
+    const withPresets = getSuggestedProducts({
+      anchor: findProduct('p5'),
+      mode: 'counterparts',
+      presets: [],
+    });
+    const without = getSuggestedProducts({
+      anchor: findProduct('p5'),
+      mode: 'counterparts',
+    });
+    expect(withPresets.map(p => p.id)).toEqual(without.map(p => p.id));
+  });
+});
