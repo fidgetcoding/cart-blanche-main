@@ -291,7 +291,7 @@ function FontSelect({ label, value, options, onChange }: { label: string; value:
 function SizeSlider({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="text-[10px] text-muted-foreground w-14 flex-shrink-0">{label}</span>
+      <span className="text-[10px] text-muted-foreground w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
       <input
         type="range"
         min={min}
