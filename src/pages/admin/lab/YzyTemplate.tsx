@@ -145,24 +145,23 @@ function ThemeControls() {
                 <Pipette className="w-3 h-3 text-foreground/70" />
               </button>
               {/* Color picker (native) */}
-              <div className="relative">
-                <input
-                  ref={colorInputRef}
-                  type="color"
-                  value={/^#[0-9a-fA-F]{6}$/.test(customColor) ? customColor : '#ffffff'}
-                  onChange={e => {
-                    setCustomColor(e.target.value);
-                    updateTheme({ tileHoverGlow: e.target.value });
-                  }}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div
-                  className="w-6 h-6 rounded-full border-2 border-border/50 hover:border-foreground/40 transition-all flex items-center justify-center cursor-pointer"
-                  title="Open color picker"
-                >
-                  <Palette className="w-3 h-3 text-foreground/70" />
-                </div>
-              </div>
+              <input
+                ref={colorInputRef}
+                type="color"
+                value={/^#[0-9a-fA-F]{6}$/.test(customColor) ? customColor : '#ffffff'}
+                onChange={e => {
+                  setCustomColor(e.target.value);
+                  updateTheme({ tileHoverGlow: e.target.value });
+                }}
+                className="sr-only"
+              />
+              <button
+                onClick={() => colorInputRef.current?.click()}
+                className="w-6 h-6 rounded-full border-2 border-border/50 hover:border-foreground/40 transition-all flex items-center justify-center cursor-pointer"
+                title="Open color picker"
+              >
+                <Palette className="w-3 h-3 text-foreground/70" />
+              </button>
             </div>
             {/* Hex code input */}
             <div className="flex items-center gap-2">
