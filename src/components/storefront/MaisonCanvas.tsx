@@ -65,7 +65,7 @@ export function MaisonCanvas() {
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-background">
+      <div className={`h-screen w-full flex items-center justify-center bg-background ${themeSettings.mode === 'light' ? 'light' : ''}`}>
         <p className="text-foreground tracking-[0.3em] text-[11px] uppercase" style={{ fontFamily: 'var(--font-display)' }}>
           Loading...
         </p>
@@ -74,7 +74,7 @@ export function MaisonCanvas() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
+    <div className={`min-h-screen w-full bg-background text-foreground ${themeSettings.mode === 'light' ? 'light' : ''}`}>
       {/* Sticky header with integrated category nav */}
       <header
         className="sticky top-0 z-30 flex items-center px-6 py-3 bg-background border-b border-border"
