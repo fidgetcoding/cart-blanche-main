@@ -230,12 +230,14 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
         {!isCompact && hasMultiple && isHovered && (
           <>
             <button
+              onMouseEnter={() => prevImage()}
               onClick={e => { e.stopPropagation(); prevImage(); }}
               className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-[2]"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
+              onMouseEnter={() => nextImage()}
               onClick={e => { e.stopPropagation(); nextImage(); }}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-[2]"
             >
@@ -250,6 +252,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
             {images.map((_, i) => (
               <button
                 key={i}
+                onMouseEnter={() => setCurrentImage(i)}
                 onClick={e => { e.stopPropagation(); setCurrentImage(i); }}
                 className={`w-1.5 h-1.5 rounded-full transition-colors ${
                   i === currentImage ? 'bg-foreground' : 'bg-foreground/30'
