@@ -1,6 +1,7 @@
 import { memo, useState, useCallback } from 'react';
 import { ShoppingBag, Layers } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ProductTileProps {
   product: DemoProduct;
@@ -24,6 +25,7 @@ export const ProductTile = memo(function ProductTile({
   const glowing = isFocused || isHovered;
   const showActions = glowing && scale > 0.4;
   const [imgLoaded, setImgLoaded] = useState(false);
+  const { themeSettings } = useTheme();
 
   const handleLoad = useCallback(() => setImgLoaded(true), []);
 
@@ -39,14 +41,14 @@ export const ProductTile = memo(function ProductTile({
         width: 220,
         height: 280,
         opacity: dimmed ? 0.15 : 1,
-        transform: glowing && !dimmed ? 'scale(1.04)' : 'scale(1)',
+        transform: glowing && !dimmed ? `scale(${themeSettings.tileHoverScale})` : 'scale(1)',
         zIndex: glowing ? 10 : 0,
         transition: 'opacity 0.4s ease, transform 0.2s ease',
         willChange: 'transform',
       }}
     >
       <div className="w-full h-full flex flex-col">
-        <div className={`flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300 ${glowing ? 'shadow-[0_0_20px_2px_hsla(0,0%,100%,0.08),0_0_40px_4px_hsla(0,0%,100%,0.04)]' : ''}`}>
+        <div className={`flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300`} style={glowing ? { boxShadow: `0 0 20px 2px ${themeSettings.tileHoverGlow}, 0 0 40px 4px ${themeSettings.tileHoverGlow}` } : undefined}>
           {product.images && product.images.length > 0 ? (
             <img
               src={product.images[0]}
@@ -86,15 +88,15 @@ export const ProductTile = memo(function ProductTile({
         {/* Product name + price */}
         {showLabel && (
           <div className="pt-2 pb-1 space-y-0.5">
-            <p className="font-display text-[11px] font-medium tracking-[0.05em] text-foreground/80 truncate">
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: `${themeSettings.displayFontSize}px` }} className="font-medium tracking-[0.05em] text-foreground/80 truncate">
               {product.title}
             </p>
             <div className="flex items-center gap-2">
-              <span className="font-body text-[10px] text-foreground/60">
+              <span style={{ fontFamily: 'var(--font-numeral)', fontSize: `${themeSettings.numeralFontSize}px` }} className="text-foreground/60">
                 ${product.price}
               </span>
               {product.compare_at_price && (
-                <span className="font-body text-[10px] text-muted-foreground line-through">
+                <span style={{ fontFamily: 'var(--font-numeral)', fontSize: `${themeSettings.numeralFontSize}px` }} className="text-muted-foreground line-through">
                   ${product.compare_at_price}
                 </span>
               )}
