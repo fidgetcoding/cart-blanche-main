@@ -22,7 +22,7 @@ export default function LabIndex() {
   return (
     <div className="p-6 md:p-10 max-w-2xl mx-auto flex flex-col gap-8">
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-sm tracking-[0.25em] text-foreground/80">EXPERIMENTS</h2>
+        <h2 className="font-display text-sm tracking-[0.25em] text-foreground/80">TEMPLATES</h2>
         <p className="text-xs text-muted-foreground font-display tracking-wider">Storefront templates in development</p>
       </div>
 
