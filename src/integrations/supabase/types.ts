@@ -244,6 +244,7 @@ export type Database = {
       grid_layouts: {
         Row: {
           category_order: string[]
+          hidden_product_types: string[]
           hidden_tags: string[]
           id: string
           layout_type: string
@@ -253,6 +254,7 @@ export type Database = {
         }
         Insert: {
           category_order?: string[]
+          hidden_product_types?: string[]
           hidden_tags?: string[]
           id?: string
           layout_type?: string
@@ -262,6 +264,7 @@ export type Database = {
         }
         Update: {
           category_order?: string[]
+          hidden_product_types?: string[]
           hidden_tags?: string[]
           id?: string
           layout_type?: string
