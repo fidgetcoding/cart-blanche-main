@@ -133,10 +133,24 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       product.images.forEach((src, i) => {
         if (i === 0) return; // already visible
         const img = new Image();
-        img.src = src;
+        img.src = src.medium;
       });
     }
   }, [productIndex]);
+
+  // Phase 6: Preload neighbor images for seamless navigation
+  useEffect(() => {
+    const directions: Array<'up'|'down'|'left'|'right'> = ['up','down','left','right'];
+    directions.forEach(dir => {
+      const idx = getWrappingNeighbor(productIndex, dir, DEMO_PRODUCTS, activeCategory);
+      if (idx === productIndex) return;
+      const neighbor = DEMO_PRODUCTS[idx];
+      if (neighbor?.images?.[0]) {
+        const img = new Image();
+        img.src = neighbor.images[0].medium;
+      }
+    });
+  }, [productIndex, activeCategory]);
 
   const navigate = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
     const newIndex = getWrappingNeighbor(productIndex, direction, DEMO_PRODUCTS, activeCategory);
@@ -343,14 +357,14 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="absolute top-3 right-3 z-10 p-1.5 bg-background/60 backdrop-blur-sm hover:bg-secondary rounded-lg transition-colors"
+                className="absolute top-3 right-3 z-10 p-1.5 bg-background/80 hover:bg-secondary rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
               {product.images && product.images.length > 0 ? (
                 <img
                   key={`${product.id}-${activeImage}`}
-                  src={product.images[Math.min(activeImage, product.images.length - 1)]}
+                  src={product.images[Math.min(activeImage, product.images.length - 1)].medium}
                   alt={product.title}
                   className="w-full h-full object-cover"
                   draggable={false}

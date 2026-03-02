@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,21 +6,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
-import AuthPage from "./pages/AuthPage";
-import ResetPassword from "./pages/ResetPassword";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminDiscounts from "./pages/admin/AdminDiscounts";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminInventory from "./pages/admin/AdminInventory";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
-import AdminPageEditor from "./pages/admin/AdminPageEditor";
-import AdminStylingGuide from "./pages/admin/AdminStylingGuide";
-import LabIndex from "./pages/admin/lab/LabIndex";
-import YzTemplate from "./pages/admin/lab/YZTemplate";
-import SlTemplate from "./pages/admin/lab/SlTemplate";
-import NotFound from "./pages/NotFound";
+
+// Code-split: lazy-load non-storefront routes
+const AuthPage = lazy(() => import('./pages/AuthPage'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminDiscounts = lazy(() => import('./pages/admin/AdminDiscounts'));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
+const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminPageEditor = lazy(() => import('./pages/admin/AdminPageEditor'));
+const AdminStylingGuide = lazy(() => import('./pages/admin/AdminStylingGuide'));
+const LabIndex = lazy(() => import('./pages/admin/lab/LabIndex'));
+const YzTemplate = lazy(() => import('./pages/admin/lab/YZTemplate'));
+const SlTemplate = lazy(() => import('./pages/admin/lab/SlTemplate'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient();
 
@@ -30,25 +32,32 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/admin/lab/yz" element={<YzTemplate />} />
-            <Route path="/admin/lab/sl" element={<SlTemplate />} />
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="discounts" element={<AdminDiscounts />} />
-              <Route path="grid" element={<AdminPageEditor />} />
-              
-              <Route path="orders" element={<AdminOrders />} />
-              <Route path="inventory" element={<AdminInventory />} />
-              <Route path="styling-guide" element={<AdminStylingGuide />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="lab" element={<LabIndex />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={
+            <div className="h-screen w-full flex items-center justify-center bg-background">
+              <span className="text-foreground/40 tracking-[0.3em] text-xs uppercase font-display">
+                Loading…
+              </span>
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/admin/lab/yz" element={<YzTemplate />} />
+              <Route path="/admin/lab/sl" element={<SlTemplate />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="discounts" element={<AdminDiscounts />} />
+                <Route path="grid" element={<AdminPageEditor />} />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="inventory" element={<AdminInventory />} />
+                <Route path="styling-guide" element={<AdminStylingGuide />} />
+                <Route path="settings" element={<AdminSettings />} />
+                <Route path="lab" element={<LabIndex />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

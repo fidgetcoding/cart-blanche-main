@@ -94,7 +94,7 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
               style={{ backgroundColor: themeSettings.tileBgMode === 'transparent' ? 'transparent' : (themeSettings.mode === 'light' ? '#ececec' : '#151515') }}
             >
               <img
-                src={p.images[0] || '/placeholder.svg'}
+                src={p.images[0]?.thumb || '/placeholder.svg'}
                 alt={p.title}
                 className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                 draggable={false}
@@ -127,7 +127,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const { addItem } = useCart();
   const { themeSettings } = useTheme();
 
-  const images = product ? (product.images.length > 0 ? product.images : ['/placeholder.svg']) : ['/placeholder.svg'];
+  const images = product ? (product.images.length > 0 ? product.images : []) : [];
 
   // Reset on product change
   useEffect(() => {
@@ -206,7 +206,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       title: product.title,
       variantTitle: v.title,
       price: v.price ?? product.price,
-      image: product.images[0],
+      image: product.images[0]?.thumb,
     });
   };
 
@@ -262,7 +262,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
         <AnimatePresence mode="wait">
           <motion.img
             key={currentVisibleImage}
-            src={images[currentVisibleImage]}
+            src={images[currentVisibleImage]?.medium || '/placeholder.svg'}
             alt={`${product.title} ${currentVisibleImage + 1}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

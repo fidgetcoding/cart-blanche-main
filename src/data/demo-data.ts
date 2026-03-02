@@ -1,44 +1,24 @@
 // Demo seed data for the spatial storefront
-import imgP1 from '@/assets/products/p1-cloud-puffer.png';
-import imgP2 from '@/assets/products/p2-stealth-trench.png';
-import imgP3 from '@/assets/products/p3-bomber.png';
-import imgP4 from '@/assets/products/p4-graphic-hoodie.png';
-import imgP5 from '@/assets/products/p5-cargo-pants.png';
-import imgP6 from '@/assets/products/p6-oversized-tee.png';
-import imgP7 from '@/assets/products/p7-wool-overcoat.png';
-import imgP8 from '@/assets/products/p8-windbreaker.png';
-import imgP9 from '@/assets/products/p9-leather-moto.png';
-import imgP10 from '@/assets/products/p10-track-jacket.png';
-import imgP11 from '@/assets/products/p11-mesh-shorts.png';
-import imgP12 from '@/assets/products/p12-maroon-crop-top.png';
-import imgP13 from '@/assets/products/p13-core-crewneck.png';
-import imgP15 from '@/assets/products/p15-tank-top.png';
-import imgP16 from '@/assets/products/p16-creme-joggers.png';
-import imgP17 from '@/assets/products/p17-sweat-shorts.png';
-import imgP18 from '@/assets/products/p18-long-sleeve.png';
-import imgP19 from '@/assets/products/p19-deconstructed-blazer.png';
-import imgP20 from '@/assets/products/p20-knit-polo.png';
-import imgP25 from '@/assets/products/p25-utility-pant.png';
-import imgP1Worn from '@/assets/products/p1-cloud-puffer-worn.png';
-import imgP2Worn from '@/assets/products/p2-stealth-trench-worn.png';
-import imgP3Worn from '@/assets/products/p3-bomber-worn.png';
-import imgP4Worn from '@/assets/products/p4-graphic-hoodie-worn.png';
-import imgP5Worn from '@/assets/products/p5-cargo-pants-worn.png';
-import imgP6Worn from '@/assets/products/p6-oversized-tee-worn.png';
-import imgP7Worn from '@/assets/products/p7-wool-overcoat-worn.png';
-import imgP8Worn from '@/assets/products/p8-windbreaker-worn.png';
-import imgP9Worn from '@/assets/products/p9-leather-moto-worn.png';
-import imgP10Worn from '@/assets/products/p10-track-jacket-worn.png';
-import imgP11Worn from '@/assets/products/p11-mesh-shorts-worn.png';
-import imgP12Worn from '@/assets/products/p12-maroon-crop-top-worn.png';
-import imgP13Worn from '@/assets/products/p13-core-crewneck-worn.png';
-import imgP15Worn from '@/assets/products/p15-tank-top-worn.png';
-import imgP16Worn from '@/assets/products/p16-creme-joggers-worn.png';
-import imgP17Worn from '@/assets/products/p17-sweat-shorts-worn.png';
-import imgP18Worn from '@/assets/products/p18-long-sleeve-worn.png';
-import imgP19Worn from '@/assets/products/p19-deconstructed-blazer-worn.png';
-import imgP20Worn from '@/assets/products/p20-knit-polo-worn.png';
-import imgP25Worn from '@/assets/products/p25-utility-pant-worn.png';
+
+// Multi-resolution image URL builder
+// Images are in public/products/ — served on-demand, not bundled
+export interface ProductImage {
+  thumb: string;     // 400px - grid tiles
+  medium: string;    // 800px - product detail
+  full: string;      // 1920px - zoom/fullscreen
+}
+
+function imgSet(baseName: string): ProductImage {
+  // Temporary: serve original PNGs from public/
+  // TODO: Replace with optimized WebP once build pipeline is set up
+  const ext = baseName.includes('slim-jogger') || baseName.includes('wide-leg') || baseName.includes('zip-vest') || baseName.includes('cashmere') || baseName.includes('scarf') ? 'jpg' : 'png';
+  const base = `/products/${baseName}`;
+  return {
+    thumb: `${base}.${ext}`,
+    medium: `${base}.${ext}`,
+    full: `${base}.${ext}`,
+  };
+}
 
 export type ProductCategory = 'shirt' | 'pants' | 'jacket' | 'hat' | 'accessory' | 'shorts' | '';
 
@@ -49,7 +29,7 @@ export interface DemoProduct {
   title: string;
   price: number;
   compare_at_price?: number;
-  images: string[];
+  images: ProductImage[];
   category: string;
   product_category: ProductCategory;
   status: 'active';
@@ -131,27 +111,27 @@ const gridPos = (i: number) => ({
 
 export const DEMO_PRODUCTS: DemoProduct[] = [
   // Row 1: Coats & Jackets
-  { id: 'p1', title: 'Cloud Puffer Jacket', price: 420, compare_at_price: 520, images: [imgP1, imgP1Worn], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(0), variants: makeVariants('p1'), description: 'Oversized puffer with matte shell. Cloud-weight insulation for sub-zero warmth.', weight_oz: 38, shipping_type: 'domestic' },
-  { id: 'p2', title: 'Stealth Trench', price: 380, images: [imgP2, imgP2Worn], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(1), variants: makeVariants('p2'), description: 'Minimalist trench coat in water-resistant cotton. Hidden snap closures.', weight_oz: 42, shipping_type: 'domestic' },
-  { id: 'p7', title: 'Wool Overcoat', price: 550, images: [imgP7, imgP7Worn], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(2), variants: makeVariants('p7'), description: 'Double-faced Italian wool. Unlined for a clean drape.', weight_oz: 48, shipping_type: 'domestic' },
-  { id: 'p9', title: 'Leather Moto Jacket', price: 680, images: [imgP9, imgP9Worn], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(3), variants: makeVariants('p9'), description: 'Full-grain lambskin with asymmetric zip. Broken in from day one.', weight_oz: 56, shipping_type: 'domestic' },
-  { id: 'p3', title: 'Bomber Mk IV', price: 290, images: [imgP3, imgP3Worn], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(4), variants: makeVariants('p3'), description: 'Technical bomber with ribbed cuffs and exposed zip. Flight-ready.', weight_oz: 28, shipping_type: 'domestic' },
+  { id: 'p1', title: 'Cloud Puffer Jacket', price: 420, compare_at_price: 520, images: [imgSet('p1-cloud-puffer'), imgSet('p1-cloud-puffer-worn')], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(0), variants: makeVariants('p1'), description: 'Oversized puffer with matte shell. Cloud-weight insulation for sub-zero warmth.', weight_oz: 38, shipping_type: 'domestic' },
+  { id: 'p2', title: 'Stealth Trench', price: 380, images: [imgSet('p2-stealth-trench'), imgSet('p2-stealth-trench-worn')], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(1), variants: makeVariants('p2'), description: 'Minimalist trench coat in water-resistant cotton. Hidden snap closures.', weight_oz: 42, shipping_type: 'domestic' },
+  { id: 'p7', title: 'Wool Overcoat', price: 550, images: [imgSet('p7-wool-overcoat'), imgSet('p7-wool-overcoat-worn')], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(2), variants: makeVariants('p7'), description: 'Double-faced Italian wool. Unlined for a clean drape.', weight_oz: 48, shipping_type: 'domestic' },
+  { id: 'p9', title: 'Leather Moto Jacket', price: 680, images: [imgSet('p9-leather-moto'), imgSet('p9-leather-moto-worn')], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(3), variants: makeVariants('p9'), description: 'Full-grain lambskin with asymmetric zip. Broken in from day one.', weight_oz: 56, shipping_type: 'domestic' },
+  { id: 'p3', title: 'Bomber Mk IV', price: 290, images: [imgSet('p3-bomber'), imgSet('p3-bomber-worn')], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(4), variants: makeVariants('p3'), description: 'Technical bomber with ribbed cuffs and exposed zip. Flight-ready.', weight_oz: 28, shipping_type: 'domestic' },
   // Row 2: Light Jackets & Tops
-  { id: 'p8', title: 'Windbreaker Shell', price: 195, images: [imgP8, imgP8Worn], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(5), variants: makeVariants('p8'), description: 'Packable windbreaker. Reflective tape at seams.', weight_oz: 12, shipping_type: 'domestic' },
-  { id: 'p10', title: 'Track Jacket', price: 210, images: [imgP10, imgP10Worn], category: 'streetwear', product_category: 'jacket', status: 'active', grid_position: gridPos(6), variants: makeVariants('p10'), description: 'Retro-inspired track jacket with contrast piping.', weight_oz: 18, shipping_type: 'domestic' },
-  { id: 'p19', title: 'Deconstructed Blazer', price: 340, images: [imgP19, imgP19Worn], category: 'new-arrivals', product_category: 'jacket', status: 'active', grid_position: gridPos(7), variants: makeVariants('p19'), description: 'Unstructured blazer with raw edge details.', weight_oz: 22, shipping_type: 'domestic' },
-  { id: 'p4', title: 'Graphic Hoodie', price: 145, images: [imgP4, imgP4Worn], category: 'streetwear', product_category: 'shirt', status: 'active', grid_position: gridPos(8), variants: makeVariants('p4'), description: 'Heavy fleece hoodie with screen-printed back graphic.', weight_oz: 24, shipping_type: 'domestic' },
-  { id: 'p13', title: 'Core Crewneck', price: 95, images: [imgP13, imgP13Worn], category: 'essentials', product_category: 'shirt', status: 'active', grid_position: gridPos(9), variants: makeVariants('p13'), description: 'Mid-weight french terry crewneck. The foundation.', weight_oz: 16, shipping_type: 'domestic' },
+  { id: 'p8', title: 'Windbreaker Shell', price: 195, images: [imgSet('p8-windbreaker'), imgSet('p8-windbreaker-worn')], category: 'outerwear', product_category: 'jacket', status: 'active', grid_position: gridPos(5), variants: makeVariants('p8'), description: 'Packable windbreaker. Reflective tape at seams.', weight_oz: 12, shipping_type: 'domestic' },
+  { id: 'p10', title: 'Track Jacket', price: 210, images: [imgSet('p10-track-jacket'), imgSet('p10-track-jacket-worn')], category: 'streetwear', product_category: 'jacket', status: 'active', grid_position: gridPos(6), variants: makeVariants('p10'), description: 'Retro-inspired track jacket with contrast piping.', weight_oz: 18, shipping_type: 'domestic' },
+  { id: 'p19', title: 'Deconstructed Blazer', price: 340, images: [imgSet('p19-deconstructed-blazer'), imgSet('p19-deconstructed-blazer-worn')], category: 'new-arrivals', product_category: 'jacket', status: 'active', grid_position: gridPos(7), variants: makeVariants('p19'), description: 'Unstructured blazer with raw edge details.', weight_oz: 22, shipping_type: 'domestic' },
+  { id: 'p4', title: 'Graphic Hoodie', price: 145, images: [imgSet('p4-graphic-hoodie'), imgSet('p4-graphic-hoodie-worn')], category: 'streetwear', product_category: 'shirt', status: 'active', grid_position: gridPos(8), variants: makeVariants('p4'), description: 'Heavy fleece hoodie with screen-printed back graphic.', weight_oz: 24, shipping_type: 'domestic' },
+  { id: 'p13', title: 'Core Crewneck', price: 95, images: [imgSet('p13-core-crewneck'), imgSet('p13-core-crewneck-worn')], category: 'essentials', product_category: 'shirt', status: 'active', grid_position: gridPos(9), variants: makeVariants('p13'), description: 'Mid-weight french terry crewneck. The foundation.', weight_oz: 16, shipping_type: 'domestic' },
   // Row 3: Shirts & Tops
-  { id: 'p20', title: 'Knit Polo', price: 125, images: [imgP20, imgP20Worn], category: 'new-arrivals', product_category: 'shirt', status: 'active', grid_position: gridPos(10), variants: makeVariants('p20'), description: 'Textured knit polo. Open collar. Relaxed fit.', weight_oz: 10, shipping_type: 'domestic' },
-  { id: 'p18', title: 'Long Sleeve Base', price: 70, images: [imgP18, imgP18Worn], category: 'essentials', product_category: 'shirt', status: 'active', grid_position: gridPos(11), variants: makeVariants('p18'), description: 'Fitted long sleeve in premium cotton. Layer or wear alone.', weight_oz: 8, shipping_type: 'domestic' },
-  { id: 'p6', title: 'Oversized Tee', price: 65, images: [imgP6, imgP6Worn], category: 'streetwear', product_category: 'shirt', status: 'active', grid_position: gridPos(12), variants: makeVariants('p6'), description: 'Heavyweight cotton. Dropped shoulder. Boxy cut.', weight_oz: 9, shipping_type: 'domestic' },
-  { id: 'p15', title: 'Tank Top', price: 40, images: [imgP15, imgP15Worn], category: 'essentials', product_category: 'shirt', status: 'active', grid_position: gridPos(13), variants: makeVariants('p15'), description: 'Ribbed cotton tank. Elongated hem.', weight_oz: 5, shipping_type: 'domestic' },
-  { id: 'p12', title: 'Maroon Crop Top', price: 55, images: [imgP12, imgP12Worn], category: 'essentials', product_category: 'shirt', status: 'active', grid_position: gridPos(14), variants: makeVariants('p12'), description: 'Fitted maroon crop top in soft stretch cotton. Scoop neck, short sleeves.', weight_oz: 4, shipping_type: 'domestic' },
+  { id: 'p20', title: 'Knit Polo', price: 125, images: [imgSet('p20-knit-polo'), imgSet('p20-knit-polo-worn')], category: 'new-arrivals', product_category: 'shirt', status: 'active', grid_position: gridPos(10), variants: makeVariants('p20'), description: 'Textured knit polo. Open collar. Relaxed fit.', weight_oz: 10, shipping_type: 'domestic' },
+  { id: 'p18', title: 'Long Sleeve Base', price: 70, images: [imgSet('p18-long-sleeve'), imgSet('p18-long-sleeve-worn')], category: 'essentials', product_category: 'shirt', status: 'active', grid_position: gridPos(11), variants: makeVariants('p18'), description: 'Fitted long sleeve in premium cotton. Layer or wear alone.', weight_oz: 8, shipping_type: 'domestic' },
+  { id: 'p6', title: 'Oversized Tee', price: 65, images: [imgSet('p6-oversized-tee'), imgSet('p6-oversized-tee-worn')], category: 'streetwear', product_category: 'shirt', status: 'active', grid_position: gridPos(12), variants: makeVariants('p6'), description: 'Heavyweight cotton. Dropped shoulder. Boxy cut.', weight_oz: 9, shipping_type: 'domestic' },
+  { id: 'p15', title: 'Tank Top', price: 40, images: [imgSet('p15-tank-top'), imgSet('p15-tank-top-worn')], category: 'essentials', product_category: 'shirt', status: 'active', grid_position: gridPos(13), variants: makeVariants('p15'), description: 'Ribbed cotton tank. Elongated hem.', weight_oz: 5, shipping_type: 'domestic' },
+  { id: 'p12', title: 'Maroon Crop Top', price: 55, images: [imgSet('p12-maroon-crop-top'), imgSet('p12-maroon-crop-top-worn')], category: 'essentials', product_category: 'shirt', status: 'active', grid_position: gridPos(14), variants: makeVariants('p12'), description: 'Fitted maroon crop top in soft stretch cotton. Scoop neck, short sleeves.', weight_oz: 4, shipping_type: 'domestic' },
   // Row 4: Pants, Shorts & Accessories
-  { id: 'p5', title: 'Cargo Pants', price: 175, images: [imgP5, imgP5Worn], category: 'streetwear', product_category: 'pants', status: 'active', grid_position: gridPos(15), variants: makeVariants('p5'), description: 'Relaxed fit cargo with oversized pockets. Ripstop cotton.', weight_oz: 20, shipping_type: 'domestic' },
-  { id: 'p16', title: 'Crème Joggers', price: 120, images: [imgP16, imgP16Worn], category: 'essentials', product_category: 'pants', status: 'active', grid_position: gridPos(16), variants: makeVariants('p16'), description: 'Heavyweight French terry joggers in crème. Elastic waist with drawstring. Ribbed cuffs.', weight_oz: 18, shipping_type: 'domestic' },
-  { id: 'p25', title: 'Utility Pant', price: 165, images: [imgP25, imgP25Worn], category: 'streetwear', product_category: 'pants', status: 'active', grid_position: gridPos(17), variants: makeVariants('p25'), description: 'Slim tapered utility pant with zippered cargo pockets. Matte black technical fabric.', weight_oz: 16, shipping_type: 'domestic' },
-  { id: 'p11', title: 'Mesh Shorts', price: 85, images: [imgP11, imgP11Worn], category: 'streetwear', product_category: 'shorts', status: 'active', grid_position: gridPos(18), variants: makeVariants('p11'), description: 'Double-layer mesh with elastic waist. Practice-ready.', weight_oz: 7, shipping_type: 'domestic' },
-  { id: 'p17', title: 'Sweat Shorts', price: 75, images: [imgP17, imgP17Worn], category: 'essentials', product_category: 'shorts', status: 'active', grid_position: gridPos(19), variants: makeVariants('p17'), description: 'French terry shorts with raw hem.', weight_oz: 10, shipping_type: 'domestic' },
+  { id: 'p5', title: 'Cargo Pants', price: 175, images: [imgSet('p5-cargo-pants'), imgSet('p5-cargo-pants-worn')], category: 'streetwear', product_category: 'pants', status: 'active', grid_position: gridPos(15), variants: makeVariants('p5'), description: 'Relaxed fit cargo with oversized pockets. Ripstop cotton.', weight_oz: 20, shipping_type: 'domestic' },
+  { id: 'p16', title: 'Crème Joggers', price: 120, images: [imgSet('p16-creme-joggers'), imgSet('p16-creme-joggers-worn')], category: 'essentials', product_category: 'pants', status: 'active', grid_position: gridPos(16), variants: makeVariants('p16'), description: 'Heavyweight French terry joggers in crème. Elastic waist with drawstring. Ribbed cuffs.', weight_oz: 18, shipping_type: 'domestic' },
+  { id: 'p25', title: 'Utility Pant', price: 165, images: [imgSet('p25-utility-pant'), imgSet('p25-utility-pant-worn')], category: 'streetwear', product_category: 'pants', status: 'active', grid_position: gridPos(17), variants: makeVariants('p25'), description: 'Slim tapered utility pant with zippered cargo pockets. Matte black technical fabric.', weight_oz: 16, shipping_type: 'domestic' },
+  { id: 'p11', title: 'Mesh Shorts', price: 85, images: [imgSet('p11-mesh-shorts'), imgSet('p11-mesh-shorts-worn')], category: 'streetwear', product_category: 'shorts', status: 'active', grid_position: gridPos(18), variants: makeVariants('p11'), description: 'Double-layer mesh with elastic waist. Practice-ready.', weight_oz: 7, shipping_type: 'domestic' },
+  { id: 'p17', title: 'Sweat Shorts', price: 75, images: [imgSet('p17-sweat-shorts'), imgSet('p17-sweat-shorts-worn')], category: 'essentials', product_category: 'shorts', status: 'active', grid_position: gridPos(19), variants: makeVariants('p17'), description: 'French terry shorts with raw hem.', weight_oz: 10, shipping_type: 'domestic' },
 ];

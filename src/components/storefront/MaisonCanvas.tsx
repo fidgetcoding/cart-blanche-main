@@ -283,8 +283,7 @@ export function MaisonCanvas() {
         />
       ) : (
         <div className="px-0">
-          <motion.div
-            layout
+          <div
             className="grid w-full"
             style={{
               gridTemplateColumns: `repeat(${viewMode}, 1fr)`,
@@ -292,7 +291,7 @@ export function MaisonCanvas() {
               borderTop: '1px solid hsl(var(--border))',
             }}
           >
-            <AnimatePresence mode="popLayout">
+            <>
               {filteredProducts.map((product, i) => (
                 <MaisonProductCard
                   key={product.id}
@@ -303,8 +302,8 @@ export function MaisonCanvas() {
                   index={i}
                 />
               ))}
-            </AnimatePresence>
-          </motion.div>
+            </>
+          </div>
         </div>
       )}
       {/* Cart drawer */}
