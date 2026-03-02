@@ -346,7 +346,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
           nodeTypes={nodeTypes}
-          className="!bg-background"
+          style={{ background: 'hsl(var(--background))' }}
           deleteKeyCode={['Backspace', 'Delete']}
           fitView={nodes.length > 0}
         >
