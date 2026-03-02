@@ -168,19 +168,17 @@ export function MaisonCanvas() {
         {/* Product type horizontal reveal */}
         <div
           className="flex items-center gap-0 overflow-hidden"
-          onMouseEnter={() => {
-            if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
-            setTypeDropdownOpen(prev => !prev);
-          }}
           onMouseLeave={() => {
-            if (typeDropdownOpen) {
-              if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
-              typeCloseTimer.current = setTimeout(() => setTypeDropdownOpen(false), 3000);
-            }
+            if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
+            typeCloseTimer.current = setTimeout(() => setTypeDropdownOpen(false), 3000);
           }}
         >
           <button
             className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            onMouseEnter={() => {
+              if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
+              setTypeDropdownOpen(prev => !prev);
+            }}
           >
             {activeType === 'ALL' ? 'CATEGORY' : activeType}
             <AnimatePresence mode="wait">
@@ -206,6 +204,9 @@ export function MaisonCanvas() {
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
                 className="flex items-center overflow-hidden ml-2"
+                onMouseEnter={() => {
+                  if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
+                }}
               >
                 <div className="w-px h-4 bg-border/60 mr-3 flex-shrink-0" />
                 <div className="flex items-center gap-4 flex-nowrap">
