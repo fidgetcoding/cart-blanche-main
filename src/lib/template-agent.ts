@@ -99,6 +99,16 @@ const VIBE_PRESETS: Record<string, { update: Partial<ThemeSettings>; message: st
   },
 };
 
+const FONT_STOP_WORDS = new Set([
+  'the', 'to', 'for', 'use', 'with', 'and', 'a', 'an', 'make', 'set', 'change',
+  'switch', 'font', 'display', 'body', 'nav', 'numeral', 'price', 'heading',
+  'title', 'titles', 'headings', 'navigator', 'it', 'my', 'mode', 'dark', 'light',
+  'add', 'remove', 'page', 'homepage', 'home', 'chatbot', 'chat', 'store', 'site',
+  'website', 'app', 'button', 'image', 'logo', 'banner', 'section', 'header',
+  'footer', 'sidebar', 'menu', 'link', 'color', 'background', 'border', 'margin',
+  'padding', 'width', 'height', 'bigger', 'smaller', 'larger', 'size',
+]);
+
 function fuzzyMatchFont(input: string): string | null {
   const lower = input.toLowerCase();
   // Exact match first
@@ -110,10 +120,11 @@ function fuzzyMatchFont(input: string): string | null {
   // Contains
   const contains = ALL_FONTS.find(f => f.toLowerCase().includes(lower));
   if (contains) return contains;
-  // Check individual words
+  // Check individual words (min 5 chars, skip stop words to avoid false positives)
   const words = lower.split(/\s+/);
   for (const word of words) {
-    if (word.length < 3) continue;
+    if (word.length < 5) continue;
+    if (FONT_STOP_WORDS.has(word)) continue;
     const match = ALL_FONTS.find(f => f.toLowerCase().includes(word));
     if (match) return match;
   }
@@ -129,15 +140,16 @@ function detectFontInInput(input: string): string | null {
   }
   // Try fuzzy on individual segments
   const segments = lower.replace(/[,.]/, '').split(/\s+/);
-  // Try pairs
+  // Try pairs (skip if both words are stop words)
   for (let i = 0; i < segments.length - 1; i++) {
+    if (FONT_STOP_WORDS.has(segments[i]) && FONT_STOP_WORDS.has(segments[i + 1])) continue;
     const pair = `${segments[i]} ${segments[i + 1]}`;
     const match = fuzzyMatchFont(pair);
     if (match) return match;
   }
   // Try singles
   for (const seg of segments) {
-    if (['the', 'to', 'for', 'use', 'with', 'and', 'a', 'an', 'make', 'set', 'change', 'switch', 'font', 'display', 'body', 'nav', 'numeral', 'price', 'heading', 'title', 'navigator', 'it', 'my', 'mode', 'dark', 'light'].includes(seg)) continue;
+    if (FONT_STOP_WORDS.has(seg)) continue;
     const match = fuzzyMatchFont(seg);
     if (match) return match;
   }
@@ -158,17 +170,17 @@ function detectColor(input: string): string | null {
 
 function detectFontTarget(input: string): 'display' | 'body' | 'numeral' | null {
   const lower = input.toLowerCase();
-  if (/\b(display|heading|title|product name|product title)\b/.test(lower)) return 'display';
-  if (/\b(body|nav|navigator|navigation|ui|text|category|pill)\b/.test(lower)) return 'body';
-  if (/\b(numeral|price|number|mono|monospace|tabular)\b/.test(lower)) return 'numeral';
+  if (/\b(display|headings?|titles?|product names?|product titles?)\b/.test(lower)) return 'display';
+  if (/\b(body|nav|navigator|navigation|ui|text|categor(?:y|ies)|pills?)\b/.test(lower)) return 'body';
+  if (/\b(numerals?|prices?|numbers?|mono|monospace|tabular)\b/.test(lower)) return 'numeral';
   return null;
 }
 
 function detectSizeTarget(input: string): 'display' | 'body' | 'numeral' | null {
   const lower = input.toLowerCase();
-  if (/\b(display|heading|title)\b/.test(lower)) return 'display';
+  if (/\b(display|headings?|titles?)\b/.test(lower)) return 'display';
   if (/\b(body|nav|navigator|navigation|ui|text)\b/.test(lower)) return 'body';
-  if (/\b(numeral|price|number)\b/.test(lower)) return 'numeral';
+  if (/\b(numerals?|prices?|numbers?)\b/.test(lower)) return 'numeral';
   return null;
 }
 
@@ -270,7 +282,7 @@ export function processMessage(input: string, current: ThemeSettings): AgentResp
       const val = Math.min(1.15, current.tileHoverScale + 0.03);
       return { message: `Bumped hover scale from ${current.tileHoverScale} to ${val}.`, themeUpdate: { tileHoverScale: val } };
     }
-    if (/\b(smaller|less|subtle|reduce|none|off)\b/.test(lower)) {
+    if (/\b(smaller|less|subtl\w*|reduce\w*|none|off)\b/.test(lower)) {
       const val = Math.max(1.0, current.tileHoverScale - 0.03);
       return { message: `Reduced hover scale from ${current.tileHoverScale} to ${val}.`, themeUpdate: { tileHoverScale: val } };
     }
@@ -310,6 +322,22 @@ export function processMessage(input: string, current: ThemeSettings): AgentResp
   if (/\b(statement)\b/.test(lower)) {
     const p = VIBE_PRESETS.bold;
     return { message: p.message, themeUpdate: p.update, suggestions: p.suggestions };
+  }
+
+  // 6a. Early size intercept — if explicit px value is present with a size target,
+  //     handle it here BEFORE font detection to avoid "display" matching "Playfair Display"
+  if (/\d{1,2}\s*px\b/.test(lower) || (/\b(bigger|smaller|larger|size)\b/.test(lower) && /\b\d{1,2}\b/.test(lower))) {
+    const sizeTarget = detectSizeTarget(lower);
+    const specificNum = lower.match(/\b(\d{1,2})\s*(?:px)?\b/);
+    if (specificNum && sizeTarget) {
+      const val = clampSize(sizeTarget, parseInt(specificNum[1]));
+      const key = sizeTarget === 'display' ? 'displayFontSize' : sizeTarget === 'body' ? 'bodyFontSize' : 'numeralFontSize';
+      const label = sizeTarget === 'display' ? 'Display' : sizeTarget === 'body' ? 'Navigator' : 'Numeral';
+      return {
+        message: `Set ${label} font to ${val}px.`,
+        themeUpdate: { [key]: val },
+      };
+    }
   }
 
   // 6. Font intent
