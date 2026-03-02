@@ -274,34 +274,6 @@ export default function AdminStylingGuide() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <Layers className="w-5 h-5 text-muted-foreground" />
-          <h1 className="font-display text-lg font-bold tracking-wide">STYLE GUIDE</h1>
-          <div className="h-5 w-px bg-border" />
-          {/* Tab toggle — inline with title */}
-          <div className="flex items-center bg-secondary rounded-md p-0.5">
-            <button className="px-3 py-1.5 rounded text-[10px] font-display tracking-wider bg-primary text-primary-foreground">
-              LIST
-            </button>
-            <button
-              disabled
-              className="px-3 py-1.5 rounded text-[10px] font-display tracking-wider text-muted-foreground/40 cursor-not-allowed"
-            >
-              CANVAS
-            </button>
-          </div>
-        </div>
-        <button
-          onClick={saveGuide}
-          disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" />
-          {saving ? 'SAVING...' : 'SAVE'}
-        </button>
-      </div>
 
       {/* Two-column layout */}
       <div className="flex-1 flex min-h-0">
@@ -360,13 +332,21 @@ export default function AdminStylingGuide() {
                   alt={selectedProduct.title}
                   className="w-28 h-28 rounded-lg object-cover flex-shrink-0"
                 />
-                <div>
+                <div className="flex-1">
                   <h2 className="font-display text-base font-bold tracking-wide">{selectedProduct.title}</h2>
                   <p className="text-sm text-muted-foreground mt-1">${selectedProduct.price}</p>
                   <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-display tracking-widest bg-secondary rounded text-muted-foreground">
                     {classifyGroup(selectedProduct)}
                   </span>
                 </div>
+                <button
+                  onClick={saveGuide}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? 'SAVING...' : 'SAVE'}
+                </button>
               </div>
 
               {/* PAIRS section */}
