@@ -75,6 +75,7 @@ function PresetList({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [dropHover, setDropHover] = useState(false);
   const filtered = availableProducts.filter(p => !items.some(i => i.id === p.id));
 
   const handleDragStart = (idx: number) => (e: React.DragEvent) => {
@@ -102,7 +103,28 @@ function PresetList({
   const handleDragEnd = () => { setDragIdx(null); setOverIdx(null); };
 
   return (
-    <div>
+    <div
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('application/product-id')) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+          setDropHover(true);
+        }
+      }}
+      onDragLeave={() => setDropHover(false)}
+      onDrop={(e) => {
+        const productId = e.dataTransfer.getData('application/product-id');
+        if (productId && dragIdx === null) {
+          e.preventDefault();
+          const product = DEMO_PRODUCTS.find(p => p.id === productId);
+          if (product && !items.some(i => i.id === productId)) {
+            handleAdd(product);
+          }
+        }
+        setDropHover(false);
+      }}
+      className={`rounded-lg transition-all duration-200 ${dropHover ? 'ring-2 ring-primary/40 bg-primary/5' : ''}`}
+    >
       <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-1">{label}</p>
       <p className="text-xs text-muted-foreground mb-3">{description}</p>
 
@@ -455,7 +477,7 @@ export default function AdminStylingGuide() {
                   <button
                     key={product.id}
                     onClick={() => handleProductClick(product.id)}
-                    draggable={activeView === 'canvas'}
+                    draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData('application/product-id', product.id);
                       e.dataTransfer.effectAllowed = 'move';
