@@ -52,14 +52,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setSettings(prev => ({ ...prev, ...partial }));
   }, []);
 
-  // Toggle light class on :root
-  useEffect(() => {
-    if (settings.mode === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-  }, [settings.mode]);
+  // Mode is stored in state and exposed via context — CSS class is applied locally by SpatialCanvas
 
   // Inject/update Google Fonts link
   useEffect(() => {

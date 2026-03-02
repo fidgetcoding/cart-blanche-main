@@ -11,6 +11,7 @@ import { useGridLayout } from '@/hooks/use-grid-layout';
 
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -27,6 +28,7 @@ export function SpatialCanvas() {
   const rootRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  const { themeSettings } = useTheme();
 
   // Load layout from Supabase
   const { loading: layoutLoading, getOrderedProducts, getOrderedCategories } = useGridLayout();
@@ -701,7 +703,7 @@ export function SpatialCanvas() {
   const compactHeader = isMobile;
 
   return (
-    <div ref={rootRef} className="relative w-full h-full overflow-hidden dynamic-bg select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
+    <div ref={rootRef} className={`relative w-full h-full overflow-hidden dynamic-bg select-none outline-none ${themeSettings.mode === 'light' ? 'light' : ''}`} tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-4 md:px-6 py-3 md:py-5">
         {/* Left: Brand */}
