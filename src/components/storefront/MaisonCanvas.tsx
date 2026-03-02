@@ -128,7 +128,7 @@ export function MaisonCanvas() {
       >
         {/* Store name — left */}
         <div
-          className="text-sm tracking-[0.3em] uppercase font-medium flex-shrink-0"
+          className="text-sm tracking-[0.3em] uppercase font-medium flex-shrink-0 text-foreground"
           style={{ color: themeSettings.storeNameColor || undefined }}
         >
           {themeSettings.storeName}
