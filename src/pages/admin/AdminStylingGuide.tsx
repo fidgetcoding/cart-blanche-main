@@ -283,7 +283,7 @@ export default function AdminStylingGuide() {
           {/* Tab toggle — inline with title */}
           <div className="flex items-center bg-secondary rounded-md p-0.5">
             <button className="px-3 py-1.5 rounded text-[10px] font-display tracking-wider bg-primary text-primary-foreground">
-              PRESETS
+              LIST
             </button>
             <button
               disabled
