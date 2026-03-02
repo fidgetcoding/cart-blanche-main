@@ -76,7 +76,7 @@ function ThemeControls() {
   const [customColor, setCustomColor] = useState('#ffffff');
 
   return (
-    <div className="border-t border-border/50">
+    <div className="mx-3 mb-3 mt-2 rounded-xl border border-accent/20 bg-accent/[0.03] shadow-[0_0_15px_-3px_hsl(var(--accent)/0.15)]">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 text-[11px] font-display tracking-[0.15em] text-foreground/70 hover:text-foreground transition-colors"
@@ -417,10 +417,7 @@ export default function YzyTemplate() {
           </div>
         </div>
 
-        {/* Separator between chat and theme settings */}
-        <div className="mx-4 my-1">
-          <div className="h-px bg-border" />
-        </div>
+        {/* Spacer before theme settings */}
 
         {/* Theme Controls */}
         <ThemeControls />
