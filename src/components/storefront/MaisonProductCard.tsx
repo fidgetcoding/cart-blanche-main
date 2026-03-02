@@ -9,10 +9,11 @@ interface MaisonProductCardProps {
   product: DemoProduct;
   viewMode: 3 | 6;
   onClick: () => void;
+  onBuildSet: (product: DemoProduct) => void;
   index: number;
 }
 
-export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonProductCardProps) {
+export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, index }: MaisonProductCardProps) {
   const [currentImage, setCurrentImage] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [showSizes, setShowSizes] = useState(false);
@@ -336,40 +337,58 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
                   {product.variants.every(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
                 </motion.p>
               ) : (
-                <motion.div
-                  key="sizes"
+              <motion.div
+                  key="sizes-and-set"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="flex items-center justify-center gap-2"
+                  className="flex items-center justify-center gap-0"
                 >
-                  {product.variants.map(v => (
-                    <button
-                      key={v.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (v.inventory_count === 0) return;
-                        addItem({
-                          productId: product.id,
-                          variantId: v.id,
-                          title: product.title,
-                          variantTitle: v.title,
-                          price: v.price ?? product.price,
-                          image: product.images[0],
-                        });
-                      }}
-                      disabled={v.inventory_count === 0}
-                      className={`text-[10px] tracking-[0.12em] uppercase transition-colors ${
-                        v.inventory_count === 0
-                          ? 'text-muted-foreground/30 line-through cursor-not-allowed'
-                          : 'text-muted-foreground hover:text-foreground cursor-pointer'
-                      }`}
-                      style={{ fontFamily: 'var(--font-body)' }}
-                    >
-                      {v.title}
-                    </button>
-                  ))}
+                  {/* Sizes */}
+                  <div className="flex items-center gap-2">
+                    {product.variants.map(v => (
+                      <button
+                        key={v.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (v.inventory_count === 0) return;
+                          addItem({
+                            productId: product.id,
+                            variantId: v.id,
+                            title: product.title,
+                            variantTitle: v.title,
+                            price: v.price ?? product.price,
+                            image: product.images[0],
+                          });
+                        }}
+                        disabled={v.inventory_count === 0}
+                        className={`text-[10px] tracking-[0.12em] uppercase transition-colors ${
+                          v.inventory_count === 0
+                            ? 'text-muted-foreground/30 line-through cursor-not-allowed'
+                            : 'text-muted-foreground hover:text-foreground cursor-pointer'
+                        }`}
+                        style={{ fontFamily: 'var(--font-body)' }}
+                      >
+                        {v.title}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Vertical divider */}
+                  <div className="w-px h-3.5 bg-border mx-3 flex-shrink-0" />
+
+                  {/* Build a Set */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBuildSet(product);
+                    }}
+                    className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+                    style={{ fontFamily: 'var(--font-body)' }}
+                  >
+                    BUILD A SET
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
