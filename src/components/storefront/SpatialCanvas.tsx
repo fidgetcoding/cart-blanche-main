@@ -706,7 +706,7 @@ export function SpatialCanvas() {
       <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-4 md:px-6 py-3 md:py-5">
         {/* Left: Brand */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="font-display text-xs md:text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
+          <span className="font-display font-semibold tracking-[0.2em] text-foreground uppercase" style={{ fontSize: 'var(--font-size-display, 11px)' }}>
             CART BLANCHE
           </span>
         </div>
@@ -716,10 +716,10 @@ export function SpatialCanvas() {
           <nav className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
             <div className="flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1.5 py-1 shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
               {CATEGORIES.map(cat => (
-                <button
+                <button style={{ fontSize: 'var(--font-size-body, 10px)' }}
                   key={cat}
                   onClick={() => { if (cat === activeCategory) { fitToVisibleProducts(); } else { setActiveCategory(cat); } }}
-                  className={`font-display text-[11px] tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
+                  className={`font-display tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
                     activeCategory === cat
                       ? 'bg-foreground/[0.12] text-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_1px_3px_rgba(0,0,0,0.2)]'
                       : 'text-muted-foreground hover:text-foreground/80 hover:bg-foreground/[0.05]'
@@ -817,7 +817,7 @@ export function SpatialCanvas() {
       <div className={`absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-500 ${footerGlass ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <div className="flex items-end justify-between px-4 md:px-6 py-3 md:py-5">
           {/* Hints */}
-          <div className="text-[10px] md:text-xs font-display tracking-wider space-y-0.5 cursor-default text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">
+          <div className="font-display tracking-wider space-y-0.5 cursor-default text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500" style={{ fontSize: 'var(--font-size-body, 10px)' }}>
             <p className="block md:hidden">PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
             <div className="hidden md:block space-y-0.5">
               <p>SCROLL TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>

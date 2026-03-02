@@ -82,7 +82,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.setProperty('--font-display', `'${settings.displayFont}', sans-serif`);
     root.setProperty('--font-body', `'${settings.bodyFont}', sans-serif`);
     root.setProperty('--font-numeral', `'${settings.numeralFont}', monospace`);
-  }, [settings.displayFont, settings.bodyFont, settings.numeralFont]);
+    root.setProperty('--font-size-display', `${settings.displayFontSize}px`);
+    root.setProperty('--font-size-body', `${settings.bodyFontSize}px`);
+    root.setProperty('--font-size-numeral', `${settings.numeralFontSize}px`);
+  }, [settings.displayFont, settings.bodyFont, settings.numeralFont, settings.displayFontSize, settings.bodyFontSize, settings.numeralFontSize]);
 
   return (
     <ThemeContext.Provider
