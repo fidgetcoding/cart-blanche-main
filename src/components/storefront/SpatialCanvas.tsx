@@ -701,7 +701,7 @@ export function SpatialCanvas() {
   const compactHeader = isMobile;
 
   return (
-    <div ref={rootRef} className="relative w-full h-screen overflow-hidden dynamic-bg select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
+    <div ref={rootRef} className="relative w-full h-full overflow-hidden dynamic-bg select-none outline-none" tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-4 md:px-6 py-3 md:py-5">
         {/* Left: Brand */}

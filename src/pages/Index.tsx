@@ -6,14 +6,16 @@ import { StyleKitView } from '@/components/storefront/StyleKitView';
 
 const Index = () => {
   return (
-    <CartProvider>
-      <SmartCartProvider>
-        <StyleKitProvider>
-          <SpatialCanvas />
-          <StyleKitView />
-        </StyleKitProvider>
-      </SmartCartProvider>
-    </CartProvider>
+    <div className="h-screen w-full">
+      <CartProvider>
+        <SmartCartProvider>
+          <StyleKitProvider>
+            <SpatialCanvas />
+            <StyleKitView />
+          </StyleKitProvider>
+        </SmartCartProvider>
+      </CartProvider>
+    </div>
   );
 };
 
