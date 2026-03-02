@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
+import { StyleKitProvider } from '@/contexts/StyleKitContext';
 import { MaisonCanvas } from '@/components/storefront/MaisonCanvas';
 
 export default function SlTemplate() {
@@ -36,7 +37,9 @@ export default function SlTemplate() {
       <div className="flex-1 overflow-auto">
         <CartProvider>
           <SmartCartProvider>
-            <MaisonCanvas />
+            <StyleKitProvider>
+              <MaisonCanvas />
+            </StyleKitProvider>
           </SmartCartProvider>
         </CartProvider>
       </div>
