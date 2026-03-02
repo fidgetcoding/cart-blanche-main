@@ -104,6 +104,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
+  if (!ctx) {
+    // Fallback for HMR edge cases — return safe defaults
+    return {
+      theme: 'dark' as const,
+      themeSettings: { ...DEFAULT_SETTINGS },
+      updateTheme: () => {},
+      setTheme: () => {},
+      toggleTheme: () => {},
+    } as ThemeContextType;
+  }
   return ctx;
 }
