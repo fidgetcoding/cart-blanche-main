@@ -9,14 +9,11 @@ export interface ProductImage {
 }
 
 function imgSet(baseName: string): ProductImage {
-  // Temporary: serve original PNGs from public/
-  // TODO: Replace with optimized WebP once build pipeline is set up
-  const ext = baseName.includes('slim-jogger') || baseName.includes('wide-leg') || baseName.includes('zip-vest') || baseName.includes('cashmere') || baseName.includes('scarf') ? 'jpg' : 'png';
   const base = `/products/${baseName}`;
   return {
-    thumb: `${base}.${ext}`,
-    medium: `${base}.${ext}`,
-    full: `${base}.${ext}`,
+    thumb: `${base}-thumb.webp`,
+    medium: `${base}-medium.webp`,
+    full: `${base}-full.webp`,
   };
 }
 

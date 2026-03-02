@@ -32,13 +32,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={
-            <div className="h-screen w-full flex items-center justify-center bg-background">
-              <span className="text-foreground/40 tracking-[0.3em] text-xs uppercase font-display">
-                Loading…
-              </span>
-            </div>
-          }>
+          <Suspense fallback={null}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
