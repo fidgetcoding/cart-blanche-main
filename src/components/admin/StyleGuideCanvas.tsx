@@ -391,13 +391,25 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     setSelectedNodeId(null);
   }, []);
 
-  const handlePaneDoubleClick = useCallback((event: React.MouseEvent) => {
-    // Ignore if double-clicked on a node or toolbar
-    const target = event.target as HTMLElement;
-    if (target.closest('.react-flow__node') || target.closest('.react-flow__controls') || target.closest('[data-toolbar]')) return;
-    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
-    createBlankNode(position);
-  }, [screenToFlowPosition, createBlankNode]);
+  // Native double-click listener (ReactFlow swallows React onDoubleClick)
+  const flowContainerRef = useRef<HTMLDivElement>(null);
+  const screenToFlowPositionRef = useRef(screenToFlowPosition);
+  screenToFlowPositionRef.current = screenToFlowPosition;
+  const createBlankNodeRef = useRef(createBlankNode);
+  createBlankNodeRef.current = createBlankNode;
+
+  useEffect(() => {
+    const el = flowContainerRef.current;
+    if (!el) return;
+    const handler = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('.react-flow__node') || target.closest('[data-toolbar]')) return;
+      const position = screenToFlowPositionRef.current({ x: event.clientX, y: event.clientY });
+      createBlankNodeRef.current(position);
+    };
+    el.addEventListener('dblclick', handler);
+    return () => el.removeEventListener('dblclick', handler);
+  }, []);
 
   const handleSave = useCallback(() => {
     const posMap: Record<string, { x: number; y: number }> = {};
@@ -505,7 +517,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
-      <div className="flex-1 relative" onDoubleClick={handlePaneDoubleClick}>
+      <div className="flex-1 relative" ref={flowContainerRef}>
         {/* Floating toolbar */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2 liquid-glass rounded-lg px-2 py-1.5">
           <button
