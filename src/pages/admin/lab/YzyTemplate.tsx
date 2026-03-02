@@ -160,7 +160,7 @@ function ThemeControls() {
 
           {/* Font Sizes */}
           <div className="space-y-2">
-            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">FONT SIZES</label>
+            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">ASSET SIZES</label>
             <div className="space-y-2">
               <SizeSlider label="Display" value={themeSettings.displayFontSize} min={8} max={18} onChange={v => updateTheme({ displayFontSize: v })} />
               <SizeSlider label="Navigator" value={themeSettings.bodyFontSize} min={8} max={16} onChange={v => updateTheme({ bodyFontSize: v })} />
