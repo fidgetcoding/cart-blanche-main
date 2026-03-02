@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
@@ -309,9 +310,9 @@ export function MaisonCanvas() {
       {/* Cart drawer */}
       <CartDrawer />
 
-      {/* Build a Set — Modal popup */}
-      <AnimatePresence>
-        {buildSetProduct && (
+      {/* Build a Set — Modal popup (portaled to body to escape CSS containment) */}
+      {buildSetProduct && createPortal(
+        <AnimatePresence>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -332,8 +333,9 @@ export function MaisonCanvas() {
               <StyleKitView />
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Cart drawer */}
       <CartDrawer />
