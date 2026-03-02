@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, lazy, Suspense, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Plus, X, ChevronUp, ChevronDown, GripVertical, Search } from 'lucide-react';
+import { Save, Plus, X, GripVertical, Search } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import type { DemoProduct } from '@/data/demo-data';
@@ -53,7 +53,7 @@ function ProductPicker({
   );
 }
 
-/** Ordered preset list with reorder + remove */
+/** Ordered preset list with drag reorder + remove */
 function PresetList({
   label,
   description,
@@ -61,8 +61,7 @@ function PresetList({
   availableProducts,
   onAdd: handleAdd,
   onRemove,
-  onMoveUp,
-  onMoveDown,
+  onReorder,
 }: {
   label: string;
   description: string;
@@ -70,11 +69,36 @@ function PresetList({
   availableProducts: DemoProduct[];
   onAdd: (p: DemoProduct) => void;
   onRemove: (id: string) => void;
-  onMoveUp: (index: number) => void;
-  onMoveDown: (index: number) => void;
+  onReorder: (newItems: DemoProduct[]) => void;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
   const filtered = availableProducts.filter(p => !items.some(i => i.id === p.id));
+
+  const handleDragStart = (idx: number) => (e: React.DragEvent) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (idx: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setOverIdx(idx);
+  };
+
+  const handleDrop = (idx: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === idx) { setDragIdx(null); setOverIdx(null); return; }
+    const reordered = [...items];
+    const [moved] = reordered.splice(dragIdx, 1);
+    reordered.splice(idx, 0, moved);
+    onReorder(reordered);
+    setDragIdx(null);
+    setOverIdx(null);
+  };
+
+  const handleDragEnd = () => { setDragIdx(null); setOverIdx(null); };
 
   return (
     <div>
@@ -83,7 +107,17 @@ function PresetList({
 
       <div className="space-y-1">
         {items.map((product, idx) => (
-          <div key={product.id} className="flex items-center gap-2 bg-foreground/5 rounded-md px-2 py-1.5">
+          <div
+            key={product.id}
+            draggable
+            onDragStart={handleDragStart(idx)}
+            onDragOver={handleDragOver(idx)}
+            onDrop={handleDrop(idx)}
+            onDragEnd={handleDragEnd}
+            className={`flex items-center gap-2 bg-foreground/5 rounded-md px-2 py-1.5 cursor-grab active:cursor-grabbing transition-all duration-150 ${
+              dragIdx === idx ? 'opacity-40 scale-95' : ''
+            } ${overIdx === idx && dragIdx !== idx ? 'border-t-2 border-primary' : 'border-t-2 border-transparent'}`}
+          >
             <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
             <span className="text-[10px] font-display text-muted-foreground w-4">{idx + 1}.</span>
             <img
@@ -95,22 +129,6 @@ function PresetList({
               <p className="font-display text-xs tracking-wide truncate">{product.title}</p>
             </div>
             <span className="text-[10px] text-muted-foreground flex-shrink-0">${product.price}</span>
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <button
-                onClick={() => onMoveUp(idx)}
-                disabled={idx === 0}
-                className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
-              >
-                <ChevronUp className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => onMoveDown(idx)}
-                disabled={idx === items.length - 1}
-                className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
-              >
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-            </div>
             <button
               onClick={() => onRemove(product.id)}
               className="p-1 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
@@ -494,8 +512,7 @@ export default function AdminStylingGuide() {
                       availableProducts={pairsAvailable}
                       onAdd={(p) => addToPreset('pairs', p)}
                       onRemove={(id) => removeFromPreset('pairs', id)}
-                      onMoveUp={(i) => moveInPreset('pairs', i, -1)}
-                      onMoveDown={(i) => moveInPreset('pairs', i, 1)}
+                      onReorder={(newItems) => updatePreset(selectedProductId!, 'pairs', newItems.map(p => p.id))}
                     />
                   </div>
 
@@ -508,8 +525,7 @@ export default function AdminStylingGuide() {
                       availableProducts={extrasAvailable}
                       onAdd={(p) => addToPreset('extras', p)}
                       onRemove={(id) => removeFromPreset('extras', id)}
-                      onMoveUp={(i) => moveInPreset('extras', i, -1)}
-                      onMoveDown={(i) => moveInPreset('extras', i, 1)}
+                      onReorder={(newItems) => updatePreset(selectedProductId!, 'extras', newItems.map(p => p.id))}
                     />
                   </div>
                 </div>
