@@ -717,7 +717,7 @@ export function SpatialCanvas() {
       <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-4 md:px-6 py-3 md:py-5">
         {/* Left: Brand */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="font-display font-semibold tracking-[0.2em] uppercase" style={{ fontSize: '11px', color: 'var(--color-store-name, inherit)' }}>
+          <span className="font-display font-semibold tracking-[0.2em] uppercase text-foreground" style={{ fontSize: '11px', color: themeSettings.storeNameColor || undefined }}>
             {themeSettings.storeName}
           </span>
         </div>
