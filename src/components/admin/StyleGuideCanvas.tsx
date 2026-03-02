@@ -314,11 +314,11 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
       <div className="flex-1 relative">
         {/* Floating toolbar */}
-        <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+        <div className="absolute top-4 left-4 z-10 flex items-center gap-2 liquid-glass rounded-lg px-2 py-1.5">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-[10px] font-display tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground/10 text-foreground border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/15 transition-all disabled:opacity-50"
           >
             <Save className="w-3.5 h-3.5" />
             {saving ? 'SAVING...' : 'SAVE'}
@@ -350,7 +350,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           fitView={nodes.length > 0}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.04)" />
-          <Controls className="!bg-[#141414] !border-[#2a2a2a] !rounded-lg !shadow-lg [&>button]:!bg-[#141414] [&>button]:!border-[#2a2a2a] [&>button]:!text-[#888] [&>button:hover]:!bg-[#1e1e1e] [&>button:hover]:!text-white [&>button]:!fill-[#888] [&>button:hover]:!fill-white" />
+          <Controls className="!rounded-lg !shadow-lg !border !border-foreground/10 [&]:!bg-foreground/5 [&]:!backdrop-blur-xl [&>button]:!bg-transparent [&>button]:!border-foreground/8 [&>button]:!text-foreground/50 [&>button:hover]:!bg-foreground/10 [&>button:hover]:!text-foreground [&>button]:!fill-foreground/50 [&>button:hover]:!fill-foreground" />
         </ReactFlow>
 
         {/* Empty state */}
@@ -365,7 +365,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
       {/* Selected node sidebar */}
       {selectedProduct && (
-        <div className="w-[280px] border-l border-border bg-card overflow-y-auto flex-shrink-0">
+        <div className="w-[280px] border-l border-foreground/5 liquid-glass overflow-y-auto flex-shrink-0">
           <div className="p-4 flex flex-col gap-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">

@@ -332,8 +332,8 @@ export default function AdminStylingGuide() {
       {/* Two-column layout — LEFT sidebar always visible */}
       <div className="flex-1 flex min-h-0">
         {/* LEFT: Product list — shared between both views */}
-        <div className="w-72 border-r border-border overflow-y-auto flex-shrink-0">
-          <div className="px-4 py-3 border-b border-border">
+        <div className="w-72 border-r border-foreground/5 overflow-y-auto flex-shrink-0 liquid-glass">
+          <div className="px-4 py-3 border-b border-foreground/5">
             {/* Search */}
             <div className="relative mb-3">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
@@ -342,7 +342,7 @@ export default function AdminStylingGuide() {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-secondary/50 border border-border rounded-md text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="w-full pl-8 pr-3 py-1.5 bg-foreground/5 border border-foreground/10 rounded-lg text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 backdrop-blur-sm"
               />
             </div>
             {/* Category pills */}
@@ -351,10 +351,10 @@ export default function AdminStylingGuide() {
                 <button
                   key={cat}
                   onClick={() => setFilterGroup(cat)}
-                  className={`px-2.5 py-1 rounded-full text-[9px] font-display tracking-wider transition-colors ${
+                  className={`px-2.5 py-1 rounded-full text-[9px] font-display tracking-wider transition-all duration-200 ${
                     filterGroup === cat
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary/50 text-muted-foreground border border-border hover:bg-secondary'
+                      ? 'bg-foreground/15 text-foreground border border-foreground/20 shadow-[0_0_8px_rgba(255,255,255,0.05)]'
+                      : 'bg-foreground/5 text-muted-foreground border border-foreground/8 hover:bg-foreground/10 hover:text-foreground/80'
                   }`}
                 >
                   {cat}
@@ -364,8 +364,8 @@ export default function AdminStylingGuide() {
           </div>
           {(['TOPS', 'BOTTOMS', 'ACCESSORIES'] as BodyZoneGroup[]).map(group => (
             <div key={group}>
-              <div className="px-4 py-2 bg-secondary/30">
-                <p className="text-[9px] font-display tracking-[0.2em] text-muted-foreground">{group}</p>
+              <div className="px-4 py-2 bg-foreground/3 border-b border-foreground/5">
+                <p className="text-[9px] font-display tracking-[0.2em] text-muted-foreground/60">{group}</p>
               </div>
               {grouped[group].map(product => {
                 const isOnCanvas = activeView === 'canvas' && canvasNodeIds.has(product.id);
@@ -373,10 +373,10 @@ export default function AdminStylingGuide() {
                   <button
                     key={product.id}
                     onClick={() => handleProductClick(product.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ease-out ${
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ease-out border-b border-foreground/3 ${
                       selectedProductId === product.id
-                        ? 'bg-primary/10 border-l-2 border-primary scale-[1.01]'
-                        : 'hover:bg-secondary/60 border-l-2 border-transparent'
+                        ? 'bg-foreground/8 border-l-2 border-l-primary/60 scale-[1.01]'
+                        : 'hover:bg-foreground/5 border-l-2 border-l-transparent'
                     }`}
                   >
                     <img
