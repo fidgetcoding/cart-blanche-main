@@ -14,39 +14,7 @@ interface MaisonProductDetailProps {
   onBuildSet: (product: DemoProduct) => void;
 }
 
-function ExpandableRow({ title, product }: { title: string; product: DemoProduct }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-t border-border">
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className="w-full flex items-center justify-between py-4 text-[10px] tracking-[0.15em] uppercase text-foreground hover:text-foreground/80 transition-colors"
-        style={{ fontFamily: 'var(--font-body)' }}
-      >
-        {title}
-        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-90' : ''}`} />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <p className="pb-4 text-[10px] leading-[1.8] text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>
-              {title === 'MORE DETAILS' && (product.description || 'No additional details available.')}
-              {title === 'SHIPPING & RETURNS' && 'Complimentary shipping on all orders. Returns accepted within 30 days of delivery.'}
-              {title === 'CONTACT US' && 'For inquiries, reach out to support@cartblanche.com'}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
+// ExpandableRow removed
 function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
   product: DemoProduct;
   allProducts: DemoProduct[];
@@ -351,12 +319,6 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             {product.description}
           </p>
 
-          {/* Expandable sections */}
-          <div className="mt-6 space-y-0">
-            <ExpandableRow title="MORE DETAILS" product={product} />
-            <ExpandableRow title="SHIPPING & RETURNS" product={product} />
-            <ExpandableRow title="CONTACT US" product={product} />
-          </div>
         </div>
 
         {/* Horizontal "You May Also Like" carousel */}
