@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, EyeOff, Archive } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface Product {
   id: string;
@@ -183,12 +184,15 @@ export default function AdminProducts() {
 
             <div>
               <label className="text-xs font-display tracking-widest text-muted-foreground">STATUS</label>
-              <select value={formStatus} onChange={e => setFormStatus(e.target.value)}
-                className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none">
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="archived">Archived</option>
-              </select>
+              <div className="flex items-center justify-between mt-2 px-1">
+                <span className={`text-xs font-display ${formStatus === 'active' ? 'text-success' : 'text-muted-foreground/60'}`}>
+                  {formStatus === 'active' ? 'Visible on storefront' : 'Hidden from storefront'}
+                </span>
+                <Switch
+                  checked={formStatus === 'active'}
+                  onCheckedChange={(checked) => setFormStatus(checked ? 'active' : 'draft')}
+                />
+              </div>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -254,14 +258,18 @@ export default function AdminProducts() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center gap-1.5" title={p.status === 'active' ? 'Visible on storefront' : 'Hidden from storefront'}>
+                        <span className={`text-[10px] font-display ${p.status === 'active' ? 'text-success' : 'text-muted-foreground/50'}`}>
+                          {p.status === 'active' ? 'LIVE' : 'DRAFT'}
+                        </span>
+                        <Switch
+                          checked={p.status === 'active'}
+                          onCheckedChange={() => handleStatusChange(p.id, p.status === 'active' ? 'draft' : 'active')}
+                        />
+                      </div>
                       <button onClick={() => openEdit(p)} className="p-1.5 hover:bg-secondary rounded transition-colors" title="Edit">
                         <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => handleStatusChange(p.id, p.status === 'active' ? 'draft' : 'active')}
-                        className="p-1.5 hover:bg-secondary rounded transition-colors"
-                        title={p.status === 'active' ? 'Set to Draft' : 'Set to Active'}>
-                        {p.status === 'active' ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
                       <button onClick={() => handleDelete(p.id)} className="p-1.5 hover:bg-destructive/20 rounded transition-colors text-destructive" title="Delete">
                         <Trash2 className="w-3.5 h-3.5" />

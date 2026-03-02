@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff, GripVertical, Globe, Home } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
@@ -28,6 +29,7 @@ interface ProductRow {
   weight_oz: number;
   shipping_type: 'domestic' | 'international';
   hs_code: string;
+  status: 'active' | 'draft' | 'archived';
 }
 
 function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
@@ -52,6 +54,7 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     weight_oz: p.weight_oz ?? 0,
     shipping_type: p.shipping_type ?? 'domestic',
     hs_code: p.hs_code ?? '',
+    status: (p.status as 'active' | 'draft' | 'archived') ?? 'active',
   }));
 }
 
@@ -119,6 +122,7 @@ export default function AdminInventory() {
   const [addWeight, setAddWeight] = useState('');
   const [addShippingType, setAddShippingType] = useState<'domestic' | 'international'>('domestic');
   const [addHsCode, setAddHsCode] = useState('');
+  const [addPublishToStorefront, setAddPublishToStorefront] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -236,6 +240,7 @@ export default function AdminInventory() {
             weight_oz: 0,
             shipping_type: 'domestic' as const,
             hs_code: '',
+            status: (p.status as 'active' | 'draft' | 'archived') ?? 'draft',
           };
         });
 
@@ -321,7 +326,7 @@ export default function AdminInventory() {
     // Update local state
     setProducts(prev => prev.map(p =>
       p.id === editingProduct.id
-        ? { ...p, title: editForm.title, price: parseFloat(editForm.price) || p.price, description: editForm.description, category: editForm.category, images: editingProduct.images, variants: editingProduct.variants, totalStock: editingProduct.variants.reduce((s, v) => s + v.inventory_count, 0) }
+        ? { ...p, title: editForm.title, price: parseFloat(editForm.price) || p.price, description: editForm.description, category: editForm.category, images: editingProduct.images, variants: editingProduct.variants, totalStock: editingProduct.variants.reduce((s, v) => s + v.inventory_count, 0), status: editingProduct.status }
         : p
     ));
 
@@ -336,6 +341,7 @@ export default function AdminInventory() {
           category: editForm.category,
           images: editingProduct.images,
           tags: editingProduct.tags,
+          status: editingProduct.status,
         }).eq('id', editingProduct.id);
 
         // Update variants
@@ -369,6 +375,18 @@ export default function AdminInventory() {
     }
     setProducts(prev => prev.filter(pr => pr.id !== p.id));
     if (expandedId === p.id) setExpandedId(null);
+  }
+
+  async function toggleProductVisibility(productId: string, currentStatus: string) {
+    const newStatus = currentStatus === 'active' ? 'draft' : 'active';
+    setProducts(prev => prev.map(p =>
+      p.id === productId ? { ...p, status: newStatus as 'active' | 'draft' | 'archived' } : p
+    ));
+    // Persist for non-demo products
+    const product = products.find(p => p.id === productId);
+    if (product && !product.isDemo) {
+      await supabase.from('products').update({ status: newStatus }).eq('id', productId);
+    }
   }
 
   function saveVariantStock(productId: string, variantId: string) {
@@ -441,7 +459,7 @@ export default function AdminInventory() {
       compare_at_price: addForm.comparePrice ? parseFloat(addForm.comparePrice) : null,
       description: addForm.description.trim(),
       category: addTags.length > 0 ? addTags[0] : '',
-      status: 'active',
+      status: addPublishToStorefront ? 'active' : 'draft',
       tags: addTags,
       images,
     }).select().single();
@@ -471,6 +489,7 @@ export default function AdminInventory() {
     setAddWeight('');
     setAddShippingType('domestic');
     setAddHsCode('');
+    setAddPublishToStorefront(true);
     fetchInventory();
   }
 
@@ -699,6 +718,21 @@ export default function AdminInventory() {
                     <span className="text-[10px] text-muted-foreground ml-1">units</span>
                   </div>
 
+                  {/* Visibility toggle */}
+                  <div className="flex-shrink-0 w-16 flex justify-center" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => toggleProductVisibility(p.id, p.status)}
+                      className={`p-1.5 rounded transition-colors ${
+                        p.status === 'active'
+                          ? 'text-success hover:bg-success/10'
+                          : 'text-muted-foreground/40 hover:bg-muted/50'
+                      }`}
+                      title={p.status === 'active' ? 'Visible on storefront' : 'Hidden from storefront'}
+                    >
+                      {p.status === 'active' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                  </div>
+
                   {/* Status badge */}
                   <div className="flex-shrink-0 w-24 text-right">
                     {isOut ? (
@@ -861,21 +895,33 @@ export default function AdminInventory() {
                               )}
                             </div>
                           </div>
-                          <div className="flex gap-2 flex-shrink-0">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
-                              className="px-4 py-2 text-xs font-display tracking-wider border border-border rounded-lg hover:bg-secondary transition-colors"
-                            >
-                              EDIT
-                            </button>
-                            {!p.isDemo && (
+                          <div className="flex flex-col gap-3 flex-shrink-0 items-end">
+                            {/* Storefront visibility toggle */}
+                            <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                              <span className={`text-[10px] font-display tracking-wider ${p.status === 'active' ? 'text-success' : 'text-muted-foreground/60'}`}>
+                                {p.status === 'active' ? 'VISIBLE' : 'HIDDEN'}
+                              </span>
+                              <Switch
+                                checked={p.status === 'active'}
+                                onCheckedChange={() => toggleProductVisibility(p.id, p.status)}
+                              />
+                            </div>
+                            <div className="flex gap-2">
                               <button
-                                onClick={(e) => { e.stopPropagation(); deleteProduct(p); }}
-                                className="px-3 py-2 text-xs font-display tracking-wider border border-destructive/30 rounded-lg hover:bg-destructive/20 text-destructive transition-colors"
+                                onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
+                                className="px-4 py-2 text-xs font-display tracking-wider border border-border rounded-lg hover:bg-secondary transition-colors"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                EDIT
                               </button>
-                            )}
+                              {!p.isDemo && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); deleteProduct(p); }}
+                                  className="px-3 py-2 text-xs font-display tracking-wider border border-destructive/30 rounded-lg hover:bg-destructive/20 text-destructive transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -1365,6 +1411,15 @@ export default function AdminInventory() {
                 </div>
               </div>
 
+              {/* Storefront visibility */}
+              <div className="flex items-center justify-between py-2 px-1">
+                <div>
+                  <p className="text-xs font-display tracking-widest text-muted-foreground">PUBLISH TO STOREFRONT</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-0.5">Make this product visible to customers</p>
+                </div>
+                <Switch checked={addPublishToStorefront} onCheckedChange={setAddPublishToStorefront} />
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button onClick={handleAddProduct} disabled={addSaving || !addForm.title.trim() || !addForm.price}
                   className="flex-1 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
@@ -1681,6 +1736,22 @@ export default function AdminInventory() {
                     <p className="text-xs text-muted-foreground text-center py-3">No sizes yet — add one above</p>
                   )}
                 </div>
+              </div>
+
+              {/* Storefront visibility */}
+              <div className="flex items-center justify-between py-2 px-1">
+                <div>
+                  <p className="text-xs font-display tracking-widest text-muted-foreground">PUBLISH TO STOREFRONT</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-0.5">Make this product visible to customers</p>
+                </div>
+                <Switch
+                  checked={editingProduct.status === 'active'}
+                  onCheckedChange={(checked) => {
+                    const newStatus = checked ? 'active' : 'draft';
+                    setEditingProduct({ ...editingProduct, status: newStatus as 'active' | 'draft' | 'archived' });
+                    setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, status: newStatus as 'active' | 'draft' | 'archived' } : p));
+                  }}
+                />
               </div>
 
               <div className="flex gap-3 pt-2">
