@@ -27,7 +27,6 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     if (cooldown.current) return;
     cooldown.current = true;
     setCurrentImage(prev => (prev + 1) % images.length);
-    wheelAccumulator.current = 0;
     setTimeout(() => { cooldown.current = false; }, 250);
   }, [images.length]);
 
@@ -35,7 +34,6 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     if (cooldown.current) return;
     cooldown.current = true;
     setCurrentImage(prev => (prev - 1 + images.length) % images.length);
-    wheelAccumulator.current = 0;
     setTimeout(() => { cooldown.current = false; }, 250);
   }, [images.length]);
 
@@ -43,6 +41,9 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
   useEffect(() => {
     const el = imageAreaRef.current;
     if (!el || !hasMultiple) return;
+
+    let lockedDirection: 'left' | 'right' | null = null;
+    let lockTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const onWheel = (e: WheelEvent) => {
       const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
@@ -53,10 +54,28 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
 
       if (cooldown.current) return;
 
+      // If direction is locked and this event is opposite, ignore it (inertia artifact)
+      const eventDirection = e.deltaX > 0 ? 'right' : 'left';
+      if (lockedDirection && eventDirection !== lockedDirection) {
+        wheelAccumulator.current = 0;
+        return;
+      }
+
       wheelAccumulator.current += e.deltaX;
+
       if (Math.abs(wheelAccumulator.current) > 40) {
-        if (wheelAccumulator.current > 0) nextImage();
+        const swipeDirection = wheelAccumulator.current > 0 ? 'right' : 'left';
+
+        if (swipeDirection === 'right') nextImage();
         else prevImage();
+
+        // Lock this direction — reject opposite events for 600ms
+        lockedDirection = swipeDirection;
+        if (lockTimeout) clearTimeout(lockTimeout);
+        lockTimeout = setTimeout(() => {
+          lockedDirection = null;
+          wheelAccumulator.current = 0;
+        }, 600);
       }
     };
 
@@ -95,6 +114,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
+      if (lockTimeout) clearTimeout(lockTimeout);
     };
   }, [hasMultiple, nextImage, prevImage]);
 
