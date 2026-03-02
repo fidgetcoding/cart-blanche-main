@@ -580,6 +580,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           style={{ background: '#0a0a0a' }}
           deleteKeyCode={['Backspace', 'Delete']}
           fitView={initialNodes.length > 0}
+          proOptions={{ hideAttribution: true }}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.04)" />
         </ReactFlow>
