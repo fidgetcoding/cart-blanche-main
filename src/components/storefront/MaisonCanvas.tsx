@@ -147,6 +147,7 @@ export function MaisonCanvas() {
         {/* View toggle */}
         <div className="flex items-center gap-3">
           <button
+            onMouseEnter={() => setViewMode(3)}
             onClick={() => setViewMode(3)}
             className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
             style={{
@@ -157,6 +158,7 @@ export function MaisonCanvas() {
             View by 3
           </button>
           <button
+            onMouseEnter={() => setViewMode(6)}
             onClick={() => setViewMode(6)}
             className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
             style={{
