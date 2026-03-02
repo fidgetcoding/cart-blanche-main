@@ -77,7 +77,7 @@ function ThemeControls() {
   const colorInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="mx-3 mb-3 mt-2 rounded-xl border border-accent/20 bg-accent/[0.03] shadow-[0_0_15px_-3px_hsl(var(--accent)/0.15)]">
+    <div className="mx-3 mb-3 mt-2 rounded-xl border border-foreground/20 bg-card/50">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 text-[11px] font-display tracking-[0.15em] text-foreground/70 hover:text-foreground transition-colors"
