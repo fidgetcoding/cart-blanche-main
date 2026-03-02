@@ -107,11 +107,19 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   );
   const posInFiltered = visibleIndices.indexOf(productIndex) + 1;
 
-  // Reset variant selection when product changes
+  // Reset variant selection when product changes & preload alternate images
   useEffect(() => {
     setSelectedVariant(null);
     setExpandDetails(false);
     setActiveImage(0);
+    // Preload worn/alternate images in background
+    if (product?.images) {
+      product.images.forEach((src, i) => {
+        if (i === 0) return; // already visible
+        const img = new Image();
+        img.src = src;
+      });
+    }
   }, [productIndex]);
 
   const navigate = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
@@ -316,10 +324,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           >
             {/* Product image area */}
             <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 relative overflow-hidden">
-              {/* Preload all images for instant switching */}
-              {product.images && product.images.map((img, i) => (
-                <img key={`preload-${i}`} src={img} alt="" className="hidden" aria-hidden="true" />
-              ))}
               {/* Close button */}
               <button
                 onClick={onClose}
@@ -329,11 +333,12 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               </button>
               {product.images && product.images.length > 0 ? (
                 <img
-                  key={activeImage}
+                  key={`${product.id}-${activeImage}`}
                   src={product.images[Math.min(activeImage, product.images.length - 1)]}
                   alt={product.title}
                   className="w-full h-full object-cover"
                   draggable={false}
+                  decoding="async"
                 />
               ) : (
                 <span className="font-display text-muted-foreground/15 text-lg tracking-[0.3em]">
