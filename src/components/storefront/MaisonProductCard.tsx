@@ -17,7 +17,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
   const [isHovered, setIsHovered] = useState(false);
   const [showSizes, setShowSizes] = useState(false);
   const { addItem } = useCart();
-  const wheelAccumulator = useRef(0);
+  
   const cooldown = useRef(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -40,62 +40,44 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     setTimeout(() => { cooldown.current = false; }, 250);
   }, [images.length]);
 
-  // Native wheel + touch handlers with { passive: false } to prevent browser back gesture
+  // Wheel handler — dead simple: one swipe = one transition, then ignore everything for 800ms
   useEffect(() => {
     const el = imageAreaRef.current;
     if (!el || !hasMultiple) return;
 
-    let lockedDirection: 'left' | 'right' | null = null;
-    let lockTimeout: ReturnType<typeof setTimeout> | null = null;
+    let blocked = false;
+    let blockTimer: ReturnType<typeof setTimeout> | null = null;
 
     const onWheel = (e: WheelEvent) => {
-      const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
-      if (!isHorizontal) return;
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
 
       e.preventDefault();
       e.stopPropagation();
 
-      if (cooldown.current) return;
+      if (blocked) return;
+      if (Math.abs(e.deltaX) < 15) return;
 
-      // If direction is locked and this event is opposite, ignore it (inertia artifact)
-      const eventDirection = e.deltaX > 0 ? 'right' : 'left';
-      if (lockedDirection && eventDirection !== lockedDirection) {
-        wheelAccumulator.current = 0;
-        return;
+      if (e.deltaX > 0) {
+        setCurrentImage(prev => (prev + 1) % images.length);
+      } else {
+        setCurrentImage(prev => (prev - 1 + images.length) % images.length);
       }
 
-      wheelAccumulator.current += e.deltaX;
-
-      if (Math.abs(wheelAccumulator.current) > 40) {
-        const swipeDirection = wheelAccumulator.current > 0 ? 'right' : 'left';
-
-        if (swipeDirection === 'right') nextImage();
-        else prevImage();
-
-        // Lock this direction — reject opposite events for 600ms
-        lockedDirection = swipeDirection;
-        if (lockTimeout) clearTimeout(lockTimeout);
-        lockTimeout = setTimeout(() => {
-          lockedDirection = null;
-          wheelAccumulator.current = 0;
-        }, 600);
-      }
+      blocked = true;
+      if (blockTimer) clearTimeout(blockTimer);
+      blockTimer = setTimeout(() => { blocked = false; }, 800);
     };
 
     let touchStartClientX = 0;
-    let isSwiping = false;
 
     const onTouchStart = (e: TouchEvent) => {
       touchStartClientX = e.touches[0].clientX;
-      isSwiping = false;
     };
 
     const onTouchMove = (e: TouchEvent) => {
       const deltaX = Math.abs(e.touches[0].clientX - touchStartClientX);
-      const deltaY = Math.abs(e.touches[0].clientY - (e as any)._startY || 0);
       if (deltaX > 10) {
-        isSwiping = true;
-        e.preventDefault(); // Block browser back/forward gesture
+        e.preventDefault();
       }
     };
 
@@ -117,9 +99,9 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
-      if (lockTimeout) clearTimeout(lockTimeout);
+      if (blockTimer) clearTimeout(blockTimer);
     };
-  }, [hasMultiple, nextImage, prevImage]);
+  }, [hasMultiple, images.length, nextImage, prevImage]);
 
   // Focus card on hover for keyboard support
   useEffect(() => {
@@ -169,7 +151,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
         ...borderGlowStyle,
       }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); wheelAccumulator.current = 0; }}
+      onMouseLeave={() => setIsHovered(false)}
       onKeyDown={handleKeyDown}
       onClick={onClick}
     >
