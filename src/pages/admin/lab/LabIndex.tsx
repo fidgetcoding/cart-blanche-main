@@ -33,8 +33,9 @@ export default function LabIndex() {
         {TEMPLATES.map((tmpl) => {
           const isActive = tmpl.id === activeId;
           return (
-            <div
+            <Link
               key={tmpl.id}
+              to={tmpl.to}
               className="group flex items-center justify-between gap-4 p-5 rounded-lg border border-sidebar-border bg-card hover:bg-sidebar-accent/40 transition-colors"
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -62,14 +63,8 @@ export default function LabIndex() {
                   </span>
                 </div>
               </div>
-              <Link
-                to={tmpl.to}
-                className="flex-shrink-0 p-1 rounded-md hover:bg-sidebar-accent/60 transition-colors"
-                title="Open template"
-              >
-                <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-foreground/60 transition-colors" />
-              </Link>
-            </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-foreground/60 transition-colors flex-shrink-0" />
+            </Link>
           );
         })}
       </div>
