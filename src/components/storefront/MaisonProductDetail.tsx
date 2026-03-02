@@ -122,24 +122,18 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isScrolling = useRef(false);
   const { addItem } = useCart();
   const { themeSettings } = useTheme();
 
   const images = product ? (product.images.length > 0 ? product.images : ['/placeholder.svg']) : ['/placeholder.svg'];
-  const tripledImages = [...images, ...images, ...images];
 
-  // Reset state on product change & start at middle set
+  // Reset on product change
   useEffect(() => {
     if (!product) return;
     setSelectedVariant(null);
     setCurrentVisibleImage(0);
-    const el = scrollContainerRef.current;
-    if (!el || images.length === 0) return;
-    requestAnimationFrame(() => {
-      const oneImageH = el.scrollHeight / 3;
-      el.scrollTop = oneImageH;
-    });
-  }, [product?.id, images.length]);
+  }, [product?.id]);
 
   // Keyboard: Escape to close
   useEffect(() => {
@@ -151,24 +145,32 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     return () => window.removeEventListener('keydown', handler);
   }, [product, onClose]);
 
-  // Vertical infinite wrap + image counter tracking
-  const handleVerticalScroll = useCallback(() => {
+  // One scroll gesture = one image toggle (wrapping)
+  const goToImage = useCallback((dir: 1 | -1) => {
+    if (isScrolling.current) return;
+    isScrolling.current = true;
+    setCurrentVisibleImage(prev => {
+      const next = prev + dir;
+      if (next < 0) return images.length - 1;
+      if (next >= images.length) return 0;
+      return next;
+    });
+    setTimeout(() => { isScrolling.current = false; }, 400);
+  }, [images.length]);
+
+  // Wheel handler: one stroke = one toggle
+  useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el || images.length <= 1) return;
-
-    const sectionH = el.scrollHeight / 3;
-
-    if (el.scrollTop < sectionH * 0.25) {
-      el.scrollTop += sectionH;
-    } else if (el.scrollTop > sectionH * 1.75) {
-      el.scrollTop -= sectionH;
-    }
-
-    const imgH = sectionH / images.length;
-    const centerScroll = el.scrollTop + el.clientHeight / 2;
-    const rawIdx = Math.floor(centerScroll / imgH);
-    setCurrentVisibleImage(rawIdx % images.length);
-  }, [images.length]);
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && Math.abs(e.deltaY) > 5) {
+        goToImage(e.deltaY > 0 ? 1 : -1);
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [goToImage, images.length]);
 
   if (!product) return null;
 
@@ -196,18 +198,16 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       className="flex flex-1 overflow-hidden"
       onClick={onClose}
     >
-      {/* LEFT COLUMN: Infinite vertical snap-scroll image carousel */}
+      {/* LEFT COLUMN: Single-image display with scroll-to-toggle */}
       <div
         ref={scrollContainerRef}
-        onScroll={handleVerticalScroll}
-        className="w-[55%] overflow-y-auto relative snap-y snap-mandatory"
-        style={{ scrollbarWidth: 'none' }}
+        className="w-[55%] relative overflow-hidden flex items-center justify-center"
         onClick={e => e.stopPropagation()}
       >
         {/* Image counter — positioned along left edge */}
         {images.length > 1 && (
           <div
-            className="sticky top-1/2 -translate-y-1/2 float-left ml-4 z-10 flex flex-col items-center text-[11px] text-muted-foreground"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center text-[11px] text-muted-foreground"
             style={{ fontFamily: 'var(--font-numeral)' }}
           >
             <span>{currentVisibleImage + 1}</span>
@@ -216,17 +216,20 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           </div>
         )}
 
-        {/* Tripled images for infinite wrap — each takes full container height */}
-        {tripledImages.map((img, i) => (
-          <div key={i} className="w-full snap-start snap-always flex-shrink-0" style={{ minHeight: '100%', height: '100%' }}>
-            <img
-              src={img}
-              alt={`${product.title} ${(i % images.length) + 1}`}
-              className="w-full h-full object-contain"
-              draggable={false}
-            />
-          </div>
-        ))}
+        {/* Current image with crossfade */}
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={currentVisibleImage}
+            src={images[currentVisibleImage]}
+            alt={`${product.title} ${currentVisibleImage + 1}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="w-full h-full object-contain"
+            draggable={false}
+          />
+        </AnimatePresence>
       </div>
 
       {/* RIGHT COLUMN: Info + carousel */}
