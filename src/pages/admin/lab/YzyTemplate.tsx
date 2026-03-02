@@ -142,9 +142,9 @@ function ThemeControls() {
             onChange={v => updateTheme({ displayFont: v })}
           />
 
-          {/* Body Font */}
+          {/* Navigator Font */}
           <FontSelect
-            label="BODY FONT"
+            label="NAVIGATOR FONT"
             value={themeSettings.bodyFont}
             options={BODY_FONTS}
             onChange={v => updateTheme({ bodyFont: v })}
@@ -163,7 +163,7 @@ function ThemeControls() {
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">FONT SIZES</label>
             <div className="space-y-2">
               <SizeSlider label="Display" value={themeSettings.displayFontSize} min={8} max={18} onChange={v => updateTheme({ displayFontSize: v })} />
-              <SizeSlider label="Body" value={themeSettings.bodyFontSize} min={8} max={16} onChange={v => updateTheme({ bodyFontSize: v })} />
+              <SizeSlider label="Navigator" value={themeSettings.bodyFontSize} min={8} max={16} onChange={v => updateTheme({ bodyFontSize: v })} />
               <SizeSlider label="Numeral" value={themeSettings.numeralFontSize} min={8} max={16} onChange={v => updateTheme({ numeralFontSize: v })} />
             </div>
           </div>
