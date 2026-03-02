@@ -348,7 +348,7 @@ export default function AdminStylingGuide() {
       {/* Two-column layout — LEFT sidebar always visible */}
       <div className="flex-1 flex min-h-0">
         {/* LEFT: Product list — shared between both views */}
-        <div className="w-72 border-r border-foreground/5 overflow-y-auto flex-shrink-0 liquid-glass">
+        <div className={`w-72 border-r border-foreground/5 overflow-y-auto flex-shrink-0 liquid-glass transition-shadow duration-500 ${activeView === 'canvas' && blankNodeActive ? 'shadow-[0_0_40px_8px_hsl(var(--primary)/0.25),inset_0_0_30px_-10px_hsl(var(--primary)/0.1)]' : ''}`}>
           {/* Blank node banner */}
           {activeView === 'canvas' && blankNodeActive && (
             <div className="px-4 py-2.5 border-b border-foreground/5 bg-primary/5 flex items-center gap-2">
