@@ -312,7 +312,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   }, [setNodes, setEdges, syncPresetsFromEdges]);
 
   return (
-    <div className="flex-1 flex relative h-full">
+    <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
       <div className="flex-1 relative">
         {/* Floating toolbar */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
@@ -346,7 +346,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
           nodeTypes={nodeTypes}
-          style={{ background: 'hsl(var(--background))' }}
+          style={{ background: '#0a0a0a' }}
           deleteKeyCode={['Backspace', 'Delete']}
           fitView={nodes.length > 0}
         >
