@@ -340,10 +340,10 @@ export default function AdminStylingGuide() {
                 <button
                   key={product.id}
                   onClick={() => setSelectedProductId(product.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ease-out ${
                     selectedProductId === product.id
-                      ? 'bg-primary/10 border-l-2 border-primary'
-                      : 'hover:bg-secondary border-l-2 border-transparent'
+                      ? 'bg-primary/10 border-l-2 border-primary scale-[1.01]'
+                      : 'hover:bg-secondary/60 border-l-2 border-transparent'
                   }`}
                 >
                   <img
