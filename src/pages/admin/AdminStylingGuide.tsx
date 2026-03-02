@@ -287,10 +287,9 @@ export default function AdminStylingGuide() {
             </button>
             <button
               disabled
-              className="px-3 py-1.5 rounded text-[10px] font-display tracking-wider text-muted-foreground/40 cursor-not-allowed relative"
+              className="px-3 py-1.5 rounded text-[10px] font-display tracking-wider text-muted-foreground/40 cursor-not-allowed"
             >
               CANVAS
-              <span className="absolute -top-1.5 -right-1 text-[7px] text-muted-foreground/50 font-display">SOON</span>
             </button>
           </div>
         </div>
