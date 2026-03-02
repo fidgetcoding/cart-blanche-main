@@ -132,18 +132,22 @@ function OrderDetail({ order, onBack, onUpdateStatus }: {
               <div className="space-y-3">
                 {items.map((item: any, i: number) => (
                   <div key={i} className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-secondary/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-4 h-4 text-muted-foreground/40" />
-                    </div>
+                    {item.image ? (
+                      <img src={item.image} alt={item.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-secondary" />
+                    ) : (
+                      <div className="w-10 h-10 bg-secondary/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Package className="w-4 h-4 text-muted-foreground/40" />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.title || item.name || 'Item'}</p>
                       <p className="text-xs text-muted-foreground">{item.variantTitle || item.variant || ''}{item.sku ? ` · SKU: ${item.sku}` : ''}</p>
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {formatCurrency(item.price || 0)} × {item.quantity || 1}
+                      {formatCurrency(item.price || 0)} × {item.quantity || item.qty || 1}
                     </span>
                     <span className="text-sm font-display font-medium w-20 text-right">
-                      {formatCurrency((item.price || 0) * (item.quantity || 1))}
+                      {formatCurrency((item.price || 0) * (item.quantity || item.qty || 1))}
                     </span>
                   </div>
                 ))}
@@ -254,8 +258,7 @@ export default function AdminOrders() {
   async function fetchOrders() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      // No session — use mock data for demo
-      setOrders(generateMockOrders(50) as any);
+      setOrders(generateMockOrders(100) as any);
       setLoading(false);
       return;
     }
@@ -264,8 +267,7 @@ export default function AdminOrders() {
     if (data && data.length > 0) {
       setOrders(data as Order[]);
     } else {
-      // No real orders — use mock data
-      setOrders(generateMockOrders(50) as any);
+      setOrders(generateMockOrders(100) as any);
     }
     setLoading(false);
   }
@@ -403,6 +405,7 @@ export default function AdminOrders() {
                   />
                 </th>
                 <th className="text-left px-3 py-3 text-xs font-display tracking-widest text-muted-foreground font-medium">ORDER</th>
+                <th className="text-left px-3 py-3 text-xs font-display tracking-widest text-muted-foreground font-medium">ITEMS</th>
                 <th className="text-left px-3 py-3 text-xs font-display tracking-widest text-muted-foreground font-medium">DATE</th>
                 <th className="text-left px-3 py-3 text-xs font-display tracking-widest text-muted-foreground font-medium">CUSTOMER</th>
                 <th className="text-left px-3 py-3 text-xs font-display tracking-widest text-muted-foreground font-medium">PAYMENT</th>
@@ -433,6 +436,24 @@ export default function AdminOrders() {
                       <span className="text-sm font-display font-medium text-primary group-hover:underline">
                         #{o.order_number}
                       </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center -space-x-1.5">
+                        {(Array.isArray(o.items) ? o.items : []).slice(0, 3).map((item: any, idx: number) => (
+                          item.image ? (
+                            <img key={idx} src={item.image} alt="" className="w-7 h-7 rounded-md object-cover border-2 border-card" />
+                          ) : (
+                            <div key={idx} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center border-2 border-card">
+                              <Package className="w-3 h-3 text-muted-foreground/40" />
+                            </div>
+                          )
+                        ))}
+                        {Array.isArray(o.items) && o.items.length > 3 && (
+                          <div className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center border-2 border-card text-[9px] font-display font-medium text-muted-foreground">
+                            +{o.items.length - 3}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-3 text-sm text-muted-foreground">{formatDate(o.created_at)}</td>
                     <td className="px-3 py-3 text-sm">

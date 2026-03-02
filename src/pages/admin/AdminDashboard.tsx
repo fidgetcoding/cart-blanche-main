@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getMockOrderStats } from '@/data/mock-orders';
 import { TrendingUp, TrendingDown, ShoppingCart, Package, DollarSign, BarChart3, MapPin, Globe, Users } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
@@ -145,11 +146,12 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  // Use real data if available, otherwise show realistic mock totals
-  const totalSales = stats.revenue > 0 ? stats.revenue : 108190;
-  const totalOrders = stats.orders > 0 ? stats.orders : 501;
+  // Use real data if available, otherwise derive from mock orders
+  const mockStats = getMockOrderStats();
+  const totalSales = stats.revenue > 0 ? stats.revenue : mockStats.totalRevenue;
+  const totalOrders = stats.orders > 0 ? stats.orders : mockStats.totalOrders;
   const totalProducts = stats.products > 0 ? stats.products : 20;
-  const avgOrderVal = totalOrders > 0 ? totalSales / totalOrders : 216;
+  const avgOrderVal = stats.revenue > 0 ? (totalSales / totalOrders) : mockStats.avgOrderValue;
   const netProfit = totalSales * 0.59;
 
   return (
