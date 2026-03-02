@@ -39,18 +39,48 @@ export function MaisonCanvas() {
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
-      {/* Sticky header */}
+      {/* Sticky header with integrated category nav */}
       <header
-        className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-background border-b border-border"
+        className="sticky top-0 z-30 flex items-center px-6 py-3 bg-background border-b border-border"
         style={{ fontFamily: 'var(--font-display)' }}
       >
+        {/* Store name — left */}
         <div
-          className="text-sm tracking-[0.3em] uppercase font-medium"
+          className="text-sm tracking-[0.3em] uppercase font-medium flex-shrink-0"
           style={{ color: themeSettings.storeNameColor || undefined }}
         >
           {themeSettings.storeName}
         </div>
-        <button onClick={openCart} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+
+        {/* Category links — center */}
+        <nav className="flex-1 flex items-center justify-center gap-8" style={{ fontFamily: 'var(--font-body)' }}>
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className="relative py-1 transition-colors"
+              style={{
+                fontSize: 'var(--font-size-body)',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: activeCategory === cat ? (themeSettings.bodyFontColor || undefined) : undefined,
+                fontWeight: activeCategory === cat ? 600 : 400,
+                opacity: activeCategory === cat ? 1 : 0.5,
+              }}
+            >
+              {cat}
+              {activeCategory === cat && (
+                <motion.div
+                  layoutId="maison-cat-underline"
+                  className="absolute bottom-0 left-0 right-0 h-[1px] bg-foreground"
+                />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Cart — right */}
+        <button onClick={openCart} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
           <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
           {itemCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-foreground text-background rounded-full text-[9px] flex items-center justify-center">
@@ -60,39 +90,9 @@ export function MaisonCanvas() {
         </button>
       </header>
 
-      {/* Category ribbon */}
-      <nav
-        className="sticky top-[57px] z-20 flex items-center justify-center gap-8 px-6 py-3 bg-background border-b border-border"
-        style={{ fontFamily: 'var(--font-body)' }}
-      >
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className="relative py-1 transition-colors"
-            style={{
-              fontSize: 'var(--font-size-body)',
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: activeCategory === cat ? (themeSettings.bodyFontColor || undefined) : undefined,
-              fontWeight: activeCategory === cat ? 600 : 400,
-              opacity: activeCategory === cat ? 1 : 0.5,
-            }}
-          >
-            {cat}
-            {activeCategory === cat && (
-              <motion.div
-                layoutId="maison-cat-underline"
-                className="absolute bottom-0 left-0 right-0 h-[1px] bg-foreground"
-              />
-            )}
-          </button>
-        ))}
-      </nav>
-
       {/* Sub-header: category dropdown + view toggle */}
       <div
-        className="flex items-center justify-between px-6 py-3 border-b border-border"
+        className="sticky top-[49px] z-20 flex items-center justify-between px-6 py-3 border-b border-border bg-background"
         style={{ fontFamily: 'var(--font-body)' }}
       >
         {/* Category dropdown */}
