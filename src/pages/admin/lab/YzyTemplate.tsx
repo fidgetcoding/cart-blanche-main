@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, GripHorizontal } from 'lucide-react';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
@@ -366,76 +367,90 @@ export default function YzyTemplate() {
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-          {/* Empty state with liquid glass suggestions */}
-          {messages.length <= 1 && suggestions.length > 0 && (
-            <div className="space-y-4 pt-6">
-              <div className="text-center space-y-2">
-                <Sparkles className="w-7 h-7 text-accent mx-auto" />
-                
-                <p className="text-[11px] text-muted-foreground">Tell me how you want your storefront to look.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 pt-2">
-                {suggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSend(s)}
-                    className="flex flex-col items-start gap-1 p-2.5 rounded-lg liquid-glass hover:brightness-125 text-left transition-all"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-[10px] font-medium">{s}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Resizable Chat + Theme Settings */}
+        <ResizablePanelGroup direction="vertical" className="flex-1 min-h-0">
+          {/* Chat Panel */}
+          <ResizablePanel defaultSize={60} minSize={20}>
+            <div className="flex flex-col h-full">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {messages.length <= 1 && suggestions.length > 0 && (
+                  <div className="space-y-4 pt-6">
+                    <div className="text-center space-y-2">
+                      <Sparkles className="w-7 h-7 text-accent mx-auto" />
+                      <p className="text-[11px] text-muted-foreground">Tell me how you want your storefront to look.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 pt-2">
+                      {suggestions.map((s, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleSend(s)}
+                          className="flex flex-col items-start gap-1 p-2.5 rounded-lg liquid-glass hover:brightness-125 text-left transition-all"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-accent" />
+                          <span className="text-[10px] font-medium">{s}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          {/* Chat messages */}
-          {messages.map((msg, i) => {
-            if (i === 0 && msg.role === 'system' && messages.length <= 1) return null;
-            return (
-              <div
-                key={i}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-0 slide-in-from-bottom-2 duration-200`}
-              >
-                <div className={`max-w-[90%] rounded-xl px-3 py-2 text-[11px] leading-relaxed whitespace-pre-line ${
-                  msg.role === 'user'
-                    ? 'bg-accent text-accent-foreground'
-                    : 'bg-card border border-border'
-                }`}>
-                  {msg.text}
+                {messages.map((msg, i) => {
+                  if (i === 0 && msg.role === 'system' && messages.length <= 1) return null;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-0 slide-in-from-bottom-2 duration-200`}
+                    >
+                      <div className={`max-w-[90%] rounded-xl px-3 py-2 text-[11px] leading-relaxed whitespace-pre-line ${
+                        msg.role === 'user'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'bg-card border border-border'
+                      }`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Chat Input */}
+              <div className="liquid-glass border-t border-border/50 p-3 rounded-t-xl flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+                    placeholder="Describe a change..."
+                    className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent font-display tracking-wider"
+                  />
+                  <button
+                    onClick={() => handleSend()}
+                    className="h-9 w-9 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 flex-shrink-0 flex items-center justify-center transition-colors"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
+            </div>
+          </ResizablePanel>
 
-        {/* Chat Input */}
-        <div className="liquid-glass border-t border-border/50 p-3 rounded-t-xl">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
-              placeholder="Describe a change..."
-              className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent font-display tracking-wider"
-            />
-            <button
-              onClick={() => handleSend()}
-              className="h-9 w-9 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 flex-shrink-0 flex items-center justify-center transition-colors"
-            >
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+          {/* Resize Handle / Divider */}
+          <ResizableHandle className="relative flex items-center justify-center !h-[6px] bg-border/30 hover:bg-accent/40 transition-colors cursor-row-resize group">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-50 group-hover:opacity-100 transition-opacity">
+              <GripHorizontal className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </ResizableHandle>
 
-        {/* Spacer before theme settings */}
-
-        {/* Theme Controls */}
-        <ThemeControls />
+          {/* Theme Settings Panel */}
+          <ResizablePanel defaultSize={40} minSize={15}>
+            <div className="h-full overflow-y-auto">
+              <ThemeControls />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
 
       {/* RIGHT: Live Preview */}
