@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Layers, Save, Plus, X, ChevronUp, ChevronDown, GripVertical, Search } from 'lucide-react';
+import { Save, Plus, X, ChevronUp, ChevronDown, GripVertical, Search } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import type { DemoProduct } from '@/data/demo-data';
@@ -151,6 +151,10 @@ export default function AdminStylingGuide() {
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
 
+  // Track which product IDs are on the canvas
+  const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
+  const canvasRef = useRef<{ addProduct: (p: DemoProduct) => void; selectProduct: (id: string) => void } | null>(null);
+
   // Group products by body zone, filtered by search and category
   const grouped = useMemo(() => {
     const groups: Record<BodyZoneGroup, DemoProduct[]> = { TOPS: [], BOTTOMS: [], ACCESSORIES: [] };
@@ -262,18 +266,34 @@ export default function AdminStylingGuide() {
   const pairsAvailable = DEMO_PRODUCTS.filter(p => {
     if (p.id === selectedProductId) return false;
     if (!anchorZone) return true;
-    // Opposite zone for pairs
     if (anchorZone === 'top') return getBodyZone(p) === 'bottom';
     if (anchorZone === 'bottom') return getBodyZone(p) === 'top';
-    return true; // accessories can pair with anything
+    return true;
   });
 
   const extrasAvailable = DEMO_PRODUCTS.filter(p => {
     if (p.id === selectedProductId) return false;
     if (!anchorZone) return true;
-    // Same zone for extras
     return getBodyZone(p) === anchorZone;
   });
+
+  const handleProductClick = (productId: string) => {
+    if (activeView === 'list') {
+      setSelectedProductId(productId);
+    } else {
+      // Canvas mode
+      const product = DEMO_PRODUCTS.find(p => p.id === productId);
+      if (!product) return;
+      if (canvasNodeIds.has(productId)) {
+        // Already on canvas — select and pan to it
+        canvasRef.current?.selectProduct(productId);
+      } else {
+        // Not on canvas — add it
+        canvasRef.current?.addProduct(product);
+      }
+      setSelectedProductId(productId);
+    }
+  };
 
   if (loading) {
     return (
@@ -309,26 +329,11 @@ export default function AdminStylingGuide() {
 
       <div className="border-b border-border" />
 
-      {activeView === 'canvas' ? (
-        <Suspense fallback={null}>
-          <StyleGuideCanvas
-            presets={presets}
-            onPresetsChange={setPresets}
-            canvasLayout={canvasLayout}
-            onCanvasLayoutChange={setCanvasLayout}
-            onSave={saveGuide}
-            saving={saving}
-          />
-        </Suspense>
-      ) : (
-      <>
-
-      {/* Two-column layout */}
+      {/* Two-column layout — LEFT sidebar always visible */}
       <div className="flex-1 flex min-h-0">
-        {/* LEFT: Product list */}
+        {/* LEFT: Product list — shared between both views */}
         <div className="w-72 border-r border-border overflow-y-auto flex-shrink-0">
           <div className="px-4 py-3 border-b border-border">
-            
             {/* Search */}
             <div className="relative mb-3">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
@@ -362,101 +367,124 @@ export default function AdminStylingGuide() {
               <div className="px-4 py-2 bg-secondary/30">
                 <p className="text-[9px] font-display tracking-[0.2em] text-muted-foreground">{group}</p>
               </div>
-              {grouped[group].map(product => (
-                <button
-                  key={product.id}
-                  onClick={() => setSelectedProductId(product.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ease-out ${
-                    selectedProductId === product.id
-                      ? 'bg-primary/10 border-l-2 border-primary scale-[1.01]'
-                      : 'hover:bg-secondary/60 border-l-2 border-transparent'
-                  }`}
-                >
-                  <img
-                    src={getImageUrl(product.images[0], 'thumb')}
-                    alt={product.title}
-                    className="w-10 h-10 rounded object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-xs tracking-wide truncate">{product.title}</p>
-                    <p className="text-[10px] text-muted-foreground">${product.price}</p>
-                  </div>
-                  {presetProductIds.has(product.id) && (
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'hsl(var(--success))' }} />
-                  )}
-                </button>
-              ))}
+              {grouped[group].map(product => {
+                const isOnCanvas = activeView === 'canvas' && canvasNodeIds.has(product.id);
+                return (
+                  <button
+                    key={product.id}
+                    onClick={() => handleProductClick(product.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ease-out ${
+                      selectedProductId === product.id
+                        ? 'bg-primary/10 border-l-2 border-primary scale-[1.01]'
+                        : 'hover:bg-secondary/60 border-l-2 border-transparent'
+                    }`}
+                  >
+                    <img
+                      src={getImageUrl(product.images[0], 'thumb')}
+                      alt={product.title}
+                      className="w-10 h-10 rounded object-cover flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-xs tracking-wide truncate">{product.title}</p>
+                      <p className="text-[10px] text-muted-foreground">${product.price}</p>
+                    </div>
+                    {/* In list mode: green dot for products with presets */}
+                    {activeView === 'list' && presetProductIds.has(product.id) && (
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'hsl(var(--success))' }} />
+                    )}
+                    {/* In canvas mode: dot for products on the canvas */}
+                    {isOnCanvas && (
+                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
 
-        {/* RIGHT: Preset editor */}
-        <div className="flex-1 overflow-y-auto">
-          {!selectedProduct ? (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-sm text-muted-foreground font-display tracking-wider">
-                Select a product to configure its Style Kit presets
-              </p>
-            </div>
+        {/* RIGHT: View-specific content */}
+        <div className="flex-1 min-h-0">
+          {activeView === 'canvas' ? (
+            <Suspense fallback={null}>
+              <StyleGuideCanvas
+                ref={canvasRef}
+                presets={presets}
+                onPresetsChange={setPresets}
+                canvasLayout={canvasLayout}
+                onCanvasLayoutChange={setCanvasLayout}
+                onSave={saveGuide}
+                saving={saving}
+                onCanvasNodeIdsChange={setCanvasNodeIds}
+              />
+            </Suspense>
           ) : (
-            <div className="p-6 max-w-2xl space-y-6">
-              {/* Anchor product header */}
-              <div className="flex items-start gap-4">
-                <img
-                  src={getImageUrl(selectedProduct.images[0], 'thumb')}
-                  alt={selectedProduct.title}
-                  className="w-28 h-28 rounded-lg object-cover flex-shrink-0"
-                />
-                <div className="flex-1">
-                  <h2 className="font-display text-base font-bold tracking-wide">{selectedProduct.title}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">${selectedProduct.price}</p>
-                  <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-display tracking-widest bg-secondary rounded text-muted-foreground">
-                    {classifyGroup(selectedProduct)}
-                  </span>
+            <>
+              {!selectedProduct ? (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-sm text-muted-foreground font-display tracking-wider">
+                    Select a product to configure its Style Kit presets
+                  </p>
                 </div>
-                <button
-                  onClick={saveGuide}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
-                >
-                  <Save className="w-4 h-4" />
-                  {saving ? 'SAVING...' : 'SAVE'}
-                </button>
-              </div>
+              ) : (
+                <div className="p-6 max-w-2xl space-y-6 overflow-y-auto h-full">
+                  {/* Anchor product header */}
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={getImageUrl(selectedProduct.images[0], 'thumb')}
+                      alt={selectedProduct.title}
+                      className="w-28 h-28 rounded-lg object-cover flex-shrink-0"
+                    />
+                    <div className="flex-1">
+                      <h2 className="font-display text-base font-bold tracking-wide">{selectedProduct.title}</h2>
+                      <p className="text-sm text-muted-foreground mt-1">${selectedProduct.price}</p>
+                      <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-display tracking-widest bg-secondary rounded text-muted-foreground">
+                        {classifyGroup(selectedProduct)}
+                      </span>
+                    </div>
+                    <button
+                      onClick={saveGuide}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
+                    >
+                      <Save className="w-4 h-4" />
+                      {saving ? 'SAVING...' : 'SAVE'}
+                    </button>
+                  </div>
 
-              {/* PAIRS section */}
-              <div className="liquid-glass rounded-lg p-4">
-                <PresetList
-                  label="PAIRS"
-                  description="When building pairs, suggest these first:"
-                  items={pairsProducts}
-                  availableProducts={pairsAvailable}
-                  onAdd={(p) => addToPreset('pairs', p)}
-                  onRemove={(id) => removeFromPreset('pairs', id)}
-                  onMoveUp={(i) => moveInPreset('pairs', i, -1)}
-                  onMoveDown={(i) => moveInPreset('pairs', i, 1)}
-                />
-              </div>
+                  {/* PAIRS section */}
+                  <div className="liquid-glass rounded-lg p-4">
+                    <PresetList
+                      label="PAIRS"
+                      description="When building pairs, suggest these first:"
+                      items={pairsProducts}
+                      availableProducts={pairsAvailable}
+                      onAdd={(p) => addToPreset('pairs', p)}
+                      onRemove={(id) => removeFromPreset('pairs', id)}
+                      onMoveUp={(i) => moveInPreset('pairs', i, -1)}
+                      onMoveDown={(i) => moveInPreset('pairs', i, 1)}
+                    />
+                  </div>
 
-              {/* EXTRAS section */}
-              <div className="liquid-glass rounded-lg p-4">
-                <PresetList
-                  label="EXTRAS"
-                  description="When building extras, suggest these first:"
-                  items={extrasProducts}
-                  availableProducts={extrasAvailable}
-                  onAdd={(p) => addToPreset('extras', p)}
-                  onRemove={(id) => removeFromPreset('extras', id)}
-                  onMoveUp={(i) => moveInPreset('extras', i, -1)}
-                  onMoveDown={(i) => moveInPreset('extras', i, 1)}
-                />
-              </div>
-            </div>
+                  {/* EXTRAS section */}
+                  <div className="liquid-glass rounded-lg p-4">
+                    <PresetList
+                      label="EXTRAS"
+                      description="When building extras, suggest these first:"
+                      items={extrasProducts}
+                      availableProducts={extrasAvailable}
+                      onAdd={(p) => addToPreset('extras', p)}
+                      onRemove={(id) => removeFromPreset('extras', id)}
+                      onMoveUp={(i) => moveInPreset('extras', i, -1)}
+                      onMoveDown={(i) => moveInPreset('extras', i, 1)}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
-      </>
-      )}
     </div>
   );
 }

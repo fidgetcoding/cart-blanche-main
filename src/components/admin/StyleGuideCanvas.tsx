@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -14,22 +14,30 @@ import {
   Handle,
   type NodeProps,
   BackgroundVariant,
+  useReactFlow,
+  ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import type { DemoProduct } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
-import { X, ChevronUp, ChevronDown, RotateCcw, Save } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Save } from 'lucide-react';
 
 /* ── Types ── */
+
+export interface StyleGuideCanvasHandle {
+  addProduct: (p: DemoProduct) => void;
+  selectProduct: (id: string) => void;
+}
 
 interface StyleGuideCanvasProps {
   presets: ProductPreset[];
   onPresetsChange: (presets: ProductPreset[]) => void;
-  canvasLayout: { positions: Record<string, { x: number; y: number }>; zoom?: number; panX?: number; panY?: number } | null;
+  canvasLayout: { positions: Record<string, { x: number; y: number }>; nodeIds?: string[] } | null;
   onCanvasLayoutChange: (layout: any) => void;
   onSave: () => void;
   saving: boolean;
+  onCanvasNodeIdsChange: (ids: Set<string>) => void;
 }
 
 type BodyZoneGroup = 'TOPS' | 'BOTTOMS' | 'ACCESSORIES';
@@ -55,24 +63,10 @@ function ProductNode({ data, selected }: NodeProps) {
       className={`relative bg-card rounded-lg border-2 ${borderColor} ${selected ? 'ring-2 ring-primary/50' : ''} p-2 flex flex-col items-center gap-1.5 w-[110px] transition-shadow`}
       style={{ boxShadow: selected ? '0 0 20px hsl(var(--primary) / 0.15)' : undefined }}
     >
-      {/* Target handle – left side */}
-      <Handle type="target" position={Position.Left} className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      {/* Pairs source – right top */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="pairs"
-        className="!w-3 !h-3 !border-2"
-        style={{ top: '35%', background: '#06b6d4', borderColor: '#06b6d4' }}
-      />
-      {/* Extras source – right bottom */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="extras"
-        className="!w-3 !h-3 !border-2"
-        style={{ top: '65%', background: '#f59e0b', borderColor: '#f59e0b' }}
-      />
+      {/* Single target handle – left side */}
+      <Handle type="target" position={Position.Left} id="target" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      {/* Single source handle – right side */}
+      <Handle type="source" position={Position.Right} id="source" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
       <img
         src={getImageUrl(d.product.images[0], 'thumb')}
         alt={d.product.title}
@@ -88,41 +82,31 @@ const nodeTypes = { product: ProductNode };
 
 /* ── Helpers ── */
 
-function getDefaultPositions(): Record<string, { x: number; y: number }> {
-  const positions: Record<string, { x: number; y: number }> = {};
-  const cols: Record<BodyZoneGroup, DemoProduct[]> = { TOPS: [], BOTTOMS: [], ACCESSORIES: [] };
-  DEMO_PRODUCTS.forEach(p => cols[classifyGroup(p)].push(p));
-
-  const colX: Record<BodyZoneGroup, number> = { TOPS: 0, BOTTOMS: 300, ACCESSORIES: 600 };
-  (Object.keys(cols) as BodyZoneGroup[]).forEach(group => {
-    cols[group].forEach((p, i) => {
-      positions[p.id] = { x: colX[group], y: i * 160 };
-    });
-  });
-  return positions;
-}
-
 function presetsToEdges(presets: ProductPreset[]): Edge[] {
   const edges: Edge[] = [];
   presets.forEach(preset => {
-    preset.pairs.forEach((targetId, i) => {
+    preset.pairs.forEach(targetId => {
       edges.push({
-        id: `${preset.anchorProductId}-pairs-${targetId}`,
+        id: `pairs-${preset.anchorProductId}-${targetId}`,
         source: preset.anchorProductId,
         target: targetId,
-        sourceHandle: 'pairs',
+        sourceHandle: 'source',
+        targetHandle: 'target',
         style: { stroke: '#06b6d4', strokeWidth: 2 },
         type: 'default',
+        data: { type: 'pairs' },
       });
     });
-    preset.extras.forEach((targetId, i) => {
+    preset.extras.forEach(targetId => {
       edges.push({
-        id: `${preset.anchorProductId}-extras-${targetId}`,
+        id: `extras-${preset.anchorProductId}-${targetId}`,
         source: preset.anchorProductId,
         target: targetId,
-        sourceHandle: 'extras',
+        sourceHandle: 'source',
+        targetHandle: 'target',
         style: { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '6 4' },
         type: 'default',
+        data: { type: 'extras' },
       });
     });
   });
@@ -134,8 +118,9 @@ function edgesToPresets(edges: Edge[]): ProductPreset[] {
   edges.forEach(e => {
     if (!map.has(e.source)) map.set(e.source, { pairs: [], extras: [] });
     const entry = map.get(e.source)!;
-    if (e.sourceHandle === 'pairs') entry.pairs.push(e.target);
-    else if (e.sourceHandle === 'extras') entry.extras.push(e.target);
+    const edgeType = (e.data as any)?.type;
+    if (edgeType === 'pairs') entry.pairs.push(e.target);
+    else if (edgeType === 'extras') entry.extras.push(e.target);
   });
   const presets: ProductPreset[] = [];
   map.forEach((val, anchorProductId) => {
@@ -144,48 +129,80 @@ function edgesToPresets(edges: Edge[]): ProductPreset[] {
   return presets;
 }
 
-/* ── Main Component ── */
+/* ── Inner component (needs ReactFlow context) ── */
 
-export default function StyleGuideCanvas({
+const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanvasProps>(({
   presets,
   onPresetsChange,
   canvasLayout,
   onCanvasLayoutChange,
   onSave,
   saving,
-}: StyleGuideCanvasProps) {
-  const positions = canvasLayout?.positions ?? getDefaultPositions();
+  onCanvasNodeIdsChange,
+}, ref) => {
+  const { fitView, setCenter } = useReactFlow();
+  const nodeCountRef = useRef(0);
 
-  const initialNodes: Node[] = useMemo(() =>
-    DEMO_PRODUCTS.map(p => ({
-      id: p.id,
-      type: 'product',
-      position: positions[p.id] ?? { x: 0, y: 0 },
-      data: { product: p, zone: classifyGroup(p) },
-    })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  // Initialize from saved layout
+  const initialNodes: Node[] = useMemo(() => {
+    if (!canvasLayout?.nodeIds || !canvasLayout.positions) return [];
+    return canvasLayout.nodeIds
+      .map(id => {
+        const product = DEMO_PRODUCTS.find(p => p.id === id);
+        if (!product) return null;
+        return {
+          id: product.id,
+          type: 'product' as const,
+          position: canvasLayout.positions[id] ?? { x: 0, y: 0 },
+          data: { product, zone: classifyGroup(product) },
+        };
+      })
+      .filter(Boolean) as Node[];
+  }, []);
 
-  const initialEdges = useMemo(() => presetsToEdges(presets), []);
+  const initialEdges = useMemo(() => {
+    // Only include edges for nodes that are on the canvas
+    const nodeIdSet = new Set(canvasLayout?.nodeIds ?? []);
+    return presetsToEdges(presets).filter(e => nodeIdSet.has(e.source) && nodeIdSet.has(e.target));
+  }, []);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-  // Sync edges back to presets when they change
+  // Sync node IDs to parent
+  useEffect(() => {
+    const ids = new Set(nodes.map(n => n.id));
+    nodeCountRef.current = ids.size;
+    onCanvasNodeIdsChange(ids);
+  }, [nodes, onCanvasNodeIdsChange]);
+
   const syncPresetsFromEdges = useCallback((currentEdges: Edge[]) => {
     onPresetsChange(edgesToPresets(currentEdges));
   }, [onPresetsChange]);
 
+  // Auto-detect pairs vs extras from body zone
   const onConnect = useCallback((connection: Connection) => {
-    const handle = connection.sourceHandle;
-    const style = handle === 'pairs'
-      ? { stroke: '#06b6d4', strokeWidth: 2 }
-      : { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '6 4' };
+    const sourceProduct = DEMO_PRODUCTS.find(p => p.id === connection.source);
+    const targetProduct = DEMO_PRODUCTS.find(p => p.id === connection.target);
+    if (!sourceProduct || !targetProduct) return;
+
+    const sourceZone = getBodyZone(sourceProduct);
+    const targetZone = getBodyZone(targetProduct);
+    const connectionType = sourceZone === targetZone ? 'extras' : 'pairs';
+
+    const newEdge = {
+      ...connection,
+      id: `${connectionType}-${connection.source}-${connection.target}`,
+      style: connectionType === 'pairs'
+        ? { stroke: '#06b6d4', strokeWidth: 2 }
+        : { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '6 4' },
+      data: { type: connectionType },
+      type: 'default' as const,
+    };
 
     setEdges(eds => {
-      const newEdges = addEdge({ ...connection, style, type: 'default' }, eds);
+      const newEdges = addEdge(newEdge as Edge, eds);
       syncPresetsFromEdges(newEdges);
       return newEdges;
     });
@@ -193,7 +210,6 @@ export default function StyleGuideCanvas({
 
   const handleEdgesChange = useCallback((changes: any) => {
     onEdgesChange(changes);
-    // Defer sync to next tick so edges state is updated
     setTimeout(() => {
       setEdges(eds => {
         syncPresetsFromEdges(eds);
@@ -210,17 +226,41 @@ export default function StyleGuideCanvas({
     setSelectedNodeId(null);
   }, []);
 
-  const autoArrange = useCallback(() => {
-    const defaultPos = getDefaultPositions();
-    setNodes(nds => nds.map(n => ({ ...n, position: defaultPos[n.id] ?? n.position })));
-  }, [setNodes]);
-
   const handleSave = useCallback(() => {
     const posMap: Record<string, { x: number; y: number }> = {};
-    nodes.forEach(n => { posMap[n.id] = n.position; });
-    onCanvasLayoutChange({ positions: posMap });
+    const nodeIds: string[] = [];
+    nodes.forEach(n => {
+      posMap[n.id] = n.position;
+      nodeIds.push(n.id);
+    });
+    onCanvasLayoutChange({ positions: posMap, nodeIds });
     onSave();
   }, [nodes, onCanvasLayoutChange, onSave]);
+
+  // Imperative handle for parent to add/select products
+  useImperativeHandle(ref, () => ({
+    addProduct: (product: DemoProduct) => {
+      const count = nodeCountRef.current;
+      const col = count % 4;
+      const row = Math.floor(count / 4);
+      const newNode: Node = {
+        id: product.id,
+        type: 'product',
+        position: { x: col * 160 + 50, y: row * 170 + 50 },
+        data: { product, zone: classifyGroup(product) },
+      };
+      setNodes(nds => [...nds, newNode]);
+      setSelectedNodeId(product.id);
+    },
+    selectProduct: (id: string) => {
+      setSelectedNodeId(id);
+      // Pan to the node
+      const node = nodes.find(n => n.id === id);
+      if (node) {
+        setCenter(node.position.x + 55, node.position.y + 60, { zoom: 1, duration: 400 });
+      }
+    },
+  }), [nodes, setNodes, setCenter]);
 
   // Sidebar helpers
   const selectedProduct = selectedNodeId ? DEMO_PRODUCTS.find(p => p.id === selectedNodeId) : null;
@@ -228,7 +268,7 @@ export default function StyleGuideCanvas({
 
   const removeConnection = useCallback((targetId: string, type: 'pairs' | 'extras') => {
     setEdges(eds => {
-      const filtered = eds.filter(e => !(e.source === selectedNodeId && e.target === targetId && e.sourceHandle === type));
+      const filtered = eds.filter(e => !(e.source === selectedNodeId && e.target === targetId && (e.data as any)?.type === type));
       syncPresetsFromEdges(filtered);
       return filtered;
     });
@@ -240,38 +280,42 @@ export default function StyleGuideCanvas({
     if (newIndex < 0 || newIndex >= items.length) return;
     [items[index], items[newIndex]] = [items[newIndex], items[index]];
 
-    // Rebuild edges for this source + type
     setEdges(eds => {
-      const otherEdges = eds.filter(e => !(e.source === selectedNodeId && e.sourceHandle === type));
+      const otherEdges = eds.filter(e => !(e.source === selectedNodeId && (e.data as any)?.type === type));
       const style = type === 'pairs'
         ? { stroke: '#06b6d4', strokeWidth: 2 }
         : { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '6 4' };
       const newEdges = items.map(targetId => ({
-        id: `${selectedNodeId}-${type}-${targetId}`,
+        id: `${type}-${selectedNodeId}-${targetId}`,
         source: selectedNodeId!,
         target: targetId,
-        sourceHandle: type,
+        sourceHandle: 'source',
+        targetHandle: 'target',
         style,
         type: 'default' as const,
+        data: { type },
       }));
-      const result = [...otherEdges, ...newEdges];
+      const result = [...otherEdges, ...newEdges] as Edge[];
       syncPresetsFromEdges(result);
       return result;
     });
   }, [selectedNodeId, selectedPreset, setEdges, syncPresetsFromEdges]);
 
+  const removeNodeFromCanvas = useCallback((nodeId: string) => {
+    setNodes(nds => nds.filter(n => n.id !== nodeId));
+    setEdges(eds => {
+      const filtered = eds.filter(e => e.source !== nodeId && e.target !== nodeId);
+      syncPresetsFromEdges(filtered);
+      return filtered;
+    });
+    setSelectedNodeId(null);
+  }, [setNodes, setEdges, syncPresetsFromEdges]);
+
   return (
-    <div className="flex-1 flex relative">
+    <div className="flex-1 flex relative h-full">
       <div className="flex-1 relative">
         {/* Floating toolbar */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-          <button
-            onClick={autoArrange}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border rounded-md text-[10px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            AUTO ARRANGE
-          </button>
           <button
             onClick={handleSave}
             disabled={saving}
@@ -302,9 +346,9 @@ export default function StyleGuideCanvas({
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
           nodeTypes={nodeTypes}
-          fitView
           className="!bg-background"
           deleteKeyCode={['Backspace', 'Delete']}
+          fitView={nodes.length > 0}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(var(--foreground) / 0.05)" />
           <Controls className="!bg-card !border-border !rounded-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground" />
@@ -314,11 +358,20 @@ export default function StyleGuideCanvas({
             maskColor="hsl(var(--background) / 0.8)"
           />
         </ReactFlow>
+
+        {/* Empty state */}
+        {nodes.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <p className="text-sm text-muted-foreground/50 font-display tracking-wider">
+              Click products in the sidebar to add them to the canvas
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Selected node sidebar */}
       {selectedProduct && (
-        <div className="w-[280px] border-l border-border bg-card overflow-y-auto flex-shrink-0 animate-slide-in-right">
+        <div className="w-[280px] border-l border-border bg-card overflow-y-auto flex-shrink-0">
           <div className="p-4 flex flex-col gap-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -335,9 +388,15 @@ export default function StyleGuideCanvas({
                   </span>
                 </div>
               </div>
-              <button onClick={() => setSelectedNodeId(null)} className="p-1 hover:bg-secondary rounded transition-colors">
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => removeNodeFromCanvas(selectedProduct.id)}
+                  className="p-1 hover:bg-destructive/20 rounded transition-colors"
+                  title="Remove from canvas"
+                >
+                  <X className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                </button>
+              </div>
             </div>
 
             {/* Pairs */}
@@ -396,4 +455,18 @@ export default function StyleGuideCanvas({
       )}
     </div>
   );
-}
+});
+
+StyleGuideCanvasInner.displayName = 'StyleGuideCanvasInner';
+
+/* ── Wrapper with ReactFlowProvider ── */
+
+const StyleGuideCanvas = forwardRef<StyleGuideCanvasHandle, StyleGuideCanvasProps>((props, ref) => (
+  <ReactFlowProvider>
+    <StyleGuideCanvasInner ref={ref} {...props} />
+  </ReactFlowProvider>
+));
+
+StyleGuideCanvas.displayName = 'StyleGuideCanvas';
+
+export default StyleGuideCanvas;
