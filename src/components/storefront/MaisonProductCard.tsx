@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { DemoProduct } from '@/data/demo-data';
@@ -17,6 +17,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
   const touchStartX = useRef(0);
   const wheelAccumulator = useRef(0);
   const cooldown = useRef(false);
+  const imageAreaRef = useRef<HTMLDivElement>(null);
   const { themeSettings } = useTheme();
 
   const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
@@ -27,7 +28,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     cooldown.current = true;
     setCurrentImage(prev => (prev + 1) % images.length);
     wheelAccumulator.current = 0;
-    setTimeout(() => { cooldown.current = false; wheelAccumulator.current = 0; }, 450);
+    setTimeout(() => { cooldown.current = false; }, 250);
   }, [images.length]);
 
   const prevImage = useCallback(() => {
@@ -35,25 +36,51 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     cooldown.current = true;
     setCurrentImage(prev => (prev - 1 + images.length) % images.length);
     wheelAccumulator.current = 0;
-    setTimeout(() => { cooldown.current = false; wheelAccumulator.current = 0; }, 450);
+    setTimeout(() => { cooldown.current = false; }, 250);
   }, [images.length]);
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (!hasMultiple) return;
-    const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
-    if (!isHorizontal) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (cooldown.current) {
-      wheelAccumulator.current = 0;
-      return;
-    }
-    wheelAccumulator.current += e.deltaX;
-    if (Math.abs(wheelAccumulator.current) > 50) {
-      if (wheelAccumulator.current > 0) nextImage();
-      else prevImage();
-    }
+  // Native wheel handler with { passive: false } to actually prevent browser back gesture
+  useEffect(() => {
+    const el = imageAreaRef.current;
+    if (!el || !hasMultiple) return;
+
+    const onWheel = (e: WheelEvent) => {
+      const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+      if (!isHorizontal) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (cooldown.current) return;
+
+      wheelAccumulator.current += e.deltaX;
+      if (Math.abs(wheelAccumulator.current) > 50) {
+        if (wheelAccumulator.current > 0) nextImage();
+        else prevImage();
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
   }, [hasMultiple, nextImage, prevImage]);
+
+  // Keyboard arrows when hovered
+  useEffect(() => {
+    if (!isHovered || !hasMultiple) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        nextImage();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevImage();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isHovered, hasMultiple, nextImage, prevImage]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -97,12 +124,12 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     >
       {/* Image area */}
       <div
+        ref={imageAreaRef}
         className="relative overflow-hidden"
         style={{
           aspectRatio: isCompact ? '3/4' : '3/4.2',
           backgroundColor: tileBg,
         }}
-        onWheel={handleWheel}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
