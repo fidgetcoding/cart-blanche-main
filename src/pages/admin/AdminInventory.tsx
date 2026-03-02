@@ -95,7 +95,7 @@ export default function AdminInventory() {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', price: '', description: '', category: '' });
+  const [editForm, setEditForm] = useState({ title: '', price: '', comparePrice: '', description: '', category: '' });
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [editVariantValue, setEditVariantValue] = useState('');
   const [newTag, setNewTag] = useState('');
@@ -107,7 +107,7 @@ export default function AdminInventory() {
   const [inlineValues, setInlineValues] = useState<Record<string, Record<string, string>>>({});
   const lowStockThreshold = 5;
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [addForm, setAddForm] = useState({ title: '', price: '', description: '' });
+  const [addForm, setAddForm] = useState({ title: '', price: '', comparePrice: '', description: '' });
   const [addTags, setAddTags] = useState<string[]>([]);
   const [addTagInput, setAddTagInput] = useState('');
   const [addProductCategory, setAddProductCategory] = useState<ProductCategory>('');
@@ -311,7 +311,7 @@ export default function AdminInventory() {
 
   function openEditPanel(p: ProductRow) {
     setEditingProduct(p);
-    setEditForm({ title: p.title, price: String(p.price), description: p.description, category: p.category });
+    setEditForm({ title: p.title, price: String(p.price), comparePrice: p.compare_at_price ? String(p.compare_at_price) : '', description: p.description, category: p.category });
   }
 
   async function saveProductEdit() {
@@ -437,6 +437,7 @@ export default function AdminInventory() {
       merchant_id: session.user.id,
       title: addForm.title.trim(),
       price: parseFloat(addForm.price) || 0,
+      compare_at_price: addForm.comparePrice ? parseFloat(addForm.comparePrice) : null,
       description: addForm.description.trim(),
       category: addTags.length > 0 ? addTags[0] : '',
       status: 'active',
@@ -459,7 +460,7 @@ export default function AdminInventory() {
 
     setAddSaving(false);
     setShowAddProduct(false);
-    setAddForm({ title: '', price: '', description: '' });
+    setAddForm({ title: '', price: '', comparePrice: '', description: '' });
     setAddTags([]);
     setAddTagInput('');
     setAddProductCategory('');
@@ -758,39 +759,76 @@ export default function AdminInventory() {
                               )}
                             </div>
 
-                            {/* Price */}
-                            <div>
-                              <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">PRICE</p>
-                              {inlineEditing[p.id]?.price ? (
-                                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                                  <span className="text-sm text-muted-foreground">$</span>
-                                  <input
-                                    type="number"
-                                    value={inlineValues[p.id]?.price ?? String(p.price)}
-                                    onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: e.target.value } }))}
-                                    className="w-28 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                                    autoFocus
-                                    onKeyDown={e => {
-                                      if (e.key === 'Enter') {
-                                        const val = parseFloat(inlineValues[p.id]?.price);
-                                        if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, price: val } : pr));
-                                        setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
-                                      }
-                                      if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
-                                    }}
-                                  />
-                                  <button onClick={() => {
-                                    const val = parseFloat(inlineValues[p.id]?.price);
-                                    if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, price: val } : pr));
-                                    setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
-                                  }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: String(p.price) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: true } })); }}
-                                  className="text-sm font-display text-foreground hover:underline"
-                                >${p.price}{p.compare_at_price ? <span className="ml-2 text-muted-foreground line-through">${p.compare_at_price}</span> : null}</button>
-                              )}
+                            {/* Price & Compare At Price */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">PRICE</p>
+                                {inlineEditing[p.id]?.price ? (
+                                  <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                    <span className="text-sm text-muted-foreground">$</span>
+                                    <input
+                                      type="number"
+                                      value={inlineValues[p.id]?.price ?? String(p.price)}
+                                      onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: e.target.value } }))}
+                                      className="w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                                      autoFocus
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                          const val = parseFloat(inlineValues[p.id]?.price);
+                                          if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, price: val } : pr));
+                                          setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
+                                        }
+                                        if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
+                                      }}
+                                    />
+                                    <button onClick={() => {
+                                      const val = parseFloat(inlineValues[p.id]?.price);
+                                      if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, price: val } : pr));
+                                      setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
+                                    }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: String(p.price) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: true } })); }}
+                                    className="text-sm font-display text-foreground hover:underline"
+                                  >${p.price}</button>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">COMPARE AT PRICE</p>
+                                {inlineEditing[p.id]?.comparePrice ? (
+                                  <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                    <span className="text-sm text-muted-foreground">$</span>
+                                    <input
+                                      type="number"
+                                      value={inlineValues[p.id]?.comparePrice ?? String(p.compare_at_price || '')}
+                                      onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: e.target.value } }))}
+                                      placeholder="Optional"
+                                      className="w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                                      autoFocus
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                          const val = e.currentTarget.value ? parseFloat(e.currentTarget.value) : undefined;
+                                          setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, compare_at_price: val } : pr));
+                                          setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: false } }));
+                                        }
+                                        if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: false } }));
+                                      }}
+                                    />
+                                    <button onClick={() => {
+                                      const raw = inlineValues[p.id]?.comparePrice;
+                                      const val = raw ? parseFloat(raw) : undefined;
+                                      setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, compare_at_price: val } : pr));
+                                      setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: false } }));
+                                    }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: String(p.compare_at_price || '') } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: true } })); }}
+                                    className="text-sm font-display text-foreground hover:underline"
+                                  >{p.compare_at_price ? <span className="line-through text-muted-foreground">${p.compare_at_price}</span> : <span className="text-muted-foreground italic text-xs">Set compare price</span>}</button>
+                                )}
+                              </div>
                             </div>
 
                             {/* Description */}
@@ -1171,11 +1209,19 @@ export default function AdminInventory() {
                 )}
               </div>
 
-              <div>
-                <label className="text-xs font-display tracking-widest text-muted-foreground">PRICE</label>
-                <input type="number" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
-                  placeholder="0" min="0"
-                  className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">PRICE</label>
+                  <input type="number" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
+                    placeholder="0" min="0"
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">COMPARE AT PRICE</label>
+                  <input type="number" value={addForm.comparePrice} onChange={e => setAddForm(f => ({ ...f, comparePrice: e.target.value }))}
+                    placeholder="Optional" min="0"
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
               </div>
 
               {/* Category type */}
@@ -1429,6 +1475,12 @@ export default function AdminInventory() {
                 <div>
                   <label className="text-xs font-display tracking-widest text-muted-foreground">PRICE</label>
                   <input type="number" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">COMPARE AT PRICE</label>
+                  <input type="number" value={editForm.comparePrice || ''} onChange={e => setEditForm(f => ({ ...f, comparePrice: e.target.value }))}
+                    placeholder="Optional" min="0"
                     className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
                 <div>
