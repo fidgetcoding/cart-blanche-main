@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette } from 'lucide-react';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
@@ -10,7 +10,8 @@ import { StyleKitView } from '@/components/storefront/StyleKitView';
 import { toast } from 'sonner';
 
 const GLOW_PRESETS = [
-  { label: 'White', value: 'hsla(0,0%,100%,0.08)' },
+  { label: 'White', value: '#ffffff' },
+  { label: 'Soft White', value: 'hsla(0,0%,100%,0.08)' },
   { label: 'Gold', value: '#e8c547' },
   { label: 'Blue', value: 'hsla(210,80%,60%,0.25)' },
   { label: 'Rose', value: 'hsla(340,70%,55%,0.25)' },
@@ -121,16 +122,25 @@ function ThemeControls() {
                   title={g.label}
                 />
               ))}
-              <input
-                type="color"
-                value={customColor}
-                onChange={e => {
-                  setCustomColor(e.target.value);
-                  updateTheme({ tileHoverGlow: e.target.value });
-                }}
-                className="w-6 h-6 rounded-full cursor-pointer border border-border/50 bg-transparent"
-                title="Custom"
-              />
+              <div className="relative">
+                <input
+                  type="color"
+                  value={customColor}
+                  onChange={e => {
+                    setCustomColor(e.target.value);
+                    updateTheme({ tileHoverGlow: e.target.value });
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  title="Custom"
+                />
+                <div className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center ${
+                  !GLOW_PRESETS.some(g => g.value === themeSettings.tileHoverGlow)
+                    ? 'border-foreground scale-110'
+                    : 'border-border/50 hover:border-foreground/40'
+                }`} style={{ background: !GLOW_PRESETS.some(g => g.value === themeSettings.tileHoverGlow) ? customColor : 'transparent' }}>
+                  <Pipette className="w-3 h-3 text-foreground/70" />
+                </div>
+              </div>
             </div>
           </div>
 
