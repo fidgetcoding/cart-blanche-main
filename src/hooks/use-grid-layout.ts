@@ -13,7 +13,10 @@ export interface GridLayout {
   categoryOrder: string[];
   hiddenTags: string[];
   hiddenProductTypes: string[];
+  hiddenProductIds: string[];
 }
+
+const EMPTY_LAYOUT: GridLayout = { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [], hiddenProductIds: [] };
 
 // Broadcast layout changes across hook instances
 const LAYOUT_CHANGE_EVENT = 'grid-layout-changed';
@@ -40,10 +43,9 @@ export function useGridLayout() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch layout
         const { data: layoutData } = await supabase
           .from('grid_layouts')
-          .select('product_order, category_order, hidden_tags, hidden_product_types')
+          .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids')
           .eq('layout_type', 'default')
           .limit(1)
           .maybeSingle();
@@ -54,6 +56,7 @@ export function useGridLayout() {
             categoryOrder: (layoutData.category_order as string[])?.length > 0 ? (layoutData.category_order as string[]) : [],
             hiddenTags: (layoutData.hidden_tags as string[]) || [],
             hiddenProductTypes: (layoutData.hidden_product_types as string[]) || [],
+            hiddenProductIds: (layoutData.hidden_product_ids as string[]) || [],
           });
         }
 
@@ -85,9 +88,7 @@ export function useGridLayout() {
               price: p.price,
               compare_at_price: p.compare_at_price ?? undefined,
               images: (p.images || []).map((url: string) => ({
-                thumb: url,
-                medium: url,
-                full: url,
+                thumb: url, medium: url, full: url,
               })),
               category: p.category || 'uncategorized',
               product_category: '' as const,
@@ -112,7 +113,7 @@ export function useGridLayout() {
     fetchData();
   }, []);
 
-  // Merge demo + DB products (DB products won't have demo IDs so no dupes)
+  // Merge demo + DB products
   const allProducts = useCallback((): DemoProduct[] => {
     return [...DEMO_PRODUCTS, ...dbProducts];
   }, [dbProducts]);
@@ -133,12 +134,12 @@ export function useGridLayout() {
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated = { productOrder, categoryOrder, hiddenTags: layout?.hiddenTags || [], hiddenProductTypes: layout?.hiddenProductTypes || [] };
+      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, productOrder, categoryOrder };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
     return !error;
-  }, []);
+  }, [layout]);
 
   // Save hidden tags
   const saveHiddenTags = useCallback(async (hiddenTags: string[]) => {
@@ -155,12 +156,12 @@ export function useGridLayout() {
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated = layout ? { ...layout, hiddenTags } : { productOrder: [], categoryOrder: [], hiddenTags, hiddenProductTypes: [] };
+      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, hiddenTags };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
     return !error;
-  }, []);
+  }, [layout]);
 
   // Save hidden product types
   const saveHiddenProductTypes = useCallback(async (hiddenProductTypes: string[]) => {
@@ -177,17 +178,74 @@ export function useGridLayout() {
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated = layout ? { ...layout, hiddenProductTypes } : { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes };
+      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, hiddenProductTypes };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
     return !error;
-  }, []);
+  }, [layout]);
 
-  // Get products in saved order (with grid positions recalculated)
+  // Save hidden product IDs
+  const saveHiddenProductIds = useCallback(async (hiddenProductIds: string[]) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { error } = await supabase
+      .from('grid_layouts')
+      .upsert({
+        merchant_id: user.id,
+        layout_type: 'default',
+        hidden_product_ids: hiddenProductIds,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'merchant_id,layout_type' });
+
+    if (!error) {
+      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, hiddenProductIds };
+      setLayout(updated);
+      broadcastLayoutChange(updated);
+    }
+    return !error;
+  }, [layout]);
+
+  // Get products in saved order, excluding hidden product IDs
   const getOrderedProducts = useCallback((): DemoProduct[] => {
     const all = allProducts();
+    const hiddenIds = new Set(layout?.hiddenProductIds || []);
 
+    // Filter out hidden products
+    const visible = all.filter(p => !hiddenIds.has(p.id));
+
+    if (!layout || layout.productOrder.length === 0) {
+      return visible.map((p, i) => ({
+        ...p,
+        grid_position: {
+          x: (i % COLS) * (TILE_W + TILE_GAP),
+          y: Math.floor(i / COLS) * (TILE_H + TILE_GAP),
+        },
+      }));
+    }
+
+    const idToProduct = new Map(visible.map(p => [p.id, p]));
+    const ordered = layout.productOrder
+      .map(id => idToProduct.get(id))
+      .filter(Boolean) as DemoProduct[];
+
+    const savedIds = new Set(layout.productOrder);
+    const unsaved = visible.filter(p => !savedIds.has(p.id));
+    const finalOrder = [...ordered, ...unsaved];
+
+    return finalOrder.map((p, i) => ({
+      ...p,
+      grid_position: {
+        x: (i % COLS) * (TILE_W + TILE_GAP),
+        y: Math.floor(i / COLS) * (TILE_H + TILE_GAP),
+      },
+    }));
+  }, [layout, allProducts]);
+
+  // Get ALL products (including hidden) — for admin views like inventory
+  const getAllProductsUnfiltered = useCallback((): DemoProduct[] => {
+    const all = allProducts();
     if (!layout || layout.productOrder.length === 0) {
       return all.map((p, i) => ({
         ...p,
@@ -197,17 +255,13 @@ export function useGridLayout() {
         },
       }));
     }
-
     const idToProduct = new Map(all.map(p => [p.id, p]));
     const ordered = layout.productOrder
       .map(id => idToProduct.get(id))
       .filter(Boolean) as DemoProduct[];
-
     const savedIds = new Set(layout.productOrder);
     const unsaved = all.filter(p => !savedIds.has(p.id));
-    const finalOrder = [...ordered, ...unsaved];
-
-    return finalOrder.map((p, i) => ({
+    return [...ordered, ...unsaved].map((p, i) => ({
       ...p,
       grid_position: {
         x: (i % COLS) * (TILE_W + TILE_GAP),
@@ -232,7 +286,7 @@ export function useGridLayout() {
     return [...savedCats, ...missing].filter(c => !hidden.has(c));
   }, [layout, allProducts]);
 
-  // Reset layout (clear saved order)
+  // Reset layout
   const resetLayout = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
@@ -246,16 +300,17 @@ export function useGridLayout() {
         category_order: [],
         hidden_tags: [],
         hidden_product_types: [],
+        hidden_product_ids: [],
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated = { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [] };
+      const updated: GridLayout = { ...EMPTY_LAYOUT };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
     return !error;
   }, []);
 
-  return { layout, loading, saveLayout, saveHiddenTags, saveHiddenProductTypes, resetLayout, getOrderedProducts, getOrderedCategories };
+  return { layout, loading, saveLayout, saveHiddenTags, saveHiddenProductTypes, saveHiddenProductIds, resetLayout, getOrderedProducts, getOrderedCategories, getAllProductsUnfiltered };
 }

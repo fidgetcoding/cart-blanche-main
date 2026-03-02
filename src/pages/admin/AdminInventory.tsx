@@ -91,7 +91,7 @@ function getTagTextColor(tag: string) {
 }
 
 export default function AdminInventory() {
-  const { layout: gridLayout, saveHiddenTags, saveLayout, getOrderedProducts } = useGridLayout();
+  const { layout: gridLayout, saveHiddenTags, saveHiddenProductIds, saveLayout, getAllProductsUnfiltered } = useGridLayout();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -196,9 +196,11 @@ export default function AdminInventory() {
   }, [dragIdx, dragOverIdx, gridLayout?.categoryOrder, saveLayout]);
 
   async function fetchInventory() {
-    // Use hook's ordered products as base (respects saved grid layout order)
-    const ordered = getOrderedProducts();
-    const demoRows = buildProductRows(ordered);
+    const ordered = getAllProductsUnfiltered();
+    const hiddenIds = new Set(gridLayout?.hiddenProductIds || []);
+    const demoRows = buildProductRows(ordered).map(p =>
+      hiddenIds.has(p.id) ? { ...p, status: 'draft' as const } : p
+    );
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
@@ -382,9 +384,16 @@ export default function AdminInventory() {
     setProducts(prev => prev.map(p =>
       p.id === productId ? { ...p, status: newStatus as 'active' | 'draft' | 'archived' } : p
     ));
-    // Persist for non-demo products
+
+    // For demo products, persist via hiddenProductIds in grid_layouts
     const product = products.find(p => p.id === productId);
-    if (product && !product.isDemo) {
+    if (product?.isDemo) {
+      const currentHidden = gridLayout?.hiddenProductIds || [];
+      const updatedHidden = newStatus === 'draft'
+        ? [...currentHidden, productId]
+        : currentHidden.filter(id => id !== productId);
+      await saveHiddenProductIds(updatedHidden);
+    } else if (product) {
       await supabase.from('products').update({ status: newStatus }).eq('id', productId);
     }
   }
