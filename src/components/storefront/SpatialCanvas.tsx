@@ -818,7 +818,7 @@ export function SpatialCanvas() {
       <div className={`absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-500 ${footerGlass ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <div className="flex items-end justify-between px-4 md:px-6 py-3 md:py-5">
           {/* Hints */}
-          <div className="tracking-wider space-y-0.5 cursor-default text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500" style={{ fontSize: 'var(--font-size-body, 10px)', fontFamily: 'var(--font-body)' }}>
+          <div className="tracking-wider space-y-0.5 cursor-default text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500" style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
             <p className="block md:hidden">PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
             <div className="hidden md:block space-y-0.5">
               <p>SCROLL TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
