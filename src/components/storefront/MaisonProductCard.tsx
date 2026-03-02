@@ -26,42 +26,55 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     if (cooldown.current) return;
     cooldown.current = true;
     setCurrentImage(prev => (prev + 1) % images.length);
-    setTimeout(() => { cooldown.current = false; }, 300);
+    setTimeout(() => { cooldown.current = false; }, 200);
   }, [images.length]);
 
   const prevImage = useCallback(() => {
     if (cooldown.current) return;
     cooldown.current = true;
     setCurrentImage(prev => (prev - 1 + images.length) % images.length);
-    setTimeout(() => { cooldown.current = false; }, 300);
+    setTimeout(() => { cooldown.current = false; }, 200);
   }, [images.length]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (!hasMultiple || viewMode === 6) return;
-    if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) return;
+    if (!hasMultiple) return;
+    const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+    if (!isHorizontal) return;
+    e.preventDefault();
     e.stopPropagation();
+    if (cooldown.current) return;
     wheelAccumulator.current += e.deltaX;
     if (Math.abs(wheelAccumulator.current) > 50) {
       if (wheelAccumulator.current > 0) nextImage();
       else prevImage();
       wheelAccumulator.current = 0;
     }
-  }, [hasMultiple, viewMode, nextImage, prevImage]);
+  }, [hasMultiple, nextImage, prevImage]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!hasMultiple || viewMode === 6) return;
+    if (!hasMultiple) return;
     const deltaX = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(deltaX) > 40) {
       if (deltaX > 0) nextImage();
       else prevImage();
     }
-  }, [hasMultiple, viewMode, nextImage, prevImage]);
+  }, [hasMultiple, nextImage, prevImage]);
 
   const isCompact = viewMode === 6;
+
+  // Thumbnail background: respect tileBgMode setting
+  const tileBg = themeSettings.tileBgMode === 'transparent'
+    ? 'transparent'
+    : (themeSettings.mode === 'light' ? '#ececec' : '#151515');
+
+  // Hover glow for view-3: subtle border glow using tileHoverGlow color
+  const borderGlowStyle = !isCompact && isHovered
+    ? { boxShadow: `inset 0 0 12px 1px ${themeSettings.tileHoverGlow}, 0 0 8px 1px ${themeSettings.tileHoverGlow}` }
+    : {};
 
   return (
     <motion.div
@@ -69,19 +82,27 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}
       className="relative cursor-pointer group"
-      style={{ borderRight: '1px solid hsl(var(--border))', borderBottom: '1px solid hsl(var(--border))' }}
+      style={{
+        borderRight: '1px solid hsl(var(--border))',
+        borderBottom: '1px solid hsl(var(--border))',
+        ...borderGlowStyle,
+      }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); wheelAccumulator.current = 0; }}
+      onMouseLeave={() => { setIsHovered(false); wheelAccumulator.current = 0; setCurrentImage(0); }}
       onClick={onClick}
     >
       {/* Image area */}
       <div
         className="relative overflow-hidden"
-        style={{ aspectRatio: isCompact ? '3/4' : '3/4.2' }}
+        style={{
+          aspectRatio: isCompact ? '3/4' : '3/4.2',
+          backgroundColor: tileBg,
+        }}
         onWheel={handleWheel}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Image carousel strip */}
         <div
           className="flex h-full will-change-transform"
           style={{
@@ -90,29 +111,64 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
           }}
         >
           {images.map((img, i) => (
-            <div key={i} className="min-w-full h-full flex-shrink-0">
+            <div key={i} className="min-w-full h-full flex-shrink-0 flex items-center justify-center p-[8%]">
               <img
                 src={img}
                 alt={product.title}
-                className="w-full h-full object-cover"
+                className="max-w-full max-h-full object-contain"
                 draggable={false}
               />
             </div>
           ))}
         </div>
 
+        {/* Hover overlay — view by 6 only: frosted overlay revealing product info */}
+        {isCompact && isHovered && (
+          <div
+            className="absolute inset-0 backdrop-blur-[2px] flex flex-col items-center justify-end pb-4 transition-opacity duration-200 z-[1]"
+            style={{ backgroundColor: `${themeSettings.tileHoverGlow}cc` }}
+          >
+            <p
+              className="tracking-[0.12em] uppercase leading-relaxed text-center px-3"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--font-size-display)',
+                color: themeSettings.displayFontColor || undefined,
+              }}
+            >
+              {product.title}
+            </p>
+            <p
+              className="tracking-[0.08em] text-muted-foreground mt-1"
+              style={{
+                fontFamily: 'var(--font-numeral)',
+                fontSize: 'var(--font-size-numeral)',
+                color: themeSettings.numeralFontColor || undefined,
+              }}
+            >
+              ${product.price}
+            </p>
+            <p
+              className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground/60 mt-1.5"
+              style={{ fontFamily: 'var(--font-body)' }}
+            >
+              {product.variants.some(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
+            </p>
+          </div>
+        )}
+
         {/* Hover chevrons — view by 3 only */}
         {!isCompact && hasMultiple && isHovered && (
           <>
             <button
               onClick={e => { e.stopPropagation(); prevImage(); }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-[2]"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={e => { e.stopPropagation(); nextImage(); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-[2]"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -121,7 +177,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
 
         {/* Pagination dots — view by 3 only, on hover */}
         {!isCompact && hasMultiple && isHovered && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-[2]">
             {images.map((_, i) => (
               <button
                 key={i}
