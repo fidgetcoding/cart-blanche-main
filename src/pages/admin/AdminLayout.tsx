@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/admin/discounts', icon: Tag, label: 'Discounts' },
   { to: '/admin/styling-guide', icon: Layers, label: 'Style Guide' },
+  { to: '/admin/lab', icon: FlaskConical, label: 'Template Lab' },
 ];
 
 export default function AdminLayout() {
@@ -135,20 +136,6 @@ export default function AdminLayout() {
           ))}
 
           <div className="flex-1" />
-          <NavLink
-            to="/admin/lab"
-            title="Template Lab"
-            className={({ isActive }) =>
-              `flex items-center gap-1.5 px-2 xl:px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap flex-shrink-0 ${
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
-              }`
-            }
-          >
-            <FlaskConical className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Lab</span>
-          </NavLink>
           <NavLink
             to="/admin/settings"
             title="Settings"
