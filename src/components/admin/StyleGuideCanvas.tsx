@@ -392,6 +392,9 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   }, []);
 
   const handlePaneDoubleClick = useCallback((event: React.MouseEvent) => {
+    // Ignore if double-clicked on a node or toolbar
+    const target = event.target as HTMLElement;
+    if (target.closest('.react-flow__node') || target.closest('.react-flow__controls') || target.closest('[data-toolbar]')) return;
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
     createBlankNode(position);
   }, [screenToFlowPosition, createBlankNode]);
@@ -502,7 +505,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
-      <div className="flex-1 relative">
+      <div className="flex-1 relative" onDoubleClick={handlePaneDoubleClick}>
         {/* Floating toolbar */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2 liquid-glass rounded-lg px-2 py-1.5">
           <button
@@ -535,7 +538,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           onConnectEnd={onConnectEnd}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
-          onDoubleClick={handlePaneDoubleClick}
+          
           nodeTypes={nodeTypes}
           style={{ background: '#0a0a0a' }}
           deleteKeyCode={['Backspace', 'Delete']}
