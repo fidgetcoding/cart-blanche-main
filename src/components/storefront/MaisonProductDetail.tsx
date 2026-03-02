@@ -149,7 +149,6 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   // One scroll gesture = one image toggle (wrapping) with strict debounce
   const isScrolling = useRef(false);
   const accumulatedDelta = useRef(0);
-  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const goToImage = useCallback((dir: 1 | -1) => {
     if (isScrolling.current) return;
@@ -161,34 +160,22 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       if (next >= images.length) return 0;
       return next;
     });
-    setTimeout(() => { isScrolling.current = false; accumulatedDelta.current = 0; }, 350);
+    setTimeout(() => { isScrolling.current = false; accumulatedDelta.current = 0; }, 150);
   }, [images.length]);
 
-  // Wheel handler: accumulate delta, trigger only once per gesture
+  // Wheel handler: direct, no accumulation delay
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el || images.length <= 1) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      if (isScrolling.current) return; // completely ignore during cooldown
-
-      accumulatedDelta.current += e.deltaY;
-
-      // Clear previous timeout — wait for gesture to settle
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-      scrollTimeout.current = setTimeout(() => {
-        const delta = accumulatedDelta.current;
-        if (Math.abs(delta) > 15) {
-          goToImage(delta > 0 ? 1 : -1);
-        } else {
-          accumulatedDelta.current = 0;
-        }
-      }, 30);
+      if (isScrolling.current) return;
+      if (Math.abs(e.deltaY) < 15) return;
+      goToImage(e.deltaY > 0 ? 1 : -1);
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => {
       el.removeEventListener('wheel', onWheel);
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     };
   }, [goToImage, images.length]);
 
@@ -267,7 +254,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.12 }}
             className="w-full h-full object-contain"
             draggable={false}
           />
