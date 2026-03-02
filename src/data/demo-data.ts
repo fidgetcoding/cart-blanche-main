@@ -20,6 +20,16 @@ function imgSet(baseName: string): ProductImage {
   };
 }
 
+/** Extract a display-ready URL from a ProductImage or plain string */
+export function getImageUrl(
+  img: ProductImage | string | undefined,
+  size: 'thumb' | 'medium' | 'full' = 'thumb'
+): string {
+  if (!img) return '/placeholder.svg';
+  if (typeof img === 'string') return img;
+  return img[size];
+}
+
 export type ProductCategory = 'shirt' | 'pants' | 'jacket' | 'hat' | 'accessory' | 'shorts' | '';
 
 export const PRODUCT_CATEGORIES: ProductCategory[] = ['shirt', 'pants', 'jacket', 'shorts', 'hat', 'accessory'];

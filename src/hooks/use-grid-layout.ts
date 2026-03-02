@@ -84,7 +84,11 @@ export function useGridLayout() {
               title: p.title,
               price: p.price,
               compare_at_price: p.compare_at_price ?? undefined,
-              images: p.images || [],
+              images: (p.images || []).map((url: string) => ({
+                thumb: url,
+                medium: url,
+                full: url,
+              })),
               category: p.category || 'uncategorized',
               product_category: '' as const,
               status: 'active' as const,

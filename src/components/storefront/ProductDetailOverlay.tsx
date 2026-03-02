@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
+import { getImageUrl } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 
 interface ProductDetailOverlayProps {
@@ -54,7 +55,7 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
           <div className="w-1/2 bg-secondary flex items-center justify-center relative overflow-hidden">
             {product.images && product.images.length > 0 ? (
               <img
-                src={product.images[0]}
+                src={getImageUrl(product.images[0], 'medium')}
                 alt={product.title}
                 className="w-full h-full object-cover"
               />

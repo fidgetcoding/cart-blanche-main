@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { DEMO_PRODUCTS } from '@/data/demo-data';
+import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { GripVertical, Save, RotateCcw, Plus, Loader2, Pencil, Check, Eye, EyeOff, X } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 
@@ -25,7 +25,7 @@ function buildGridProducts(): GridProduct[] {
     price: p.price,
     compare_at_price: p.compare_at_price,
     category: p.category,
-    images: p.images,
+    images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
   }));
 }
 
@@ -79,7 +79,7 @@ export default function AdminPageEditor() {
         price: p.price,
         compare_at_price: p.compare_at_price,
         category: p.category,
-        images: p.images,
+        images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
       })));
       const cats = getOrderedCategories();
       setCategories(cats.map(c => c.toLowerCase()));
