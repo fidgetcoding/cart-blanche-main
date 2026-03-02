@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff, GripVertical, Globe, Home } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
+import { HsCodePicker } from '@/components/admin/HsCodePicker';
 import { type DemoProduct, PRODUCT_CATEGORIES, type ProductCategory } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -1106,35 +1107,11 @@ export default function AdminInventory() {
                             {p.shipping_type === 'international' && (
                               <div className="mt-2" onClick={e => e.stopPropagation()}>
                                 <p className="text-[10px] text-muted-foreground font-display tracking-widest mb-1">HS CODE</p>
-                                {inlineEditing[p.id]?.hsCode ? (
-                                  <div className="flex items-center gap-2">
-                                    <input
-                                      value={inlineValues[p.id]?.hsCode ?? p.hs_code}
-                                      onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: e.target.value } }))}
-                                      placeholder="e.g. 6201.93"
-                                      className="w-32 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                                      autoFocus
-                                      onKeyDown={e => {
-                                        if (e.key === 'Enter') {
-                                          const val = inlineValues[p.id]?.hsCode ?? '';
-                                          setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: val } : pr));
-                                          setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: false } }));
-                                        }
-                                        if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: false } }));
-                                      }}
-                                    />
-                                    <button onClick={() => {
-                                      const val = inlineValues[p.id]?.hsCode ?? '';
-                                      setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: val } : pr));
-                                      setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: false } }));
-                                    }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => { setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: p.hs_code } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: true } })); }}
-                                    className="text-xs font-display text-foreground hover:underline"
-                                  >{p.hs_code || <span className="text-muted-foreground italic">Set HS code</span>}</button>
-                                )}
+                                <HsCodePicker
+                                  value={p.hs_code}
+                                  onChange={(code) => setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: code } : pr))}
+                                  compact
+                                />
                               </div>
                             )}
                           </div>
@@ -1339,9 +1316,7 @@ export default function AdminInventory() {
               {addShippingType === 'international' && (
                 <div>
                   <label className="text-xs font-display tracking-widest text-muted-foreground">HS CODE</label>
-                  <input value={addHsCode} onChange={e => setAddHsCode(e.target.value)}
-                    placeholder="e.g. 6201.93"
-                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <HsCodePicker value={addHsCode} onChange={setAddHsCode} />
                 </div>
               )}
 
@@ -1541,12 +1516,13 @@ export default function AdminInventory() {
               {editingProduct.shipping_type === 'international' && (
                 <div>
                   <label className="text-xs font-display tracking-widest text-muted-foreground">HS CODE</label>
-                  <input value={editingProduct.hs_code} onChange={e => {
-                    setEditingProduct({ ...editingProduct, hs_code: e.target.value });
-                    setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, hs_code: e.target.value } : p));
-                  }}
-                    placeholder="e.g. 6201.93"
-                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <HsCodePicker
+                    value={editingProduct.hs_code}
+                    onChange={(code) => {
+                      setEditingProduct({ ...editingProduct, hs_code: code });
+                      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, hs_code: code } : p));
+                    }}
+                  />
                 </div>
               )}
 
