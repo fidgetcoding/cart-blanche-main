@@ -54,9 +54,9 @@
     --success: 142 70% 45%;
     --warning: 38 92% 50%;
 
-    --font-display: 'Space Grotesk', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --font-numeral: 'Inter', monospace;
+    --font-display: Space Grotesk, sans-serif;
+    --font-body: Inter, sans-serif;
+    --font-numeral: Inter, monospace;
   }
 
   .light {

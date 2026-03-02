@@ -738,7 +738,8 @@ export function SpatialCanvas() {
                 <button
                   key={cat}
                   onClick={() => { if (cat === activeCategory) { fitToVisibleProducts(); } else { setActiveCategory(cat); } }}
-                  className={`font-display text-[10px] tracking-[0.12em] uppercase transition-all duration-200 rounded-md px-3 py-1.5 whitespace-nowrap flex-shrink-0 ${
+                  style={{ fontSize: 'var(--font-size-body, 10px)', fontFamily: 'var(--font-body)' }}
+                  className={`text-[10px] tracking-[0.12em] uppercase transition-all duration-200 rounded-md px-3 py-1.5 whitespace-nowrap flex-shrink-0 ${
                     activeCategory === cat
                       ? 'bg-foreground/[0.15] text-foreground font-medium'
                       : 'text-muted-foreground'

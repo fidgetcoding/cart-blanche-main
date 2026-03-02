@@ -79,9 +79,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Update CSS custom properties
   useEffect(() => {
     const root = document.documentElement.style;
-    root.setProperty('--font-display', `'${settings.displayFont}', sans-serif`);
-    root.setProperty('--font-body', `'${settings.bodyFont}', sans-serif`);
-    root.setProperty('--font-numeral', `'${settings.numeralFont}', monospace`);
+    root.setProperty('--font-display', `${settings.displayFont}, sans-serif`);
+    root.setProperty('--font-body', `${settings.bodyFont}, sans-serif`);
+    root.setProperty('--font-numeral', `${settings.numeralFont}, monospace`);
     root.setProperty('--font-size-display', `${settings.displayFontSize}px`);
     root.setProperty('--font-size-body', `${settings.bodyFontSize}px`);
     root.setProperty('--font-size-numeral', `${settings.numeralFontSize}px`);
