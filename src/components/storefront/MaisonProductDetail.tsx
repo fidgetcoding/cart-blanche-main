@@ -184,10 +184,11 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       className="flex flex-1 overflow-hidden"
       onClick={onClose}
     >
-      {/* LEFT COLUMN: Vertical image scroll */}
+      {/* LEFT COLUMN: Vertical snap-scroll image carousel */}
       <div
         ref={scrollContainerRef}
-        className="w-[55%] overflow-y-auto relative"
+        className="w-[55%] overflow-y-auto relative snap-y snap-mandatory"
+        style={{ scrollbarWidth: 'none' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Image counter — positioned along left edge */}
@@ -202,13 +203,13 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           </div>
         )}
 
-        {/* All images stacked vertically */}
+        {/* All images — each snaps to fill the viewport */}
         {images.map((img, i) => (
-          <div key={i} data-image-index={i} className="w-full">
+          <div key={i} data-image-index={i} className="w-full h-full snap-start snap-always flex-shrink-0">
             <img
               src={img}
               alt={`${product.title} ${i + 1}`}
-              className="w-full h-auto object-cover"
+              className="w-full h-full object-contain"
               draggable={false}
             />
           </div>
@@ -216,9 +217,9 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       </div>
 
       {/* RIGHT COLUMN: Info + carousel */}
-      <div className="w-[45%] overflow-y-auto border-l border-border" onClick={e => e.stopPropagation()}>
+      <div className="w-[45%] overflow-hidden border-l border-border flex flex-col" onClick={e => e.stopPropagation()}>
         {/* Product info */}
-        <div className="px-10 py-8">
+        <div className="px-10 py-8 flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
           {/* Category label */}
           <p
             className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground"
