@@ -52,20 +52,22 @@ export default function LabIndex() {
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setActiveId(tmpl.id);
-                  }}
-                  className={`px-2.5 py-0.5 rounded-full text-[9px] font-display tracking-wider transition-all backdrop-blur-sm ${
-                    isActive
-                      ? 'bg-success/15 text-[hsl(var(--success))] border border-[hsl(var(--success))]/20 cursor-default'
-                      : 'bg-foreground/5 text-muted-foreground border border-foreground/10 hover:bg-foreground/10 hover:text-foreground cursor-pointer'
-                  }`}
-                >
-                  {isActive ? 'ACTIVE' : 'SET ACTIVE'}
-                </button>
+                {tmpl.id !== 'sl' && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setActiveId(tmpl.id);
+                    }}
+                    className={`px-2.5 py-0.5 rounded-full text-[9px] font-display tracking-wider transition-all backdrop-blur-sm ${
+                      isActive
+                        ? 'bg-success/15 text-[hsl(var(--success))] border border-[hsl(var(--success))]/20 cursor-default'
+                        : 'bg-foreground/5 text-muted-foreground border border-foreground/10 hover:bg-foreground/10 hover:text-foreground cursor-pointer'
+                    }`}
+                  >
+                    {isActive ? 'ACTIVE' : 'SET ACTIVE'}
+                  </button>
+                )}
                 <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-foreground/50 transition-colors" />
               </div>
             </Link>
