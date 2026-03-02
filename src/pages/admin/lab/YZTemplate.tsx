@@ -95,7 +95,7 @@ function ThemeControls() {
           <div className="space-y-1">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">BACKGROUND MODE</label>
             <div className="flex gap-1">
-              {(['light', 'dark'] as const).map(m => (
+              {(['dark', 'light'] as const).map(m => (
                 <button
                   key={m}
                   onClick={() => updateTheme({ mode: m })}
@@ -582,7 +582,7 @@ function YzTemplateInner() {
 
 export default function YzTemplate() {
   return (
-    <ThemeProvider storageKey="cb-theme-yz">
+    <ThemeProvider storageKey="cb-theme-yz" defaults={{ mode: 'dark' }}>
       <YzTemplateInner />
     </ThemeProvider>
   );
