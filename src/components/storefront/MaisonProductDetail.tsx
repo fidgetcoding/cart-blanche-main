@@ -146,38 +146,177 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     return () => window.removeEventListener('keydown', handler);
   }, [product, onClose]);
 
-  // One scroll gesture = one image toggle (wrapping) with strict debounce
-  const isScrolling = useRef(false);
-  const accumulatedDelta = useRef(0);
+  // Continuous drag/scroll offset for smooth sliding
+  const offsetY = useRef(0); // current pixel offset into the virtual strip
+  const [renderOffset, setRenderOffset] = useState(0);
+  const animFrameRef = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const dragStartY = useRef(0);
+  const dragStartOffset = useRef(0);
+  const velocityRef = useRef(0);
+  const lastDragY = useRef(0);
+  const lastDragTime = useRef(0);
 
-  const goToImage = useCallback((dir: 1 | -1) => {
-    if (isScrolling.current) return;
-    isScrolling.current = true;
-    accumulatedDelta.current = 0;
-    setCurrentVisibleImage(prev => {
-      const next = prev + dir;
-      if (next < 0) return images.length - 1;
-      if (next >= images.length) return 0;
-      return next;
-    });
-    setTimeout(() => { isScrolling.current = false; accumulatedDelta.current = 0; }, 150);
+  // Container height ref
+  const containerHeight = useRef(0);
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (el) containerHeight.current = el.clientHeight;
+  });
+
+  // Snap to nearest image with momentum
+  const snapTo = useCallback((targetIndex: number, animated = true) => {
+    const h = containerHeight.current || 600;
+    const targetOffset = targetIndex * h;
+    if (!animated) {
+      offsetY.current = targetOffset;
+      setRenderOffset(targetOffset);
+      setCurrentVisibleImage(targetIndex);
+      return;
+    }
+    // Animate to target
+    const start = offsetY.current;
+    const dist = targetOffset - start;
+    const duration = 250;
+    const startTime = performance.now();
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      const current = start + dist * ease;
+      offsetY.current = current;
+      setRenderOffset(current);
+      // Update visible image based on position
+      const idx = Math.round(current / h) % images.length;
+      setCurrentVisibleImage(idx < 0 ? idx + images.length : idx);
+      if (t < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        offsetY.current = targetOffset;
+        setRenderOffset(targetOffset);
+      }
+    };
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    animFrameRef.current = requestAnimationFrame(animate);
   }, [images.length]);
 
-  // Wheel handler: direct, no accumulation delay
+  const goToImage = useCallback((dir: 1 | -1) => {
+    const h = containerHeight.current || 600;
+    const currentIdx = Math.round(offsetY.current / h);
+    snapTo(currentIdx + dir);
+  }, [snapTo]);
+
+  // Reset offset when product changes
+  useEffect(() => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    offsetY.current = 0;
+    setRenderOffset(0);
+  }, [product?.id]);
+
+  // Wheel handler: continuous scrolling
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el || images.length <= 1) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      if (isScrolling.current) return;
-      if (Math.abs(e.deltaY) < 15) return;
-      goToImage(e.deltaY > 0 ? 1 : -1);
+      if (isDragging.current) return;
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      const h = containerHeight.current || 600;
+      offsetY.current += e.deltaY * 0.8;
+      setRenderOffset(offsetY.current);
+      const idx = Math.round(offsetY.current / h) % images.length;
+      setCurrentVisibleImage(idx < 0 ? idx + images.length : idx);
     };
-    el.addEventListener('wheel', onWheel, { passive: false });
+    // Snap on wheel end (debounce)
+    let wheelTimer: ReturnType<typeof setTimeout> | null = null;
+    const onWheelWithSnap = (e: WheelEvent) => {
+      onWheel(e);
+      if (wheelTimer) clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(() => {
+        const h = containerHeight.current || 600;
+        const nearest = Math.round(offsetY.current / h);
+        snapTo(nearest);
+      }, 120);
+    };
+    el.addEventListener('wheel', onWheelWithSnap, { passive: false });
     return () => {
-      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('wheel', onWheelWithSnap);
+      if (wheelTimer) clearTimeout(wheelTimer);
     };
-  }, [goToImage, images.length]);
+  }, [images.length, snapTo]);
+
+  // Mouse drag handlers
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || images.length <= 1) return;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      isDragging.current = true;
+      dragStartY.current = e.clientY;
+      dragStartOffset.current = offsetY.current;
+      lastDragY.current = e.clientY;
+      lastDragTime.current = performance.now();
+      velocityRef.current = 0;
+      el.style.cursor = 'grabbing';
+      e.preventDefault();
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const dy = e.clientY - dragStartY.current;
+      const now = performance.now();
+      const dt = now - lastDragTime.current;
+      if (dt > 0) {
+        velocityRef.current = (e.clientY - lastDragY.current) / dt;
+      }
+      lastDragY.current = e.clientY;
+      lastDragTime.current = now;
+      offsetY.current = dragStartOffset.current - dy;
+      setRenderOffset(offsetY.current);
+      const h = containerHeight.current || 600;
+      const idx = Math.round(offsetY.current / h) % images.length;
+      setCurrentVisibleImage(idx < 0 ? idx + images.length : idx);
+    };
+    const onMouseUp = () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      el.style.cursor = '';
+      const h = containerHeight.current || 600;
+      // Use velocity to determine target
+      const momentum = -velocityRef.current * 150; // project forward
+      const projected = offsetY.current + momentum;
+      const nearest = Math.round(projected / h);
+      snapTo(nearest);
+    };
+
+    el.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [images.length, snapTo]);
+
+  // Compute which images to render (virtual strip with wrapping)
+  const h = containerHeight.current || 600;
+  const visibleImages = (() => {
+    if (images.length === 0) return [];
+    const result: { img: typeof images[0]; index: number; yPos: number }[] = [];
+    // Show enough images to cover viewport + buffer
+    const buffer = 2;
+    const centerIdx = Math.floor(renderOffset / (h || 1));
+    for (let i = centerIdx - buffer; i <= centerIdx + buffer; i++) {
+      const wrappedIdx = ((i % images.length) + images.length) % images.length;
+      result.push({
+        img: images[wrappedIdx],
+        index: i,
+        yPos: i * h - renderOffset,
+      });
+    }
+    return result;
+  })();
 
   if (!product) return null;
 
@@ -245,20 +384,27 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           </div>
         )}
 
-        {/* Current image with crossfade */}
-        <AnimatePresence mode="wait">
-          <motion.img
-            key={currentVisibleImage}
-            src={images[currentVisibleImage]?.medium || '/placeholder.svg'}
-            alt={`${product.title} ${currentVisibleImage + 1}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
-            className="w-full h-full object-contain"
-            draggable={false}
-          />
-        </AnimatePresence>
+        {/* Sliding image strip */}
+        <div className="absolute inset-0 overflow-hidden select-none">
+          {visibleImages.map(({ img, index, yPos }) => (
+            <div
+              key={`strip-${index}`}
+              className="absolute inset-x-0 flex items-center justify-center"
+              style={{
+                height: `${h}px`,
+                transform: `translateY(${yPos}px)`,
+                willChange: 'transform',
+              }}
+            >
+              <img
+                src={img?.medium || '/placeholder.svg'}
+                alt={`${product.title} ${((index % images.length) + images.length) % images.length + 1}`}
+                className="w-full h-full object-contain"
+                draggable={false}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* RIGHT COLUMN: Info + carousel */}
