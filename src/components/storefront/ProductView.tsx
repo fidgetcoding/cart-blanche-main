@@ -20,21 +20,36 @@ function getWrappingNeighbor(
   products: DemoProduct[],
   activeCategory: string
 ): number {
-  // Filter to category but keep original indices
+  // Get visible products in visual grid order (they already have correct grid_position from layout)
   const visible = products
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
 
   if (visible.length === 0) return currentIndex;
 
-  // Build grid from filtered products using their grid_position
-  const yPositions = [...new Set(visible.map(({ p }) => p.grid_position.y))].sort((a, b) => a - b);
-  const rows: number[][] = yPositions.map(y =>
-    visible
-      .filter(({ p }) => p.grid_position.y === y)
-      .sort((a, b) => a.p.grid_position.x - b.p.grid_position.x)
-      .map(({ i }) => i)
-  );
+  // For category-filtered views, reflow positions into a compact grid (matches SpatialCanvas overridePositions)
+  const COLS = 5;
+  const TILE_W = 220;
+  const TILE_H = 280;
+  const GAP = 20;
+
+  const positions = activeCategory === 'ALL'
+    ? visible.map(({ p }) => p.grid_position)
+    : visible.map((_, idx) => ({
+        x: (idx % COLS) * (TILE_W + GAP),
+        y: Math.floor(idx / COLS) * (TILE_H + GAP),
+      }));
+
+  // Build grid rows from positions
+  const yPositions = [...new Set(positions.map(pos => pos.y))].sort((a, b) => a - b);
+  const rows: number[][] = yPositions.map(y => {
+    const inRow = visible
+      .map((v, idx) => ({ v, idx }))
+      .filter((_, idx) => positions[idx].y === y)
+      .sort((a, b) => positions[a.idx].x - positions[b.idx].x)
+      .map(({ v }) => v.i);
+    return inRow;
+  });
 
   // Find which row/col the current product is in
   let rowIdx = -1;
