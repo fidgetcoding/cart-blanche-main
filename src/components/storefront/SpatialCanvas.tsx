@@ -708,7 +708,7 @@ export function SpatialCanvas() {
       <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-4 md:px-6 py-3 md:py-5">
         {/* Left: Brand */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="font-display font-semibold tracking-[0.2em] text-foreground uppercase" style={{ fontSize: '11px' }}>
+          <span className="font-display font-semibold tracking-[0.2em] uppercase" style={{ fontSize: '11px', color: 'var(--color-store-name, inherit)' }}>
             {themeSettings.storeName}
           </span>
         </div>
@@ -718,7 +718,7 @@ export function SpatialCanvas() {
           <nav className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
             <div className="flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1.5 py-1 shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
               {CATEGORIES.map(cat => (
-                <button style={{ fontSize: 'var(--font-size-body, 10px)', fontFamily: 'var(--font-body)' }}
+                <button style={{ fontSize: 'var(--font-size-body, 10px)', fontFamily: 'var(--font-body)', color: themeSettings.bodyFontColor || undefined }}
                   key={cat}
                   onClick={() => { if (cat === activeCategory) { fitToVisibleProducts(); } else { setActiveCategory(cat); } }}
                   className={`tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
@@ -740,7 +740,7 @@ export function SpatialCanvas() {
                 <button
                   key={cat}
                   onClick={() => { if (cat === activeCategory) { fitToVisibleProducts(); } else { setActiveCategory(cat); } }}
-                  style={{ fontSize: 'var(--font-size-body, 10px)', fontFamily: 'var(--font-body)' }}
+                  style={{ fontSize: 'var(--font-size-body, 10px)', fontFamily: 'var(--font-body)', color: themeSettings.bodyFontColor || undefined }}
                   className={`text-[10px] tracking-[0.12em] uppercase transition-all duration-200 rounded-md px-3 py-1.5 whitespace-nowrap flex-shrink-0 ${
                     activeCategory === cat
                       ? 'bg-foreground/[0.15] text-foreground font-medium'

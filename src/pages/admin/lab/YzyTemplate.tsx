@@ -224,7 +224,18 @@ function ThemeControls() {
               <SizeSlider label="Navigator" value={themeSettings.bodyFontSize} min={8} max={16} onChange={v => updateTheme({ bodyFontSize: v })} />
               <SizeSlider label="Numeral" value={themeSettings.numeralFontSize} min={8} max={16} onChange={v => updateTheme({ numeralFontSize: v })} />
             </div>
-        </div>
+          </div>
+
+          {/* Font Colors */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">FONT COLORS</label>
+            <div className="space-y-2">
+              <ColorInput label="Store Name" value={themeSettings.storeNameColor} onChange={v => updateTheme({ storeNameColor: v })} />
+              <ColorInput label="Display" value={themeSettings.displayFontColor} onChange={v => updateTheme({ displayFontColor: v })} />
+              <ColorInput label="Navigator" value={themeSettings.bodyFontColor} onChange={v => updateTheme({ bodyFontColor: v })} />
+              <ColorInput label="Numeral" value={themeSettings.numeralFontColor} onChange={v => updateTheme({ numeralFontColor: v })} />
+            </div>
+          </div>
 
           {/* Save / Revert */}
           <div className="flex gap-2 pt-2">
@@ -321,6 +332,32 @@ function SizeSlider({ label, value, min, max, onChange }: { label: string; value
         className="flex-1 h-1 accent-foreground cursor-pointer"
       />
       <span className="text-[10px] text-foreground/60 w-6 text-right font-mono">{value}</span>
+    </div>
+  );
+}
+
+function ColorInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-[10px] text-muted-foreground w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
+      <button
+        onClick={() => ref.current?.click()}
+        className="w-6 h-6 rounded-md border border-border/50 flex-shrink-0 cursor-pointer"
+        style={{ background: value || 'hsl(var(--foreground))' }}
+      />
+      <input ref={ref} type="color" value={value || '#ffffff'} onChange={e => onChange(e.target.value)} className="sr-only" />
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="inherit"
+        className="flex-1 bg-muted/50 border border-border/50 rounded-md px-2 py-1 text-[10px] font-mono text-foreground tracking-wider focus:outline-none focus:ring-1 focus:ring-ring uppercase"
+        maxLength={7}
+      />
+      {value && (
+        <button onClick={() => onChange('')} className="text-[9px] text-muted-foreground hover:text-foreground transition-colors">✕</button>
+      )}
     </div>
   );
 }
