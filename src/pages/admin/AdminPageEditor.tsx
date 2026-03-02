@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
-import { GripVertical, Save, RotateCcw, Plus, Loader2 } from 'lucide-react';
+import { GripVertical, Save, RotateCcw, Plus, Loader2, Pencil, Check, Eye, EyeOff, X } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 
 const TILE_W = 220;
@@ -62,8 +62,9 @@ function getGridPos(index: number) {
 }
 
 export default function AdminPageEditor() {
-  const { loading, saveLayout: saveToSupabase, resetLayout, getOrderedProducts, getOrderedCategories } = useGridLayout();
-
+  const { loading, layout: gridLayout, saveLayout: saveToSupabase, saveHiddenTags, resetLayout, getOrderedProducts, getOrderedCategories } = useGridLayout();
+  const [tagEditMode, setTagEditMode] = useState(false);
+  const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [products, setProducts] = useState<GridProduct[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
@@ -85,6 +86,34 @@ export default function AdminPageEditor() {
       setInitialized(true);
     }
   }, [loading, initialized, getOrderedProducts, getOrderedCategories]);
+
+  // Sync hiddenTags from gridLayout
+  useEffect(() => {
+    if (gridLayout?.hiddenTags) {
+      setHiddenTags(gridLayout.hiddenTags);
+    }
+  }, [gridLayout]);
+
+  const toggleTagVisibility = async (tag: string) => {
+    const newHidden = hiddenTags.includes(tag)
+      ? hiddenTags.filter(t => t !== tag)
+      : [...hiddenTags, tag];
+    setHiddenTags(newHidden);
+    await saveHiddenTags(newHidden);
+  };
+
+  const deleteCategory = async (cat: string) => {
+    if (!confirm(`Remove "${cat}" tab? Products won't be deleted.`)) return;
+    const newCats = categories.filter(c => c !== cat);
+    setCategories(newCats);
+    // Also remove from hiddenTags if present
+    if (hiddenTags.includes(cat)) {
+      const newHidden = hiddenTags.filter(t => t !== cat);
+      setHiddenTags(newHidden);
+      await saveHiddenTags(newHidden);
+    }
+    setHasChanges(true);
+  };
 
   const [hasChanges, setHasChanges] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -290,18 +319,42 @@ export default function AdminPageEditor() {
           onPointerUp={handleCatPointerUp}
         >
           {liveCats.map((cat, idx) => (
-            <div
-              key={cat}
-              onPointerDown={e => handleCatPointerDown(e, idx)}
-              className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-display tracking-wider
-                transition-all duration-200 select-none touch-none
-                ${idx === 0 ? 'border-foreground/20 bg-foreground/10 text-foreground opacity-60 cursor-default' : `cursor-grab active:cursor-grabbing ${getCatColor(cat)}`}
-                ${catDragIdx === idx ? 'opacity-50 scale-110 shadow-lg ring-2 ring-primary z-20' : ''}
-              `}
-            >
-              {idx !== 0 && <GripVertical className="w-3 h-3 opacity-40" />}
-              {cat.toUpperCase().replace('-', ' ')}
+            <div key={cat} className="flex items-center gap-1">
+              <div
+                onPointerDown={e => handleCatPointerDown(e, idx)}
+                className={`
+                  flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-display tracking-wider
+                  transition-all duration-200 select-none touch-none
+                  ${idx === 0 ? 'border-foreground/20 bg-foreground/10 text-foreground opacity-60 cursor-default' : `cursor-grab active:cursor-grabbing ${getCatColor(cat)}`}
+                  ${catDragIdx === idx ? 'opacity-50 scale-110 shadow-lg ring-2 ring-primary z-20' : ''}
+                  ${hiddenTags.includes(cat) && idx !== 0 ? 'line-through decoration-1' : ''}
+                `}
+              >
+                {idx !== 0 && <GripVertical className="w-3 h-3 opacity-40" />}
+                {cat.toUpperCase().replace('-', ' ')}
+              </div>
+              {tagEditMode && idx !== 0 && (
+                <>
+                  <button
+                    onClick={() => toggleTagVisibility(cat)}
+                    className={`w-5 h-5 inline-flex items-center justify-center rounded border transition-colors ${
+                      hiddenTags.includes(cat)
+                        ? 'border-warning/40 bg-warning/15 text-warning hover:bg-warning/30'
+                        : 'border-success/40 bg-success/15 text-success hover:bg-success/30'
+                    }`}
+                    title={hiddenTags.includes(cat) ? `Show "${cat}" on storefront` : `Hide "${cat}" from storefront`}
+                  >
+                    {hiddenTags.includes(cat) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  </button>
+                  <button
+                    onClick={() => deleteCategory(cat)}
+                    className="w-5 h-5 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    title={`Delete tab "${cat}"`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </>
+              )}
             </div>
           ))}
           {addingTab ? (
@@ -337,6 +390,15 @@ export default function AdminPageEditor() {
               <Plus className="w-3 h-3" /> ADD
             </button>
           )}
+          <button
+            onClick={() => setTagEditMode(prev => !prev)}
+            className={`ml-1 px-2.5 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
+              tagEditMode ? 'bg-success/15 text-success border-success/30' : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+            }`}
+            title={tagEditMode ? 'Done editing tags' : 'Edit tags'}
+          >
+            {tagEditMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
 
