@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight, ChevronLeft, X } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -215,9 +215,17 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-1 overflow-hidden"
+      className="flex flex-1 overflow-hidden relative"
       onClick={onClose}
     >
+      {/* Close button — top-right corner */}
+      <button
+        onClick={onClose}
+        className="absolute top-5 right-5 z-50 p-2 text-muted-foreground hover:text-foreground transition-colors"
+        aria-label="Close product detail"
+      >
+        <X className="w-6 h-6" strokeWidth={1.5} />
+      </button>
       {/* LEFT COLUMN: Single-image display with scroll-to-toggle */}
       <div
         ref={scrollContainerRef}
