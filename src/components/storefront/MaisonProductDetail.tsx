@@ -216,9 +216,9 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           </div>
         )}
 
-        {/* Tripled images for infinite wrap */}
+        {/* Tripled images for infinite wrap — each takes full container height */}
         {tripledImages.map((img, i) => (
-          <div key={i} className="w-full h-full snap-start snap-always flex-shrink-0">
+          <div key={i} className="w-full snap-start snap-always flex-shrink-0" style={{ minHeight: '100%', height: '100%' }}>
             <img
               src={img}
               alt={`${product.title} ${(i % images.length) + 1}`}
