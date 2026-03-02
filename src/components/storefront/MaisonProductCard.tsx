@@ -104,14 +104,20 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
       >
         {/* Image carousel strip */}
         <div
-          className="flex h-full will-change-transform"
+          className="h-full will-change-transform"
           style={{
-            transform: `translateX(-${currentImage * 100}%)`,
+            display: 'flex',
+            width: `${images.length * 100}%`,
+            transform: `translateX(-${(currentImage * 100) / images.length}%)`,
             transition: 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
           }}
         >
           {images.map((img, i) => (
-            <div key={i} className="min-w-full h-full flex-shrink-0 flex items-center justify-center p-[8%]">
+            <div
+              key={i}
+              className="h-full flex-shrink-0 flex items-center justify-center"
+              style={{ width: `${100 / images.length}%`, padding: '8%' }}
+            >
               <img
                 src={img}
                 alt={product.title}
