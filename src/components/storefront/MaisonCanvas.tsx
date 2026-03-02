@@ -185,7 +185,7 @@ export function MaisonCanvas() {
           className="flex items-center gap-0 overflow-hidden"
           onMouseLeave={() => {
             if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
-            typeCloseTimer.current = setTimeout(() => setTypeDropdownOpen(false), 3000);
+            typeCloseTimer.current = setTimeout(() => setTypeDropdownOpen(false), 5000);
           }}
         >
           <button
