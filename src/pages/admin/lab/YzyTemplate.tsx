@@ -138,12 +138,7 @@ function ThemeControls() {
                     toast.error('EyeDropper not supported in this browser');
                   }
                 }}
-                className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center ${
-                  !GLOW_PRESETS.some(g => g.value === themeSettings.tileHoverGlow)
-                    ? 'border-foreground scale-110'
-                    : 'border-border/50 hover:border-foreground/40'
-                }`}
-                style={{ background: !GLOW_PRESETS.some(g => g.value === themeSettings.tileHoverGlow) ? customColor : 'transparent' }}
+                className="w-6 h-6 rounded-full border-2 border-border/50 hover:border-foreground/40 transition-all flex items-center justify-center bg-muted/50"
                 title="Pick color from screen"
               >
                 <Pipette className="w-3 h-3 text-foreground/70" />
