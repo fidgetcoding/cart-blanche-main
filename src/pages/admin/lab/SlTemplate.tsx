@@ -115,7 +115,7 @@ function ThemeControls() {
           <div className="space-y-1">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">THUMBNAIL BACKGROUND</label>
             <div className="flex gap-1.5">
-              {(['default', 'transparent'] as const).map(mode => {
+              {(['transparent', 'default'] as const).map(mode => {
                 const isActive = themeSettings.tileBgMode === mode;
                 const label = mode === 'default'
                   ? (themeSettings.mode === 'light' ? '#ECECEC' : '#151515')
@@ -580,7 +580,7 @@ function SlTemplateInner() {
 
 export default function SlTemplate() {
   return (
-    <ThemeProvider storageKey="cb-theme-sl">
+    <ThemeProvider storageKey="cb-theme-sl" defaults={{ tileBgMode: 'transparent' }}>
       <SlTemplateInner />
     </ThemeProvider>
   );

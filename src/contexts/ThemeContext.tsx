@@ -71,10 +71,11 @@ function buildGoogleFontsUrl(families: string[]): string {
   return `https://fonts.googleapis.com/css2?${params}&display=swap`;
 }
 
-export function ThemeProvider({ children, storageKey }: { children: React.ReactNode; storageKey?: string }) {
+export function ThemeProvider({ children, storageKey, defaults }: { children: React.ReactNode; storageKey?: string; defaults?: Partial<ThemeSettings> }) {
   const key = storageKey || DEFAULT_STORAGE_KEY;
-  const [settings, setSettings] = useState<ThemeSettings>(() => loadSaved(key) || DEFAULT_SETTINGS);
-  const [savedSnapshot, setSavedSnapshot] = useState<ThemeSettings>(() => loadSaved(key) || DEFAULT_SETTINGS);
+  const mergedDefaults = defaults ? { ...DEFAULT_SETTINGS, ...defaults } : DEFAULT_SETTINGS;
+  const [settings, setSettings] = useState<ThemeSettings>(() => loadSaved(key) || mergedDefaults);
+  const [savedSnapshot, setSavedSnapshot] = useState<ThemeSettings>(() => loadSaved(key) || mergedDefaults);
   const linkRef = useRef<HTMLLinkElement | null>(null);
 
   const hasUnsavedChanges = JSON.stringify(settings) !== JSON.stringify(savedSnapshot);
