@@ -118,9 +118,13 @@ const chartTooltipStyle = {
   labelStyle: { color: 'hsl(var(--foreground))' },
 };
 
+const TIME_RANGES = ['1D','7D','1M','3M','6M','1Y','YTD'] as const;
+type TimeRange = typeof TIME_RANGES[number];
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ orders: 0, revenue: 0, avgOrder: 0, products: 0 });
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<TimeRange>('1M');
 
   useEffect(() => {
     async function fetchStats() {
@@ -150,7 +154,24 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-6 md:p-8 space-y-6">
-      <h1 className="font-display text-2xl font-bold">Dashboard</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="font-display text-2xl font-bold">Dashboard</h1>
+        <div className="flex items-center bg-secondary rounded-lg p-0.5 gap-0.5">
+          {TIME_RANGES.map(r => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
+              className={`px-3 py-1.5 text-[11px] font-display font-medium tracking-wide rounded-md transition-colors ${
+                range === r
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Top stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
