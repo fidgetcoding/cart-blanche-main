@@ -297,7 +297,7 @@ export default function YzyTemplate() {
   const navigate = useNavigate();
   const { themeSettings, updateTheme } = useTheme();
   const [chatInput, setChatInput] = useState('');
-  const [sidebarTab, setSidebarTab] = useState<'ai' | 'settings'>('ai');
+  const [sidebarTab, setSidebarTab] = useState<'ai' | 'settings'>('settings');
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'system', text: "Hey — I'm your Template Builder AI. Tell me how you want your storefront to look and I'll make it happen. I can change fonts, colors, hover effects, sizes, and background mode." },
   ]);
