@@ -78,7 +78,7 @@ function ThemeControls() {
   const colorInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="px-4 py-4 space-y-5">
+    <div className="px-4 py-4 space-y-3">
           {/* Store Name */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">STORE NAME</label>
