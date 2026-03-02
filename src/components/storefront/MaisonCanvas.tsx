@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
@@ -20,7 +20,20 @@ export function MaisonCanvas() {
   const [activeType, setActiveType] = useState('ALL');
   const [selectedProduct, setSelectedProduct] = useState<DemoProduct | null>(null);
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const typeCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastChangedFilter = useRef<'ribbon' | 'dropdown'>('ribbon');
+
+  const openTypeDropdown = useCallback(() => {
+    if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
+    setTypeDropdownOpen(true);
+  }, []);
+
+  const scheduleCloseTypeDropdown = useCallback(() => {
+    if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
+    typeCloseTimer.current = setTimeout(() => setTypeDropdownOpen(false), 5000);
+  }, []);
+
+  useEffect(() => () => { if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current); }, []);
 
   const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const categories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
@@ -139,20 +152,27 @@ export function MaisonCanvas() {
         {/* Product type horizontal reveal */}
         <div
           className="flex items-center gap-0 overflow-hidden"
-          onMouseEnter={() => setTypeDropdownOpen(true)}
-          onMouseLeave={() => setTypeDropdownOpen(false)}
+          onMouseEnter={openTypeDropdown}
+          onMouseLeave={scheduleCloseTypeDropdown}
         >
           <button
             className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
           >
             {activeType === 'ALL' ? 'CATEGORY' : activeType}
-            <motion.span
-              animate={{ rotate: typeDropdownOpen ? 90 : 0 }}
-              transition={{ duration: 0.2 }}
-              className="inline-flex"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </motion.span>
+            <AnimatePresence mode="wait">
+              {!typeDropdownOpen && (
+                <motion.span
+                  key="chevron"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="inline-flex"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
           <AnimatePresence>
             {typeDropdownOpen && (
