@@ -7,7 +7,7 @@ import { MaisonProductDetail } from './MaisonProductDetail';
 import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { PRODUCT_CATEGORIES } from '@/data/demo-data';
+
 import { ShoppingBag } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 
@@ -27,8 +27,10 @@ export function MaisonCanvas() {
 
   const productTypes = useMemo(() => {
     const hiddenSet = new Set((layout?.hiddenProductTypes || []).map(t => t.toUpperCase()));
-    return ['ALL', ...PRODUCT_CATEGORIES.filter(c => c).map(c => c.toUpperCase()).filter(c => !hiddenSet.has(c))];
-  }, [layout]);
+    // Derive from actual products, not static constant — matches settings pills
+    const fromProducts = new Set(allProducts.map(p => (p.product_category || '').toUpperCase()).filter(Boolean));
+    return ['ALL', ...Array.from(fromProducts).sort().filter(c => !hiddenSet.has(c))];
+  }, [layout, allProducts]);
 
   const handleRibbonChange = useCallback((cat: string) => {
     lastChangedFilter.current = 'ribbon';
