@@ -38,30 +38,12 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   storeNameColor: '',
 };
 
-export const MAISON_DEFAULTS: ThemeSettings = {
-  mode: 'light',
-  storeName: 'CART BLANCHE',
-  tileHoverGlow: '#e8e4de',
-  tileHoverScale: 1.02,
-  tileBgMode: 'default',
-  displayFont: 'Cormorant Garamond',
-  bodyFont: 'Cormorant Garamond',
-  numeralFont: 'Inter',
-  displayFontSize: 12,
-  bodyFontSize: 11,
-  numeralFontSize: 11,
-  displayFontColor: '',
-  bodyFontColor: '',
-  numeralFontColor: '',
-  storeNameColor: '',
-};
+const STORAGE_KEY = 'cb-theme-settings';
 
-const DEFAULT_STORAGE_KEY = 'cb-theme-settings';
-
-function loadSaved(storageKey: string, defaults: ThemeSettings): ThemeSettings | null {
+function loadSaved(): ThemeSettings | null {
   try {
-    const raw = localStorage.getItem(storageKey);
-    if (raw) return { ...defaults, ...JSON.parse(raw) };
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
   } catch {}
   return null;
 }
@@ -89,11 +71,9 @@ function buildGoogleFontsUrl(families: string[]): string {
   return `https://fonts.googleapis.com/css2?${params}&display=swap`;
 }
 
-export function ThemeProvider({ children, storageKey, defaults }: { children: React.ReactNode; storageKey?: string; defaults?: ThemeSettings }) {
-  const key = storageKey || DEFAULT_STORAGE_KEY;
-  const defs = defaults || DEFAULT_SETTINGS;
-  const [settings, setSettings] = useState<ThemeSettings>(() => loadSaved(key, defs) || defs);
-  const [savedSnapshot, setSavedSnapshot] = useState<ThemeSettings>(() => loadSaved(key, defs) || defs);
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [settings, setSettings] = useState<ThemeSettings>(() => loadSaved() || DEFAULT_SETTINGS);
+  const [savedSnapshot, setSavedSnapshot] = useState<ThemeSettings>(() => loadSaved() || DEFAULT_SETTINGS);
   const linkRef = useRef<HTMLLinkElement | null>(null);
 
   const hasUnsavedChanges = JSON.stringify(settings) !== JSON.stringify(savedSnapshot);
@@ -103,9 +83,9 @@ export function ThemeProvider({ children, storageKey, defaults }: { children: Re
   }, []);
 
   const saveTheme = useCallback(() => {
-    localStorage.setItem(key, JSON.stringify(settings));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     setSavedSnapshot({ ...settings });
-  }, [key, settings]);
+  }, [settings]);
 
   const revertTheme = useCallback(() => {
     setSettings({ ...savedSnapshot });

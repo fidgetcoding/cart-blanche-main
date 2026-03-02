@@ -1,42 +1,33 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 
 interface MaisonProductDetailProps {
   product: DemoProduct | null;
-  products: DemoProduct[];
+  products: DemoProduct[]; // filtered set for navigation
   onClose: () => void;
   onNavigate: (product: DemoProduct) => void;
 }
 
 export function MaisonProductDetail({ product, products, onClose, onNavigate }: MaisonProductDetailProps) {
-  const { themeSettings } = useTheme();
   const [currentImage, setCurrentImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const touchStartX = useRef(0);
   const { addItem } = useCart();
 
-  // Derive theme values
-  const bgColor = themeSettings.mode === 'light' ? '#FAF7F2' : '#0a0a0a';
-  const textColor = themeSettings.displayFontColor || (themeSettings.mode === 'light' ? '#1a1a1a' : '#f5f5f5');
-  const borderColor = themeSettings.mode === 'light' ? '#e8e4de' : '#222';
-  const mutedColor = themeSettings.mode === 'light' ? '#666666' : '#999';
-  const disabledColor = themeSettings.mode === 'light' ? '#ccc' : '#555';
-  const displayFont = `'${themeSettings.displayFont}', Georgia, serif`;
-  const numeralFont = `'${themeSettings.numeralFont}', monospace`;
-
   const currentIndex = product ? products.findIndex(p => p.id === product.id) : -1;
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < products.length - 1;
 
+  // Reset image when product changes
   useEffect(() => {
     setCurrentImage(0);
     setSelectedVariant(null);
   }, [product?.id]);
 
+  // Keyboard navigation
   useEffect(() => {
     if (!product) return;
     const handler = (e: KeyboardEvent) => {
@@ -86,39 +77,40 @@ export function MaisonProductDetail({ product, products, onClose, onNavigate }: 
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-center justify-center"
-        style={{ backgroundColor: bgColor }}
+        style={{ backgroundColor: '#FAF7F2' }}
         onClick={onClose}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center transition-colors z-10"
-          style={{ color: `${textColor}99` }}
+          className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors z-10"
         >
           <X className="w-5 h-5" strokeWidth={1.5} />
         </button>
 
+        {/* Prev product arrow */}
         {hasPrev && (
           <button
             onClick={e => { e.stopPropagation(); onNavigate(products[currentIndex - 1]); }}
-            className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition-colors z-10"
-            style={{ color: `${textColor}66` }}
+            className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-[#1a1a1a]/40 hover:text-[#1a1a1a] transition-colors z-10"
           >
             <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
           </button>
         )}
 
+        {/* Next product arrow */}
         {hasNext && (
           <button
             onClick={e => { e.stopPropagation(); onNavigate(products[currentIndex + 1]); }}
-            className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition-colors z-10"
-            style={{ color: `${textColor}66` }}
+            className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-[#1a1a1a]/40 hover:text-[#1a1a1a] transition-colors z-10"
           >
             <ChevronRight className="w-6 h-6" strokeWidth={1.5} />
           </button>
         )}
 
+        {/* Product content */}
         <motion.div
           key={product.id}
           initial={{ opacity: 0, y: 10 }}
@@ -127,8 +119,9 @@ export function MaisonProductDetail({ product, products, onClose, onNavigate }: 
           transition={{ duration: 0.3 }}
           className="flex flex-col items-center max-w-lg w-full px-6"
           onClick={e => e.stopPropagation()}
-          style={{ fontFamily: displayFont }}
+          style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
         >
+          {/* Image */}
           <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
             <img
               src={images[currentImage]}
@@ -138,47 +131,44 @@ export function MaisonProductDetail({ product, products, onClose, onNavigate }: 
             />
           </div>
 
+          {/* Image pagination dots */}
           {images.length > 1 && (
             <div className="flex gap-2 mt-4">
               {images.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentImage(i)}
-                  className="w-1.5 h-1.5 rounded-full transition-colors"
-                  style={{ backgroundColor: i === currentImage ? textColor : `${textColor}40` }}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    i === currentImage ? 'bg-[#1a1a1a]' : 'bg-[#1a1a1a]/25'
+                  }`}
                 />
               ))}
             </div>
           )}
 
+          {/* Product info */}
           <div className="text-center mt-6">
-            <h2
-              className="tracking-[0.2em] uppercase"
-              style={{ fontSize: `${themeSettings.displayFontSize}px`, color: textColor }}
-            >
+            <h2 className="text-sm tracking-[0.2em] uppercase text-[#1a1a1a]">
               {product.title}
             </h2>
-            <p
-              className="tracking-[0.1em] mt-2"
-              style={{ fontSize: `${themeSettings.numeralFontSize}px`, color: themeSettings.numeralFontColor || mutedColor, fontFamily: numeralFont }}
-            >
+            <p className="text-sm tracking-[0.1em] text-[#666666] mt-2">
               ${product.price}
             </p>
 
+            {/* Size selection */}
             {product.variants.length > 1 && (
               <div className="flex gap-2 justify-center mt-4">
                 {product.variants.map(v => (
                   <button
                     key={v.id}
                     onClick={() => setSelectedVariant(v.id === selectedVariant ? null : v.id)}
-                    className="px-3 py-1.5 text-[10px] tracking-[0.15em] uppercase border transition-colors"
-                    style={{
-                      borderColor: v.id === selectedVariant ? textColor : borderColor,
-                      backgroundColor: v.id === selectedVariant ? textColor : 'transparent',
-                      color: v.id === selectedVariant ? bgColor : v.inventory_count === 0 ? disabledColor : textColor,
-                      textDecoration: v.inventory_count === 0 ? 'line-through' : 'none',
-                      cursor: v.inventory_count === 0 ? 'not-allowed' : 'pointer',
-                    }}
+                    className={`px-3 py-1.5 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
+                      v.id === selectedVariant
+                        ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]'
+                        : v.inventory_count === 0
+                          ? 'border-[#e8e4de] text-[#ccc] line-through cursor-not-allowed'
+                          : 'border-[#e8e4de] text-[#1a1a1a] hover:border-[#1a1a1a]'
+                    }`}
                     disabled={v.inventory_count === 0}
                   >
                     {v.title}
@@ -187,25 +177,15 @@ export function MaisonProductDetail({ product, products, onClose, onNavigate }: 
               </div>
             )}
 
+            {/* CTA */}
             <button
               onClick={handleAddToCart}
               disabled={isOutOfStock}
-              className="mt-5 px-8 py-3 text-[10px] tracking-[0.25em] uppercase border transition-colors"
-              style={{
-                borderColor: isOutOfStock ? borderColor : textColor,
-                color: isOutOfStock ? mutedColor : textColor,
-                cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-              }}
-              onMouseEnter={e => {
-                if (!isOutOfStock) {
-                  (e.target as HTMLButtonElement).style.backgroundColor = textColor;
-                  (e.target as HTMLButtonElement).style.color = bgColor;
-                }
-              }}
-              onMouseLeave={e => {
-                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                (e.target as HTMLButtonElement).style.color = isOutOfStock ? mutedColor : textColor;
-              }}
+              className={`mt-5 px-8 py-3 text-[10px] tracking-[0.25em] uppercase border transition-colors ${
+                isOutOfStock
+                  ? 'border-[#e8e4de] text-[#999] cursor-not-allowed'
+                  : 'border-[#1a1a1a] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#FAF7F2]'
+              }`}
             >
               {isOutOfStock ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
             </button>
