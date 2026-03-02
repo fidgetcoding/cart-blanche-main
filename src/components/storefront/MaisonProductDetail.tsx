@@ -14,7 +14,7 @@ interface MaisonProductDetailProps {
   onBuildSet: (product: DemoProduct) => void;
 }
 
-// ExpandableRow removed
+/* ── Infinite horizontal "You May Also Like" carousel ── */
 function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
   product: DemoProduct;
   allProducts: DemoProduct[];
@@ -22,23 +22,28 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
   themeSettings: any;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const items = allProducts.filter(p => p.id !== product.id);
+  const tripled = [...items, ...items, ...items];
+  const ITEM_W = 156; // 140 + 16 gap
 
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 2);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 2);
-  }, []);
-
+  // Start at the middle copy
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    checkScroll();
-    el.addEventListener('scroll', checkScroll, { passive: true });
-    return () => el.removeEventListener('scroll', checkScroll);
-  }, [checkScroll]);
+    if (!el || items.length === 0) return;
+    el.scrollLeft = items.length * ITEM_W;
+  }, [product.id, items.length]);
+
+  // Seamless wrap on scroll
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || items.length === 0) return;
+    const section = items.length * ITEM_W;
+    if (el.scrollLeft < section * 0.3) {
+      el.scrollLeft += section;
+    } else if (el.scrollLeft > section * 1.7) {
+      el.scrollLeft -= section;
+    }
+  }, [items.length]);
 
   const scroll = useCallback((dir: 'left' | 'right') => {
     const el = scrollRef.current;
@@ -46,10 +51,8 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
     el.scrollBy({ left: dir === 'left' ? -300 : 300, behavior: 'smooth' });
   }, []);
 
-  const items = allProducts.filter(p => p.id !== product.id);
-
   return (
-    <div className="border-t border-border px-10 py-6 mt-auto">
+    <div className="border-t border-border px-10 py-6 flex-shrink-0">
       <div className="flex items-center justify-between mb-4">
         <p
           className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground"
@@ -60,24 +63,27 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); scroll('left'); }}
-            className={`p-1.5 transition-colors ${canScrollLeft ? 'text-muted-foreground hover:text-foreground' : 'text-muted-foreground/20 cursor-default'}`}
-            disabled={!canScrollLeft}
+            className="p-1.5 transition-colors text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); scroll('right'); }}
-            className={`p-1.5 transition-colors ${canScrollRight ? 'text-muted-foreground hover:text-foreground' : 'text-muted-foreground/20 cursor-default'}`}
-            disabled={!canScrollRight}
+            className="p-1.5 transition-colors text-muted-foreground hover:text-foreground"
           >
             <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
           </button>
         </div>
       </div>
-      <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-        {items.map(p => (
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex gap-4 overflow-x-auto pb-2"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {tripled.map((p, idx) => (
           <div
-            key={p.id}
+            key={`${p.id}-${idx}`}
             onClick={(e) => { e.stopPropagation(); onNavigate(p); }}
             className="flex-shrink-0 w-[140px] cursor-pointer group"
           >
@@ -111,6 +117,7 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
   );
 }
 
+/* ── Main product detail ── */
 export function MaisonProductDetail({ product, products, allProducts, onClose, onNavigate, onBuildSet }: MaisonProductDetailProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
@@ -118,13 +125,21 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const { addItem } = useCart();
   const { themeSettings } = useTheme();
 
-  // Reset state on product change
+  const images = product ? (product.images.length > 0 ? product.images : ['/placeholder.svg']) : ['/placeholder.svg'];
+  const tripledImages = [...images, ...images, ...images];
+
+  // Reset state on product change & start at middle set
   useEffect(() => {
+    if (!product) return;
     setSelectedVariant(null);
     setCurrentVisibleImage(0);
-    // Scroll left column back to top
-    scrollContainerRef.current?.scrollTo({ top: 0 });
-  }, [product?.id]);
+    const el = scrollContainerRef.current;
+    if (!el || images.length === 0) return;
+    requestAnimationFrame(() => {
+      const oneImageH = el.scrollHeight / 3;
+      el.scrollTop = oneImageH;
+    });
+  }, [product?.id, images.length]);
 
   // Keyboard: Escape to close
   useEffect(() => {
@@ -136,30 +151,27 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     return () => window.removeEventListener('keydown', handler);
   }, [product, onClose]);
 
-  // IntersectionObserver for image counter
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container || !product) return;
+  // Vertical infinite wrap + image counter tracking
+  const handleVerticalScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el || images.length <= 1) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const idx = Number(entry.target.getAttribute('data-image-index'));
-            if (!isNaN(idx)) setCurrentVisibleImage(idx);
-          }
-        });
-      },
-      { root: container, threshold: 0.5 }
-    );
+    const sectionH = el.scrollHeight / 3;
 
-    container.querySelectorAll('[data-image-index]').forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, [product?.id]);
+    if (el.scrollTop < sectionH * 0.25) {
+      el.scrollTop += sectionH;
+    } else if (el.scrollTop > sectionH * 1.75) {
+      el.scrollTop -= sectionH;
+    }
+
+    const imgH = sectionH / images.length;
+    const centerScroll = el.scrollTop + el.clientHeight / 2;
+    const rawIdx = Math.floor(centerScroll / imgH);
+    setCurrentVisibleImage(rawIdx % images.length);
+  }, [images.length]);
 
   if (!product) return null;
 
-  const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
   const variant = product.variants.find(v => v.id === selectedVariant);
   const isOutOfStock = variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0);
 
@@ -184,9 +196,10 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       className="flex flex-1 overflow-hidden"
       onClick={onClose}
     >
-      {/* LEFT COLUMN: Vertical snap-scroll image carousel */}
+      {/* LEFT COLUMN: Infinite vertical snap-scroll image carousel */}
       <div
         ref={scrollContainerRef}
+        onScroll={handleVerticalScroll}
         className="w-[55%] overflow-y-auto relative snap-y snap-mandatory"
         style={{ scrollbarWidth: 'none' }}
         onClick={e => e.stopPropagation()}
@@ -203,12 +216,12 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           </div>
         )}
 
-        {/* All images — each snaps to fill the viewport */}
-        {images.map((img, i) => (
-          <div key={i} data-image-index={i} className="w-full h-full snap-start snap-always flex-shrink-0">
+        {/* Tripled images for infinite wrap */}
+        {tripledImages.map((img, i) => (
+          <div key={i} className="w-full h-full snap-start snap-always flex-shrink-0">
             <img
               src={img}
-              alt={`${product.title} ${i + 1}`}
+              alt={`${product.title} ${(i % images.length) + 1}`}
               className="w-full h-full object-contain"
               draggable={false}
             />
