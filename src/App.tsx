@@ -5,20 +5,24 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+
+// Storefront: eagerly loaded (customer-facing, must be instant)
 import Index from "./pages/Index";
 
-// Code-split: lazy-load non-storefront routes
+// Admin sub-pages: eagerly imported so tab switching is instant
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminDiscounts from './pages/admin/AdminDiscounts';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminInventory from './pages/admin/AdminInventory';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminPageEditor from './pages/admin/AdminPageEditor';
+import AdminStylingGuide from './pages/admin/AdminStylingGuide';
+import LabIndex from './pages/admin/lab/LabIndex';
+
+// Only lazy-load completely separate sections (different entry points)
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const AdminDiscounts = lazy(() => import('./pages/admin/AdminDiscounts'));
-const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
-const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
-const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
-const AdminPageEditor = lazy(() => import('./pages/admin/AdminPageEditor'));
-const AdminStylingGuide = lazy(() => import('./pages/admin/AdminStylingGuide'));
-const LabIndex = lazy(() => import('./pages/admin/lab/LabIndex'));
 const YzTemplate = lazy(() => import('./pages/admin/lab/YZTemplate'));
 const SlTemplate = lazy(() => import('./pages/admin/lab/SlTemplate'));
 const NotFound = lazy(() => import('./pages/NotFound'));
