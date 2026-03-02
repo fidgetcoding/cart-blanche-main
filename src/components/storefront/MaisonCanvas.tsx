@@ -7,6 +7,7 @@ import { MaisonProductDetail } from './MaisonProductDetail';
 import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { PRODUCT_CATEGORIES } from '@/data/demo-data';
 import { ShoppingBag } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 
@@ -16,16 +17,28 @@ export function MaisonCanvas() {
   const { themeSettings } = useTheme();
   const [viewMode, setViewMode] = useState<3 | 6>(3);
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [activeType, setActiveType] = useState('ALL');
   const [selectedProduct, setSelectedProduct] = useState<DemoProduct | null>(null);
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
 
   const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const categories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
 
+  // Product types from PRODUCT_CATEGORIES
+  const productTypes = useMemo(() => {
+    return ['ALL', ...PRODUCT_CATEGORIES.filter(c => c).map(c => c.toUpperCase())];
+  }, []);
+
   const filteredProducts = useMemo(() => {
-    if (activeCategory === 'ALL') return allProducts;
-    return allProducts.filter(p => p.category.toUpperCase() === activeCategory);
-  }, [allProducts, activeCategory]);
+    let result = allProducts;
+    if (activeCategory !== 'ALL') {
+      result = result.filter(p => p.category.toUpperCase() === activeCategory);
+    }
+    if (activeType !== 'ALL') {
+      result = result.filter(p => p.product_category?.toUpperCase() === activeType);
+    }
+    return result;
+  }, [allProducts, activeCategory, activeType]);
 
   if (loading) {
     return (
@@ -90,37 +103,37 @@ export function MaisonCanvas() {
         </button>
       </header>
 
-      {/* Sub-header: category dropdown + view toggle */}
+      {/* Sub-header: type dropdown + view toggle */}
       <div
         className="sticky top-[49px] z-20 flex items-center justify-between px-6 py-3 border-b border-border bg-background"
         style={{ fontFamily: 'var(--font-body)' }}
       >
-        {/* Category dropdown */}
+        {/* Product type dropdown */}
         <div className="relative">
           <button
-            onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+            onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
             className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
           >
-            {activeCategory === 'ALL' ? 'ALL PRODUCTS' : activeCategory}
+            {activeType === 'ALL' ? 'ALL TYPES' : activeType}
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
           <AnimatePresence>
-            {categoryDropdownOpen && (
+            {typeDropdownOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 className="absolute top-full left-0 mt-1 py-2 min-w-[160px] z-20 bg-background border border-border"
               >
-                {categories.map(cat => (
+                {productTypes.map(type => (
                   <button
-                    key={cat}
-                    onClick={() => { setActiveCategory(cat); setCategoryDropdownOpen(false); }}
+                    key={type}
+                    onClick={() => { setActiveType(type); setTypeDropdownOpen(false); }}
                     className={`block w-full text-left px-4 py-2 text-[11px] tracking-[0.15em] uppercase hover:bg-muted/40 transition-colors ${
-                      activeCategory === cat ? 'text-foreground' : 'text-muted-foreground'
+                      activeType === type ? 'text-foreground' : 'text-muted-foreground'
                     }`}
                   >
-                    {cat}
+                    {type}
                   </button>
                 ))}
               </motion.div>
@@ -134,7 +147,6 @@ export function MaisonCanvas() {
             onClick={() => setViewMode(3)}
             className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
             style={{
-              color: viewMode === 3 ? undefined : undefined,
               opacity: viewMode === 3 ? 1 : 0.5,
               borderBottom: viewMode === 3 ? '1px solid currentColor' : '1px solid transparent',
             }}
@@ -155,8 +167,8 @@ export function MaisonCanvas() {
       </div>
 
       {/* Close dropdown on outside click */}
-      {categoryDropdownOpen && (
-        <div className="fixed inset-0 z-10" onClick={() => setCategoryDropdownOpen(false)} />
+      {typeDropdownOpen && (
+        <div className="fixed inset-0 z-10" onClick={() => setTypeDropdownOpen(false)} />
       )}
 
       {/* Product grid */}
