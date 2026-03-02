@@ -159,8 +159,8 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
               ${product.price}
             </p>
             <p
-              className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground/60 mt-1.5"
-              style={{ fontFamily: 'var(--font-body)' }}
+              className="text-[9px] tracking-[0.15em] uppercase mt-1.5"
+              style={{ fontFamily: 'var(--font-body)', color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))' }}
             >
               {product.variants.some(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
             </p>
@@ -225,8 +225,8 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
             ${product.price}
           </p>
           <p
-            className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/50 mt-2"
-            style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--font-size-body)' }}
+            className="text-[10px] tracking-[0.2em] uppercase mt-2"
+            style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--font-size-body)', color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))' }}
           >
             {product.variants.some(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
           </p>
