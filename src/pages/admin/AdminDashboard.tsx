@@ -5,46 +5,68 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, 
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// Demo chart data
-const salesVolumeData = MONTHS.map((m, i) => ({
-  name: m,
-  thisMonth: Math.round(400 + Math.random() * 1600),
-  lastMonth: Math.round(300 + Math.random() * 1400),
-}));
+// Realistic mock chart data
+const salesVolumeData = [
+  { name: 'Jan', thisMonth: 4820, lastMonth: 3910 },
+  { name: 'Feb', thisMonth: 5340, lastMonth: 4200 },
+  { name: 'Mar', thisMonth: 6100, lastMonth: 4850 },
+  { name: 'Apr', thisMonth: 5780, lastMonth: 5100 },
+  { name: 'May', thisMonth: 7200, lastMonth: 5640 },
+  { name: 'Jun', thisMonth: 8450, lastMonth: 6320 },
+  { name: 'Jul', thisMonth: 9100, lastMonth: 7100 },
+  { name: 'Aug', thisMonth: 8700, lastMonth: 7580 },
+  { name: 'Sep', thisMonth: 10200, lastMonth: 7900 },
+  { name: 'Oct', thisMonth: 11500, lastMonth: 8400 },
+  { name: 'Nov', thisMonth: 14200, lastMonth: 10100 },
+  { name: 'Dec', thisMonth: 16800, lastMonth: 12500 },
+];
 
-const orderVolumeData = MONTHS.map((m) => ({
-  name: m,
-  thisMonth: Math.round(10 + Math.random() * 50),
-  lastMonth: Math.round(8 + Math.random() * 40),
-}));
+const orderVolumeData = [
+  { name: 'Jan', thisMonth: 18, lastMonth: 14 },
+  { name: 'Feb', thisMonth: 22, lastMonth: 16 },
+  { name: 'Mar', thisMonth: 27, lastMonth: 19 },
+  { name: 'Apr', thisMonth: 24, lastMonth: 21 },
+  { name: 'May', thisMonth: 31, lastMonth: 23 },
+  { name: 'Jun', thisMonth: 38, lastMonth: 26 },
+  { name: 'Jul', thisMonth: 42, lastMonth: 30 },
+  { name: 'Aug', thisMonth: 39, lastMonth: 32 },
+  { name: 'Sep', thisMonth: 46, lastMonth: 34 },
+  { name: 'Oct', thisMonth: 52, lastMonth: 37 },
+  { name: 'Nov', thisMonth: 64, lastMonth: 44 },
+  { name: 'Dec', thisMonth: 78, lastMonth: 55 },
+];
 
 const channelData = [
-  { name: 'Direct', value: 123, color: 'hsl(var(--primary))' },
-  { name: 'Social', value: 102, color: 'hsl(var(--success))' },
-  { name: 'Referral', value: 99, color: 'hsl(var(--warning))' },
+  { name: 'Direct', value: 187, color: 'hsl(var(--primary))' },
+  { name: 'Social', value: 143, color: 'hsl(var(--success))' },
+  { name: 'Referral', value: 98, color: 'hsl(var(--warning))' },
+  { name: 'Email', value: 73, color: 'hsl(var(--accent-foreground))' },
 ];
 
 const locationData = [
-  { region: 'United States', amount: 15100 },
-  { region: 'Canada', amount: 3600 },
-  { region: 'United Kingdom', amount: 2100 },
-  { region: 'Germany', amount: 890 },
+  { region: 'United States', amount: 68400 },
+  { region: 'Canada', amount: 14200 },
+  { region: 'United Kingdom', amount: 9800 },
+  { region: 'Germany', amount: 6100 },
+  { region: 'Australia', amount: 4300 },
+  { region: 'France', amount: 2900 },
 ];
 
 const referrerData = [
-  { source: 'Direct / None', amount: 15300 },
-  { source: 'instagram.com', amount: 1124 },
-  { source: 'tiktok.com', amount: 958 },
-  { source: 'google.com', amount: 546 },
+  { source: 'Direct / None', amount: 42600 },
+  { source: 'instagram.com', amount: 18900 },
+  { source: 'tiktok.com', amount: 12400 },
+  { source: 'google.com', amount: 8700 },
+  { source: 'pinterest.com', amount: 3200 },
 ];
 
 const plData = [
-  { label: 'Gross Sales', amount: 22000 },
-  { label: 'Discounts', amount: -1200 },
-  { label: 'Refunds', amount: -580 },
-  { label: 'Shipping Costs', amount: -1140 },
-  { label: 'Processing Fees', amount: -441 },
-  { label: 'Total Costs', amount: -3361 },
+  { label: 'Gross Sales', amount: 108190 },
+  { label: 'Discounts', amount: -6490 },
+  { label: 'Refunds', amount: -2160 },
+  { label: 'Shipping Costs', amount: -5410 },
+  { label: 'Processing Fees', amount: -3246 },
+  { label: 'Total Costs', amount: -17306 },
 ];
 
 function formatK(n: number) {
@@ -119,7 +141,12 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  const netProfit = stats.revenue * 0.59;
+  // Use real data if available, otherwise show realistic mock totals
+  const totalSales = stats.revenue > 0 ? stats.revenue : 108190;
+  const totalOrders = stats.orders > 0 ? stats.orders : 501;
+  const totalProducts = stats.products > 0 ? stats.products : 20;
+  const avgOrderVal = totalOrders > 0 ? totalSales / totalOrders : 216;
+  const netProfit = totalSales * 0.59;
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -127,10 +154,10 @@ export default function AdminDashboard() {
 
       {/* Top stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="TOTAL SALES" value={loading ? '—' : formatK(stats.revenue)} icon={DollarSign} change={229} changeLabel="vs last week" />
-        <StatCard label="ORDERS" value={loading ? '—' : String(stats.orders)} icon={ShoppingCart} change={8} changeLabel="vs last week" />
-        <StatCard label="NET PROFIT" value={loading ? '—' : formatK(netProfit)} icon={TrendingUp} change={2020} changeLabel="vs last month" />
-        <StatCard label="PRODUCTS" value={loading ? '—' : String(stats.products)} icon={Package} />
+        <StatCard label="TOTAL SALES" value={loading ? '—' : formatK(totalSales)} icon={DollarSign} change={4820} changeLabel="vs last week" />
+        <StatCard label="ORDERS" value={loading ? '—' : String(totalOrders)} icon={ShoppingCart} change={23} changeLabel="vs last week" />
+        <StatCard label="NET PROFIT" value={loading ? '—' : formatK(netProfit)} icon={TrendingUp} change={8200} changeLabel="vs last month" />
+        <StatCard label="PRODUCTS" value={loading ? '—' : String(totalProducts)} icon={Package} />
       </div>
 
       {/* Charts row */}
@@ -242,7 +269,7 @@ export default function AdminDashboard() {
 
       {/* Avg order + Net profit margin row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <StatCard label="AVG ORDER VALUE" value={loading ? '—' : `$${stats.avgOrder.toFixed(0)}`} icon={BarChart3} />
+        <StatCard label="AVG ORDER VALUE" value={loading ? '—' : `$${avgOrderVal.toFixed(0)}`} icon={BarChart3} change={12} changeLabel="vs last week" />
         <div className="bg-card border border-border rounded-xl p-5">
           <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground mb-1">NET PROFIT MARGIN</p>
           <p className="font-display text-4xl font-bold">59<span className="text-xl">%</span></p>
