@@ -17,7 +17,7 @@ import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminPageEditor from "./pages/admin/AdminPageEditor";
 import AdminStylingGuide from "./pages/admin/AdminStylingGuide";
 import LabIndex from "./pages/admin/lab/LabIndex";
-import YzTemplate from "./pages/admin/lab/YzTemplate";
+import YzTemplate from "./pages/admin/lab/YZTemplate";
 import SlTemplate from "./pages/admin/lab/SlTemplate";
 import NotFound from "./pages/NotFound";
 
