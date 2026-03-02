@@ -64,102 +64,96 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-2xl font-bold">Settings</h1>
+    <div className="p-5 max-w-2xl">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="font-display text-xl font-bold">Settings</h1>
         <button onClick={handleSave} disabled={saving}
-          className="px-4 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2">
-          <Save className="w-4 h-4" /> {saving ? 'SAVING...' : 'SAVE'}
+          className="px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2">
+          <Save className="w-3.5 h-3.5" /> {saving ? 'SAVING...' : 'SAVE'}
         </button>
       </div>
 
       {message && (
-        <div className={`mb-6 p-3 rounded-lg text-sm font-display ${message.includes('Error') ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success'}`}>
+        <div className={`mb-4 p-2.5 rounded-lg text-xs font-display ${message.includes('Error') ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success'}`}>
           {message}
         </div>
       )}
 
       {/* Store Info */}
-      <section className="mb-8">
-        <h2 className="font-display text-sm font-semibold tracking-wider mb-4">STORE INFO</h2>
-        <div className="space-y-4 liquid-glass rounded-xl p-6">
+      <section className="mb-5">
+        <h2 className="font-display text-[11px] font-semibold tracking-wider mb-2.5">STORE INFO</h2>
+        <div className="space-y-3 liquid-glass rounded-xl p-4">
           <div>
-            <label className="text-xs font-display tracking-widest text-muted-foreground">STORE NAME</label>
+            <label className="text-[10px] font-display tracking-widest text-muted-foreground">STORE NAME</label>
             <input value={storeName} onChange={e => setStoreName(e.target.value)}
-              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              className="w-full mt-0.5 px-3 py-2 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
           <div>
-            <label className="text-xs font-display tracking-widest text-muted-foreground">STORE SLUG</label>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-muted-foreground">/store/</span>
+            <label className="text-[10px] font-display tracking-widest text-muted-foreground">STORE SLUG</label>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-muted-foreground">/store/</span>
               <input value={storeSlug} onChange={e => setStoreSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                className="flex-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                className="flex-1 px-3 py-2 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-display tracking-widest text-muted-foreground">TAGLINE</label>
+              <input value={storeTagline} onChange={e => setStoreTagline(e.target.value)}
+                className="w-full mt-0.5 px-3 py-2 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div>
+              <label className="text-[10px] font-display tracking-widest text-muted-foreground">CATEGORY</label>
+              <select value={storeCategory} onChange={e => setStoreCategory(e.target.value)}
+                className="w-full mt-0.5 px-3 py-2 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none">
+                <option value="">Select...</option>
+                <option value="fashion">Fashion</option>
+                <option value="beauty">Beauty</option>
+                <option value="supplements">Supplements</option>
+                <option value="home">Home Goods</option>
+                <option value="general">General</option>
+              </select>
             </div>
           </div>
           <div>
-            <label className="text-xs font-display tracking-widest text-muted-foreground">TAGLINE</label>
-            <input value={storeTagline} onChange={e => setStoreTagline(e.target.value)}
-              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
-          <div>
-            <label className="text-xs font-display tracking-widest text-muted-foreground">DESCRIPTION</label>
-            <textarea value={storeDescription} onChange={e => setStoreDescription(e.target.value)} rows={3}
-              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
-          </div>
-          <div>
-            <label className="text-xs font-display tracking-widest text-muted-foreground">CATEGORY</label>
-            <select value={storeCategory} onChange={e => setStoreCategory(e.target.value)}
-              className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none">
-              <option value="">Select...</option>
-              <option value="fashion">Fashion</option>
-              <option value="beauty">Beauty</option>
-              <option value="supplements">Supplements</option>
-              <option value="home">Home Goods</option>
-              <option value="general">General</option>
-            </select>
+            <label className="text-[10px] font-display tracking-widest text-muted-foreground">DESCRIPTION</label>
+            <textarea value={storeDescription} onChange={e => setStoreDescription(e.target.value)} rows={2}
+              className="w-full mt-0.5 px-3 py-2 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
           </div>
         </div>
       </section>
 
 
 
-      {/* Payments */}
-      <section>
-        <h2 className="font-display text-sm font-semibold tracking-wider mb-4">PAYMENTS</h2>
-        <div className="liquid-glass rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-display text-sm font-medium">Stripe Connect</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Connect your Stripe account to accept payments</p>
-            </div>
-            <button className="px-4 py-2 bg-secondary border border-border rounded-lg text-sm font-display tracking-wider hover:bg-muted transition-colors">
+      {/* Payments & Account side by side */}
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <section>
+          <h2 className="font-display text-[11px] font-semibold tracking-wider mb-2.5">PAYMENTS</h2>
+          <div className="liquid-glass rounded-xl p-4">
+            <p className="font-display text-xs font-medium">Stripe Connect</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 mb-2.5">Accept payments via Stripe</p>
+            <button className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-xs font-display tracking-wider hover:bg-muted transition-colors">
               CONNECT STRIPE
             </button>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Account */}
-      <section className="mt-8">
-        <h2 className="font-display text-sm font-semibold tracking-wider mb-4">ACCOUNT</h2>
-        <div className="liquid-glass rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-display text-sm font-medium">Sign Out</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Sign out of your merchant account</p>
-            </div>
+        <section>
+          <h2 className="font-display text-[11px] font-semibold tracking-wider mb-2.5">ACCOUNT</h2>
+          <div className="liquid-glass rounded-xl p-4">
+            <p className="font-display text-xs font-medium">Sign Out</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 mb-2.5">Sign out of merchant account</p>
             <button
               onClick={async () => { await supabase.auth.signOut(); navigate('/auth'); }}
-              className="px-4 py-2 bg-secondary border border-border rounded-lg text-sm font-display tracking-wider hover:bg-destructive/20 hover:text-destructive hover:border-destructive/50 transition-colors flex items-center gap-2"
+              className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-xs font-display tracking-wider hover:bg-destructive/20 hover:text-destructive hover:border-destructive/50 transition-colors flex items-center justify-center gap-2"
             >
-              <LogOut className="w-4 h-4" />
-              SIGN OUT
+              <LogOut className="w-3.5 h-3.5" /> SIGN OUT
             </button>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <p className="text-center text-[10px] text-muted-foreground/50 font-display tracking-widest py-6">Version 1.01</p>
+      <p className="text-center text-[10px] text-muted-foreground/50 font-display tracking-widest pb-4">Version 1.01</p>
     </div>
   );
 }
