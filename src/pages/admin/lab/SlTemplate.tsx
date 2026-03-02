@@ -563,7 +563,7 @@ function SlTemplateInner() {
 
         {/* Live storefront */}
         <div className="flex-1 rounded-b-xl border border-border/30 overflow-hidden relative" style={{ contain: 'paint layout' }}>
-          <div className="absolute inset-0" style={{ transform: 'translateZ(0)' }}>
+          <div className="absolute inset-0 overflow-y-auto" style={{ transform: 'translateZ(0)' }}>
             <CartProvider>
               <SmartCartProvider>
                 <StyleKitProvider>
