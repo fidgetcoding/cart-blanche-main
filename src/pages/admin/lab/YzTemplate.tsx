@@ -78,9 +78,9 @@ function ThemeControls() {
   const colorInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="px-4 py-4 space-y-3">
+    <div className="px-4 py-3 space-y-2.5">
           {/* Store Name */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">STORE NAME</label>
             <input
               type="text"
@@ -92,7 +92,7 @@ function ThemeControls() {
           </div>
 
           {/* Mode */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">BACKGROUND MODE</label>
             <div className="flex gap-1">
               {(['dark', 'light'] as const).map(m => (
