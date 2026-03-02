@@ -126,7 +126,7 @@ export function SpatialCanvas() {
     const rect = container.getBoundingClientRect();
     const padX = isMobile ? 16 : 40;
     const headerPad = isMobile ? 90 : 100;
-    const bottomPad = isMobile ? 100 : 160;
+    const bottomPad = isMobile ? 80 : 60;
     const fitScale = Math.min(
       (rect.width - padX * 2) / CANVAS_W,
       (rect.height - headerPad - bottomPad) / CANVAS_H
@@ -167,7 +167,7 @@ export function SpatialCanvas() {
     const bboxH = maxY - minY;
     const padX = isMobile ? 20 : 120;
     const headerPad = isMobile ? 90 : 120;
-    const bottomPad = isMobile ? 100 : 160;
+    const bottomPad = isMobile ? 80 : 60;
     const fitScale = Math.min(
       (rect.width - padX * 2) / bboxW,
       (rect.height - headerPad - bottomPad) / bboxH
