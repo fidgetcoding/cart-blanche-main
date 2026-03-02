@@ -110,9 +110,8 @@ export function MaisonCanvas() {
         style={{ fontFamily: 'var(--font-body)' }}
       >
         {/* Product type dropdown */}
-        <div className="relative">
+        <div className="relative" onMouseEnter={() => setTypeDropdownOpen(true)} onMouseLeave={() => setTypeDropdownOpen(false)}>
           <button
-            onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
             className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
           >
             {activeType === 'ALL' ? 'ALL TYPES' : activeType}
@@ -124,19 +123,22 @@ export function MaisonCanvas() {
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                className="absolute top-full left-0 mt-1 py-2 min-w-[160px] z-20 bg-background border border-border"
+                className="absolute top-full left-0 pt-1 z-20"
               >
-                {productTypes.map(type => (
-                  <button
-                    key={type}
-                    onClick={() => { setActiveType(type); setTypeDropdownOpen(false); }}
-                    className={`block w-full text-left px-4 py-2 text-[11px] tracking-[0.15em] uppercase hover:bg-muted/40 transition-colors ${
-                      activeType === type ? 'text-foreground' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
+                <div className="py-2 min-w-[160px] bg-background border border-border">
+                  {productTypes.map(type => (
+                    <button
+                      key={type}
+                      onMouseEnter={() => setActiveType(type)}
+                      onClick={() => { setActiveType(type); setTypeDropdownOpen(false); }}
+                      className={`block w-full text-left px-4 py-2 text-[11px] tracking-[0.15em] uppercase hover:bg-muted/40 transition-colors ${
+                        activeType === type ? 'text-foreground' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -167,10 +169,6 @@ export function MaisonCanvas() {
         </div>
       </div>
 
-      {/* Close dropdown on outside click */}
-      {typeDropdownOpen && (
-        <div className="fixed inset-0 z-10" onClick={() => setTypeDropdownOpen(false)} />
-      )}
 
       {/* Product grid */}
       <div className="px-0">
