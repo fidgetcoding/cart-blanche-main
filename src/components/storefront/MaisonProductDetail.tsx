@@ -161,8 +161,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       if (next >= images.length) return 0;
       return next;
     });
-    // Lock out for 800ms to absorb all inertia events from one gesture
-    setTimeout(() => { isScrolling.current = false; accumulatedDelta.current = 0; }, 800);
+    setTimeout(() => { isScrolling.current = false; accumulatedDelta.current = 0; }, 350);
   }, [images.length]);
 
   // Wheel handler: accumulate delta, trigger only once per gesture
@@ -179,12 +178,12 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
       scrollTimeout.current = setTimeout(() => {
         const delta = accumulatedDelta.current;
-        if (Math.abs(delta) > 20) {
+        if (Math.abs(delta) > 15) {
           goToImage(delta > 0 ? 1 : -1);
         } else {
           accumulatedDelta.current = 0;
         }
-      }, 50);
+      }, 30);
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => {
@@ -225,15 +224,29 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
         className="w-[55%] relative overflow-hidden flex items-center justify-center"
         onClick={e => e.stopPropagation()}
       >
-        {/* Image counter — positioned along left edge */}
+        {/* Image counter + up/down arrows — positioned along left edge */}
         {images.length > 1 && (
           <div
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center text-[11px] text-muted-foreground"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1"
             style={{ fontFamily: 'var(--font-numeral)' }}
           >
-            <span>{currentVisibleImage + 1}</span>
-            <div className="w-px h-3 bg-foreground/30 my-1" />
-            <span>{images.length}</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); goToImage(-1); }}
+              onMouseEnter={(e) => { e.stopPropagation(); goToImage(-1); }}
+              className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 rotate-90" strokeWidth={1.5} />
+            </button>
+            <span className="text-[11px] text-muted-foreground">{currentVisibleImage + 1}</span>
+            <div className="w-px h-2 bg-foreground/30" />
+            <span className="text-[11px] text-muted-foreground">{images.length}</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); goToImage(1); }}
+              onMouseEnter={(e) => { e.stopPropagation(); goToImage(1); }}
+              className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronRight className="w-3.5 h-3.5 rotate-90" strokeWidth={1.5} />
+            </button>
           </div>
         )}
 
@@ -246,7 +259,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
             className="w-full h-full object-contain"
             draggable={false}
           />
