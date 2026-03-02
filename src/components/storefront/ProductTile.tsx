@@ -48,7 +48,10 @@ export const ProductTile = memo(function ProductTile({
       }}
     >
       <div className="w-full h-full flex flex-col">
-        <div className={`flex-1 bg-muted/40 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300`} style={glowing ? { boxShadow: `0 0 20px 2px ${themeSettings.tileHoverGlow}, 0 0 40px 4px ${themeSettings.tileHoverGlow}` } : undefined}>
+        <div className={`flex-1 rounded-lg flex items-center justify-center relative overflow-hidden transition-shadow duration-300`} style={{
+          backgroundColor: themeSettings.tileBgMode === 'transparent' ? 'transparent' : (themeSettings.mode === 'light' ? '#ececec' : '#151515'),
+          ...(glowing ? { boxShadow: `0 0 20px 2px ${themeSettings.tileHoverGlow}, 0 0 40px 4px ${themeSettings.tileHoverGlow}` } : {}),
+        }}>
           {product.images && product.images.length > 0 ? (
             <img
               src={product.images[0]}
