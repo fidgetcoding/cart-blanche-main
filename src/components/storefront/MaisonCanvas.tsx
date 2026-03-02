@@ -154,12 +154,6 @@ export function MaisonCanvas() {
               }}
             >
               {cat}
-              {activeCategory === cat && (
-                <motion.div
-                  layoutId="maison-cat-underline"
-                  className="absolute bottom-0 left-0 right-0 h-[1px] bg-foreground"
-                />
-              )}
             </button>
           ))}
         </nav>
@@ -259,9 +253,8 @@ export function MaisonCanvas() {
             
             onMouseEnter={() => setViewMode(3)}
             onClick={() => setViewMode(3)}
-            className={`text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1 ${
-              viewMode === 3 ? 'opacity-100 border-b border-current' : 'opacity-50 hover:opacity-80 border-b border-transparent'
-            }`}
+            className="text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1"
+            style={{ opacity: viewMode === 3 ? 1 : 0.4 }}
           >
             View by 3
           </button>
@@ -269,9 +262,8 @@ export function MaisonCanvas() {
             
             onMouseEnter={() => setViewMode(6)}
             onClick={() => setViewMode(6)}
-            className={`text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1 ${
-              viewMode === 6 ? 'opacity-100 border-b border-current' : 'opacity-50 hover:opacity-80 border-b border-transparent'
-            }`}
+            className="text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1"
+            style={{ opacity: viewMode === 6 ? 1 : 0.4 }}
           >
             View by 6
           </button>
