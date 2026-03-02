@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Layers, Save, Plus, X, ChevronUp, ChevronDown, GripVertical, Search } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import type { DemoProduct } from '@/data/demo-data';
+
+const StyleGuideCanvas = lazy(() => import('@/components/admin/StyleGuideCanvas'));
 
 type BodyZoneGroup = 'TOPS' | 'BOTTOMS' | 'ACCESSORIES';
 
@@ -146,6 +148,8 @@ export default function AdminStylingGuide() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGroup, setFilterGroup] = useState<'ALL' | BodyZoneGroup>('ALL');
+  const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
+  const [canvasLayout, setCanvasLayout] = useState<any>(null);
 
   // Group products by body zone, filtered by search and category
   const grouped = useMemo(() => {
@@ -184,6 +188,7 @@ export default function AdminStylingGuide() {
       const rules = data.rules as any;
       if (rules?.version === 2 && Array.isArray(rules.presets)) {
         setPresets(rules.presets);
+        setCanvasLayout(rules.canvasLayout || null);
       }
     }
     setLoading(false);
@@ -194,7 +199,7 @@ export default function AdminStylingGuide() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
 
-    const rules = { version: 2, presets };
+    const rules = { version: 2, presets, canvasLayout };
 
     if (guideId) {
       await supabase
@@ -283,12 +288,19 @@ export default function AdminStylingGuide() {
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
         <h1 className="font-display text-2xl font-bold tracking-wide">Style Guide</h1>
         <div className="flex items-center bg-secondary rounded-lg p-1">
-          <button className="px-5 py-2 rounded-md text-sm font-display tracking-wider bg-primary text-primary-foreground transition-colors">
+          <button
+            onClick={() => setActiveView('list')}
+            className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+              activeView === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+            }`}
+          >
             LIST
           </button>
           <button
-            disabled
-            className="px-5 py-2 rounded-md text-sm font-display tracking-wider text-muted-foreground/40 cursor-not-allowed transition-colors"
+            onClick={() => setActiveView('canvas')}
+            className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+              activeView === 'canvas' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+            }`}
           >
             CANVAS
           </button>
@@ -296,6 +308,20 @@ export default function AdminStylingGuide() {
       </div>
 
       <div className="border-b border-border" />
+
+      {activeView === 'canvas' ? (
+        <Suspense fallback={null}>
+          <StyleGuideCanvas
+            presets={presets}
+            onPresetsChange={setPresets}
+            canvasLayout={canvasLayout}
+            onCanvasLayoutChange={setCanvasLayout}
+            onSave={saveGuide}
+            saving={saving}
+          />
+        </Suspense>
+      ) : (
+      <>
 
       {/* Two-column layout */}
       <div className="flex-1 flex min-h-0">
@@ -429,6 +455,8 @@ export default function AdminStylingGuide() {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
