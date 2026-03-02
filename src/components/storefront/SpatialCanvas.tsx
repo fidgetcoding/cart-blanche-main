@@ -844,6 +844,8 @@ export function SpatialCanvas() {
         {selectedIndex !== null && (
           <ProductView
             productIndex={selectedIndex}
+            products={DEMO_PRODUCTS}
+            categories={CATEGORIES}
             onClose={() => {
               setFocusedIndex(selectedIndex);
               setSelectedIndex(null);
