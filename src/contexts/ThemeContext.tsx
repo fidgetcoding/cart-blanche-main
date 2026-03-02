@@ -1,10 +1,13 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
+export type TileBgMode = 'default' | 'transparent';
+
 export interface ThemeSettings {
   mode: 'dark' | 'light';
   storeName: string;
   tileHoverGlow: string;
   tileHoverScale: number;
+  tileBgMode: TileBgMode;
   displayFont: string;
   bodyFont: string;
   numeralFont: string;
@@ -22,6 +25,7 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   storeName: 'CART BLANCHE',
   tileHoverGlow: 'hsla(0,0%,100%,0.08)',
   tileHoverScale: 1.04,
+  tileBgMode: 'default',
   displayFont: 'Space Grotesk',
   bodyFont: 'Inter',
   numeralFont: 'Inter',
