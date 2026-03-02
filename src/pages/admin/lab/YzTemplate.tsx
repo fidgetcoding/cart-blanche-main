@@ -113,9 +113,9 @@ function ThemeControls() {
           </div>
 
           {/* Tile Hover Glow */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">TILE HOVER GLOW</label>
-            <div className="flex gap-1.5 items-center flex-wrap">
+            <div className="flex gap-1.5 items-center">
               {GLOW_PRESETS.map(g => (
                 <button
                   key={g.label}
@@ -127,7 +127,6 @@ function ThemeControls() {
                   title={g.label}
                 />
               ))}
-              {/* Eyedropper - picks color from anywhere on screen */}
               <button
                 onClick={async () => {
                   if ('EyeDropper' in window) {
@@ -146,7 +145,6 @@ function ThemeControls() {
               >
                 <Pipette className="w-3 h-3 text-foreground/70" />
               </button>
-              {/* Color picker (native) */}
               <input
                 ref={colorInputRef}
                 type="color"
@@ -164,9 +162,7 @@ function ThemeControls() {
               >
                 <Palette className="w-3 h-3 text-foreground/70" />
               </button>
-            </div>
-            {/* Hex code input */}
-            <div className="flex items-center gap-2">
+              <div className="w-px h-5 bg-border/40 mx-0.5" />
               <div
                 className="w-6 h-6 rounded-md border border-border/50 flex-shrink-0"
                 style={{ background: customColor }}
@@ -187,7 +183,7 @@ function ThemeControls() {
                   }
                 }}
                 placeholder="#000000"
-                className="flex-1 bg-muted/50 border border-border/50 rounded-md px-2.5 py-1 text-[11px] font-mono text-foreground tracking-wider focus:outline-none focus:ring-1 focus:ring-ring uppercase"
+                className="w-20 bg-muted/50 border border-border/50 rounded-md px-2 py-1 text-[11px] font-mono text-foreground tracking-wider focus:outline-none focus:ring-1 focus:ring-ring uppercase"
                 maxLength={7}
               />
             </div>
