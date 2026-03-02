@@ -6,6 +6,89 @@ import { useCart } from '@/contexts/CartContext';
 import { getSuggestedProducts, getSmartOrientation } from '@/lib/pairing-logic';
 import type { DemoProduct } from '@/data/demo-data';
 
+function CarouselCard({
+  product,
+  onSelect,
+  onAddToLook,
+  cardSize = 'default',
+  hasDraggedRef,
+}: {
+  product: DemoProduct;
+  onSelect: (p: DemoProduct) => void;
+  onAddToLook: (p: DemoProduct) => void;
+  cardSize?: 'default' | 'large';
+  hasDraggedRef: React.MutableRefObject<boolean>;
+}) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const hasImages = product.images && product.images.length > 0;
+  const hasMulti = product.images && product.images.length > 1;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer"
+      onClick={() => { if (!hasDraggedRef.current) onSelect(product); }}
+    >
+      <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full relative overflow-hidden">
+        {hasImages ? (
+          <img
+            src={product.images![Math.min(imgIdx, product.images!.length - 1)]}
+            alt={product.title}
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+        ) : (
+          <span className="font-display text-muted-foreground/20 text-[10px] tracking-widest">
+            {product.category.toUpperCase()}
+          </span>
+        )}
+        {hasMulti && (
+          <div className="absolute bottom-0 left-0 right-0 flex h-8 z-10" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+            {product.images!.map((_, i) => (
+              <button
+                key={i}
+                onClick={e => { e.stopPropagation(); setImgIdx(i); }}
+                onMouseEnter={() => setImgIdx(i)}
+                className="flex-1 relative group/dot"
+              >
+                <div className={`absolute bottom-1.5 left-0.5 right-0.5 h-0.5 rounded-full transition-all duration-200 ${
+                  imgIdx === i ? 'bg-foreground/80' : 'bg-foreground/15 group-hover/dot:bg-foreground/30'
+                }`} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="p-3 flex flex-col justify-between flex-1">
+        <div>
+          <p className={`font-display font-medium tracking-wide truncate ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>
+            {product.title}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`font-display ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>${product.price}</span>
+            {product.compare_at_price && (
+              <span className="text-[10px] text-muted-foreground line-through">
+                ${product.compare_at_price}
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToLook(product);
+          }}
+          className="mt-2 w-full py-1.5 bg-primary text-primary-foreground text-[10px] font-display font-semibold tracking-wider rounded flex items-center justify-center gap-1 hover:opacity-90 transition-opacity"
+        >
+          <Plus className="w-3 h-3" />
+          ADD
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 function CarouselRow({
   products,
   onSelect,
@@ -161,44 +244,15 @@ function CarouselRow({
         }}
       >
         {loopedProducts.map((product, idx) => (
-          <motion.div
-            key={`${product.id}-${idx}`}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer ${cardWidthClass}`}
-            onClick={() => { if (!hasDragged.current) onSelect(product); }}
-          >
-            <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full">
-              <span className="font-display text-muted-foreground/20 text-[10px] tracking-widest">
-                {product.category.toUpperCase()}
-              </span>
-            </div>
-            <div className="p-3 flex flex-col justify-between flex-1">
-              <div>
-                <p className={`font-display font-medium tracking-wide truncate ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>
-                  {product.title}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`font-display ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>${product.price}</span>
-                  {product.compare_at_price && (
-                    <span className="text-[10px] text-muted-foreground line-through">
-                      ${product.compare_at_price}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddToLook(product);
-                }}
-                className="mt-2 w-full py-1.5 bg-primary text-primary-foreground text-[10px] font-display font-semibold tracking-wider rounded flex items-center justify-center gap-1 hover:opacity-90 transition-opacity"
-              >
-                <Plus className="w-3 h-3" />
-                ADD
-              </button>
-            </div>
-          </motion.div>
+          <div key={`${product.id}-${idx}`} className={`flex-shrink-0 ${cardWidthClass}`}>
+            <CarouselCard
+              product={product}
+              onSelect={onSelect}
+              onAddToLook={onAddToLook}
+              cardSize={cardSize}
+              hasDraggedRef={hasDragged}
+            />
+          </div>
         ))}
 
         {products.length === 0 && (
@@ -207,6 +261,55 @@ function CarouselRow({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Reusable thumbnail with image toggle indicators */
+function ProductThumbnail({
+  product,
+  className,
+  overlay,
+}: {
+  product: DemoProduct;
+  className?: string;
+  overlay?: React.ReactNode;
+}) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const hasImages = product.images && product.images.length > 0;
+  const hasMulti = product.images && product.images.length > 1;
+
+  return (
+    <div className={`bg-secondary/30 flex items-center justify-center flex-shrink-0 relative overflow-hidden ${className ?? ''}`}>
+      {hasImages ? (
+        <img
+          src={product.images![Math.min(imgIdx, product.images!.length - 1)]}
+          alt={product.title}
+          className="w-full h-full object-cover"
+          draggable={false}
+        />
+      ) : (
+        <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
+          {product.category.toUpperCase()}
+        </span>
+      )}
+      {hasMulti && (
+        <div className="absolute bottom-0 left-0 right-0 flex h-10 z-10" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+          {product.images!.map((_, i) => (
+            <button
+              key={i}
+              onClick={e => { e.stopPropagation(); setImgIdx(i); }}
+              onMouseEnter={() => setImgIdx(i)}
+              className="flex-1 relative group/dot"
+            >
+              <div className={`absolute bottom-2 left-0.5 right-0.5 h-0.5 rounded-full transition-all duration-200 ${
+                imgIdx === i ? 'bg-foreground/80' : 'bg-foreground/15 group-hover/dot:bg-foreground/30'
+              }`} />
+            </button>
+          ))}
+        </div>
+      )}
+      {overlay}
     </div>
   );
 }
@@ -305,17 +408,18 @@ function LockedPairPanel({
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="flex-1 flex flex-col p-4 gap-3">
-          <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 relative">
-            <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
-              {product.category.toUpperCase()}
-            </span>
-            <button
-              onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
-            >
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          </div>
+          <ProductThumbnail
+            product={product}
+            className="w-full aspect-square rounded-lg"
+            overlay={
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            }
+          />
           <ProductDetails
             anchorProduct={product}
             sizes={sizes}
@@ -340,17 +444,18 @@ function LockedPairPanel({
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="flex-1 flex flex-row overflow-hidden">
-        <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0 relative">
-          <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
-            {product.category.toUpperCase()}
-          </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
-          >
-            <X className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
-        </div>
+        <ProductThumbnail
+          product={product}
+          className="h-full aspect-[3/4]"
+          overlay={
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
+            >
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          }
+        />
         <div className="flex-1 flex flex-col p-5 overflow-y-auto">
           <ProductDetails
             anchorProduct={product}
@@ -390,19 +495,18 @@ function AnchorPanel({
     return (
       <div className="flex flex-col bg-card/50 backdrop-blur-sm border-b border-border h-full">
         <div className="flex-1 flex flex-row overflow-hidden">
-          <div className="h-full aspect-[3/4] bg-secondary/30 flex items-center justify-center flex-shrink-0 relative">
-            <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
-              {anchorProduct.category.toUpperCase()}
-            </span>
-            {onRemove && (
+          <ProductThumbnail
+            product={anchorProduct}
+            className="h-full aspect-[3/4]"
+            overlay={onRemove ? (
               <button
                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
                 className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
               >
                 <X className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
-            )}
-          </div>
+            ) : undefined}
+          />
           <div className="flex-1 flex flex-col p-5 overflow-y-auto">
             <ProductDetails
               anchorProduct={anchorProduct}
@@ -421,19 +525,18 @@ function AnchorPanel({
   return (
     <div className="flex flex-col bg-card/50 backdrop-blur-sm border-r border-border h-full overflow-y-auto">
       <div className="flex-1 flex flex-col p-4 gap-3">
-        <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center flex-shrink-0 relative">
-          <span className="font-display text-muted-foreground/15 text-sm tracking-[0.3em]">
-            {anchorProduct.category.toUpperCase()}
-          </span>
-          {onRemove && (
+        <ProductThumbnail
+          product={anchorProduct}
+          className="w-full aspect-square rounded-lg"
+          overlay={onRemove ? (
             <button
               onClick={(e) => { e.stopPropagation(); onRemove(); }}
               className="absolute top-2 right-2 p-1.5 bg-background/60 backdrop-blur-sm rounded-full hover:bg-destructive/20 transition-colors"
             >
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
-          )}
-        </div>
+          ) : undefined}
+        />
         <ProductDetails
           anchorProduct={anchorProduct}
           sizes={sizes}
