@@ -359,10 +359,6 @@ export default function YzyTemplate() {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>BACK TO LAB</span>
           </button>
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-foreground/50" />
-            <span className="font-display text-[11px] tracking-[0.15em] text-foreground/70">TEMPLATE BUILDER AI</span>
-          </div>
         </div>
 
         {/* Messages */}
