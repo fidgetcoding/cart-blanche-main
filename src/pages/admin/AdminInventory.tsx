@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
-import { type DemoProduct, PRODUCT_CATEGORIES, type ProductCategory } from '@/data/demo-data';
+import { type DemoProduct, PRODUCT_CATEGORIES, type ProductCategory, getImageUrl } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProductRow {
@@ -40,7 +40,7 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     compare_at_price: p.compare_at_price,
     category: p.category,
     product_category: p.product_category || '',
-    images: p.images,
+    images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
     description: p.description,
     tags: [p.category],
     variants: p.variants.map(v => ({

@@ -1,7 +1,7 @@
 // Mock orders built from real store inventory (DEMO_PRODUCTS)
 // 100 orders, prices match product catalog exactly
 
-import { DEMO_PRODUCTS } from './demo-data';
+import { DEMO_PRODUCTS, getImageUrl } from './demo-data';
 
 const FIRST_NAMES = ['Alex','Jordan','Morgan','Taylor','Casey','Riley','Jamie','Quinn','Avery','Blake','Drew','Skyler','Reese','Parker','Hayden','Dakota','Emery','Sage','River','Rowan','Kai','Logan','Cameron','Finley','Elliot','Harper','Lennox','Nico','Wren','Jules'];
 const LAST_NAMES = ['Chen','Williams','Martinez','Johnson','Lee','Patel','Kim','Garcia','Anderson','Taylor','Brown','Wilson','Thomas','Moore','Jackson','White','Harris','Clark','Lewis','Hall','Young','Walker','Allen','King','Scott','Green','Adams','Baker','Rivera','Hill'];
@@ -91,7 +91,7 @@ export function generateMockOrders(count: number = 100): MockOrder[] {
         variant: size,
         qty: 1,
         price: prod.price,
-        image: prod.images[0],
+        image: getImageUrl(prod.images[0], 'thumb'),
         product_id: prod.id,
       });
     }

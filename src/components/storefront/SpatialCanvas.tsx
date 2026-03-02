@@ -45,6 +45,7 @@ export function SpatialCanvas() {
   const transformRef = useRef({ x: 0, y: 0, scale: 0.5 });
   const targetTransformRef = useRef({ x: 0, y: 0, scale: 0.5 });
   const rafRef = useRef<number>(0);
+  const animatingRef = useRef(false);
   const minScaleRef = useRef(0.3);
 
   // React state for UI that needs re-renders
@@ -144,73 +145,26 @@ export function SpatialCanvas() {
     applyTransform();
   }, [applyTransform, isMobile]);
 
-  // Fit canvas to visible products when category changes
-  const fitToVisibleProducts = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
+  // Self-terminating animation loop — starts on demand, stops when idle
+  const startAnimation = useCallback(() => {
+    if (animatingRef.current) return;
+    animatingRef.current = true;
 
-    const visibleWithIndex = DEMO_PRODUCTS
-      .map((p, i) => ({ p, i }))
-      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
-    if (visibleWithIndex.length === 0) return;
-
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const { p, i } of visibleWithIndex) {
-      const pos = overridePositions ? overridePositions[i] : p.grid_position;
-      if (!pos) continue;
-      minX = Math.min(minX, pos.x);
-      minY = Math.min(minY, pos.y);
-      maxX = Math.max(maxX, pos.x + TILE_W);
-      maxY = Math.max(maxY, pos.y + TILE_H);
-    }
-
-    const bboxW = maxX - minX;
-    const bboxH = maxY - minY;
-    const padX = isMobile ? 20 : 120;
-    const headerPad = isMobile ? 90 : 120;
-    const bottomPad = isMobile ? 80 : 60;
-    const fitScale = Math.min(
-      (rect.width - padX * 2) / bboxW,
-      (rect.height - headerPad - bottomPad) / bboxH
-    );
-    // Cap at 1.0 so filtered views don't blow up too large
-    const s = Math.max(0.15, Math.min(1, fitScale));
-    const scaledW = bboxW * s;
-    const scaledH = bboxH * s;
-    const cx = (rect.width - scaledW) / 2 - minX * s;
-    const cy = headerPad + ((rect.height - headerPad - bottomPad) - scaledH) / 2 - minY * s;
-
-    targetTransformRef.current = { x: cx, y: cy, scale: s };
-    if (activeCategory !== 'ALL') {
-      categoryZoomRef.current = { x: cx, y: cy, scale: s };
-    }
-    setScaleState(s);
-    setPeekingAll(false);
-  }, [activeCategory, overridePositions, isMobile]);
-
-  useEffect(() => {
-    fitToVisibleProducts();
-  }, [fitToVisibleProducts]);
-
-  // Smooth interpolation loop
-  useEffect(() => {
-    let running = true;
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
     const LERP_SPEED = 0.25;
 
     const tick = () => {
-      if (!running) return;
+      if (!animatingRef.current) return;
       const t = transformRef.current;
       const target = targetTransformRef.current;
+
+      let needsNextFrame = false;
 
       if (!dragRef.current.dragging && !touchRef.current.touching) {
         const dx = Math.abs(t.x - target.x);
         const dy = Math.abs(t.y - target.y);
         const ds = Math.abs(t.scale - target.scale);
 
-        // When scale is stable, apply boundary constraints (only for ALL view)
-        // For filtered views, fitToVisibleProducts already computed the correct centered position
         if (ds < 0.001 && activeCategoryRef.current === 'ALL') {
           const container = containerRef.current;
           if (container) {
@@ -250,7 +204,10 @@ export function SpatialCanvas() {
           t.y = lerp(t.y, target.y, LERP_SPEED);
           t.scale = lerp(t.scale, target.scale, LERP_SPEED);
           applyTransform();
+          needsNextFrame = true;
         }
+      } else {
+        needsNextFrame = true;
       }
 
       // Check if canvas content extends into footer zone
@@ -259,19 +216,78 @@ export function SpatialCanvas() {
         const r = ctr.getBoundingClientRect();
         const canvasBottom = t.y + canvasDimsRef.current.h * t.scale;
         const footerZone = r.height - 50;
-        // Use hysteresis: require more clearance to turn off than to turn on
         const shouldGlass = canvasBottom > footerZone;
         const shouldClear = canvasBottom < footerZone - 20;
         if (shouldGlass) setFooterGlass(true);
         else if (shouldClear) setFooterGlass(false);
       }
 
-      rafRef.current = requestAnimationFrame(tick);
+      if (needsNextFrame) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        animatingRef.current = false;
+      }
     };
 
     rafRef.current = requestAnimationFrame(tick);
-    return () => { running = false; cancelAnimationFrame(rafRef.current); };
   }, [applyTransform]);
+
+  useEffect(() => {
+    startAnimation();
+    return () => {
+      animatingRef.current = false;
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [startAnimation]);
+
+  // Fit canvas to visible products when category changes
+  const fitToVisibleProducts = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+
+    const visibleWithIndex = DEMO_PRODUCTS
+      .map((p, i) => ({ p, i }))
+      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
+    if (visibleWithIndex.length === 0) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const { p, i } of visibleWithIndex) {
+      const pos = overridePositions ? overridePositions[i] : p.grid_position;
+      if (!pos) continue;
+      minX = Math.min(minX, pos.x);
+      minY = Math.min(minY, pos.y);
+      maxX = Math.max(maxX, pos.x + TILE_W);
+      maxY = Math.max(maxY, pos.y + TILE_H);
+    }
+
+    const bboxW = maxX - minX;
+    const bboxH = maxY - minY;
+    const padX = isMobile ? 20 : 120;
+    const headerPad = isMobile ? 90 : 120;
+    const bottomPad = isMobile ? 80 : 60;
+    const fitScale = Math.min(
+      (rect.width - padX * 2) / bboxW,
+      (rect.height - headerPad - bottomPad) / bboxH
+    );
+    const s = Math.max(0.15, Math.min(1, fitScale));
+    const scaledW = bboxW * s;
+    const scaledH = bboxH * s;
+    const cx = (rect.width - scaledW) / 2 - minX * s;
+    const cy = headerPad + ((rect.height - headerPad - bottomPad) - scaledH) / 2 - minY * s;
+
+    targetTransformRef.current = { x: cx, y: cy, scale: s };
+    startAnimation();
+    if (activeCategory !== 'ALL') {
+      categoryZoomRef.current = { x: cx, y: cy, scale: s };
+    }
+    setScaleState(s);
+    setPeekingAll(false);
+  }, [activeCategory, overridePositions, isMobile, startAnimation]);
+
+  useEffect(() => {
+    fitToVisibleProducts();
+  }, [fitToVisibleProducts]);
 
   // Find the product index under a given screen coordinate
   const getProductAtCursor = useCallback((screenX: number, screenY: number) => {
@@ -298,7 +314,6 @@ export function SpatialCanvas() {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    let scaleUpdateTimer: number;
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -364,18 +379,14 @@ export function SpatialCanvas() {
         }
       }
 
-      clearTimeout(scaleUpdateTimer);
-      scaleUpdateTimer = window.setTimeout(() => {
-        setScaleState(targetTransformRef.current.scale);
-      }, 80);
+      startAnimation();
     };
 
     container.addEventListener('wheel', onWheel, { passive: false });
     return () => {
       container.removeEventListener('wheel', onWheel);
-      clearTimeout(scaleUpdateTimer);
     };
-  }, [getProductAtCursor, activeCategory]);
+  }, [getProductAtCursor, activeCategory, startAnimation]);
 
   // Touch gestures (pan + pinch-to-zoom)
   useEffect(() => {
@@ -397,7 +408,7 @@ export function SpatialCanvas() {
       };
     };
 
-    let scaleUpdateTimer: number;
+    
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 1) {
@@ -460,10 +471,6 @@ export function SpatialCanvas() {
         transformRef.current.scale = target.scale;
         applyTransform();
 
-        clearTimeout(scaleUpdateTimer);
-        scaleUpdateTimer = window.setTimeout(() => {
-          setScaleState(targetTransformRef.current.scale);
-        }, 50);
       } else if (e.touches.length === 1 && !tr.pinching) {
         const t = e.touches[0];
         const dx = t.clientX - tr.startX;
@@ -483,6 +490,7 @@ export function SpatialCanvas() {
       if (e.touches.length === 0) {
         touchRef.current.touching = false;
         setScaleState(targetTransformRef.current.scale);
+        startAnimation();
       }
     };
 
@@ -494,9 +502,8 @@ export function SpatialCanvas() {
       container.removeEventListener('touchstart', onTouchStart);
       container.removeEventListener('touchmove', onTouchMove);
       container.removeEventListener('touchend', onTouchEnd);
-      clearTimeout(scaleUpdateTimer);
     };
-  }, [applyTransform]);
+  }, [applyTransform, startAnimation]);
 
   // Drag to pan (mouse)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -532,7 +539,8 @@ export function SpatialCanvas() {
   const handleMouseUp = useCallback(() => {
     dragRef.current.dragging = false;
     setIsDragging(false);
-  }, []);
+    startAnimation();
+  }, [startAnimation]);
 
   // Smooth zoom to scale
   const setScaleSmooth = useCallback((newScale: number) => {
@@ -547,7 +555,8 @@ export function SpatialCanvas() {
     target.y = cy - (cy - target.y) * ratio;
     target.scale = newScale;
     setScaleState(newScale);
-  }, []);
+    startAnimation();
+  }, [startAnimation]);
 
   // Focus root on mount and refocus after any click within the canvas
   // BUT skip refocusing when user clicks inside inputs, textareas, or other interactive elements
