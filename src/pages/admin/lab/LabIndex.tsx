@@ -45,29 +45,29 @@ export default function LabIndex() {
                   <FlaskConical className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground/80 transition-colors" />
                 </div>
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <div className="flex items-center gap-2.5">
-                    <span className="font-display text-xs tracking-[0.15em] text-foreground">{tmpl.name}</span>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setActiveId(tmpl.id);
-                      }}
-                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-display tracking-wider transition-all backdrop-blur-sm ${
-                        isActive
-                          ? 'bg-success/15 text-[hsl(var(--success))] border border-[hsl(var(--success))]/20 cursor-default'
-                          : 'bg-foreground/5 text-muted-foreground border border-foreground/10 hover:bg-foreground/10 hover:text-foreground cursor-pointer'
-                      }`}
-                    >
-                      {isActive ? 'ACTIVE' : 'SET ACTIVE'}
-                    </button>
-                  </div>
+                  <span className="font-display text-xs tracking-[0.15em] text-foreground">{tmpl.name}</span>
                   <span className="text-[11px] text-muted-foreground/70">
                     {tmpl.subtitle}
                   </span>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-foreground/50 transition-colors flex-shrink-0" />
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveId(tmpl.id);
+                  }}
+                  className={`px-2.5 py-0.5 rounded-full text-[9px] font-display tracking-wider transition-all backdrop-blur-sm ${
+                    isActive
+                      ? 'bg-success/15 text-[hsl(var(--success))] border border-[hsl(var(--success))]/20 cursor-default'
+                      : 'bg-foreground/5 text-muted-foreground border border-foreground/10 hover:bg-foreground/10 hover:text-foreground cursor-pointer'
+                  }`}
+                >
+                  {isActive ? 'ACTIVE' : 'SET ACTIVE'}
+                </button>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-foreground/50 transition-colors" />
+              </div>
             </Link>
           );
         })}
