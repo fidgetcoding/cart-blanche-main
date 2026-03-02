@@ -3,7 +3,8 @@ import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, Chevro
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
-import { getSuggestedProducts, getSmartOrientation } from '@/lib/pairing-logic';
+import { getSuggestedProducts, getSmartOrientation, type ProductPreset } from '@/lib/pairing-logic';
+import { supabase } from '@/integrations/supabase/client';
 import type { DemoProduct } from '@/data/demo-data';
 
 function CarouselCard({
@@ -582,20 +583,37 @@ export function StyleKitView() {
   const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, lookItems, initialAnchorSize } = useStyleKit();
   const { items: cartItems, addItem } = useCart();
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);
+  const [presets, setPresets] = useState<ProductPreset[]>([]);
   
   // Size selections: anchor + paired
   const [anchorSize, setAnchorSize] = useState<string | null>(null);
   const [pairedSize, setPairedSize] = useState<string | null>(null);
 
   // Track which side the carousel should appear on in extras mode
-  // 'right' = default (anchor left, carousel right)
-  // 'left' = anchor was dismissed (carousel left, paired stays right)
   const [carouselSide, setCarouselSide] = useState<'left' | 'right'>('right');
 
-  // The locked paired product (non-anchor item in lookItems) — works for both modes
+  // The locked paired product (non-anchor item in lookItems)
   const pairedProduct = lookItems.length > 1
     ? lookItems.find(p => p.id !== anchorProduct?.id) ?? null
     : null;
+
+  // Load presets from DB
+  useEffect(() => {
+    async function loadPresets() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('styling_guides')
+        .select('rules')
+        .eq('merchant_id', user.id)
+        .limit(1)
+        .maybeSingle();
+      if (data?.rules && (data.rules as any).version === 2) {
+        setPresets((data.rules as any).presets || []);
+      }
+    }
+    loadPresets();
+  }, []);
 
   // Reset sizes when anchor changes, using initial size if provided
   useEffect(() => {
@@ -628,6 +646,7 @@ export function StyleKitView() {
     mode,
     cartProductIds: cartItems.map((i) => i.productId),
     lookProductIds: lookItems.map((p) => p.id),
+    presets,
   });
 
   const handleAddToLook = (product: DemoProduct) => {

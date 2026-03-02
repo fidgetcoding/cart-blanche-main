@@ -37,12 +37,20 @@ export function getSmartOrientation(category: string): 'top' | 'bottom' {
   return 'top';
 }
 
+// ─── Preset type ─────────────────────────────────────────────────
+export interface ProductPreset {
+  anchorProductId: string;
+  pairs: string[];
+  extras: string[];
+}
+
 // ─── Pairing logic ───────────────────────────────────────────────
 interface PairingOptions {
   anchor: DemoProduct;
   mode: 'counterparts' | 'extras';
   cartProductIds?: string[];
   lookProductIds?: string[];
+  presets?: ProductPreset[];
 }
 
 export function getSuggestedProducts({
@@ -50,22 +58,30 @@ export function getSuggestedProducts({
   mode,
   cartProductIds = [],
   lookProductIds = [],
+  presets = [],
 }: PairingOptions): DemoProduct[] {
   const excludeIds = new Set([anchor.id, ...cartProductIds, ...lookProductIds]);
   const anchorZone = getBodyZone(anchor);
 
+  // Check for a matching preset
+  const preset = presets.find(p => p.anchorProductId === anchor.id);
+  const presetIds = mode === 'counterparts'
+    ? (preset?.pairs || [])
+    : (preset?.extras || []);
+
+  const presetProducts = presetIds
+    .filter(id => !excludeIds.has(id))
+    .map(id => DEMO_PRODUCTS.find(p => p.id === id))
+    .filter(Boolean) as DemoProduct[];
+
   let candidates = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id));
 
   if (mode === 'counterparts') {
-    // PAIRS: show the OPPOSITE body zone
-    // If anchor is a top → show bottoms. If anchor is bottom → show tops.
-    // Accessories pair with tops first, then bottoms.
     if (anchorZone === 'top') {
       candidates = candidates.filter(p => getBodyZone(p) === 'bottom');
     } else if (anchorZone === 'bottom') {
       candidates = candidates.filter(p => getBodyZone(p) === 'top');
     } else {
-      // accessory — show both tops and bottoms, tops first
       candidates.sort((a, b) => {
         const zA = getBodyZone(a);
         const zB = getBodyZone(b);
@@ -75,13 +91,10 @@ export function getSuggestedProducts({
       });
     }
   } else {
-    // EXTRAS: show the SAME body zone (more of the same type)
-    // Top → tops, Bottom → bottoms, Accessory → accessories (+ fallback to all)
     const sameZone = candidates.filter(p => getBodyZone(p) === anchorZone);
     if (sameZone.length > 0) {
       candidates = sameZone;
     }
-    // If very few same-zone items, keep all but sort same-zone first
   }
 
   // Score and sort by price similarity
@@ -89,13 +102,11 @@ export function getSuggestedProducts({
     let scoreA = 0;
     let scoreB = 0;
 
-    // Price band: prefer items within ±30% of anchor price
     const priceLow = anchor.price * 0.7;
     const priceHigh = anchor.price * 1.3;
     if (a.price >= priceLow && a.price <= priceHigh) scoreA += 3;
     if (b.price >= priceLow && b.price <= priceHigh) scoreB += 3;
 
-    // In extras mode, same product_category gets a bonus (e.g. jacket with jacket specifically)
     if (mode === 'extras') {
       if (a.product_category === anchor.product_category) scoreA += 2;
       if (b.product_category === anchor.product_category) scoreB += 2;
@@ -104,5 +115,9 @@ export function getSuggestedProducts({
     return scoreB - scoreA;
   });
 
-  return candidates;
+  // Merge: preset products first, then auto (deduped)
+  const presetProductIds = new Set(presetProducts.map(p => p.id));
+  const autoCandidates = candidates.filter(p => !presetProductIds.has(p.id));
+
+  return [...presetProducts, ...autoCandidates];
 }
