@@ -357,7 +357,7 @@ export default function YzyTemplate() {
             className="flex items-center gap-1.5 text-[11px] font-display tracking-wider text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>BACK TO LAB</span>
+            <span>BACK TO SMART PORTAL</span>
           </button>
         </div>
 
