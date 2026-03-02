@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff, GripVertical, Globe, Home } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { type DemoProduct, PRODUCT_CATEGORIES, type ProductCategory } from '@/data/demo-data';
@@ -24,6 +24,9 @@ interface ProductRow {
   }[];
   totalStock: number;
   isDemo: boolean;
+  weight_oz: number;
+  shipping_type: 'domestic' | 'international';
+  hs_code: string;
 }
 
 function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
@@ -45,6 +48,9 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     })),
     totalStock: p.variants.reduce((sum, v) => sum + v.inventory_count, 0),
     isDemo: true,
+    weight_oz: p.weight_oz ?? 0,
+    shipping_type: p.shipping_type ?? 'domestic',
+    hs_code: p.hs_code ?? '',
   }));
 }
 
@@ -109,6 +115,9 @@ export default function AdminInventory() {
   const [addSaving, setAddSaving] = useState(false);
   const [addImages, setAddImages] = useState<string[]>([]);
   const [addVideo, setAddVideo] = useState<string | null>(null);
+  const [addWeight, setAddWeight] = useState('');
+  const [addShippingType, setAddShippingType] = useState<'domestic' | 'international'>('domestic');
+  const [addHsCode, setAddHsCode] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -223,6 +232,9 @@ export default function AdminInventory() {
             })),
             totalStock: pvs.reduce((sum, v) => sum + (v.inventory_count ?? 0), 0),
             isDemo: false,
+            weight_oz: 0,
+            shipping_type: 'domestic' as const,
+            hs_code: '',
           };
         });
 
@@ -454,6 +466,9 @@ export default function AdminInventory() {
     setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
     setAddImages([]);
     setAddVideo(null);
+    setAddWeight('');
+    setAddShippingType('domestic');
+    setAddHsCode('');
     fetchInventory();
   }
 
@@ -995,6 +1010,97 @@ export default function AdminInventory() {
                             })}
                           </div>
                         </div>
+
+                        {/* Weight & Shipping */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">WEIGHT (oz)</p>
+                            {inlineEditing[p.id]?.weight ? (
+                              <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                <input
+                                  type="number"
+                                  value={inlineValues[p.id]?.weight ?? String(p.weight_oz)}
+                                  onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: e.target.value } }))}
+                                  className="w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                                  autoFocus
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      const val = parseFloat(inlineValues[p.id]?.weight);
+                                      if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                      setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
+                                    }
+                                    if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
+                                  }}
+                                />
+                                <button onClick={() => {
+                                  const val = parseFloat(inlineValues[p.id]?.weight);
+                                  if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                  setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
+                                }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: String(p.weight_oz) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: true } })); }}
+                                className="text-sm font-display text-foreground hover:underline"
+                              >{p.weight_oz > 0 ? `${p.weight_oz} oz` : <span className="text-muted-foreground italic">Set weight</span>}</button>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">SHIPPING</p>
+                            <div className="flex items-center gap-1 bg-secondary/30 rounded-lg p-0.5 w-fit" onClick={e => e.stopPropagation()}>
+                              <button
+                                onClick={() => setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'domestic' } : pr))}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md transition-colors ${
+                                  p.shipping_type === 'domestic' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+                                }`}
+                              >
+                                <Home className="w-3 h-3" /> DOMESTIC
+                              </button>
+                              <button
+                                onClick={() => setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'international' } : pr))}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md transition-colors ${
+                                  p.shipping_type === 'international' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+                                }`}
+                              >
+                                <Globe className="w-3 h-3" /> INTL
+                              </button>
+                            </div>
+                            {p.shipping_type === 'international' && (
+                              <div className="mt-2" onClick={e => e.stopPropagation()}>
+                                <p className="text-[10px] text-muted-foreground font-display tracking-widest mb-1">HS CODE</p>
+                                {inlineEditing[p.id]?.hsCode ? (
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      value={inlineValues[p.id]?.hsCode ?? p.hs_code}
+                                      onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: e.target.value } }))}
+                                      placeholder="e.g. 6201.93"
+                                      className="w-32 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                                      autoFocus
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                          const val = inlineValues[p.id]?.hsCode ?? '';
+                                          setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: val } : pr));
+                                          setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: false } }));
+                                        }
+                                        if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: false } }));
+                                      }}
+                                    />
+                                    <button onClick={() => {
+                                      const val = inlineValues[p.id]?.hsCode ?? '';
+                                      setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: val } : pr));
+                                      setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: false } }));
+                                    }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => { setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: p.hs_code } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], hsCode: true } })); }}
+                                    className="text-xs font-display text-foreground hover:underline"
+                                  >{p.hs_code || <span className="text-muted-foreground italic">Set HS code</span>}</button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -1152,6 +1258,47 @@ export default function AdminInventory() {
                   className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
               </div>
 
+              {/* Weight & Shipping */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">WEIGHT (oz)</label>
+                  <input type="number" value={addWeight} onChange={e => setAddWeight(e.target.value)}
+                    placeholder="0" min="0"
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground mb-1 block">SHIPPING</label>
+                  <div className="flex items-center gap-1 bg-background/30 border border-border/50 rounded-lg p-0.5 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setAddShippingType('domestic')}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-[10px] font-display tracking-wider rounded-md transition-colors flex-1 justify-center ${
+                        addShippingType === 'domestic' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+                      }`}
+                    >
+                      <Home className="w-3 h-3" /> DOMESTIC
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAddShippingType('international')}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-[10px] font-display tracking-wider rounded-md transition-colors flex-1 justify-center ${
+                        addShippingType === 'international' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+                      }`}
+                    >
+                      <Globe className="w-3 h-3" /> INTL
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {addShippingType === 'international' && (
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">HS CODE</label>
+                  <input value={addHsCode} onChange={e => setAddHsCode(e.target.value)}
+                    placeholder="e.g. 6201.93"
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-display tracking-widest text-muted-foreground">SIZES & INVENTORY</label>
@@ -1296,6 +1443,60 @@ export default function AdminInventory() {
                 <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3}
                   className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
               </div>
+
+              {/* Weight & Shipping */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">WEIGHT (oz)</label>
+                  <input type="number" value={editingProduct.weight_oz} onChange={e => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setEditingProduct({ ...editingProduct, weight_oz: val });
+                    setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, weight_oz: val } : p));
+                  }}
+                    placeholder="0" min="0"
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground mb-1 block">SHIPPING</label>
+                  <div className="flex items-center gap-1 bg-background/30 border border-border/50 rounded-lg p-0.5 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingProduct({ ...editingProduct, shipping_type: 'domestic' });
+                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, shipping_type: 'domestic' as const } : p));
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-[10px] font-display tracking-wider rounded-md transition-colors flex-1 justify-center ${
+                        editingProduct.shipping_type === 'domestic' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+                      }`}
+                    >
+                      <Home className="w-3 h-3" /> DOMESTIC
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingProduct({ ...editingProduct, shipping_type: 'international' });
+                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, shipping_type: 'international' as const } : p));
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-[10px] font-display tracking-wider rounded-md transition-colors flex-1 justify-center ${
+                        editingProduct.shipping_type === 'international' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+                      }`}
+                    >
+                      <Globe className="w-3 h-3" /> INTL
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {editingProduct.shipping_type === 'international' && (
+                <div>
+                  <label className="text-xs font-display tracking-widest text-muted-foreground">HS CODE</label>
+                  <input value={editingProduct.hs_code} onChange={e => {
+                    setEditingProduct({ ...editingProduct, hs_code: e.target.value });
+                    setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, hs_code: e.target.value } : p));
+                  }}
+                    placeholder="e.g. 6201.93"
+                    className="w-full mt-1 px-4 py-2.5 bg-background/40 border border-border/50 backdrop-blur-sm rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+              )}
 
               {/* Tags */}
               <div>
