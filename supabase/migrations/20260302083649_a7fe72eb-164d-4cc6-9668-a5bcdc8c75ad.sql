@@ -1,0 +1,1 @@
+ALTER TABLE public.grid_layouts ADD COLUMN IF NOT EXISTS hidden_product_types text[] NOT NULL DEFAULT '{}';
