@@ -82,8 +82,11 @@ function ProductNode({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={`relative bg-card rounded-lg border-2 ${borderColor} ${selected ? 'ring-2 ring-primary/50' : ''} p-2 flex flex-col items-center gap-1.5 w-[120px] transition-shadow group`}
-      style={{ boxShadow: selected ? '0 0 20px hsl(var(--primary) / 0.15)' : undefined }}
+      className={`relative rounded-lg border-2 ${borderColor} ${selected ? 'ring-2 ring-primary/50' : ''} p-2 flex flex-col items-center gap-1.5 w-[120px] transition-shadow group`}
+      style={{
+        background: '#141414',
+        boxShadow: selected ? '0 0 20px hsl(var(--primary) / 0.15)' : undefined,
+      }}
     >
       <Handle type="target" position={Position.Left} id="target" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
       <Handle type="source" position={Position.Right} id="source" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
@@ -102,8 +105,8 @@ function ProductNode({ data, selected }: NodeProps) {
         className="w-[80px] h-[80px] rounded object-cover"
         draggable={false}
       />
-      <p className="text-[10px] font-display tracking-wide text-center leading-tight truncate w-full">{d.product.title}</p>
-      <p className="text-[9px] text-muted-foreground">${d.product.price}</p>
+      <p className="text-[10px] font-display tracking-wide text-center leading-tight truncate w-full" style={{ color: '#e5e5e5' }}>{d.product.title}</p>
+      <p className="text-[9px]" style={{ color: '#888' }}>${d.product.price}</p>
     </div>
   );
 }
