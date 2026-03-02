@@ -177,39 +177,29 @@ export function MaisonCanvas() {
           </AnimatePresence>
         </div>
 
-        {/* View toggle — hidden when type selector is expanded */}
-        <AnimatePresence>
-          {!typeDropdownOpen && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-3 overflow-hidden"
-            >
-              <button
-                onClick={() => setViewMode(3)}
-                className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
-                style={{
-                  opacity: viewMode === 3 ? 1 : 0.5,
-                  borderBottom: viewMode === 3 ? '1px solid currentColor' : '1px solid transparent',
-                }}
-              >
-                View by 3
-              </button>
-              <button
-                onClick={() => setViewMode(6)}
-                className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
-                style={{
-                  opacity: viewMode === 6 ? 1 : 0.5,
-                  borderBottom: viewMode === 6 ? '1px solid currentColor' : '1px solid transparent',
-                }}
-              >
-                View by 6
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* View toggle — always visible */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={() => setViewMode(3)}
+            className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
+            style={{
+              opacity: viewMode === 3 ? 1 : 0.5,
+              borderBottom: viewMode === 3 ? '1px solid currentColor' : '1px solid transparent',
+            }}
+          >
+            View by 3
+          </button>
+          <button
+            onClick={() => setViewMode(6)}
+            className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
+            style={{
+              opacity: viewMode === 6 ? 1 : 0.5,
+              borderBottom: viewMode === 6 ? '1px solid currentColor' : '1px solid transparent',
+            }}
+          >
+            View by 6
+          </button>
+        </div>
       </div>
 
 
