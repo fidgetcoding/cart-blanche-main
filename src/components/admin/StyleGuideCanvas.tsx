@@ -400,11 +400,17 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   useEffect(() => {
     const el = flowContainerRef.current;
+    console.log('[StyleGuideCanvas] dblclick useEffect, el:', !!el);
     if (!el) return;
     const handler = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (target.closest('.react-flow__node') || target.closest('[data-toolbar]')) return;
+      console.log('[StyleGuideCanvas] dblclick fired, target:', target.className);
+      if (target.closest('.react-flow__node') || target.closest('[data-toolbar]')) {
+        console.log('[StyleGuideCanvas] dblclick ignored (node/toolbar)');
+        return;
+      }
       const position = screenToFlowPositionRef.current({ x: event.clientX, y: event.clientY });
+      console.log('[StyleGuideCanvas] creating blank node at', position);
       createBlankNodeRef.current(position);
     };
     el.addEventListener('dblclick', handler);
