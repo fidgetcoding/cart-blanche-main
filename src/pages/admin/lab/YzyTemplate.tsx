@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette } from 'lucide-react';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
@@ -8,6 +8,12 @@ import { StyleKitProvider } from '@/contexts/StyleKitContext';
 import { SpatialCanvas } from '@/components/storefront/SpatialCanvas';
 import { StyleKitView } from '@/components/storefront/StyleKitView';
 import { toast } from 'sonner';
+import { processMessage } from '@/lib/template-agent';
+
+interface ChatMessage {
+  role: 'system' | 'user';
+  text: string;
+}
 
 const GLOW_PRESETS = [
   { label: 'White', value: '#ffffff' },
@@ -63,11 +69,6 @@ function injectCustomFont(file: File): Promise<string> {
   });
 }
 
-const DEMO_MESSAGES = [
-  { role: 'system', text: 'Welcome to your storefront builder. Describe changes and I\'ll update your store in real-time.' },
-  { role: 'user', text: 'Make the hover glow gold and use a more editorial font' },
-  { role: 'system', text: 'Done — I\'ve updated the tile glow to gold (#e8c547) and switched headings to Playfair Display. Check the preview →' },
-];
 
 function ThemeControls() {
   const { themeSettings, updateTheme } = useTheme();
@@ -261,7 +262,44 @@ function SizeSlider({ label, value, min, max, onChange }: { label: string; value
 
 export default function YzyTemplate() {
   const navigate = useNavigate();
+  const { themeSettings, updateTheme } = useTheme();
   const [chatInput, setChatInput] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'system', text: "Hey — I'm your Template Builder AI. Tell me how you want your storefront to look and I'll make it happen. I can change fonts, colors, hover effects, sizes, and background mode." },
+  ]);
+  const [suggestions, setSuggestions] = useState<string[]>([
+    'Switch to light mode with a serif heading font',
+    'Make the hover glow gold for a luxury feel',
+    'Use monospaced numerals for cleaner prices',
+    'Make everything bigger and more readable',
+  ]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = useCallback((text?: string) => {
+    const userMsg = (text || chatInput).trim();
+    if (!userMsg) return;
+    setChatInput('');
+
+    // Add user message
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+
+    // Process with agent after short delay
+    setTimeout(() => {
+      const response = processMessage(userMsg, themeSettings);
+      if (response.themeUpdate) {
+        updateTheme(response.themeUpdate);
+      }
+      setMessages(prev => [...prev, { role: 'system', text: response.message }]);
+      if (response.suggestions) {
+        setSuggestions(response.suggestions);
+      }
+    }, 300);
+  }, [chatInput, themeSettings, updateTheme]);
 
   return (
     <div className="h-screen flex overflow-hidden bg-background">
@@ -284,9 +322,12 @@ export default function YzyTemplate() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {DEMO_MESSAGES.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] rounded-lg px-3 py-2 text-[11px] leading-relaxed ${
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-0 slide-in-from-bottom-2 duration-200`}
+            >
+              <div className={`max-w-[85%] rounded-lg px-3 py-2 text-[11px] leading-relaxed whitespace-pre-line ${
                 msg.role === 'user'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted/60 text-foreground/80'
@@ -295,7 +336,23 @@ export default function YzyTemplate() {
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
+
+        {/* Suggestion Chips */}
+        {suggestions.length > 0 && (
+          <div className="px-4 pb-2 grid grid-cols-2 gap-1.5">
+            {suggestions.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => handleSend(s)}
+                className="bg-muted/30 border border-border/50 rounded-md px-2.5 py-2 text-[10px] text-foreground/70 hover:text-foreground hover:bg-muted/50 transition-colors text-left leading-snug font-display tracking-wider"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Chat Input */}
         <div className="px-4 pb-2">
@@ -304,11 +361,12 @@ export default function YzyTemplate() {
               type="text"
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
               placeholder="Describe a change..."
               className="flex-1 bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none font-display tracking-wider"
             />
             <button
-              onClick={() => toast.info('AI builder coming soon')}
+              onClick={() => handleSend()}
               className="p-1.5 rounded-md hover:bg-muted/60 text-muted-foreground transition-colors"
             >
               <Send className="w-3.5 h-3.5" />
