@@ -62,7 +62,7 @@ function getGridPos(index: number) {
 }
 
 export default function AdminPageEditor() {
-  const { loading, layout: gridLayout, saveLayout: saveToSupabase, saveHiddenTags, resetLayout, getAllProductsUnfiltered, getOrderedCategories } = useGridLayout();
+  const { loading, layout: gridLayout, saveLayout: saveToSupabase, saveHiddenTags, resetLayout, getOrderedProducts, getOrderedCategories } = useGridLayout();
   const [tagEditMode, setTagEditMode] = useState(false);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [products, setProducts] = useState<GridProduct[]>([]);
@@ -72,7 +72,7 @@ export default function AdminPageEditor() {
   // Initialize from Supabase layout once loaded
   useEffect(() => {
     if (!loading && !initialized) {
-      const ordered = getAllProductsUnfiltered();
+      const ordered = getOrderedProducts();
       setProducts(ordered.map(p => ({
         id: p.id,
         title: p.title,
@@ -85,7 +85,7 @@ export default function AdminPageEditor() {
       setCategories(cats.map(c => c.toLowerCase()));
       setInitialized(true);
     }
-  }, [loading, initialized, getAllProductsUnfiltered, getOrderedCategories]);
+  }, [loading, initialized, getOrderedProducts, getOrderedCategories]);
 
   // Sync hiddenTags from gridLayout
   useEffect(() => {
