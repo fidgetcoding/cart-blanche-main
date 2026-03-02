@@ -273,8 +273,21 @@ export default function AdminStylingGuide() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <h1 className="font-display text-2xl font-bold tracking-wide px-6 pt-6 pb-4 flex-shrink-0">Style Guide</h1>
+    <div className="flex flex-col h-full border-t border-border">
+      <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
+        <h1 className="font-display text-2xl font-bold tracking-wide">Style Guide</h1>
+        <div className="flex items-center bg-secondary rounded-lg p-1">
+          <button className="px-5 py-2 rounded-md text-sm font-display tracking-wider bg-primary text-primary-foreground transition-colors">
+            LIST
+          </button>
+          <button
+            disabled
+            className="px-5 py-2 rounded-md text-sm font-display tracking-wider text-muted-foreground/40 cursor-not-allowed transition-colors"
+          >
+            CANVAS
+          </button>
+        </div>
+      </div>
 
       {/* Two-column layout */}
       <div className="flex-1 flex min-h-0">
