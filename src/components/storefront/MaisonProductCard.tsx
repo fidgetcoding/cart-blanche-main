@@ -280,48 +280,40 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
       {/* Text area — view by 3 only */}
       {!isCompact && (
-        <div
-          className="px-4 py-4 text-center"
-          onMouseEnter={() => setShowSizes(true)}
-          onMouseLeave={() => setShowSizes(false)}
-        >
-          {/* Title + Price — slide up when sizes shown */}
-          <motion.div
-            animate={{ y: showSizes && product.variants.length > 1 ? -8 : 0 }}
-            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+        <div className="px-4 py-4 text-center">
+          <p
+            className="tracking-[0.15em] uppercase leading-relaxed"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--font-size-display)',
+              color: themeSettings.displayFontColor || undefined,
+            }}
           >
-            <p
-              className="tracking-[0.15em] uppercase leading-relaxed"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'var(--font-size-display)',
-                color: themeSettings.displayFontColor || undefined,
-              }}
-            >
-              {product.title}
-            </p>
-            <p
-              className="tracking-[0.1em] text-muted-foreground mt-1.5"
-              style={{
-                fontFamily: 'var(--font-numeral)',
-                fontSize: 'var(--font-size-numeral)',
-                color: themeSettings.numeralFontColor || undefined,
-              }}
-            >
-              ${product.price}
-            </p>
-          </motion.div>
-
-          {/* ADD TO CART / Sizes + Build a Set */}
-          <div className="relative mt-2 h-8 flex items-center justify-center">
+            {product.title}
+          </p>
+          <p
+            className="tracking-[0.1em] text-muted-foreground mt-1.5"
+            style={{
+              fontFamily: 'var(--font-numeral)',
+              fontSize: 'var(--font-size-numeral)',
+              color: themeSettings.numeralFontColor || undefined,
+            }}
+          >
+            ${product.price}
+          </p>
+          <div
+            className="relative mt-2 h-6 flex items-center justify-center"
+            onMouseEnter={() => setShowSizes(true)}
+            onMouseLeave={() => setShowSizes(false)}
+          >
             <AnimatePresence mode="wait">
               {!showSizes || product.variants.length <= 1 ? (
                 <motion.p
                   key="cta"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
                   className="text-[10px] tracking-[0.2em] uppercase cursor-pointer"
                   style={{
                     fontFamily: 'var(--font-body)',
@@ -345,63 +337,58 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                   {product.variants.every(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
                 </motion.p>
               ) : (
-                <motion.div
+              <motion.div
                   key="sizes-and-set"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="flex flex-col items-center gap-1.5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center justify-center gap-0"
                 >
-                  {/* Thin separator line */}
-                  <div className="w-8 h-px bg-border/50" />
-
-                  <div className="flex items-center justify-center gap-0">
-                    {/* Sizes */}
-                    <div className="flex items-center gap-2">
-                      {product.variants.map(v => (
-                        <button
-                          key={v.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (v.inventory_count === 0) return;
-                            addItem({
-                              productId: product.id,
-                              variantId: v.id,
-                              title: product.title,
-                              variantTitle: v.title,
-                              price: v.price ?? product.price,
-                              image: product.images[0],
-                            });
-                          }}
-                          disabled={v.inventory_count === 0}
-                          className={`text-[10px] tracking-[0.12em] uppercase transition-colors ${
-                            v.inventory_count === 0
-                              ? 'text-muted-foreground/30 line-through cursor-not-allowed'
-                              : 'text-muted-foreground hover:text-foreground cursor-pointer'
-                          }`}
-                          style={{ fontFamily: 'var(--font-body)' }}
-                        >
-                          {v.title}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Vertical divider */}
-                    <div className="w-px h-3.5 bg-border/50 mx-3 flex-shrink-0" />
-
-                    {/* Build a Set */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onBuildSet(product);
-                      }}
-                      className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
-                      style={{ fontFamily: 'var(--font-body)' }}
-                    >
-                      BUILD A SET
-                    </button>
+                  {/* Sizes */}
+                  <div className="flex items-center gap-2">
+                    {product.variants.map(v => (
+                      <button
+                        key={v.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (v.inventory_count === 0) return;
+                          addItem({
+                            productId: product.id,
+                            variantId: v.id,
+                            title: product.title,
+                            variantTitle: v.title,
+                            price: v.price ?? product.price,
+                            image: product.images[0],
+                          });
+                        }}
+                        disabled={v.inventory_count === 0}
+                        className={`text-[10px] tracking-[0.12em] uppercase transition-colors ${
+                          v.inventory_count === 0
+                            ? 'text-muted-foreground/30 line-through cursor-not-allowed'
+                            : 'text-muted-foreground hover:text-foreground cursor-pointer'
+                        }`}
+                        style={{ fontFamily: 'var(--font-body)' }}
+                      >
+                        {v.title}
+                      </button>
+                    ))}
                   </div>
+
+                  {/* Vertical divider */}
+                  <div className="w-px h-3.5 bg-border mx-3 flex-shrink-0" />
+
+                  {/* Build a Set */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBuildSet(product);
+                    }}
+                    className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+                    style={{ fontFamily: 'var(--font-body)' }}
+                  >
+                    BUILD A SET
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
