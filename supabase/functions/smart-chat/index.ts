@@ -7,6 +7,90 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ─── Embedded demo catalog & mock orders (mirrors client-side mock-orders.ts) ───
+const DEMO_CATALOG = [
+  { id: 'p1', title: 'Cloud Puffer Jacket', price: 420, compare_at_price: 520, category: 'outerwear', description: 'Oversized puffer with matte shell.' },
+  { id: 'p2', title: 'Stealth Trench', price: 380, category: 'outerwear', description: 'Minimalist trench coat in water-resistant cotton.' },
+  { id: 'p7', title: 'Wool Overcoat', price: 550, category: 'outerwear', description: 'Double-faced Italian wool.' },
+  { id: 'p9', title: 'Leather Moto Jacket', price: 680, category: 'outerwear', description: 'Full-grain lambskin with asymmetric zip.' },
+  { id: 'p3', title: 'Bomber Mk IV', price: 290, category: 'outerwear', description: 'Technical bomber with ribbed cuffs.' },
+  { id: 'p8', title: 'Windbreaker Shell', price: 195, category: 'outerwear', description: 'Packable windbreaker.' },
+  { id: 'p10', title: 'Track Jacket', price: 210, category: 'streetwear', description: 'Retro-inspired track jacket.' },
+  { id: 'p19', title: 'Deconstructed Blazer', price: 340, category: 'new-arrivals', description: 'Unstructured blazer with raw edge details.' },
+  { id: 'p4', title: 'Graphic Hoodie', price: 145, category: 'streetwear', description: 'Heavy fleece hoodie with screen-printed back graphic.' },
+  { id: 'p13', title: 'Core Crewneck', price: 95, category: 'essentials', description: 'Mid-weight french terry crewneck.' },
+  { id: 'p20', title: 'Knit Polo', price: 125, category: 'new-arrivals', description: 'Textured knit polo.' },
+  { id: 'p18', title: 'Long Sleeve Base', price: 70, category: 'essentials', description: 'Fitted long sleeve in premium cotton.' },
+  { id: 'p6', title: 'Oversized Tee', price: 65, category: 'streetwear', description: 'Heavyweight cotton. Dropped shoulder.' },
+  { id: 'p15', title: 'Tank Top', price: 40, category: 'essentials', description: 'Ribbed cotton tank.' },
+  { id: 'p12', title: 'Maroon Crop Top', price: 55, category: 'essentials', description: 'Fitted maroon crop top.' },
+  { id: 'p5', title: 'Cargo Pants', price: 175, category: 'streetwear', description: 'Relaxed fit cargo with oversized pockets.' },
+  { id: 'p16', title: 'Crème Joggers', price: 120, category: 'essentials', description: 'Heavyweight French terry joggers.' },
+  { id: 'p25', title: 'Utility Pant', price: 165, category: 'streetwear', description: 'Slim tapered utility pant.' },
+  { id: 'p11', title: 'Mesh Shorts', price: 85, category: 'streetwear', description: 'Double-layer mesh shorts.' },
+  { id: 'p17', title: 'Sweat Shorts', price: 75, category: 'essentials', description: 'French terry shorts with raw hem.' },
+];
+
+const FIRST_NAMES = ['Alex','Jordan','Morgan','Taylor','Casey','Riley','Jamie','Quinn','Avery','Blake','Drew','Skyler','Reese','Parker','Hayden','Dakota','Emery','Sage','River','Rowan','Kai','Logan','Cameron','Finley','Elliot','Harper','Lennox','Nico','Wren','Jules'];
+const LAST_NAMES = ['Chen','Williams','Martinez','Johnson','Lee','Patel','Kim','Garcia','Anderson','Taylor','Brown','Wilson','Thomas','Moore','Jackson','White','Harris','Clark','Lewis','Hall','Young','Walker','Allen','King','Scott','Green','Adams','Baker','Rivera','Hill'];
+const STATUSES = ['pending','fulfilled','shipped','delivered','cancelled'];
+const STATUS_WEIGHTS = [0.10, 0.15, 0.18, 0.52, 0.05];
+
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
+}
+function pick<T>(arr: T[], rand: () => number): T { return arr[Math.floor(rand() * arr.length)]; }
+function weightedPick(items: string[], weights: number[], rand: () => number): string {
+  const r = rand(); let sum = 0;
+  for (let i = 0; i < items.length; i++) { sum += weights[i]; if (r <= sum) return items[i]; }
+  return items[items.length - 1];
+}
+
+interface MockOrder {
+  id: string; order_number: string; customer_name: string; customer_email: string;
+  items: { title: string; variant: string; qty: number; price: number; product_id: string }[];
+  subtotal: number; total: number; status: string; created_at: string;
+}
+
+let _mockOrdersCache: MockOrder[] | null = null;
+function generateMockOrders(): MockOrder[] {
+  if (_mockOrdersCache) return _mockOrdersCache;
+  const rand = seededRandom(77);
+  const orders: MockOrder[] = [];
+  const now = Date.now();
+  const SIZES = ['XS','S','M','L','XL'];
+  for (let i = 0; i < 100; i++) {
+    const firstName = pick(FIRST_NAMES, rand);
+    const lastName = pick(LAST_NAMES, rand);
+    const numItems = rand() < 0.55 ? 1 : rand() < 0.80 ? 2 : 3;
+    const items: MockOrder['items'] = [];
+    const usedIds = new Set<string>();
+    for (let j = 0; j < numItems; j++) {
+      let prod = pick(DEMO_CATALOG, rand);
+      let attempts = 0;
+      while (usedIds.has(prod.id) && attempts < 10) { prod = pick(DEMO_CATALOG, rand); attempts++; }
+      usedIds.add(prod.id);
+      items.push({ title: prod.title, variant: pick(SIZES, rand), qty: 1, price: prod.price, product_id: prod.id });
+    }
+    const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0);
+    const status = weightedPick(STATUSES, STATUS_WEIGHTS, rand);
+    const daysAgo = Math.floor(rand() * 120);
+    const hoursAgo = Math.floor(rand() * 24);
+    const createdAt = new Date(now - daysAgo * 86400000 - hoursAgo * 3600000).toISOString();
+    orders.push({
+      id: `mock-${String(i + 1).padStart(4, '0')}`,
+      order_number: `CB-${String(1001 + i).padStart(4, '0')}`,
+      customer_email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
+      customer_name: `${firstName} ${lastName}`,
+      items, subtotal, total: subtotal, status, created_at: createdAt,
+    });
+  }
+  orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  _mockOrdersCache = orders;
+  return orders;
+}
+
 // Tool definitions for the AI agent
 const tools = [
   {
@@ -175,6 +259,15 @@ async function executeTool(
 
       const { data, error } = await query;
       if (error) throw error;
+
+      // Fall back to demo catalog if DB is empty
+      if (!data || data.length === 0) {
+        let demos = [...DEMO_CATALOG];
+        if (args.search) demos = demos.filter(p => p.title.toLowerCase().includes((args.search as string).toLowerCase()));
+        if (args.category) demos = demos.filter(p => p.category === args.category);
+        const limited = demos.slice(0, (args.limit as number) || 20);
+        return { products: limited.map(p => ({ ...p, status: 'active', tags: [], pinned: false })), count: limited.length, source: "demo" };
+      }
       return { products: data, count: data?.length || 0 };
     }
 
@@ -231,6 +324,16 @@ async function executeTool(
 
       const { data, error } = await query;
       if (error) throw error;
+
+      // Fall back to mock orders if DB is empty
+      if (!data || data.length === 0) {
+        let mockOrders = generateMockOrders();
+        if (args.status) mockOrders = mockOrders.filter(o => o.status === args.status);
+        if (args.date_from) mockOrders = mockOrders.filter(o => o.created_at >= (args.date_from as string));
+        if (args.date_to) mockOrders = mockOrders.filter(o => o.created_at <= (args.date_to as string));
+        const limited = mockOrders.slice(0, (args.limit as number) || 20);
+        return { orders: limited, count: limited.length, total_in_store: mockOrders.length, source: "demo" };
+      }
       return { orders: data, count: data?.length || 0 };
     }
 
@@ -257,7 +360,7 @@ async function executeTool(
           dateFrom = new Date(0);
       }
 
-      const { data: orders, error } = await supabaseAdmin
+      const { data: dbOrders, error } = await supabaseAdmin
         .from("orders")
         .select("total, items, created_at, status")
         .eq("merchant_id", merchantId)
@@ -265,14 +368,37 @@ async function executeTool(
 
       if (error) throw error;
 
-      const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total), 0) || 0;
-      const orderCount = orders?.length || 0;
+      // Use mock orders if DB is empty
+      const useOrders = (dbOrders && dbOrders.length > 0)
+        ? dbOrders.map(o => ({ total: Number(o.total), items: o.items, created_at: o.created_at, status: o.status }))
+        : generateMockOrders()
+            .filter(o => new Date(o.created_at).getTime() >= dateFrom.getTime())
+            .map(o => ({ total: o.total, items: o.items, created_at: o.created_at, status: o.status }));
+
+      const nonCancelled = useOrders.filter(o => o.status !== 'cancelled');
+      const totalRevenue = nonCancelled.reduce((sum, o) => sum + o.total, 0);
+      const orderCount = useOrders.length;
+
+      // Top products
+      const productSales: Record<string, { title: string; revenue: number; qty: number }> = {};
+      for (const o of useOrders) {
+        const orderItems = Array.isArray(o.items) ? o.items : [];
+        for (const item of orderItems) {
+          const pid = (item as any).product_id || (item as any).title;
+          if (!productSales[pid]) productSales[pid] = { title: (item as any).title || pid, revenue: 0, qty: 0 };
+          productSales[pid].revenue += (item as any).price * ((item as any).qty || 1);
+          productSales[pid].qty += (item as any).qty || 1;
+        }
+      }
+      const topProducts = Object.values(productSales).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
       return {
         period: args.period,
-        total_revenue: totalRevenue,
+        total_revenue: Math.round(totalRevenue * 100) / 100,
         order_count: orderCount,
-        average_order_value: orderCount > 0 ? (totalRevenue / orderCount).toFixed(2) : 0,
+        average_order_value: orderCount > 0 ? Math.round((totalRevenue / nonCancelled.length) * 100) / 100 : 0,
+        top_products: topProducts,
+        source: (dbOrders && dbOrders.length > 0) ? "live" : "demo",
       };
     }
 
