@@ -729,6 +729,7 @@ export function SpatialCanvas() {
               {CATEGORIES.map(cat => (
                 <button style={{ fontSize: 'var(--font-size-body, 10px)', fontFamily: 'var(--font-body)', color: themeSettings.bodyFontColor || undefined }}
                   key={cat}
+                  onMouseEnter={() => { if (cat !== activeCategory) { setActiveCategory(cat); } }}
                   onClick={() => { if (cat === activeCategory) { fitToVisibleProducts(); } else { setActiveCategory(cat); } }}
                   className={`tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
                     activeCategory === cat
