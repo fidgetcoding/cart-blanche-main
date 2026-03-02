@@ -338,25 +338,27 @@ function SizeSlider({ label, value, min, max, onChange }: { label: string; value
 
 function ColorInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLInputElement>(null);
+  const { themeSettings } = useTheme();
+  const defaultColor = themeSettings.mode === 'light' ? '#262626' : '#ffffff';
+  const displayValue = value || defaultColor;
   return (
     <div className="flex items-center gap-3">
       <span className="text-[10px] text-muted-foreground w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
       <button
         onClick={() => ref.current?.click()}
         className="w-6 h-6 rounded-md border border-border/50 flex-shrink-0 cursor-pointer"
-        style={{ background: value || 'hsl(var(--foreground))' }}
+        style={{ background: displayValue }}
       />
-      <input ref={ref} type="color" value={value || '#ffffff'} onChange={e => onChange(e.target.value)} className="sr-only" />
+      <input ref={ref} type="color" value={displayValue} onChange={e => onChange(e.target.value)} className="sr-only" />
       <input
         type="text"
-        value={value}
+        value={displayValue.toUpperCase()}
         onChange={e => onChange(e.target.value)}
-        placeholder="inherit"
         className="flex-1 bg-muted/50 border border-border/50 rounded-md px-2 py-1 text-[10px] font-mono text-foreground tracking-wider focus:outline-none focus:ring-1 focus:ring-ring uppercase"
         maxLength={7}
       />
       {value && (
-        <button onClick={() => onChange('')} className="text-[9px] text-muted-foreground hover:text-foreground transition-colors">✕</button>
+        <button onClick={() => onChange('')} className="text-[9px] text-muted-foreground hover:text-foreground transition-colors" title="Reset to default">✕</button>
       )}
     </div>
   );
