@@ -21,6 +21,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
   const cooldown = useRef(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { themeSettings } = useTheme();
 
   const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
@@ -110,6 +111,11 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     }
   }, [isHovered, hasMultiple]);
 
+  // Cleanup reset timer on unmount
+  useEffect(() => {
+    return () => { if (resetTimer.current) clearTimeout(resetTimer.current); };
+  }, []);
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!hasMultiple) return;
     if (e.key === 'ArrowRight') {
@@ -150,8 +156,16 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
         borderBottom: '1px solid hsl(var(--border))',
         ...borderGlowStyle,
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        if (resetTimer.current) { clearTimeout(resetTimer.current); resetTimer.current = null; }
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        if (currentImage !== 0) {
+          resetTimer.current = setTimeout(() => { setCurrentImage(0); }, 5000);
+        }
+      }}
       onKeyDown={handleKeyDown}
       onClick={onClick}
     >
