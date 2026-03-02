@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin/lab/yzy" element={<YzyTemplate />} />
+            <Route path="/admin/lab/sl" element={<SlTemplate />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="discounts" element={<AdminDiscounts />} />
@@ -45,7 +46,6 @@ const App = () => (
               <Route path="styling-guide" element={<AdminStylingGuide />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="lab" element={<LabIndex />} />
-              <Route path="lab/sl" element={<SlTemplate />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
