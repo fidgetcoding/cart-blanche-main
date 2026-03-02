@@ -33,14 +33,14 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
     if (cooldown.current) return;
     cooldown.current = true;
     setCurrentImage(prev => (prev + 1) % images.length);
-    setTimeout(() => { cooldown.current = false; }, 250);
+    setTimeout(() => { cooldown.current = false; }, 120);
   }, [images.length]);
 
   const prevImage = useCallback(() => {
     if (cooldown.current) return;
     cooldown.current = true;
     setCurrentImage(prev => (prev - 1 + images.length) % images.length);
-    setTimeout(() => { cooldown.current = false; }, 250);
+    setTimeout(() => { cooldown.current = false; }, 120);
   }, [images.length]);
 
   // Wheel handler — dead simple: one swipe = one transition, then ignore everything for 800ms
@@ -68,7 +68,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
       blocked = true;
       if (blockTimer) clearTimeout(blockTimer);
-      blockTimer = setTimeout(() => { blocked = false; }, 800);
+      blockTimer = setTimeout(() => { blocked = false; }, 200);
     };
 
     let touchStartClientX = 0;
