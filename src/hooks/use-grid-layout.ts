@@ -15,10 +15,26 @@ export interface GridLayout {
   hiddenProductTypes: string[];
 }
 
+// Broadcast layout changes across hook instances
+const LAYOUT_CHANGE_EVENT = 'grid-layout-changed';
+function broadcastLayoutChange(layout: GridLayout) {
+  window.dispatchEvent(new CustomEvent(LAYOUT_CHANGE_EVENT, { detail: layout }));
+}
+
 export function useGridLayout() {
   const [layout, setLayout] = useState<GridLayout | null>(null);
   const [dbProducts, setDbProducts] = useState<DemoProduct[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Listen for layout changes from other hook instances
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<GridLayout>).detail;
+      setLayout(detail);
+    };
+    window.addEventListener(LAYOUT_CHANGE_EVENT, handler);
+    return () => window.removeEventListener(LAYOUT_CHANGE_EVENT, handler);
+  }, []);
 
   // Fetch saved layout and DB products on mount
   useEffect(() => {
@@ -113,7 +129,9 @@ export function useGridLayout() {
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      setLayout(prev => ({ productOrder, categoryOrder, hiddenTags: prev?.hiddenTags || [], hiddenProductTypes: prev?.hiddenProductTypes || [] }));
+      const updated = { productOrder, categoryOrder, hiddenTags: layout?.hiddenTags || [], hiddenProductTypes: layout?.hiddenProductTypes || [] };
+      setLayout(updated);
+      broadcastLayoutChange(updated);
     }
     return !error;
   }, []);
@@ -133,7 +151,9 @@ export function useGridLayout() {
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      setLayout(prev => prev ? { ...prev, hiddenTags } : { productOrder: [], categoryOrder: [], hiddenTags, hiddenProductTypes: [] });
+      const updated = layout ? { ...layout, hiddenTags } : { productOrder: [], categoryOrder: [], hiddenTags, hiddenProductTypes: [] };
+      setLayout(updated);
+      broadcastLayoutChange(updated);
     }
     return !error;
   }, []);
@@ -153,7 +173,9 @@ export function useGridLayout() {
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      setLayout(prev => prev ? { ...prev, hiddenProductTypes } : { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes });
+      const updated = layout ? { ...layout, hiddenProductTypes } : { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes };
+      setLayout(updated);
+      broadcastLayoutChange(updated);
     }
     return !error;
   }, []);
@@ -224,7 +246,9 @@ export function useGridLayout() {
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      setLayout({ productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [] });
+      const updated = { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [] };
+      setLayout(updated);
+      broadcastLayoutChange(updated);
     }
     return !error;
   }, []);
