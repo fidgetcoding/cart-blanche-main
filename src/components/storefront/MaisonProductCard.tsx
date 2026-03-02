@@ -18,6 +18,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
   const wheelAccumulator = useRef(0);
   const cooldown = useRef(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const { themeSettings } = useTheme();
 
   const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
@@ -54,7 +55,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
       if (cooldown.current) return;
 
       wheelAccumulator.current += e.deltaX;
-      if (Math.abs(wheelAccumulator.current) > 50) {
+      if (Math.abs(wheelAccumulator.current) > 40) {
         if (wheelAccumulator.current > 0) nextImage();
         else prevImage();
       }
@@ -64,23 +65,25 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     return () => el.removeEventListener('wheel', onWheel);
   }, [hasMultiple, nextImage, prevImage]);
 
-  // Keyboard arrows when hovered
+  // Focus card on hover for keyboard support
   useEffect(() => {
-    if (!isHovered || !hasMultiple) return;
+    if (isHovered && hasMultiple && cardRef.current) {
+      cardRef.current.focus({ preventScroll: true });
+    }
+  }, [isHovered, hasMultiple]);
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        nextImage();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        prevImage();
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isHovered, hasMultiple, nextImage, prevImage]);
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!hasMultiple) return;
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      nextImage();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      e.stopPropagation();
+      prevImage();
+    }
+  }, [hasMultiple, nextImage, prevImage]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -109,17 +112,21 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
 
   return (
     <motion.div
+      ref={cardRef}
+      tabIndex={-1}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}
       className="relative cursor-pointer group"
       style={{
+        outline: 'none',
         borderRight: '1px solid hsl(var(--border))',
         borderBottom: '1px solid hsl(var(--border))',
         ...borderGlowStyle,
       }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); wheelAccumulator.current = 0; setCurrentImage(0); }}
+      onMouseLeave={() => { setIsHovered(false); wheelAccumulator.current = 0; }}
+      onKeyDown={handleKeyDown}
       onClick={onClick}
     >
       {/* Image area */}
