@@ -247,66 +247,66 @@ export function MaisonCanvas() {
           </AnimatePresence>
         </div>
 
-        {/* View toggle — always visible */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <button
-            
-            onMouseEnter={() => setViewMode(3)}
-            onClick={() => setViewMode(3)}
-            className="text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1"
-            style={{ opacity: viewMode === 3 ? 1 : 0.4 }}
-          >
-            View by 3
-          </button>
-          <button
-            
-            onMouseEnter={() => setViewMode(6)}
-            onClick={() => setViewMode(6)}
-            className="text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1"
-            style={{ opacity: viewMode === 6 ? 1 : 0.4 }}
-          >
-            View by 6
-          </button>
-        </div>
+        {/* View toggle — hidden when detail is open */}
+        {!selectedProduct && (
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              onMouseEnter={() => setViewMode(3)}
+              onClick={() => setViewMode(3)}
+              className="text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1"
+              style={{ opacity: viewMode === 3 ? 1 : 0.4 }}
+            >
+              View by 3
+            </button>
+            <button
+              onMouseEnter={() => setViewMode(6)}
+              onClick={() => setViewMode(6)}
+              className="text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1"
+              style={{ opacity: viewMode === 6 ? 1 : 0.4 }}
+            >
+              View by 6
+            </button>
+          </div>
+        )}
       </div>
 
 
-      {/* Product grid */}
-      <div className="px-0">
-        <motion.div
-          layout
-          className="grid w-full"
-          style={{
-            gridTemplateColumns: `repeat(${viewMode}, 1fr)`,
-            borderLeft: '1px solid hsl(var(--border))',
-            borderTop: '1px solid hsl(var(--border))',
-          }}
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredProducts.map((product, i) => (
-              <MaisonProductCard
-                key={product.id}
-                product={product}
-                viewMode={viewMode}
-                onClick={() => setSelectedProduct(product)}
-                onBuildSet={handleBuildSet}
-                index={i}
-              />
-            ))}
-          </AnimatePresence>
-        </motion.div>
-      </div>
-
-      {/* Product detail overlay */}
-      {selectedProduct && (
+      {/* Product grid OR detail view */}
+      {selectedProduct ? (
         <MaisonProductDetail
           product={selectedProduct}
           products={filteredProducts}
+          allProducts={allProducts}
           onClose={() => setSelectedProduct(null)}
           onNavigate={setSelectedProduct}
+          onBuildSet={handleBuildSet}
         />
+      ) : (
+        <div className="px-0">
+          <motion.div
+            layout
+            className="grid w-full"
+            style={{
+              gridTemplateColumns: `repeat(${viewMode}, 1fr)`,
+              borderLeft: '1px solid hsl(var(--border))',
+              borderTop: '1px solid hsl(var(--border))',
+            }}
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredProducts.map((product, i) => (
+                <MaisonProductCard
+                  key={product.id}
+                  product={product}
+                  viewMode={viewMode}
+                  onClick={() => setSelectedProduct(product)}
+                  onBuildSet={handleBuildSet}
+                  index={i}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        </div>
       )}
-
       {/* Cart drawer */}
       <CartDrawer />
 
