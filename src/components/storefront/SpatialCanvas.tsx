@@ -126,7 +126,7 @@ export function SpatialCanvas() {
     const rect = container.getBoundingClientRect();
     const padX = isMobile ? 16 : 40;
     const headerPad = isMobile ? 90 : 100;
-    const bottomPad = isMobile ? 80 : 120;
+    const bottomPad = isMobile ? 100 : 160;
     const fitScale = Math.min(
       (rect.width - padX * 2) / CANVAS_W,
       (rect.height - headerPad - bottomPad) / CANVAS_H
@@ -167,7 +167,7 @@ export function SpatialCanvas() {
     const bboxH = maxY - minY;
     const padX = isMobile ? 20 : 120;
     const headerPad = isMobile ? 90 : 120;
-    const bottomPad = isMobile ? 70 : 100;
+    const bottomPad = isMobile ? 100 : 160;
     const fitScale = Math.min(
       (rect.width - padX * 2) / bboxW,
       (rect.height - headerPad - bottomPad) / bboxH
@@ -256,7 +256,7 @@ export function SpatialCanvas() {
       if (ctr) {
         const r = ctr.getBoundingClientRect();
         const canvasBottom = t.y + canvasDimsRef.current.h * t.scale;
-        const footerZone = r.height - 70;
+        const footerZone = r.height - 50;
         // Use hysteresis: require more clearance to turn off than to turn on
         const shouldGlass = canvasBottom > footerZone;
         const shouldClear = canvasBottom < footerZone - 20;
