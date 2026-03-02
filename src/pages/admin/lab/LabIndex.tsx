@@ -14,7 +14,7 @@ const TEMPLATES = [
   {
     id: 'sl',
     name: 'SL Template',
-    subtitle: 'High-fashion editorial. Cinematic pacing, full-bleed imagery.',
+    subtitle: 'Editorial luxury grid. Built for high-end fashion and designer brands.',
     activeDescription: 'Your active storefront template. Cinematic editorial layout.',
     inactiveDescription: 'High-fashion editorial. Cinematic pacing, full-bleed imagery.',
     to: '/admin/lab/sl',
