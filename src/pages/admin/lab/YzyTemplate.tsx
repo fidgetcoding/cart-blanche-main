@@ -115,7 +115,7 @@ function ThemeControls() {
               {GLOW_PRESETS.map(g => (
                 <button
                   key={g.label}
-                  onClick={() => updateTheme({ tileHoverGlow: g.value })}
+                  onClick={() => { updateTheme({ tileHoverGlow: g.value }); setCustomColor(g.value); }}
                   className={`w-6 h-6 rounded-full border-2 transition-all ${
                     themeSettings.tileHoverGlow === g.value ? 'border-foreground scale-110' : 'border-border/50 hover:border-foreground/40'
                   }`}
@@ -123,25 +123,56 @@ function ThemeControls() {
                   title={g.label}
                 />
               ))}
-              <div className="relative">
-                <input
-                  type="color"
-                  value={customColor}
-                  onChange={e => {
-                    setCustomColor(e.target.value);
-                    updateTheme({ tileHoverGlow: e.target.value });
-                  }}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  title="Custom"
-                />
-                <div className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center ${
+              {/* Eyedropper - picks color from anywhere on screen */}
+              <button
+                onClick={async () => {
+                  if ('EyeDropper' in window) {
+                    try {
+                      const dropper = new (window as any).EyeDropper();
+                      const result = await dropper.open();
+                      setCustomColor(result.sRGBHex);
+                      updateTheme({ tileHoverGlow: result.sRGBHex });
+                    } catch { /* user cancelled */ }
+                  } else {
+                    toast.error('EyeDropper not supported in this browser');
+                  }
+                }}
+                className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center ${
                   !GLOW_PRESETS.some(g => g.value === themeSettings.tileHoverGlow)
                     ? 'border-foreground scale-110'
                     : 'border-border/50 hover:border-foreground/40'
-                }`} style={{ background: !GLOW_PRESETS.some(g => g.value === themeSettings.tileHoverGlow) ? customColor : 'transparent' }}>
-                  <Pipette className="w-3 h-3 text-foreground/70" />
-                </div>
-              </div>
+                }`}
+                style={{ background: !GLOW_PRESETS.some(g => g.value === themeSettings.tileHoverGlow) ? customColor : 'transparent' }}
+                title="Pick color from screen"
+              >
+                <Pipette className="w-3 h-3 text-foreground/70" />
+              </button>
+            </div>
+            {/* Hex code input */}
+            <div className="flex items-center gap-2">
+              <div
+                className="w-6 h-6 rounded-md border border-border/50 flex-shrink-0"
+                style={{ background: customColor }}
+              />
+              <input
+                type="text"
+                value={customColor}
+                onChange={e => {
+                  const val = e.target.value;
+                  setCustomColor(val);
+                  if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                    updateTheme({ tileHoverGlow: val });
+                  }
+                }}
+                onBlur={() => {
+                  if (/^#[0-9a-fA-F]{6}$/.test(customColor)) {
+                    updateTheme({ tileHoverGlow: customColor });
+                  }
+                }}
+                placeholder="#000000"
+                className="flex-1 bg-muted/50 border border-border/50 rounded-md px-2.5 py-1 text-[11px] font-mono text-foreground tracking-wider focus:outline-none focus:ring-1 focus:ring-ring uppercase"
+                maxLength={7}
+              />
             </div>
           </div>
 
