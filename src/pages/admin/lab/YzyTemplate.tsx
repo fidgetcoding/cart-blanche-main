@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette } from 'lucide-react';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
@@ -74,6 +74,7 @@ function ThemeControls() {
   const { themeSettings, updateTheme } = useTheme();
   const [expanded, setExpanded] = useState(true);
   const [customColor, setCustomColor] = useState('#ffffff');
+  const colorInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="mx-3 mb-3 mt-2 rounded-xl border border-accent/20 bg-accent/[0.03] shadow-[0_0_15px_-3px_hsl(var(--accent)/0.15)]">
@@ -147,6 +148,25 @@ function ThemeControls() {
               >
                 <Pipette className="w-3 h-3 text-foreground/70" />
               </button>
+              {/* Color picker (native) */}
+              <div className="relative">
+                <input
+                  ref={colorInputRef}
+                  type="color"
+                  value={/^#[0-9a-fA-F]{6}$/.test(customColor) ? customColor : '#ffffff'}
+                  onChange={e => {
+                    setCustomColor(e.target.value);
+                    updateTheme({ tileHoverGlow: e.target.value });
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div
+                  className="w-6 h-6 rounded-full border-2 border-border/50 hover:border-foreground/40 transition-all flex items-center justify-center cursor-pointer"
+                  title="Open color picker"
+                >
+                  <Palette className="w-3 h-3 text-foreground/70" />
+                </div>
+              </div>
             </div>
             {/* Hex code input */}
             <div className="flex items-center gap-2">
