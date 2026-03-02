@@ -396,7 +396,14 @@ export default function AdminStylingGuide() {
                   <button
                     key={product.id}
                     onClick={() => handleProductClick(product.id)}
+                    draggable={activeView === 'canvas'}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/product-id', product.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ease-out border-b border-foreground/3 ${
+                      activeView === 'canvas' ? 'cursor-grab active:cursor-grabbing' : ''
+                    } ${
                       selectedProductId === product.id
                         ? 'bg-foreground/8 border-l-2 border-l-primary/60 scale-[1.01]'
                         : blankNodeActive && activeView === 'canvas'

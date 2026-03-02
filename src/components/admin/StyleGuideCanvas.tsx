@@ -31,6 +31,7 @@ const PENDING_STYLE = { stroke: 'rgba(255,255,255,0.15)', strokeWidth: 2, stroke
 
 export interface StyleGuideCanvasHandle {
   addProduct: (p: DemoProduct) => void;
+  addProductAtPosition: (p: DemoProduct, screenX: number, screenY: number) => void;
   selectProduct: (id: string) => void;
   fillBlankNode: (p: DemoProduct) => void;
   hasBlankNode: () => boolean;
@@ -391,31 +392,38 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     setSelectedNodeId(null);
   }, []);
 
-  // Native double-click listener (ReactFlow swallows React onDoubleClick)
-  const flowContainerRef = useRef<HTMLDivElement>(null);
-  const screenToFlowPositionRef = useRef(screenToFlowPosition);
-  screenToFlowPositionRef.current = screenToFlowPosition;
-  const createBlankNodeRef = useRef(createBlankNode);
-  createBlankNodeRef.current = createBlankNode;
+  // Double-click on pane to create blank node
+  const handleCanvasDoubleClick = useCallback((event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('.react-flow__node') || target.closest('[data-toolbar]')) return;
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    createBlankNode(position);
+  }, [screenToFlowPosition, createBlankNode]);
 
-  useEffect(() => {
-    const el = flowContainerRef.current;
-    console.log('[StyleGuideCanvas] dblclick useEffect, el:', !!el);
-    if (!el) return;
-    const handler = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      console.log('[StyleGuideCanvas] dblclick fired, target:', target.className);
-      if (target.closest('.react-flow__node') || target.closest('[data-toolbar]')) {
-        console.log('[StyleGuideCanvas] dblclick ignored (node/toolbar)');
-        return;
-      }
-      const position = screenToFlowPositionRef.current({ x: event.clientX, y: event.clientY });
-      console.log('[StyleGuideCanvas] creating blank node at', position);
-      createBlankNodeRef.current(position);
-    };
-    el.addEventListener('dblclick', handler);
-    return () => el.removeEventListener('dblclick', handler);
+  // Drag-and-drop from sidebar
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
   }, []);
+
+  const onDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    const productId = event.dataTransfer.getData('application/product-id');
+    if (!productId) return;
+    const product = DEMO_PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+    // Don't add duplicates
+    if (nodes.some(n => n.id === productId)) return;
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    const newNode: Node = {
+      id: product.id,
+      type: 'product',
+      position,
+      data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+    };
+    setNodes(nds => [...nds, newNode]);
+    setSelectedNodeId(product.id);
+  }, [screenToFlowPosition, nodes, setNodes, removeNodeFromCanvas]);
 
   const handleSave = useCallback(() => {
     const posMap: Record<string, { x: number; y: number }> = {};
@@ -473,6 +481,17 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       setNodes(nds => [...nds, newNode]);
       setSelectedNodeId(product.id);
     },
+    addProductAtPosition: (product: DemoProduct, screenX: number, screenY: number) => {
+      const position = screenToFlowPosition({ x: screenX, y: screenY });
+      const newNode: Node = {
+        id: product.id,
+        type: 'product',
+        position,
+        data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+      };
+      setNodes(nds => [...nds, newNode]);
+      setSelectedNodeId(product.id);
+    },
     selectProduct: (id: string) => {
       setSelectedNodeId(id);
       const node = nodes.find(n => n.id === id);
@@ -523,7 +542,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
-      <div className="flex-1 relative" ref={flowContainerRef}>
+      <div className="flex-1 relative" onDragOver={onDragOver} onDrop={onDrop}>
         {/* Floating toolbar */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2 liquid-glass rounded-lg px-2 py-1.5">
           <button
@@ -556,7 +575,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           onConnectEnd={onConnectEnd}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
-          
+          onDoubleClick={handleCanvasDoubleClick}
           nodeTypes={nodeTypes}
           style={{ background: '#0a0a0a' }}
           deleteKeyCode={['Backspace', 'Delete']}
