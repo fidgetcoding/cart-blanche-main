@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare, Save, RotateCcw } from 'lucide-react';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
@@ -71,7 +71,7 @@ function injectCustomFont(file: File): Promise<string> {
 
 
 function ThemeControls() {
-  const { themeSettings, updateTheme } = useTheme();
+  const { themeSettings, updateTheme, saveTheme, revertTheme, hasUnsavedChanges } = useTheme();
   const [expanded, setExpanded] = useState(true);
   const [customColor, setCustomColor] = useState('#ffffff');
   const colorInputRef = useRef<HTMLInputElement>(null);
@@ -225,6 +225,26 @@ function ThemeControls() {
               <SizeSlider label="Numeral" value={themeSettings.numeralFontSize} min={8} max={16} onChange={v => updateTheme({ numeralFontSize: v })} />
             </div>
         </div>
+
+          {/* Save / Revert */}
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={revertTheme}
+              disabled={!hasUnsavedChanges}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[10px] font-display tracking-wider border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <RotateCcw className="w-3 h-3" />
+              REVERT
+            </button>
+            <button
+              onClick={() => { saveTheme(); toast.success('Theme saved'); }}
+              disabled={!hasUnsavedChanges}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[10px] font-display tracking-wider bg-accent text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Save className="w-3 h-3" />
+              SAVE
+            </button>
+          </div>
     </div>
   );
 }
