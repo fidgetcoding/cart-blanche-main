@@ -20,13 +20,21 @@ import '@xyflow/react/dist/style.css';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import type { DemoProduct } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
-import { X, ChevronUp, ChevronDown, Save } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Save, Plus } from 'lucide-react';
+
+/* ── Constants ── */
+const BLANK_NODE_ID = '__blank__';
+const PAIRS_STYLE = { stroke: '#60a5fa', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.5))' };
+const EXTRAS_STYLE = { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' };
+const PENDING_STYLE = { stroke: 'rgba(255,255,255,0.15)', strokeWidth: 2, strokeDasharray: '4 4' };
 
 /* ── Types ── */
 
 export interface StyleGuideCanvasHandle {
   addProduct: (p: DemoProduct) => void;
   selectProduct: (id: string) => void;
+  fillBlankNode: (p: DemoProduct) => void;
+  hasBlankNode: () => boolean;
 }
 
 interface StyleGuideCanvasProps {
@@ -37,6 +45,7 @@ interface StyleGuideCanvasProps {
   onSave: () => void;
   saving: boolean;
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
+  onBlankNodeChange: (active: boolean) => void;
 }
 
 type BodyZoneGroup = 'TOPS' | 'BOTTOMS' | 'ACCESSORIES';
@@ -51,7 +60,21 @@ function classifyGroup(product: DemoProduct): BodyZoneGroup {
 /* ── Custom Node ── */
 
 function ProductNode({ data, selected }: NodeProps) {
-  const d = data as { product: DemoProduct; zone: BodyZoneGroup };
+  const d = data as { product?: DemoProduct; zone?: BodyZoneGroup; isBlank?: boolean; onDelete?: (id: string) => void };
+
+  if (d.isBlank) {
+    return (
+      <div className="w-[120px] h-[130px] bg-foreground/3 border-2 border-dashed border-foreground/15 rounded-lg p-4 flex flex-col items-center justify-center gap-2 animate-scale-in">
+        <Handle type="target" position={Position.Left} id="target" className="!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20" />
+        <Handle type="source" position={Position.Right} id="source" className="!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20" />
+        <Plus className="w-6 h-6 text-muted-foreground/40" />
+        <span className="text-[8px] text-muted-foreground/50 font-display tracking-widest">SELECT PRODUCT</span>
+      </div>
+    );
+  }
+
+  if (!d.product) return null;
+
   const borderColor =
     d.zone === 'TOPS' ? 'border-blue-500/30' :
     d.zone === 'BOTTOMS' ? 'border-amber-500/30' :
@@ -59,17 +82,25 @@ function ProductNode({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={`relative bg-card rounded-lg border-2 ${borderColor} ${selected ? 'ring-2 ring-primary/50' : ''} p-2 flex flex-col items-center gap-1.5 w-[110px] transition-shadow`}
+      className={`relative bg-card rounded-lg border-2 ${borderColor} ${selected ? 'ring-2 ring-primary/50' : ''} p-2 flex flex-col items-center gap-1.5 w-[120px] transition-shadow group`}
       style={{ boxShadow: selected ? '0 0 20px hsl(var(--primary) / 0.15)' : undefined }}
     >
-      {/* Single target handle – left side */}
       <Handle type="target" position={Position.Left} id="target" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      {/* Single source handle – right side */}
       <Handle type="source" position={Position.Right} id="source" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      {/* Hover delete button */}
+      {d.onDelete && (
+        <button
+          onClick={(e) => { e.stopPropagation(); d.onDelete!(d.product!.id); }}
+          className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
       <img
         src={getImageUrl(d.product.images[0], 'thumb')}
         alt={d.product.title}
         className="w-[80px] h-[80px] rounded object-cover"
+        draggable={false}
       />
       <p className="text-[10px] font-display tracking-wide text-center leading-tight truncate w-full">{d.product.title}</p>
       <p className="text-[9px] text-muted-foreground">${d.product.price}</p>
@@ -91,7 +122,7 @@ function presetsToEdges(presets: ProductPreset[]): Edge[] {
         target: targetId,
         sourceHandle: 'source',
         targetHandle: 'target',
-        style: { stroke: '#60a5fa', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.5))' },
+        style: PAIRS_STYLE,
         type: 'default',
         data: { type: 'pairs' },
       });
@@ -103,7 +134,7 @@ function presetsToEdges(presets: ProductPreset[]): Edge[] {
         target: targetId,
         sourceHandle: 'source',
         targetHandle: 'target',
-        style: { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' },
+        style: EXTRAS_STYLE,
         type: 'default',
         data: { type: 'extras' },
       });
@@ -115,6 +146,7 @@ function presetsToEdges(presets: ProductPreset[]): Edge[] {
 function edgesToPresets(edges: Edge[]): ProductPreset[] {
   const map = new Map<string, { pairs: string[]; extras: string[] }>();
   edges.forEach(e => {
+    if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return;
     if (!map.has(e.source)) map.set(e.source, { pairs: [], extras: [] });
     const entry = map.get(e.source)!;
     const edgeType = (e.data as any)?.type;
@@ -138,9 +170,13 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   onSave,
   saving,
   onCanvasNodeIdsChange,
+  onBlankNodeChange,
 }, ref) => {
-  const { fitView, setCenter } = useReactFlow();
+  const { fitView, setCenter, screenToFlowPosition } = useReactFlow();
   const nodeCountRef = useRef(0);
+  const [showHotkeys, setShowHotkeys] = useState(true);
+  // Track pending connection source for blank node flow
+  const pendingConnectionSourceRef = useRef<string | null>(null);
 
   // Initialize from saved layout
   const initialNodes: Node[] = useMemo(() => {
@@ -153,14 +189,13 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           id: product.id,
           type: 'product' as const,
           position: canvasLayout.positions[id] ?? { x: 0, y: 0 },
-          data: { product, zone: classifyGroup(product) },
+          data: { product, zone: classifyGroup(product), onDelete: undefined as any },
         };
       })
       .filter(Boolean) as Node[];
   }, []);
 
   const initialEdges = useMemo(() => {
-    // Only include edges for nodes that are on the canvas
     const nodeIdSet = new Set(canvasLayout?.nodeIds ?? []);
     return presetsToEdges(presets).filter(e => nodeIdSet.has(e.source) && nodeIdSet.has(e.target));
   }, []);
@@ -169,9 +204,32 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-  // Sync node IDs to parent
+  // Keep onDelete callback fresh on all nodes
+  const removeNodeFromCanvas = useCallback((nodeId: string) => {
+    if (nodeId === BLANK_NODE_ID) {
+      onBlankNodeChange(false);
+      pendingConnectionSourceRef.current = null;
+    }
+    setNodes(nds => nds.filter(n => n.id !== nodeId));
+    setEdges(eds => {
+      const filtered = eds.filter(e => e.source !== nodeId && e.target !== nodeId);
+      syncPresetsFromEdges(filtered);
+      return filtered;
+    });
+    if (selectedNodeId === nodeId) setSelectedNodeId(null);
+  }, [selectedNodeId]);
+
+  // Inject onDelete into node data
   useEffect(() => {
-    const ids = new Set(nodes.map(n => n.id));
+    setNodes(nds => nds.map(n => ({
+      ...n,
+      data: { ...n.data, onDelete: removeNodeFromCanvas },
+    })));
+  }, [removeNodeFromCanvas]);
+
+  // Sync node IDs to parent (exclude blank node)
+  useEffect(() => {
+    const ids = new Set(nodes.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
     nodeCountRef.current = ids.size;
     onCanvasNodeIdsChange(ids);
   }, [nodes, onCanvasNodeIdsChange]);
@@ -179,6 +237,103 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   const syncPresetsFromEdges = useCallback((currentEdges: Edge[]) => {
     onPresetsChange(edgesToPresets(currentEdges));
   }, [onPresetsChange]);
+
+  const hasBlankNode = useCallback(() => {
+    return nodes.some(n => n.id === BLANK_NODE_ID);
+  }, [nodes]);
+
+  const createBlankNode = useCallback((position: { x: number; y: number }, pendingSourceId?: string) => {
+    // Only one blank node at a time
+    if (nodes.some(n => n.id === BLANK_NODE_ID)) {
+      // Pan to existing blank node
+      const existing = nodes.find(n => n.id === BLANK_NODE_ID);
+      if (existing) {
+        setCenter(existing.position.x + 60, existing.position.y + 65, { zoom: 1, duration: 400 });
+      }
+      return;
+    }
+    
+    const newNode: Node = {
+      id: BLANK_NODE_ID,
+      type: 'product',
+      position,
+      data: { isBlank: true, onDelete: removeNodeFromCanvas },
+    };
+    setNodes(nds => [...nds, newNode]);
+    onBlankNodeChange(true);
+
+    if (pendingSourceId) {
+      pendingConnectionSourceRef.current = pendingSourceId;
+      // Add a pending gray edge
+      const pendingEdge: Edge = {
+        id: `pending-${pendingSourceId}-blank`,
+        source: pendingSourceId,
+        target: BLANK_NODE_ID,
+        sourceHandle: 'source',
+        targetHandle: 'target',
+        style: PENDING_STYLE,
+        type: 'default',
+        data: { type: 'pending' },
+      };
+      setEdges(eds => [...eds, pendingEdge]);
+    }
+  }, [nodes, setNodes, setEdges, setCenter, removeNodeFromCanvas, onBlankNodeChange]);
+
+  const fillBlankNode = useCallback((product: DemoProduct) => {
+    const blankNode = nodes.find(n => n.id === BLANK_NODE_ID);
+    if (!blankNode) return;
+
+    // Replace blank node with filled product node
+    setNodes(nds => nds.map(n => {
+      if (n.id !== BLANK_NODE_ID) return n;
+      return {
+        ...n,
+        id: product.id,
+        data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+      };
+    }));
+
+    // Complete pending connection if exists
+    const pendingSourceId = pendingConnectionSourceRef.current;
+    setEdges(eds => {
+      // Remove pending edge
+      let newEdges = eds.filter(e => !(e.data as any)?.type || (e.data as any).type !== 'pending');
+      // Also update any edges referencing the blank node ID
+      newEdges = newEdges.map(e => {
+        if (e.target === BLANK_NODE_ID) return { ...e, target: product.id, id: e.id.replace(BLANK_NODE_ID, product.id) };
+        if (e.source === BLANK_NODE_ID) return { ...e, source: product.id, id: e.id.replace(BLANK_NODE_ID, product.id) };
+        return e;
+      });
+
+      if (pendingSourceId) {
+        const sourceProduct = DEMO_PRODUCTS.find(p => p.id === pendingSourceId);
+        if (sourceProduct) {
+          const sourceZone = getBodyZone(sourceProduct);
+          const targetZone = getBodyZone(product);
+          const connectionType = sourceZone === targetZone ? 'extras' : 'pairs';
+          const style = connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE;
+          const newEdge: Edge = {
+            id: `${connectionType}-${pendingSourceId}-${product.id}`,
+            source: pendingSourceId,
+            target: product.id,
+            sourceHandle: 'source',
+            targetHandle: 'target',
+            style,
+            type: 'default',
+            data: { type: connectionType },
+          };
+          newEdges = addEdge(newEdge, newEdges);
+        }
+      }
+
+      syncPresetsFromEdges(newEdges);
+      return newEdges;
+    });
+
+    pendingConnectionSourceRef.current = null;
+    onBlankNodeChange(false);
+    setSelectedNodeId(product.id);
+  }, [nodes, setNodes, setEdges, syncPresetsFromEdges, removeNodeFromCanvas, onBlankNodeChange]);
 
   // Auto-detect pairs vs extras from body zone
   const onConnect = useCallback((connection: Connection) => {
@@ -193,9 +348,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const newEdge = {
       ...connection,
       id: `${connectionType}-${connection.source}-${connection.target}`,
-      style: connectionType === 'pairs'
-        ? { stroke: '#60a5fa', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.5))' }
-        : { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' },
+      style: connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE,
       data: { type: connectionType },
       type: 'default' as const,
     };
@@ -206,6 +359,20 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       return newEdges;
     });
   }, [setEdges, syncPresetsFromEdges]);
+
+  // Drag-to-empty: create blank node at drop position
+  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, connectionState: any) => {
+    if (connectionState?.isValid) return;
+    const sourceId = connectionState?.fromNode?.id;
+    if (!sourceId) return;
+
+    const clientX = 'clientX' in event ? event.clientX : (event as TouchEvent).changedTouches?.[0]?.clientX;
+    const clientY = 'clientY' in event ? event.clientY : (event as TouchEvent).changedTouches?.[0]?.clientY;
+    if (clientX == null || clientY == null) return;
+
+    const position = screenToFlowPosition({ x: clientX, y: clientY });
+    createBlankNode(position, sourceId);
+  }, [screenToFlowPosition, createBlankNode]);
 
   const handleEdgesChange = useCallback((changes: any) => {
     onEdgesChange(changes);
@@ -218,6 +385,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   }, [onEdgesChange, setEdges, syncPresetsFromEdges]);
 
   const handleNodeClick = useCallback((_: any, node: Node) => {
+    if (node.id === BLANK_NODE_ID) return;
     setSelectedNodeId(node.id);
   }, []);
 
@@ -225,10 +393,16 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     setSelectedNodeId(null);
   }, []);
 
+  const handlePaneDoubleClick = useCallback((event: React.MouseEvent) => {
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    createBlankNode(position);
+  }, [screenToFlowPosition, createBlankNode]);
+
   const handleSave = useCallback(() => {
     const posMap: Record<string, { x: number; y: number }> = {};
     const nodeIds: string[] = [];
     nodes.forEach(n => {
+      if (n.id === BLANK_NODE_ID) return;
       posMap[n.id] = n.position;
       nodeIds.push(n.id);
     });
@@ -236,7 +410,36 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onSave();
   }, [nodes, onCanvasLayoutChange, onSave]);
 
-  // Imperative handle for parent to add/select products
+  // Hotkeys
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      if ((e.key === 'p' || e.key === 'n') && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        createBlankNode({ x: 300, y: 300 });
+      }
+      if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        fitView({ duration: 400 });
+      }
+      if (e.key === 'Escape') {
+        if (hasBlankNode()) {
+          removeNodeFromCanvas(BLANK_NODE_ID);
+        }
+        setSelectedNodeId(null);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [createBlankNode, fitView, hasBlankNode, removeNodeFromCanvas, handleSave]);
+
+  // Imperative handle for parent
   useImperativeHandle(ref, () => ({
     addProduct: (product: DemoProduct) => {
       const count = nodeCountRef.current;
@@ -246,20 +449,21 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         id: product.id,
         type: 'product',
         position: { x: col * 160 + 50, y: row * 170 + 50 },
-        data: { product, zone: classifyGroup(product) },
+        data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
       };
       setNodes(nds => [...nds, newNode]);
       setSelectedNodeId(product.id);
     },
     selectProduct: (id: string) => {
       setSelectedNodeId(id);
-      // Pan to the node
       const node = nodes.find(n => n.id === id);
       if (node) {
-        setCenter(node.position.x + 55, node.position.y + 60, { zoom: 1, duration: 400 });
+        setCenter(node.position.x + 60, node.position.y + 65, { zoom: 1, duration: 400 });
       }
     },
-  }), [nodes, setNodes, setCenter]);
+    fillBlankNode,
+    hasBlankNode,
+  }), [nodes, setNodes, setCenter, removeNodeFromCanvas, fillBlankNode, hasBlankNode]);
 
   // Sidebar helpers
   const selectedProduct = selectedNodeId ? DEMO_PRODUCTS.find(p => p.id === selectedNodeId) : null;
@@ -281,9 +485,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
     setEdges(eds => {
       const otherEdges = eds.filter(e => !(e.source === selectedNodeId && (e.data as any)?.type === type));
-      const style = type === 'pairs'
-        ? { stroke: '#60a5fa', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.5))' }
-        : { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' };
+      const style = type === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE;
       const newEdges = items.map(targetId => ({
         id: `${type}-${selectedNodeId}-${targetId}`,
         source: selectedNodeId!,
@@ -299,16 +501,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       return result;
     });
   }, [selectedNodeId, selectedPreset, setEdges, syncPresetsFromEdges]);
-
-  const removeNodeFromCanvas = useCallback((nodeId: string) => {
-    setNodes(nds => nds.filter(n => n.id !== nodeId));
-    setEdges(eds => {
-      const filtered = eds.filter(e => e.source !== nodeId && e.target !== nodeId);
-      syncPresetsFromEdges(filtered);
-      return filtered;
-    });
-    setSelectedNodeId(null);
-  }, [setNodes, setEdges, syncPresetsFromEdges]);
 
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
@@ -342,12 +534,14 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           onNodesChange={onNodesChange}
           onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
+          onConnectEnd={onConnectEnd}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
+          onDoubleClick={handlePaneDoubleClick}
           nodeTypes={nodeTypes}
           style={{ background: '#0a0a0a' }}
           deleteKeyCode={['Backspace', 'Delete']}
-          fitView={nodes.length > 0}
+          fitView={initialNodes.length > 0}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.04)" />
           <Controls className="!rounded-lg !shadow-lg !border !border-foreground/10 [&]:!bg-foreground/5 [&]:!backdrop-blur-xl [&>button]:!bg-transparent [&>button]:!border-foreground/8 [&>button]:!text-foreground/50 [&>button:hover]:!bg-foreground/10 [&>button:hover]:!text-foreground [&>button]:!fill-foreground/50 [&>button:hover]:!fill-foreground" />
@@ -355,10 +549,28 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
         {/* Empty state */}
         {nodes.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
             <p className="text-sm text-muted-foreground/50 font-display tracking-wider">
               Click products in the sidebar to add them to the canvas
             </p>
+            <p className="text-[10px] text-muted-foreground/30 font-display tracking-wider">
+              or press P to add · double-click empty space
+            </p>
+          </div>
+        )}
+
+        {/* Hotkey hints */}
+        {showHotkeys && nodes.length > 0 && (
+          <div className="absolute bottom-4 left-14 z-10 flex items-center gap-1">
+            <div className="liquid-glass rounded-md px-3 py-1.5 text-[9px] text-muted-foreground/60 font-display tracking-wider flex items-center gap-3">
+              <span><kbd className="text-foreground/40">P</kbd> Add</span>
+              <span><kbd className="text-foreground/40">Del</kbd> Remove</span>
+              <span><kbd className="text-foreground/40">F</kbd> Fit</span>
+              <span><kbd className="text-foreground/40">⌘S</kbd> Save</span>
+              <button onClick={() => setShowHotkeys(false)} className="ml-1 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -377,7 +589,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
                 <div>
                   <p className="font-display text-xs tracking-wide font-bold">{selectedProduct.title}</p>
                   <p className="text-[11px] text-muted-foreground">${selectedProduct.price}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 text-[8px] font-display tracking-widest bg-secondary rounded text-muted-foreground">
+                  <span className="inline-block mt-1 px-2 py-0.5 text-[8px] font-display tracking-widest bg-foreground/5 rounded text-muted-foreground">
                     {classifyGroup(selectedProduct)}
                   </span>
                 </div>
@@ -404,12 +616,12 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
                     const p = DEMO_PRODUCTS.find(x => x.id === id);
                     if (!p) return null;
                     return (
-                      <div key={id} className="flex items-center gap-2 px-2 py-1.5 rounded bg-secondary/30">
+                      <div key={id} className="flex items-center gap-2 px-2 py-1.5 rounded bg-foreground/5">
                         <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-7 h-7 rounded object-cover" />
                         <span className="text-[10px] font-display tracking-wide flex-1 truncate">{p.title}</span>
                         <div className="flex items-center gap-0.5">
-                          <button onClick={() => moveItem('pairs', i, -1)} className="p-0.5 hover:bg-secondary rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
-                          <button onClick={() => moveItem('pairs', i, 1)} className="p-0.5 hover:bg-secondary rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
+                          <button onClick={() => moveItem('pairs', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
+                          <button onClick={() => moveItem('pairs', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
                           <button onClick={() => removeConnection(id, 'pairs')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
                         </div>
                       </div>
@@ -430,12 +642,12 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
                     const p = DEMO_PRODUCTS.find(x => x.id === id);
                     if (!p) return null;
                     return (
-                      <div key={id} className="flex items-center gap-2 px-2 py-1.5 rounded bg-secondary/30">
+                      <div key={id} className="flex items-center gap-2 px-2 py-1.5 rounded bg-foreground/5">
                         <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-7 h-7 rounded object-cover" />
                         <span className="text-[10px] font-display tracking-wide flex-1 truncate">{p.title}</span>
                         <div className="flex items-center gap-0.5">
-                          <button onClick={() => moveItem('extras', i, -1)} className="p-0.5 hover:bg-secondary rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
-                          <button onClick={() => moveItem('extras', i, 1)} className="p-0.5 hover:bg-secondary rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
+                          <button onClick={() => moveItem('extras', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
+                          <button onClick={() => moveItem('extras', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
                           <button onClick={() => removeConnection(id, 'extras')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
                         </div>
                       </div>
