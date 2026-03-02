@@ -115,6 +115,17 @@ function ThemeControls() {
     toast.success(`${val} added`);
   }, [newType, layout, saveHiddenProductTypes]);
 
+  const deleteSubcategory = useCallback(async (type: string) => {
+    const current = layout?.hiddenProductTypes || [];
+    const upperType = type.toUpperCase();
+    if (!current.some(t => t.toUpperCase() === upperType)) {
+      const updated = [...current, type];
+      const ok = await saveHiddenProductTypes(updated);
+      if (ok) toast.success(`${upperType} removed`);
+      else toast.error('Failed to save — are you signed in?');
+    }
+  }, [layout, saveHiddenProductTypes]);
+
   return (
     <div className="px-4 py-3 space-y-2.5">
           {/* Store Name */}
@@ -240,17 +251,25 @@ function ThemeControls() {
               {allSubcategories.map(type => {
                 const isHidden = hiddenTypes.has(type);
                 return (
-                  <button
-                    key={type}
-                    onClick={() => toggleSubcategory(type)}
-                    className={`px-2.5 py-1 rounded-full text-[9px] tracking-[0.12em] uppercase border transition-all duration-200 ${
-                      isHidden
-                        ? 'border-border/30 text-muted-foreground/40 bg-transparent line-through'
-                        : 'border-foreground/30 text-foreground bg-foreground/10'
-                    } hover:border-foreground/60`}
-                  >
-                    {type}
-                  </button>
+                  <div key={type} className="group relative flex items-center">
+                    <button
+                      onClick={() => toggleSubcategory(type)}
+                      className={`px-2.5 py-1 rounded-full text-[9px] tracking-[0.12em] uppercase border transition-all duration-200 pr-6 ${
+                        isHidden
+                          ? 'border-border/30 text-muted-foreground/40 bg-transparent line-through'
+                          : 'border-foreground/30 text-foreground bg-foreground/10'
+                      } hover:border-foreground/60`}
+                    >
+                      {type}
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteSubcategory(type); }}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+                      title={`Delete ${type}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
