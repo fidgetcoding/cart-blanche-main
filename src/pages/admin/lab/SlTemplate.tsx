@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare, Save, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare, Save, RotateCcw, X, Plus } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { useTheme, ThemeProvider, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
@@ -73,30 +73,47 @@ function injectCustomFont(file: File): Promise<string> {
 
 function ThemeControls() {
   const { themeSettings, updateTheme, saveTheme, revertTheme, hasUnsavedChanges } = useTheme();
-  const { layout, getOrderedProducts, saveHiddenTags } = useGridLayout();
+  const { layout, getOrderedProducts, saveHiddenProductTypes } = useGridLayout();
   const [expanded, setExpanded] = useState(true);
   const [customColor, setCustomColor] = useState('#ffffff');
   const colorInputRef = useRef<HTMLInputElement>(null);
+  const [newType, setNewType] = useState('');
+  const [showAddInput, setShowAddInput] = useState(false);
 
-  // Derive all unique categories from products
+  // Derive all unique product_category subcategories from products
   const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
-  const allCategories = useMemo(() => {
-    const cats = new Set(allProducts.map(p => p.category.toUpperCase()));
-    return Array.from(cats).sort();
+  const allSubcategories = useMemo(() => {
+    const types = new Set(allProducts.map(p => (p.product_category || '').toUpperCase()).filter(Boolean));
+    return Array.from(types).sort();
   }, [allProducts]);
-  const hiddenTags = useMemo(() => new Set((layout?.hiddenTags || []).map(t => t.toUpperCase())), [layout]);
+  const hiddenTypes = useMemo(() => new Set((layout?.hiddenProductTypes || []).map(t => t.toUpperCase())), [layout]);
 
-  const toggleCategory = useCallback(async (cat: string) => {
-    const current = layout?.hiddenTags || [];
-    const upperCat = cat.toUpperCase();
-    const isHidden = current.some(t => t.toUpperCase() === upperCat);
+  const toggleSubcategory = useCallback(async (type: string) => {
+    const current = layout?.hiddenProductTypes || [];
+    const upperType = type.toUpperCase();
+    const isHidden = current.some(t => t.toUpperCase() === upperType);
     const updated = isHidden
-      ? current.filter(t => t.toUpperCase() !== upperCat)
-      : [...current, cat];
-    const ok = await saveHiddenTags(updated);
-    if (ok) toast.success(isHidden ? `${upperCat} is now visible` : `${upperCat} is now hidden`);
+      ? current.filter(t => t.toUpperCase() !== upperType)
+      : [...current, type];
+    const ok = await saveHiddenProductTypes(updated);
+    if (ok) toast.success(isHidden ? `${upperType} visible` : `${upperType} hidden`);
     else toast.error('Failed to save — are you signed in?');
-  }, [layout, saveHiddenTags]);
+  }, [layout, saveHiddenProductTypes]);
+
+  const addCustomType = useCallback(async () => {
+    const val = newType.trim().toUpperCase();
+    if (!val) return;
+    // Adding a custom type means making sure it's NOT in hidden list (it's visible)
+    const current = layout?.hiddenProductTypes || [];
+    // If it's already tracked, just show it
+    if (current.some(t => t.toUpperCase() === val)) {
+      const updated = current.filter(t => t.toUpperCase() !== val);
+      await saveHiddenProductTypes(updated);
+    }
+    setNewType('');
+    setShowAddInput(false);
+    toast.success(`${val} added`);
+  }, [newType, layout, saveHiddenProductTypes]);
 
   return (
     <div className="px-4 py-3 space-y-2.5">
@@ -207,28 +224,55 @@ function ThemeControls() {
             </div>
           </div>
 
-          {/* Category Visibility */}
+          {/* Subcategory Visibility — pill toggles */}
           <div className="space-y-2">
-            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">CATEGORY VISIBILITY</label>
-            <div className="space-y-1">
-              {allCategories.map(cat => {
-                const isHidden = hiddenTags.has(cat);
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">SUBCATEGORIES</label>
+              <button
+                onClick={() => setShowAddInput(v => !v)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title="Add subcategory"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {allSubcategories.map(type => {
+                const isHidden = hiddenTypes.has(type);
                 return (
-                  <div key={cat} className="flex items-center justify-between py-1">
-                    <span className={`text-[10px] tracking-[0.12em] uppercase ${isHidden ? 'text-muted-foreground/40 line-through' : 'text-foreground'}`}>
-                      {cat}
-                    </span>
-                    <button
-                      onClick={() => toggleCategory(cat)}
-                      className={`p-1 rounded transition-colors ${isHidden ? 'text-muted-foreground/40 hover:text-foreground' : 'text-foreground hover:text-muted-foreground'}`}
-                      title={isHidden ? `Show ${cat}` : `Hide ${cat}`}
-                    >
-                      {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
+                  <button
+                    key={type}
+                    onClick={() => toggleSubcategory(type)}
+                    className={`px-2.5 py-1 rounded-full text-[9px] tracking-[0.12em] uppercase border transition-all duration-200 ${
+                      isHidden
+                        ? 'border-border/30 text-muted-foreground/40 bg-transparent line-through'
+                        : 'border-foreground/30 text-foreground bg-foreground/10'
+                    } hover:border-foreground/60`}
+                  >
+                    {type}
+                  </button>
                 );
               })}
             </div>
+            {showAddInput && (
+              <div className="flex gap-1.5 items-center">
+                <input
+                  type="text"
+                  value={newType}
+                  onChange={e => setNewType(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addCustomType()}
+                  placeholder="New type..."
+                  className="flex-1 bg-muted/50 border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground tracking-wider focus:outline-none focus:ring-1 focus:ring-ring uppercase"
+                  autoFocus
+                />
+                <button onClick={addCustomType} className="text-[9px] tracking-wider text-foreground bg-foreground/10 border border-foreground/30 rounded-md px-2 py-1 hover:bg-foreground/20 transition-colors">
+                  ADD
+                </button>
+                <button onClick={() => { setShowAddInput(false); setNewType(''); }} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-2">

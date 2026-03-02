@@ -12,7 +12,7 @@ import { ShoppingBag } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 
 export function MaisonCanvas() {
-  const { loading, getOrderedProducts, getOrderedCategories } = useGridLayout();
+  const { loading, layout, getOrderedProducts, getOrderedCategories } = useGridLayout();
   const { items, openCart, itemCount } = useCart();
   const { themeSettings } = useTheme();
   const [viewMode, setViewMode] = useState<3 | 6>(3);
@@ -26,8 +26,9 @@ export function MaisonCanvas() {
   const categories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
 
   const productTypes = useMemo(() => {
-    return ['ALL', ...PRODUCT_CATEGORIES.filter(c => c).map(c => c.toUpperCase())];
-  }, []);
+    const hiddenSet = new Set((layout?.hiddenProductTypes || []).map(t => t.toUpperCase()));
+    return ['ALL', ...PRODUCT_CATEGORIES.filter(c => c).map(c => c.toUpperCase()).filter(c => !hiddenSet.has(c))];
+  }, [layout]);
 
   const handleRibbonChange = useCallback((cat: string) => {
     lastChangedFilter.current = 'ribbon';
