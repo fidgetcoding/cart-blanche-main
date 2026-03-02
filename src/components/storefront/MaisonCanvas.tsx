@@ -7,6 +7,8 @@ import { MaisonProductDetail } from './MaisonProductDetail';
 import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStyleKit } from '@/contexts/StyleKitContext';
+import { StyleKitView } from './StyleKitView';
 
 import { ShoppingBag } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
@@ -15,6 +17,7 @@ export function MaisonCanvas() {
   const { loading, layout, getOrderedProducts, getOrderedCategories } = useGridLayout();
   const { items, openCart, itemCount } = useCart();
   const { themeSettings } = useTheme();
+  const { openStyleKit } = useStyleKit();
   const [viewMode, setViewMode] = useState<3 | 6>(3);
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [activeType, setActiveType] = useState('ALL');
@@ -37,7 +40,9 @@ export function MaisonCanvas() {
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
-  // No longer used — dropdown opens on click, not hover
+  const handleBuildSet = useCallback((product: DemoProduct) => {
+    openStyleKit(product, 'counterparts');
+  }, [openStyleKit]);
 
   const scheduleCloseTypeDropdown = useCallback(() => {
     if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
@@ -264,6 +269,7 @@ export function MaisonCanvas() {
                 product={product}
                 viewMode={viewMode}
                 onClick={() => setSelectedProduct(product)}
+                onBuildSet={handleBuildSet}
                 index={i}
               />
             ))}
@@ -283,6 +289,9 @@ export function MaisonCanvas() {
 
       {/* Cart drawer */}
       <CartDrawer />
+
+      {/* Style Kit popup for Build a Set */}
+      <StyleKitView />
     </div>
   );
 }
