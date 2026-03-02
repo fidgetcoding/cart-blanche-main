@@ -96,6 +96,9 @@ export default function AdminInventory() {
   const [tagEditMode, setTagEditMode] = useState(false);
   const [addingTagForId, setAddingTagForId] = useState<string | null>(null);
   const [modalNewTag, setModalNewTag] = useState('');
+  // Inline editing state for expanded panel
+  const [inlineEditing, setInlineEditing] = useState<Record<string, Record<string, boolean>>>({});
+  const [inlineValues, setInlineValues] = useState<Record<string, Record<string, string>>>({});
   const lowStockThreshold = 5;
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [addForm, setAddForm] = useState({ title: '', price: '', description: '' });
@@ -704,11 +707,105 @@ export default function AdminInventory() {
                       className="overflow-hidden"
                     >
                       <div className="border-t border-border px-6 py-5 space-y-5">
-                        {/* Product info + edit */}
+                        {/* Title + Price inline edit */}
                         <div className="flex items-start justify-between gap-6">
-                          <div className="space-y-1 flex-1">
-                            <p className="text-xs text-muted-foreground font-display tracking-widest">DESCRIPTION</p>
-                            <p className="text-sm text-foreground/70 leading-relaxed">{p.description}</p>
+                          <div className="space-y-3 flex-1">
+                            {/* Title */}
+                            <div>
+                              <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">TITLE</p>
+                              {inlineEditing[p.id]?.title ? (
+                                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    value={inlineValues[p.id]?.title ?? p.title}
+                                    onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: e.target.value } }))}
+                                    className="flex-1 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                                    autoFocus
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        const val = inlineValues[p.id]?.title?.trim();
+                                        if (val) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, title: val } : pr));
+                                        setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: false } }));
+                                      }
+                                      if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: false } }));
+                                    }}
+                                  />
+                                  <button onClick={() => {
+                                    const val = inlineValues[p.id]?.title?.trim();
+                                    if (val) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, title: val } : pr));
+                                    setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: false } }));
+                                  }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: p.title } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: true } })); }}
+                                  className="text-sm text-foreground hover:text-foreground/80 hover:underline"
+                                >{p.title}</button>
+                              )}
+                            </div>
+
+                            {/* Price */}
+                            <div>
+                              <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">PRICE</p>
+                              {inlineEditing[p.id]?.price ? (
+                                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                  <span className="text-sm text-muted-foreground">$</span>
+                                  <input
+                                    type="number"
+                                    value={inlineValues[p.id]?.price ?? String(p.price)}
+                                    onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: e.target.value } }))}
+                                    className="w-28 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                                    autoFocus
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        const val = parseFloat(inlineValues[p.id]?.price);
+                                        if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, price: val } : pr));
+                                        setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
+                                      }
+                                      if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
+                                    }}
+                                  />
+                                  <button onClick={() => {
+                                    const val = parseFloat(inlineValues[p.id]?.price);
+                                    if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, price: val } : pr));
+                                    setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
+                                  }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: String(p.price) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: true } })); }}
+                                  className="text-sm font-display text-foreground hover:underline"
+                                >${p.price}{p.compare_at_price ? <span className="ml-2 text-muted-foreground line-through">${p.compare_at_price}</span> : null}</button>
+                              )}
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                              <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">DESCRIPTION</p>
+                              {inlineEditing[p.id]?.description ? (
+                                <div className="flex items-start gap-2" onClick={e => e.stopPropagation()}>
+                                  <textarea
+                                    value={inlineValues[p.id]?.description ?? p.description}
+                                    onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], description: e.target.value } }))}
+                                    rows={3}
+                                    className="flex-1 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                                    autoFocus
+                                    onKeyDown={e => {
+                                      if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], description: false } }));
+                                    }}
+                                  />
+                                  <button onClick={() => {
+                                    const val = inlineValues[p.id]?.description?.trim();
+                                    if (val !== undefined) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, description: val } : pr));
+                                    setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], description: false } }));
+                                  }} className="p-1 text-success mt-1"><Check className="w-3.5 h-3.5" /></button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], description: p.description } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], description: true } })); }}
+                                  className="text-sm text-foreground/70 leading-relaxed text-left hover:text-foreground/90"
+                                >{p.description || <span className="italic text-muted-foreground">No description</span>}</button>
+                              )}
+                            </div>
                           </div>
                           <div className="flex gap-2 flex-shrink-0">
                             <button
@@ -725,6 +822,31 @@ export default function AdminInventory() {
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
+                          </div>
+                        </div>
+
+                        {/* Category */}
+                        <div>
+                          <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">CATEGORY</p>
+                          <div className="flex flex-wrap gap-2">
+                            {PRODUCT_CATEGORIES.map(cat => (
+                              <button
+                                key={cat}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setProducts(prev => prev.map(pr =>
+                                    pr.id === p.id ? { ...pr, product_category: (pr.product_category === cat ? '' : cat) as ProductCategory } : pr
+                                  ));
+                                }}
+                                className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                                  p.product_category === cat
+                                    ? 'bg-foreground/10 text-foreground border-foreground/20'
+                                    : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                                }`}
+                              >
+                                {cat.toUpperCase()}
+                              </button>
+                            ))}
                           </div>
                         </div>
 
