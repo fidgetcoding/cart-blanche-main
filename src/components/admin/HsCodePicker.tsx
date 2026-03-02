@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronRight, X, Check } from 'lucide-react';
 
 // Common HS codes for apparel / fashion — structured like Shopify's picker
@@ -252,15 +253,31 @@ export function HsCodePicker({ value, onChange, compact = false }: HsCodePickerP
   const [search, setSearch] = useState('');
   const [breadcrumb, setBreadcrumb] = useState<HsEntry[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  // Recalculate position when open
+  useLayoutEffect(() => {
+    if (!isOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const dropH = 380;
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+    const top = spaceBelow >= dropH ? rect.bottom + 4 : rect.top - dropH - 4;
+    setPos({ top: Math.max(4, top), left: rect.left });
+  }, [isOpen]);
 
   // Close on outside click
   useEffect(() => {
+    if (!isOpen) return;
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node) &&
+          triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [isOpen]);
 
   const currentLevel = breadcrumb.length > 0
     ? breadcrumb[breadcrumb.length - 1].children ?? []
@@ -299,8 +316,9 @@ export function HsCodePicker({ value, onChange, compact = false }: HsCodePickerP
   };
 
   return (
-    <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
+    <div className="relative" onClick={e => e.stopPropagation()}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => { setIsOpen(!isOpen); setSearch(''); setBreadcrumb([]); }}
         className={`flex items-center gap-2 text-left transition-colors ${
@@ -323,9 +341,11 @@ export function HsCodePicker({ value, onChange, compact = false }: HsCodePickerP
         )}
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-80 max-h-[380px] bg-popover border border-border rounded-lg shadow-xl flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
-          style={{ left: compact ? 0 : undefined }}
+      {isOpen && pos && createPortal(
+        <div
+          ref={ref}
+          className="fixed z-[9999] w-80 max-h-[380px] bg-popover border border-border rounded-lg shadow-xl flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
+          style={{ top: pos.top, left: pos.left }}
         >
           {/* Search bar */}
           <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-muted/30">
@@ -441,7 +461,8 @@ export function HsCodePicker({ value, onChange, compact = false }: HsCodePickerP
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
