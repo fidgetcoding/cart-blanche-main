@@ -570,14 +570,22 @@ export default function AdminStylingGuide() {
                         {classifyGroup(selectedProduct)}
                       </span>
                     </div>
-                    <button
-                      onClick={saveGuide}
-                      disabled={saving}
-                      className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
-                    >
-                      <Save className="w-4 h-4" />
-                      {saving ? 'SAVING...' : 'SAVE'}
-                    </button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={saveGuide}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                      >
+                        <Save className="w-4 h-4" />
+                        {saving ? 'SAVING...' : 'SAVE'}
+                      </button>
+                      <button
+                        onClick={() => setSelectedProductId(null)}
+                        className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* PAIRS section */}
