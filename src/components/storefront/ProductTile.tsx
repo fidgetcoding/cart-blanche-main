@@ -54,7 +54,7 @@ export const ProductTile = memo(function ProductTile({
         }}>
           {product.images && product.images.length > 0 ? (
             <img
-              src={product.images[0]}
+              src={product.images[0].thumb}
               alt={product.title}
               loading="lazy"
               decoding="async"
@@ -65,21 +65,19 @@ export const ProductTile = memo(function ProductTile({
             <div className="w-3/4 h-3/4 bg-muted/60 rounded-md pointer-events-none" />
           )}
 
-          {/* Quick action buttons */}
+          {/* Quick action buttons — Phase 5: removed backdrop-blur */}
           {showActions && (
-            <div
-              className="absolute bottom-2 right-2 flex gap-1 animate-in fade-in-0 duration-150"
-            >
+            <div className="absolute bottom-2 right-2 flex gap-1 animate-in fade-in-0 duration-150">
               <button
                 onClick={onQuickAdd}
-                className="p-1.5 rounded-md bg-background/60 backdrop-blur-sm hover:bg-background/80 transition-colors"
+                className="p-1.5 rounded-md bg-background/80 hover:bg-background/90 transition-colors"
                 title="Quick Add"
               >
                 <ShoppingBag className="w-3 h-3 text-foreground/70" />
               </button>
               <button
                 onClick={onQuickStyleKit}
-                className="p-1.5 rounded-md bg-background/60 backdrop-blur-sm hover:bg-background/80 transition-colors"
+                className="p-1.5 rounded-md bg-background/80 hover:bg-background/90 transition-colors"
                 title="Style Kit"
               >
                 <Layers className="w-3 h-3 text-foreground/70" />

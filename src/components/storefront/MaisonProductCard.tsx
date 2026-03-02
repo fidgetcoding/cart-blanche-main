@@ -26,7 +26,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { themeSettings } = useTheme();
 
-  const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
+  const images = product.images.length > 0 ? product.images : [];
   const hasMultiple = images.length > 1;
 
   const nextImage = useCallback(() => {
@@ -145,13 +145,12 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
     : {};
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
       tabIndex={-1}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, delay: index * 0.03 }}
-      className="relative cursor-pointer group"
+      className="animate-fade-in"
+      style={{ animationDelay: `${index * 30}ms` }}
+      className="relative cursor-pointer group animate-fade-in"
       style={{
         outline: 'none',
         borderRight: '1px solid hsl(var(--border))',
@@ -199,9 +198,11 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
               style={{ width: `${100 / images.length}%`, padding: '8%' }}
             >
               <img
-                src={img}
+                src={typeof img === 'string' ? img : img.medium}
                 alt={product.title}
                 className="max-w-full max-h-full object-contain"
+                loading="lazy"
+                decoding="async"
                 draggable={false}
               />
             </div>
@@ -290,7 +291,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                               title: product.title,
                               variantTitle: v.title,
                               price: v.price ?? product.price,
-                              image: product.images[0],
+                              image: product.images[0]?.thumb,
                             });
                           }}
                           disabled={v.inventory_count === 0}
@@ -415,7 +416,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                         title: product.title,
                         variantTitle: product.variants[0].title,
                         price: product.variants[0].price ?? product.price,
-                        image: product.images[0],
+                        image: product.images[0]?.thumb,
                       });
                     }
                   }}
@@ -445,7 +446,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                             title: product.title,
                             variantTitle: v.title,
                             price: v.price ?? product.price,
-                            image: product.images[0],
+                            image: product.images[0]?.thumb,
                           });
                         }}
                         disabled={v.inventory_count === 0}
@@ -481,6 +482,6 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -33,7 +33,7 @@ function CarouselCard({
       <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full relative overflow-hidden">
         {hasImages ? (
           <img
-            src={product.images![Math.min(imgIdx, product.images!.length - 1)]}
+            src={product.images![Math.min(imgIdx, product.images!.length - 1)]?.thumb}
             alt={product.title}
             className="w-full h-full object-cover"
             draggable={false}
@@ -283,7 +283,7 @@ function ProductThumbnail({
     <div className={`bg-secondary/30 flex items-center justify-center flex-shrink-0 relative overflow-hidden ${className ?? ''}`}>
       {hasImages ? (
         <img
-          src={product.images![Math.min(imgIdx, product.images!.length - 1)]}
+          src={product.images![Math.min(imgIdx, product.images!.length - 1)]?.thumb}
           alt={product.title}
           className="w-full h-full object-cover"
           draggable={false}
