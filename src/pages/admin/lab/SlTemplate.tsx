@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare, Save, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload, Pipette, Palette, Settings, MessageSquare, Save, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 import { useTheme, ThemeProvider, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
@@ -72,9 +73,30 @@ function injectCustomFont(file: File): Promise<string> {
 
 function ThemeControls() {
   const { themeSettings, updateTheme, saveTheme, revertTheme, hasUnsavedChanges } = useTheme();
+  const { layout, getOrderedProducts, saveHiddenTags } = useGridLayout();
   const [expanded, setExpanded] = useState(true);
   const [customColor, setCustomColor] = useState('#ffffff');
   const colorInputRef = useRef<HTMLInputElement>(null);
+
+  // Derive all unique categories from products
+  const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
+  const allCategories = useMemo(() => {
+    const cats = new Set(allProducts.map(p => p.category.toUpperCase()));
+    return Array.from(cats).sort();
+  }, [allProducts]);
+  const hiddenTags = useMemo(() => new Set((layout?.hiddenTags || []).map(t => t.toUpperCase())), [layout]);
+
+  const toggleCategory = useCallback(async (cat: string) => {
+    const current = layout?.hiddenTags || [];
+    const upperCat = cat.toUpperCase();
+    const isHidden = current.some(t => t.toUpperCase() === upperCat);
+    const updated = isHidden
+      ? current.filter(t => t.toUpperCase() !== upperCat)
+      : [...current, cat];
+    const ok = await saveHiddenTags(updated);
+    if (ok) toast.success(isHidden ? `${upperCat} is now visible` : `${upperCat} is now hidden`);
+    else toast.error('Failed to save — are you signed in?');
+  }, [layout, saveHiddenTags]);
 
   return (
     <div className="px-4 py-3 space-y-2.5">
@@ -185,7 +207,30 @@ function ThemeControls() {
             </div>
           </div>
 
-          {/* Save / Revert */}
+          {/* Category Visibility */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">CATEGORY VISIBILITY</label>
+            <div className="space-y-1">
+              {allCategories.map(cat => {
+                const isHidden = hiddenTags.has(cat);
+                return (
+                  <div key={cat} className="flex items-center justify-between py-1">
+                    <span className={`text-[10px] tracking-[0.12em] uppercase ${isHidden ? 'text-muted-foreground/40 line-through' : 'text-foreground'}`}>
+                      {cat}
+                    </span>
+                    <button
+                      onClick={() => toggleCategory(cat)}
+                      className={`p-1 rounded transition-colors ${isHidden ? 'text-muted-foreground/40 hover:text-foreground' : 'text-foreground hover:text-muted-foreground'}`}
+                      title={isHidden ? `Show ${cat}` : `Hide ${cat}`}
+                    >
+                      {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex gap-2 pt-2">
             <button
               onClick={revertTheme}
