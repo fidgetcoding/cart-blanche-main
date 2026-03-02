@@ -228,7 +228,7 @@ export function MaisonCanvas() {
                   {productTypes.map(type => (
                     <button
                       key={type}
-                      
+                      onMouseEnter={() => handleTypeChange(type)}
                       onClick={() => { handleTypeChange(type); setTypeDropdownOpen(false); }}
                       className={`text-[11px] tracking-[0.15em] uppercase whitespace-nowrap transition-all duration-200 ${
                         activeType === type ? 'text-foreground opacity-100' : 'text-muted-foreground opacity-50 hover:opacity-80 hover:text-foreground'
