@@ -35,12 +35,12 @@ function getWrappingNeighbor(
   const TILE_H = 280;
   const GAP = 20;
 
-  const positions = activeCategory === 'ALL'
-    ? visible.map(({ p }) => p.grid_position)
-    : visible.map((_, idx) => ({
-        x: (idx % COLS) * (TILE_W + GAP),
-        y: Math.floor(idx / COLS) * (TILE_H + GAP),
-      }));
+  // Always derive positions from array index — the products array is already
+  // sorted by the layout system, so index order = visual grid order.
+  const positions = visible.map((_, idx) => ({
+    x: (idx % COLS) * (TILE_W + GAP),
+    y: Math.floor(idx / COLS) * (TILE_H + GAP),
+  }));
 
   // Build grid rows from positions
   const yPositions = [...new Set(positions.map(pos => pos.y))].sort((a, b) => a - b);
