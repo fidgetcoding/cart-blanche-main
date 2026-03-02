@@ -140,7 +140,7 @@ export function MaisonCanvas() {
           <button
             className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
           >
-            {activeType === 'ALL' ? 'FILTER' : activeType}
+            {activeType === 'ALL' ? 'CATEGORY' : activeType}
             <motion.span
               animate={{ rotate: typeDropdownOpen ? 90 : 0 }}
               transition={{ duration: 0.2 }}
