@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, ChevronDown, ChevronUp, Sun, Moon, Upload } from 'lucide-react';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
@@ -20,9 +20,47 @@ const GLOW_PRESETS = [
 const DISPLAY_FONTS = [
   'Space Grotesk', 'Playfair Display', 'Instrument Serif', 'DM Sans',
   'Bebas Neue', 'Oswald', 'Cormorant Garamond', 'JetBrains Mono',
+  'Abril Fatface', 'Archivo Black', 'Cinzel', 'Dela Gothic One',
+  'Fraunces', 'Libre Baskerville', 'Lora', 'Merriweather',
+  'Montserrat', 'Poppins', 'Raleway', 'Syne',
 ];
-const BODY_FONTS = ['Inter', 'DM Sans', 'Nunito Sans', 'Work Sans', 'Lato', 'Source Sans 3'];
-const NUMERAL_FONTS = ['Inter', 'JetBrains Mono', 'Space Mono', 'DM Mono', 'IBM Plex Mono'];
+const BODY_FONTS = [
+  'Inter', 'DM Sans', 'Nunito Sans', 'Work Sans', 'Lato', 'Source Sans 3',
+  'Karla', 'Libre Franklin', 'Manrope', 'Outfit',
+  'Plus Jakarta Sans', 'Public Sans', 'Roboto', 'Rubik',
+  'Sora', 'Urbanist', 'Barlow', 'Figtree',
+  'Geist', 'Noto Sans',
+];
+const NUMERAL_FONTS = [
+  'Inter', 'JetBrains Mono', 'Space Mono', 'DM Mono', 'IBM Plex Mono',
+  'Fira Code', 'Source Code Pro', 'Roboto Mono', 'Ubuntu Mono',
+  'Inconsolata', 'Overpass Mono', 'Red Hat Mono', 'Azeret Mono',
+  'Cousine', 'Martian Mono', 'Noto Sans Mono', 'Oxygen Mono',
+  'PT Mono', 'Share Tech Mono', 'Victor Mono',
+];
+
+// Track injected custom font-face rules to avoid duplicates
+const injectedCustomFonts = new Set<string>();
+
+function injectCustomFont(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = reader.result as string;
+      const name = file.name.replace(/\.(woff2?|ttf|otf)$/i, '').replace(/[-_]/g, ' ');
+      const familyName = `Custom: ${name}`;
+      if (!injectedCustomFonts.has(familyName)) {
+        const style = document.createElement('style');
+        style.textContent = `@font-face { font-family: '${familyName}'; src: url('${url}'); font-display: swap; }`;
+        document.head.appendChild(style);
+        injectedCustomFonts.add(familyName);
+      }
+      resolve(familyName);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 const DEMO_MESSAGES = [
   { role: 'system', text: 'Welcome to your storefront builder. Describe changes and I\'ll update your store in real-time.' },
@@ -136,16 +174,57 @@ function ThemeControls() {
 }
 
 function FontSelect({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [customFonts, setCustomFonts] = useState<string[]>([]);
+
+  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const valid = /\.(woff2?|ttf|otf)$/i.test(file.name);
+    if (!valid) {
+      toast.error('Unsupported format. Use .woff2, .woff, .ttf, or .otf');
+      return;
+    }
+    try {
+      const familyName = await injectCustomFont(file);
+      setCustomFonts(prev => prev.includes(familyName) ? prev : [...prev, familyName]);
+      onChange(familyName);
+      toast.success(`Loaded "${familyName}"`);
+    } catch {
+      toast.error('Failed to load font');
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  }, [onChange]);
+
+  const allOptions = [...options, ...customFonts];
+
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">{label}</label>
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">{label}</label>
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-1 text-[9px] font-display tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+          title="Upload custom font (.woff2, .ttf, .otf)"
+        >
+          <Upload className="w-3 h-3" />
+          UPLOAD
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".woff,.woff2,.ttf,.otf"
+          onChange={handleUpload}
+          className="hidden"
+        />
+      </div>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
         className="w-full bg-muted/50 border border-border/50 rounded-md px-2.5 py-1.5 text-[11px] text-foreground font-display tracking-wider focus:outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer"
         style={{ fontFamily: value }}
       >
-        {options.map(f => (
+        {allOptions.map(f => (
           <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
         ))}
       </select>
