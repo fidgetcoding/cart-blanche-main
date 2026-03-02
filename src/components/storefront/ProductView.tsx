@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Heart, X, ShoppingBag, Layers } from 'lucide-react';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, forwardRef } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
@@ -76,7 +76,7 @@ function getWrappingNeighbor(
   }
 }
 
-export function ProductView({ productIndex, onClose, onNavigate, activeCategory, onCategoryChange }: ProductViewProps) {
+export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView({ productIndex, onClose, onNavigate, activeCategory, onCategoryChange }, _ref) {
   const { getOrderedProducts, getOrderedCategories } = useGridLayout();
   const DEMO_PRODUCTS = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const CATEGORIES = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
@@ -304,13 +304,13 @@ export function ProductView({ productIndex, onClose, onNavigate, activeCategory,
         </button>
 
         {/* Product content */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={product.id}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             className="flex flex-col items-center max-w-lg w-full px-6 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -482,4 +482,4 @@ export function ProductView({ productIndex, onClose, onNavigate, activeCategory,
       </div>
     </motion.div>
   );
-}
+});
