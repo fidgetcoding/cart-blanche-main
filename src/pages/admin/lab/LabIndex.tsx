@@ -25,13 +25,13 @@ export default function LabIndex() {
   const [activeId, setActiveId] = useState('yz');
 
   return (
-    <div className="p-6 md:p-10 max-w-2xl mx-auto flex flex-col gap-6">
+    <div className="p-6 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="font-display text-2xl font-bold tracking-tight">Templates</h1>
+        <h1 className="font-display text-2xl font-bold tracking-wide">Templates</h1>
         <p className="text-[11px] text-muted-foreground font-display tracking-wider">Storefront templates in development</p>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {TEMPLATES.map((tmpl) => {
           const isActive = tmpl.id === activeId;
           return (
