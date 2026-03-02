@@ -26,12 +26,25 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   numeralFontSize: 10,
 };
 
+const STORAGE_KEY = 'cb-theme-settings';
+
+function loadSaved(): ThemeSettings | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch {}
+  return null;
+}
+
 interface ThemeContextType {
   theme: 'dark' | 'light';
   themeSettings: ThemeSettings;
   updateTheme: (partial: Partial<ThemeSettings>) => void;
   setTheme: (theme: string) => void;
   toggleTheme: () => void;
+  saveTheme: () => void;
+  revertTheme: () => void;
+  hasUnsavedChanges: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -47,14 +60,24 @@ function buildGoogleFontsUrl(families: string[]): string {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<ThemeSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<ThemeSettings>(() => loadSaved() || DEFAULT_SETTINGS);
+  const [savedSnapshot, setSavedSnapshot] = useState<ThemeSettings>(() => loadSaved() || DEFAULT_SETTINGS);
   const linkRef = useRef<HTMLLinkElement | null>(null);
+
+  const hasUnsavedChanges = JSON.stringify(settings) !== JSON.stringify(savedSnapshot);
 
   const updateTheme = useCallback((partial: Partial<ThemeSettings>) => {
     setSettings(prev => ({ ...prev, ...partial }));
   }, []);
 
-  // Mode is stored in state and exposed via context — CSS class is applied locally by SpatialCanvas
+  const saveTheme = useCallback(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    setSavedSnapshot({ ...settings });
+  }, [settings]);
+
+  const revertTheme = useCallback(() => {
+    setSettings({ ...savedSnapshot });
+  }, [savedSnapshot]);
 
   // Inject/update Google Fonts link
   useEffect(() => {
@@ -90,6 +113,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         updateTheme,
         setTheme: (t: string) => updateTheme({ mode: t as 'dark' | 'light' }),
         toggleTheme: () => updateTheme({ mode: settings.mode === 'dark' ? 'light' : 'dark' }),
+        saveTheme,
+        revertTheme,
+        hasUnsavedChanges,
       }}
     >
       {children}
@@ -100,13 +126,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
-    // Fallback for HMR edge cases — return safe defaults
     return {
       theme: 'dark' as const,
       themeSettings: { ...DEFAULT_SETTINGS },
       updateTheme: () => {},
       setTheme: () => {},
       toggleTheme: () => {},
+      saveTheme: () => {},
+      revertTheme: () => {},
+      hasUnsavedChanges: false,
     } as ThemeContextType;
   }
   return ctx;
