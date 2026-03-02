@@ -361,6 +361,9 @@ export default function YzyTemplate() {
           </button>
         </div>
 
+        {/* Theme Controls */}
+        <ThemeControls />
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           {messages.length <= 1 && suggestions.length > 0 && (
@@ -423,9 +426,6 @@ export default function YzyTemplate() {
             </button>
           </div>
         </div>
-
-        {/* Theme Controls */}
-        <ThemeControls />
       </div>
 
       {/* RIGHT: Live Preview */}
