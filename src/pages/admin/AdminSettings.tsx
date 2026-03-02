@@ -153,7 +153,7 @@ export default function AdminSettings() {
         </section>
       </div>
 
-      <p className="text-center text-[10px] text-muted-foreground/50 font-display tracking-widest pb-4">Version 1.01</p>
+      <p className="text-center text-[10px] text-muted-foreground/50 font-display tracking-widest pb-4">Version 1.11</p>
     </div>
   );
 }
