@@ -68,12 +68,31 @@ const PROMPTS_BY_ROUTE: Record<string, SuggestedPrompt[]> = {
     { icon: Tag, text: "What's the optimal platform fee?", label: "Fee Advice" },
     { icon: BarChart3, text: "Review my store configuration", label: "Configuration Review" },
   ],
+  discounts: [
+    { icon: Tag, text: "Show me all active discount codes", label: "Active Codes" },
+    { icon: Sparkles, text: "Suggest a promotion strategy for this month", label: "Promo Strategy" },
+    { icon: BarChart3, text: "Which discount codes are used the most?", label: "Top Codes" },
+    { icon: Package, text: "Create a 15% off code for new customers", label: "New Code" },
+  ],
+  'styling-guide': [
+    { icon: Sparkles, text: "How do styling rules work?", label: "Guide Overview" },
+    { icon: Package, text: "Suggest product pairings for outerwear", label: "Pairing Ideas" },
+    { icon: Grid3X3, text: "What categories pair well together?", label: "Category Combos" },
+    { icon: Settings, text: "Help me optimize my styling guide", label: "Optimize Rules" },
+  ],
+  lab: [
+    { icon: Sparkles, text: "What templates are available?", label: "Browse Templates" },
+    { icon: Settings, text: "How do I customize my storefront template?", label: "Customize" },
+    { icon: Grid3X3, text: "Compare the YZ and SL templates", label: "Compare" },
+    { icon: Package, text: "Which template is best for my brand?", label: "Recommend" },
+  ],
 };
 
 export function SmartChatPanel() {
   const location = useLocation();
   const currentRoute = useMemo(() => {
-    const path = location.pathname.replace('/admin', '').replace('/', '') || 'dashboard';
+    const path = location.pathname.replace('/admin/', '').replace('/admin', '') || 'dashboard';
+    if (path.startsWith('lab')) return 'lab';
     return path in PROMPTS_BY_ROUTE ? path : 'dashboard';
   }, [location.pathname]);
   const suggestedPrompts = PROMPTS_BY_ROUTE[currentRoute];
