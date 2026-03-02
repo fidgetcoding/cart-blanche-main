@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback, useRef, useMemo, forwardRef } from 'r
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
-import { useGridLayout } from '@/hooks/use-grid-layout';
+
 
 interface ProductViewProps {
   productIndex: number;
+  products: DemoProduct[];
+  categories: string[];
   onClose: () => void;
   onNavigate: (newIndex: number) => void;
   activeCategory: string;
@@ -91,10 +93,9 @@ function getWrappingNeighbor(
   }
 }
 
-export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView({ productIndex, onClose, onNavigate, activeCategory, onCategoryChange }, _ref) {
-  const { getOrderedProducts, getOrderedCategories } = useGridLayout();
-  const DEMO_PRODUCTS = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
-  const CATEGORIES = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
+export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange }, _ref) {
+  const DEMO_PRODUCTS = products;
+  const CATEGORIES = categories;
 
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
