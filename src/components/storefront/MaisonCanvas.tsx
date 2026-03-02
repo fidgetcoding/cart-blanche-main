@@ -195,7 +195,17 @@ export function MaisonCanvas() {
               setTypeDropdownOpen(prev => !prev);
             }}
           >
-            {activeType === 'ALL' ? 'CATEGORY' : activeType}
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={activeType === 'ALL' ? 'CATEGORY' : activeType}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                {activeType === 'ALL' ? 'CATEGORY' : activeType}
+              </motion.span>
+            </AnimatePresence>
             <AnimatePresence mode="wait">
               {!typeDropdownOpen && (
                 <motion.span
@@ -203,7 +213,7 @@ export function MaisonCanvas() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
                   className="inline-flex"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -217,7 +227,7 @@ export function MaisonCanvas() {
                 initial={{ width: 0, opacity: 0 }}
                 animate={{ width: 'auto', opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
                 className="flex items-center overflow-hidden ml-2"
                 onMouseEnter={() => {
                   if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
