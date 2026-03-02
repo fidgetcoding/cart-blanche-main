@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Storefront: eagerly loaded (customer-facing, must be instant)
@@ -29,34 +29,36 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient();
 
+const router = createBrowserRouter([
+  { path: "/", element: <Index /> },
+  { path: "/auth", element: <Suspense fallback={null}><AuthPage /></Suspense> },
+  { path: "/reset-password", element: <Suspense fallback={null}><ResetPassword /></Suspense> },
+  { path: "/admin/lab/yz", element: <Suspense fallback={null}><YzTemplate /></Suspense> },
+  { path: "/admin/lab/sl", element: <Suspense fallback={null}><SlTemplate /></Suspense> },
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <AdminDashboard /> },
+      { path: "discounts", element: <AdminDiscounts /> },
+      { path: "grid", element: <AdminPageEditor /> },
+      { path: "orders", element: <AdminOrders /> },
+      { path: "inventory", element: <AdminInventory /> },
+      { path: "styling-guide", element: <AdminStylingGuide /> },
+      { path: "settings", element: <AdminSettings /> },
+      { path: "lab", element: <LabIndex /> },
+    ],
+  },
+  { path: "*", element: <Suspense fallback={null}><NotFound /></Suspense> },
+]);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={null}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/admin/lab/yz" element={<YzTemplate />} />
-              <Route path="/admin/lab/sl" element={<SlTemplate />} />
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="discounts" element={<AdminDiscounts />} />
-                <Route path="grid" element={<AdminPageEditor />} />
-                <Route path="orders" element={<AdminOrders />} />
-                <Route path="inventory" element={<AdminInventory />} />
-                <Route path="styling-guide" element={<AdminStylingGuide />} />
-                <Route path="settings" element={<AdminSettings />} />
-                <Route path="lab" element={<LabIndex />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        <RouterProvider router={router} />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
