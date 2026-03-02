@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
@@ -20,24 +20,47 @@ export function MaisonCanvas() {
   const [activeType, setActiveType] = useState('ALL');
   const [selectedProduct, setSelectedProduct] = useState<DemoProduct | null>(null);
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const lastChangedFilter = useRef<'ribbon' | 'dropdown'>('ribbon');
 
   const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const categories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
 
-  // Product types from PRODUCT_CATEGORIES
   const productTypes = useMemo(() => {
     return ['ALL', ...PRODUCT_CATEGORIES.filter(c => c).map(c => c.toUpperCase())];
   }, []);
 
+  const handleRibbonChange = useCallback((cat: string) => {
+    lastChangedFilter.current = 'ribbon';
+    setActiveCategory(cat);
+    const filtered = allProducts.filter(p => {
+      const matchesCat = cat === 'ALL' || p.category.toUpperCase() === cat;
+      const matchesType = activeType === 'ALL' || p.product_category?.toUpperCase() === activeType;
+      return matchesCat && matchesType;
+    });
+    if (filtered.length === 0 && activeType !== 'ALL') {
+      setActiveType('ALL');
+    }
+  }, [allProducts, activeType]);
+
+  const handleTypeChange = useCallback((type: string) => {
+    lastChangedFilter.current = 'dropdown';
+    setActiveType(type);
+    const filtered = allProducts.filter(p => {
+      const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
+      const matchesType = type === 'ALL' || p.product_category?.toUpperCase() === type;
+      return matchesCat && matchesType;
+    });
+    if (filtered.length === 0 && activeCategory !== 'ALL') {
+      setActiveCategory('ALL');
+    }
+  }, [allProducts, activeCategory]);
+
   const filteredProducts = useMemo(() => {
-    let result = allProducts;
-    if (activeCategory !== 'ALL') {
-      result = result.filter(p => p.category.toUpperCase() === activeCategory);
-    }
-    if (activeType !== 'ALL') {
-      result = result.filter(p => p.product_category?.toUpperCase() === activeType);
-    }
-    return result;
+    return allProducts.filter(p => {
+      const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
+      const matchesType = activeType === 'ALL' || p.product_category?.toUpperCase() === activeType;
+      return matchesCat && matchesType;
+    });
   }, [allProducts, activeCategory, activeType]);
 
   if (loading) {
@@ -70,8 +93,8 @@ export function MaisonCanvas() {
           {categories.map(cat => (
             <button
               key={cat}
-              onMouseEnter={() => setActiveCategory(cat)}
-              onClick={() => setActiveCategory(cat)}
+              onMouseEnter={() => handleRibbonChange(cat)}
+              onClick={() => handleRibbonChange(cat)}
               className="relative py-1 transition-colors"
               style={{
                 fontSize: 'var(--font-size-body)',
@@ -129,8 +152,8 @@ export function MaisonCanvas() {
                   {productTypes.map(type => (
                     <button
                       key={type}
-                      onMouseEnter={() => setActiveType(type)}
-                      onClick={() => { setActiveType(type); setTypeDropdownOpen(false); }}
+                      onMouseEnter={() => handleTypeChange(type)}
+                      onClick={() => { handleTypeChange(type); setTypeDropdownOpen(false); }}
                       className={`block w-full text-left px-4 py-2 text-[11px] tracking-[0.15em] uppercase hover:bg-muted/40 transition-colors ${
                         activeType === type ? 'text-foreground' : 'text-muted-foreground'
                       }`}
