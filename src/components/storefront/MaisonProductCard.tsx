@@ -14,7 +14,6 @@ interface MaisonProductCardProps {
 export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonProductCardProps) {
   const [currentImage, setCurrentImage] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const touchStartX = useRef(0);
   const wheelAccumulator = useRef(0);
   const cooldown = useRef(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
@@ -40,7 +39,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     setTimeout(() => { cooldown.current = false; }, 250);
   }, [images.length]);
 
-  // Native wheel handler with { passive: false } to actually prevent browser back gesture
+  // Native wheel + touch handlers with { passive: false } to prevent browser back gesture
   useEffect(() => {
     const el = imageAreaRef.current;
     if (!el || !hasMultiple) return;
@@ -61,8 +60,42 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
       }
     };
 
+    let touchStartClientX = 0;
+    let isSwiping = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartClientX = e.touches[0].clientX;
+      isSwiping = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const deltaX = Math.abs(e.touches[0].clientX - touchStartClientX);
+      const deltaY = Math.abs(e.touches[0].clientY - (e as any)._startY || 0);
+      if (deltaX > 10) {
+        isSwiping = true;
+        e.preventDefault(); // Block browser back/forward gesture
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const deltaX = touchStartClientX - e.changedTouches[0].clientX;
+      if (Math.abs(deltaX) > 40) {
+        if (deltaX > 0) nextImage();
+        else prevImage();
+      }
+    };
+
     el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
   }, [hasMultiple, nextImage, prevImage]);
 
   // Focus card on hover for keyboard support
@@ -85,18 +118,6 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
     }
   }, [hasMultiple, nextImage, prevImage]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  }, []);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!hasMultiple) return;
-    const deltaX = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(deltaX) > 40) {
-      if (deltaX > 0) nextImage();
-      else prevImage();
-    }
-  }, [hasMultiple, nextImage, prevImage]);
 
   const isCompact = viewMode === 6;
 
@@ -136,9 +157,8 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
         style={{
           aspectRatio: isCompact ? '3/4' : '3/4.2',
           backgroundColor: tileBg,
+          touchAction: 'pan-y',
         }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
       >
         {/* Image carousel strip */}
         <div
