@@ -295,6 +295,8 @@ export default function AdminStylingGuide() {
         </div>
       </div>
 
+      <div className="border-b border-border" />
+
       {/* Two-column layout */}
       <div className="flex-1 flex min-h-0">
         {/* LEFT: Product list */}
