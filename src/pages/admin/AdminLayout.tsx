@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Outlet, NavLink, useLocation } from 'react-router-dom';
+import { useNavigate, Outlet, NavLink } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { SmartChatPanel } from '@/components/admin/SmartChatPanel';
 import {
@@ -12,7 +12,6 @@ import {
   Store,
   Layers,
   FlaskConical,
-  ArrowLeft,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -27,10 +26,7 @@ const NAV_ITEMS = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [loading, setLoading] = useState(true);
-  const isLab = location.pathname.startsWith('/admin/lab');
-  const isLabSub = isLab && location.pathname !== '/admin/lab';
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -48,47 +44,6 @@ export default function AdminLayout() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="font-display text-muted-foreground tracking-widest animate-pulse">LOADING...</div>
-      </div>
-    );
-  }
-
-  /* ── LAB LAYOUT ── */
-  if (isLab) {
-    return (
-      <div className="h-screen dynamic-bg flex flex-col overflow-hidden">
-        <header className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 gap-2">
-          <FlaskConical className="w-3.5 h-3.5 text-sidebar-foreground/50" />
-          <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">TEMPLATE LAB</h1>
-          <div className="flex-1" />
-          {isLabSub ? (
-            <button
-              onClick={() => navigate('/admin/lab')}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">ALL EXPERIMENTS</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate('/admin')}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">BACK TO PORTAL</span>
-            </button>
-          )}
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-display tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors whitespace-nowrap flex-shrink-0"
-            title="Back to Store"
-          >
-            <Store className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">SMART SHOP</span>
-          </button>
-        </header>
-        <main className="flex-1 overflow-y-auto">
-          <Outlet />
-        </main>
       </div>
     );
   }
