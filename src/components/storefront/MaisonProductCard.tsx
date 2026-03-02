@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { DemoProduct } from '@/data/demo-data';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface MaisonProductCardProps {
   product: DemoProduct;
@@ -16,6 +17,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
   const touchStartX = useRef(0);
   const wheelAccumulator = useRef(0);
   const cooldown = useRef(false);
+  const { themeSettings } = useTheme();
 
   const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
   const hasMultiple = images.length > 1;
@@ -67,7 +69,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}
       className="relative cursor-pointer group"
-      style={{ borderRight: '1px solid #e8e4de', borderBottom: '1px solid #e8e4de' }}
+      style={{ borderRight: '1px solid hsl(var(--border))', borderBottom: '1px solid hsl(var(--border))' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); wheelAccumulator.current = 0; }}
       onClick={onClick}
@@ -104,13 +106,13 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
           <>
             <button
               onClick={e => { e.stopPropagation(); prevImage(); }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={e => { e.stopPropagation(); nextImage(); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -125,7 +127,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
                 key={i}
                 onClick={e => { e.stopPropagation(); setCurrentImage(i); }}
                 className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                  i === currentImage ? 'bg-[#1a1a1a]' : 'bg-[#1a1a1a]/30'
+                  i === currentImage ? 'bg-foreground' : 'bg-foreground/30'
                 }`}
               />
             ))}
@@ -135,14 +137,31 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
 
       {/* Text area — view by 3 only */}
       {!isCompact && (
-        <div className="px-4 py-4 text-center" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-          <p className="text-xs tracking-[0.15em] uppercase text-[#1a1a1a] leading-relaxed">
+        <div className="px-4 py-4 text-center">
+          <p
+            className="tracking-[0.15em] uppercase leading-relaxed"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--font-size-display)',
+              color: themeSettings.displayFontColor || undefined,
+            }}
+          >
             {product.title}
           </p>
-          <p className="text-xs tracking-[0.1em] text-[#666666] mt-1.5">
+          <p
+            className="tracking-[0.1em] text-muted-foreground mt-1.5"
+            style={{
+              fontFamily: 'var(--font-numeral)',
+              fontSize: 'var(--font-size-numeral)',
+              color: themeSettings.numeralFontColor || undefined,
+            }}
+          >
             ${product.price}
           </p>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-[#1a1a1a]/50 mt-2">
+          <p
+            className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/50 mt-2"
+            style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--font-size-body)' }}
+          >
             {product.variants.some(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
           </p>
         </div>
