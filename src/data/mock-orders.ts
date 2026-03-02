@@ -1,36 +1,17 @@
-// Mock orders that correlate with dashboard figures:
-// ~$108K total sales, ~501 orders, avg ~$216/order
+// Mock orders built from real store inventory (DEMO_PRODUCTS)
+// 100 orders, prices match product catalog exactly
 
-const FIRST_NAMES = ['Alex','Jordan','Morgan','Taylor','Casey','Riley','Jamie','Quinn','Avery','Blake','Drew','Skyler','Reese','Parker','Hayden','Dakota','Emery','Sage','River','Rowan'];
-const LAST_NAMES = ['Chen','Williams','Martinez','Johnson','Lee','Patel','Kim','Garcia','Anderson','Taylor','Brown','Wilson','Thomas','Moore','Jackson','White','Harris','Clark','Lewis','Hall'];
-const CITIES = ['New York','Los Angeles','Chicago','Houston','Phoenix','Philadelphia','San Antonio','San Diego','Dallas','Austin','Toronto','Vancouver','London','Berlin','Sydney','Melbourne'];
-const STATES = ['NY','CA','IL','TX','AZ','PA','TX','CA','TX','TX','ON','BC','UK','DE','NSW','VIC'];
-const COUNTRIES = ['US','US','US','US','US','US','US','US','US','US','CA','CA','GB','DE','AU','AU'];
-const PRODUCTS = [
-  { title: 'Cloud Puffer Jacket', variant: 'M', price: 420 },
-  { title: 'Stealth Trench', variant: 'L', price: 380 },
-  { title: 'Wool Overcoat', variant: 'M', price: 550 },
-  { title: 'Leather Moto Jacket', variant: 'S', price: 680 },
-  { title: 'Bomber Mk IV', variant: 'L', price: 290 },
-  { title: 'Windbreaker Shell', variant: 'M', price: 195 },
-  { title: 'Track Jacket', variant: 'XL', price: 210 },
-  { title: 'Deconstructed Blazer', variant: 'M', price: 340 },
-  { title: 'Graphic Hoodie', variant: 'L', price: 145 },
-  { title: 'Core Crewneck', variant: 'M', price: 95 },
-  { title: 'Knit Polo', variant: 'S', price: 125 },
-  { title: 'Long Sleeve Base', variant: 'M', price: 70 },
-  { title: 'Oversized Tee', variant: 'L', price: 65 },
-  { title: 'Tank Top', variant: 'M', price: 40 },
-  { title: 'Maroon Crop Top', variant: 'S', price: 55 },
-  { title: 'Cargo Pants', variant: 'M', price: 175 },
-  { title: 'Crème Joggers', variant: 'L', price: 120 },
-  { title: 'Utility Pant', variant: 'M', price: 165 },
-  { title: 'Mesh Shorts', variant: 'L', price: 85 },
-  { title: 'Sweat Shorts', variant: 'M', price: 75 },
-];
+import { DEMO_PRODUCTS } from './demo-data';
+
+const FIRST_NAMES = ['Alex','Jordan','Morgan','Taylor','Casey','Riley','Jamie','Quinn','Avery','Blake','Drew','Skyler','Reese','Parker','Hayden','Dakota','Emery','Sage','River','Rowan','Kai','Logan','Cameron','Finley','Elliot','Harper','Lennox','Nico','Wren','Jules'];
+const LAST_NAMES = ['Chen','Williams','Martinez','Johnson','Lee','Patel','Kim','Garcia','Anderson','Taylor','Brown','Wilson','Thomas','Moore','Jackson','White','Harris','Clark','Lewis','Hall','Young','Walker','Allen','King','Scott','Green','Adams','Baker','Rivera','Hill'];
+const CITIES = ['New York','Los Angeles','Chicago','Houston','Phoenix','Philadelphia','San Antonio','San Diego','Dallas','Austin','Toronto','Vancouver','London','Berlin','Sydney','Melbourne','Seattle','Portland','Denver','Miami'];
+const STATES = ['NY','CA','IL','TX','AZ','PA','TX','CA','TX','TX','ON','BC','UK','DE','NSW','VIC','WA','OR','CO','FL'];
+const COUNTRIES = ['US','US','US','US','US','US','US','US','US','US','CA','CA','GB','DE','AU','AU','US','US','US','US'];
+const SIZES = ['XS','S','M','L','XL'];
 
 const STATUSES = ['pending','fulfilled','shipped','delivered','cancelled'];
-const STATUS_WEIGHTS = [0.12, 0.18, 0.15, 0.50, 0.05]; // most are delivered
+const STATUS_WEIGHTS = [0.10, 0.15, 0.18, 0.52, 0.05];
 
 function seededRandom(seed: number) {
   let s = seed;
@@ -54,12 +35,21 @@ function weightedPick(items: string[], weights: number[], rand: () => number): s
   return items[items.length - 1];
 }
 
+export interface MockOrderItem {
+  title: string;
+  variant: string;
+  qty: number;
+  price: number;
+  image: string;
+  product_id: string;
+}
+
 export interface MockOrder {
   id: string;
   order_number: string;
   customer_email: string;
   customer_name: string;
-  items: { title: string; variant: string; qty: number; price: number }[];
+  items: MockOrderItem[];
   subtotal: number;
   total: number;
   status: string;
@@ -69,27 +59,47 @@ export interface MockOrder {
   created_at: string;
 }
 
-export function generateMockOrders(count: number = 50): MockOrder[] {
-  const rand = seededRandom(42);
+let _cached: MockOrder[] | null = null;
+
+export function generateMockOrders(count: number = 100): MockOrder[] {
+  if (_cached && _cached.length === count) return _cached;
+
+  const rand = seededRandom(77);
   const orders: MockOrder[] = [];
   const now = Date.now();
+  const products = DEMO_PRODUCTS;
 
   for (let i = 0; i < count; i++) {
     const firstName = pick(FIRST_NAMES, rand);
     const lastName = pick(LAST_NAMES, rand);
     const cityIdx = Math.floor(rand() * CITIES.length);
-    const numItems = rand() < 0.6 ? 1 : rand() < 0.8 ? 2 : 3;
-    const items: { title: string; variant: string; qty: number; price: number }[] = [];
+    const numItems = rand() < 0.55 ? 1 : rand() < 0.80 ? 2 : 3;
+    const items: MockOrderItem[] = [];
 
+    const usedIds = new Set<string>();
     for (let j = 0; j < numItems; j++) {
-      const prod = pick(PRODUCTS, rand);
-      items.push({ title: prod.title, variant: prod.variant, qty: 1, price: prod.price });
+      let prod = pick(products, rand);
+      let attempts = 0;
+      while (usedIds.has(prod.id) && attempts < 10) {
+        prod = pick(products, rand);
+        attempts++;
+      }
+      usedIds.add(prod.id);
+      const size = pick(SIZES, rand);
+      items.push({
+        title: prod.title,
+        variant: size,
+        qty: 1,
+        price: prod.price,
+        image: prod.images[0],
+        product_id: prod.id,
+      });
     }
 
     const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0);
     const total = subtotal;
     const status = weightedPick(STATUSES, STATUS_WEIGHTS, rand);
-    const daysAgo = Math.floor(rand() * 90);
+    const daysAgo = Math.floor(rand() * 120);
     const hoursAgo = Math.floor(rand() * 24);
     const createdAt = new Date(now - daysAgo * 86400000 - hoursAgo * 3600000).toISOString();
 
@@ -98,7 +108,7 @@ export function generateMockOrders(count: number = 50): MockOrder[] {
 
     orders.push({
       id: `mock-${String(i + 1).padStart(4, '0')}`,
-      order_number: `#CB-${String(1001 + i)}`,
+      order_number: `CB-${String(1001 + i).padStart(4, '0')}`,
       customer_email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
       customer_name: `${firstName} ${lastName}`,
       items,
@@ -114,12 +124,23 @@ export function generateMockOrders(count: number = 50): MockOrder[] {
         zip: String(10000 + Math.floor(rand() * 89999)),
         country: COUNTRIES[cityIdx],
       },
-      notes: rand() < 0.15 ? pick(['Gift wrap please','Leave at door','Ring doorbell','Fragile items','Rush delivery requested'], rand) : null,
+      notes: rand() < 0.12 ? pick(['Gift wrap please','Leave at door','Ring doorbell','Fragile items','Rush delivery requested'], rand) : null,
       created_at: createdAt,
     });
   }
 
-  // Sort newest first
   orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  _cached = orders;
   return orders;
+}
+
+export function getMockOrderStats() {
+  const orders = generateMockOrders(100);
+  const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
+  const nonCancelled = orders.filter(o => o.status !== 'cancelled');
+  return {
+    totalOrders: orders.length,
+    totalRevenue,
+    avgOrderValue: nonCancelled.length > 0 ? nonCancelled.reduce((s, o) => s + o.total, 0) / nonCancelled.length : 0,
+  };
 }
