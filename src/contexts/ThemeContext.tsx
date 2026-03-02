@@ -11,6 +11,10 @@ export interface ThemeSettings {
   displayFontSize: number;
   bodyFontSize: number;
   numeralFontSize: number;
+  displayFontColor: string;
+  bodyFontColor: string;
+  numeralFontColor: string;
+  storeNameColor: string;
 }
 
 const DEFAULT_SETTINGS: ThemeSettings = {
@@ -24,6 +28,10 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   displayFontSize: 11,
   bodyFontSize: 10,
   numeralFontSize: 10,
+  displayFontColor: '',
+  bodyFontColor: '',
+  numeralFontColor: '',
+  storeNameColor: '',
 };
 
 const STORAGE_KEY = 'cb-theme-settings';
@@ -103,7 +111,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.setProperty('--font-size-display', `${settings.displayFontSize}px`);
     root.setProperty('--font-size-body', `${settings.bodyFontSize}px`);
     root.setProperty('--font-size-numeral', `${settings.numeralFontSize}px`);
-  }, [settings.displayFont, settings.bodyFont, settings.numeralFont, settings.displayFontSize, settings.bodyFontSize, settings.numeralFontSize]);
+    root.setProperty('--color-display', settings.displayFontColor || 'inherit');
+    root.setProperty('--color-body', settings.bodyFontColor || 'inherit');
+    root.setProperty('--color-numeral', settings.numeralFontColor || 'inherit');
+    root.setProperty('--color-store-name', settings.storeNameColor || 'inherit');
+  }, [settings]);
 
   return (
     <ThemeContext.Provider
