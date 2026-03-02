@@ -302,7 +302,7 @@ export default function AdminStylingGuide() {
         {/* LEFT: Product list */}
         <div className="w-72 border-r border-border overflow-y-auto flex-shrink-0">
           <div className="px-4 py-3 border-b border-border">
-            <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-3">SELECT A PRODUCT</p>
+            
             {/* Search */}
             <div className="relative mb-3">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
