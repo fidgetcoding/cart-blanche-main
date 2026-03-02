@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { generateMockOrders } from '@/data/mock-orders';
 import {
   Search, ChevronDown, Truck, Package, CheckCircle, XCircle, Clock,
   ArrowLeft, MoreHorizontal, MapPin, FileText, Printer, Eye,
@@ -252,10 +253,20 @@ export default function AdminOrders() {
 
   async function fetchOrders() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      // No session — use mock data for demo
+      setOrders(generateMockOrders(50) as any);
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase.from('orders').select('*')
       .eq('merchant_id', session.user.id).order('created_at', { ascending: false });
-    if (data) setOrders(data as Order[]);
+    if (data && data.length > 0) {
+      setOrders(data as Order[]);
+    } else {
+      // No real orders — use mock data
+      setOrders(generateMockOrders(50) as any);
+    }
     setLoading(false);
   }
 
