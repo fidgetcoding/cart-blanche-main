@@ -53,7 +53,7 @@ export default function LabIndex() {
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 {tmpl.id === 'sl' ? (
-                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-display tracking-wider bg-foreground/5 text-muted-foreground/50 border border-foreground/10">
+                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-display tracking-wider bg-yellow-500/15 text-yellow-500 border border-yellow-500/20">
                     COMING SOON
                   </span>
                 ) : (
