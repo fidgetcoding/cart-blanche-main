@@ -1,40 +1,170 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Save, Layers } from 'lucide-react';
+import { Layers, Save, Plus, X, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
+import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
+import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
+import type { DemoProduct } from '@/data/demo-data';
 
-interface StylingRule {
-  anchor_category: string;
-  suggested_categories: string[];
-  orientation: 'horizontal' | 'vertical';
+type BodyZoneGroup = 'TOPS' | 'BOTTOMS' | 'ACCESSORIES';
+
+function classifyGroup(product: DemoProduct): BodyZoneGroup {
+  const zone = getBodyZone(product);
+  if (zone === 'top') return 'TOPS';
+  if (zone === 'bottom') return 'BOTTOMS';
+  return 'ACCESSORIES';
 }
 
-interface StylingGuide {
-  id: string;
-  name: string;
-  rules: StylingRule[];
+/** Small inline product picker dropdown */
+function ProductPicker({
+  products,
+  onSelect,
+  onClose,
+}: {
+  products: DemoProduct[];
+  onSelect: (p: DemoProduct) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="liquid-glass rounded-lg mt-1 max-h-60 overflow-y-auto">
+      {products.map(p => (
+        <button
+          key={p.id}
+          onClick={() => { onSelect(p); onClose(); }}
+          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary transition-colors text-left"
+        >
+          <img
+            src={getImageUrl(p.images[0], 'thumb')}
+            alt={p.title}
+            className="w-10 h-10 rounded object-cover flex-shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-xs tracking-wide truncate">{p.title}</p>
+            <p className="text-[10px] text-muted-foreground">${p.price}</p>
+          </div>
+        </button>
+      ))}
+      {products.length === 0 && (
+        <p className="px-3 py-4 text-xs text-muted-foreground text-center font-display tracking-wider">NO PRODUCTS AVAILABLE</p>
+      )}
+    </div>
+  );
 }
 
-const AVAILABLE_CATEGORIES = ['outerwear', 'streetwear', 'essentials', 'new-arrivals'];
+/** Ordered preset list with reorder + remove */
+function PresetList({
+  label,
+  description,
+  items,
+  availableProducts,
+  onAdd: handleAdd,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+}: {
+  label: string;
+  description: string;
+  items: DemoProduct[];
+  availableProducts: DemoProduct[];
+  onAdd: (p: DemoProduct) => void;
+  onRemove: (id: string) => void;
+  onMoveUp: (index: number) => void;
+  onMoveDown: (index: number) => void;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const filtered = availableProducts.filter(p => !items.some(i => i.id === p.id));
+
+  return (
+    <div>
+      <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-1">{label}</p>
+      <p className="text-xs text-muted-foreground mb-3">{description}</p>
+
+      <div className="space-y-1">
+        {items.map((product, idx) => (
+          <div key={product.id} className="flex items-center gap-2 bg-secondary/50 rounded-md px-2 py-1.5">
+            <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+            <span className="text-[10px] font-display text-muted-foreground w-4">{idx + 1}.</span>
+            <img
+              src={getImageUrl(product.images[0], 'thumb')}
+              alt={product.title}
+              className="w-8 h-8 rounded object-cover flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-xs tracking-wide truncate">{product.title}</p>
+            </div>
+            <span className="text-[10px] text-muted-foreground flex-shrink-0">${product.price}</span>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button
+                onClick={() => onMoveUp(idx)}
+                disabled={idx === 0}
+                className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => onMoveDown(idx)}
+                disabled={idx === items.length - 1}
+                className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <button
+              onClick={() => onRemove(product.id)}
+              className="p-1 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2">
+        <button
+          onClick={() => setPickerOpen(!pickerOpen)}
+          className="flex items-center gap-1 px-3 py-1.5 border border-border rounded-md text-[10px] font-display tracking-wider hover:bg-secondary transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+          ADD PRODUCT
+        </button>
+        {pickerOpen && (
+          <ProductPicker
+            products={filtered}
+            onSelect={handleAdd}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminStylingGuide() {
-  const [guide, setGuide] = useState<StylingGuide | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [guideName, setGuideName] = useState('Default Guide');
-  const [rules, setRules] = useState<StylingRule[]>([
-    { anchor_category: 'outerwear', suggested_categories: ['streetwear', 'essentials'], orientation: 'horizontal' },
-    { anchor_category: 'streetwear', suggested_categories: ['outerwear', 'essentials', 'new-arrivals'], orientation: 'horizontal' },
-    { anchor_category: 'essentials', suggested_categories: ['outerwear', 'streetwear'], orientation: 'horizontal' },
-    { anchor_category: 'new-arrivals', suggested_categories: ['outerwear', 'streetwear', 'essentials'], orientation: 'horizontal' },
-  ]);
+  const [guideId, setGuideId] = useState<string | null>(null);
+  const [presets, setPresets] = useState<ProductPreset[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadGuide();
+  // Group products by body zone
+  const grouped = useMemo(() => {
+    const groups: Record<BodyZoneGroup, DemoProduct[]> = { TOPS: [], BOTTOMS: [], ACCESSORIES: [] };
+    DEMO_PRODUCTS.forEach(p => {
+      groups[classifyGroup(p)].push(p);
+    });
+    return groups;
   }, []);
+
+  const selectedProduct = DEMO_PRODUCTS.find(p => p.id === selectedProductId) ?? null;
+  const currentPreset = presets.find(p => p.anchorProductId === selectedProductId);
+
+  // Products that have a preset defined
+  const presetProductIds = new Set(presets.map(p => p.anchorProductId));
+
+  useEffect(() => { loadGuide(); }, []);
 
   const loadGuide = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
 
     const { data } = await supabase
       .from('styling_guides')
@@ -44,10 +174,11 @@ export default function AdminStylingGuide() {
       .maybeSingle();
 
     if (data) {
-      const g = data as unknown as StylingGuide;
-      setGuide(g);
-      setGuideName(g.name);
-      setRules(g.rules);
+      setGuideId(data.id);
+      const rules = data.rules as any;
+      if (rules?.version === 2 && Array.isArray(rules.presets)) {
+        setPresets(rules.presets);
+      }
     }
     setLoading(false);
   };
@@ -57,41 +188,81 @@ export default function AdminStylingGuide() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
 
-    if (guide) {
-      await supabase
-        .from('styling_guides')
-        .update({ name: guideName, rules: rules as unknown as any })
-        .eq('id', guide.id);
-    } else {
-      await supabase
-        .from('styling_guides')
-        .insert({ merchant_id: user.id, name: guideName, rules: rules as unknown as any });
-    }
+    const rules = { version: 2, presets };
 
-    await loadGuide();
+    if (guideId) {
+      await supabase
+        .from('styling_guides')
+        .update({ rules: rules as unknown as any })
+        .eq('id', guideId);
+    } else {
+      const { data } = await supabase
+        .from('styling_guides')
+        .insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as any })
+        .select('id')
+        .single();
+      if (data) setGuideId(data.id);
+    }
     setSaving(false);
   };
 
-  const addRule = () => {
-    setRules([...rules, { anchor_category: '', suggested_categories: [], orientation: 'horizontal' }]);
+  const updatePreset = (anchorId: string, field: 'pairs' | 'extras', ids: string[]) => {
+    setPresets(prev => {
+      const existing = prev.find(p => p.anchorProductId === anchorId);
+      if (existing) {
+        return prev.map(p => p.anchorProductId === anchorId ? { ...p, [field]: ids } : p);
+      }
+      return [...prev, { anchorProductId: anchorId, pairs: field === 'pairs' ? ids : [], extras: field === 'extras' ? ids : [] }];
+    });
   };
 
-  const removeRule = (index: number) => {
-    setRules(rules.filter((_, i) => i !== index));
+  const addToPreset = (field: 'pairs' | 'extras', product: DemoProduct) => {
+    if (!selectedProductId) return;
+    const current = currentPreset?.[field] ?? [];
+    updatePreset(selectedProductId, field, [...current, product.id]);
   };
 
-  const updateRule = (index: number, field: keyof StylingRule, value: any) => {
-    setRules(rules.map((r, i) => i === index ? { ...r, [field]: value } : r));
+  const removeFromPreset = (field: 'pairs' | 'extras', productId: string) => {
+    if (!selectedProductId) return;
+    const current = currentPreset?.[field] ?? [];
+    updatePreset(selectedProductId, field, current.filter(id => id !== productId));
   };
 
-  const toggleSuggestedCategory = (ruleIndex: number, category: string) => {
-    const rule = rules[ruleIndex];
-    const current = rule.suggested_categories;
-    const updated = current.includes(category)
-      ? current.filter(c => c !== category)
-      : [...current, category];
-    updateRule(ruleIndex, 'suggested_categories', updated);
+  const moveInPreset = (field: 'pairs' | 'extras', index: number, direction: -1 | 1) => {
+    if (!selectedProductId) return;
+    const current = [...(currentPreset?.[field] ?? [])];
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= current.length) return;
+    [current[index], current[newIndex]] = [current[newIndex], current[index]];
+    updatePreset(selectedProductId, field, current);
   };
+
+  // Resolve product IDs to DemoProduct objects
+  const pairsProducts = (currentPreset?.pairs ?? [])
+    .map(id => DEMO_PRODUCTS.find(p => p.id === id))
+    .filter(Boolean) as DemoProduct[];
+
+  const extrasProducts = (currentPreset?.extras ?? [])
+    .map(id => DEMO_PRODUCTS.find(p => p.id === id))
+    .filter(Boolean) as DemoProduct[];
+
+  // Filter available products for pickers
+  const anchorZone = selectedProduct ? getBodyZone(selectedProduct) : null;
+  const pairsAvailable = DEMO_PRODUCTS.filter(p => {
+    if (p.id === selectedProductId) return false;
+    if (!anchorZone) return true;
+    // Opposite zone for pairs
+    if (anchorZone === 'top') return getBodyZone(p) === 'bottom';
+    if (anchorZone === 'bottom') return getBodyZone(p) === 'top';
+    return true; // accessories can pair with anything
+  });
+
+  const extrasAvailable = DEMO_PRODUCTS.filter(p => {
+    if (p.id === selectedProductId) return false;
+    if (!anchorZone) return true;
+    // Same zone for extras
+    return getBodyZone(p) === anchorZone;
+  });
 
   if (loading) {
     return (
@@ -102,134 +273,134 @@ export default function AdminStylingGuide() {
   }
 
   return (
-    <div className="p-6 max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-3">
           <Layers className="w-5 h-5 text-muted-foreground" />
           <h1 className="font-display text-lg font-bold tracking-wide">STYLE GUIDE</h1>
         </div>
-        <button
-          onClick={saveGuide}
-          disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" />
-          {saving ? 'SAVING...' : 'SAVE GUIDE'}
-        </button>
-      </div>
-
-      <p className="text-sm text-muted-foreground mb-6">
-        Configure how Style Kit suggests pairings for your customers. Define which categories complement each other and how the split-screen should orient.
-      </p>
-
-      {/* Guide name */}
-      <div className="mb-6">
-        <label className="text-[10px] font-display tracking-widest text-muted-foreground mb-1 block">
-          GUIDE NAME
-        </label>
-        <input
-          type="text"
-          value={guideName}
-          onChange={(e) => setGuideName(e.target.value)}
-          className="w-full max-w-sm bg-secondary border border-border rounded-md px-3 py-2 text-sm font-display focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-
-      {/* Rules */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-xs tracking-widest text-muted-foreground">PAIRING RULES</h2>
+        <div className="flex items-center gap-3">
+          {/* Tab toggle */}
+          <div className="flex items-center bg-secondary rounded-md p-0.5">
+            <button className="px-3 py-1.5 rounded text-[10px] font-display tracking-wider bg-primary text-primary-foreground">
+              PRESETS
+            </button>
+            <button
+              disabled
+              className="px-3 py-1.5 rounded text-[10px] font-display tracking-wider text-muted-foreground/40 cursor-not-allowed relative"
+            >
+              CANVAS
+              <span className="absolute -top-1.5 -right-1 text-[7px] text-muted-foreground/50 font-display">SOON</span>
+            </button>
+          </div>
           <button
-            onClick={addRule}
-            className="flex items-center gap-1 px-3 py-1.5 border border-border rounded-md text-[10px] font-display tracking-wider hover:bg-secondary transition-colors"
+            onClick={saveGuide}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            <Plus className="w-3 h-3" />
-            ADD RULE
+            <Save className="w-4 h-4" />
+            {saving ? 'SAVING...' : 'SAVE'}
           </button>
         </div>
+      </div>
 
-        {rules.map((rule, i) => (
-          <div key={i} className="liquid-glass rounded-lg p-4 space-y-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 space-y-3">
-                {/* Anchor category */}
-                <div>
-                  <label className="text-[10px] font-display tracking-widest text-muted-foreground mb-1 block">
-                    WHEN CUSTOMER SELECTS
-                  </label>
-                  <select
-                    value={rule.anchor_category}
-                    onChange={(e) => updateRule(i, 'anchor_category', e.target.value)}
-                    className="bg-secondary border border-border rounded-md px-3 py-2 text-sm font-display focus:outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option value="">Select category...</option>
-                    {AVAILABLE_CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>{cat.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Suggested categories */}
-                <div>
-                  <label className="text-[10px] font-display tracking-widest text-muted-foreground mb-1 block">
-                    SUGGEST FROM
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {AVAILABLE_CATEGORIES.filter(c => c !== rule.anchor_category).map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => toggleSuggestedCategory(i, cat)}
-                        className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                          rule.suggested_categories.includes(cat)
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'border-border hover:bg-secondary'
-                        }`}
-                      >
-                        {cat.toUpperCase()}
-                      </button>
-                    ))}
+      {/* Two-column layout */}
+      <div className="flex-1 flex min-h-0">
+        {/* LEFT: Product list */}
+        <div className="w-72 border-r border-border overflow-y-auto flex-shrink-0">
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-display tracking-widest text-muted-foreground">SELECT A PRODUCT</p>
+          </div>
+          {(['TOPS', 'BOTTOMS', 'ACCESSORIES'] as BodyZoneGroup[]).map(group => (
+            <div key={group}>
+              <div className="px-4 py-2 bg-secondary/30">
+                <p className="text-[9px] font-display tracking-[0.2em] text-muted-foreground">{group}</p>
+              </div>
+              {grouped[group].map(product => (
+                <button
+                  key={product.id}
+                  onClick={() => setSelectedProductId(product.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                    selectedProductId === product.id
+                      ? 'bg-primary/10 border-l-2 border-primary'
+                      : 'hover:bg-secondary border-l-2 border-transparent'
+                  }`}
+                >
+                  <img
+                    src={getImageUrl(product.images[0], 'thumb')}
+                    alt={product.title}
+                    className="w-10 h-10 rounded object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display text-xs tracking-wide truncate">{product.title}</p>
+                    <p className="text-[10px] text-muted-foreground">${product.price}</p>
                   </div>
-                </div>
+                  {presetProductIds.has(product.id) && (
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'hsl(var(--success))' }} />
+                  )}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
 
-                {/* Orientation */}
+        {/* RIGHT: Preset editor */}
+        <div className="flex-1 overflow-y-auto">
+          {!selectedProduct ? (
+            <div className="h-full flex items-center justify-center">
+              <p className="text-sm text-muted-foreground font-display tracking-wider">
+                Select a product to configure its Style Kit presets
+              </p>
+            </div>
+          ) : (
+            <div className="p-6 max-w-2xl space-y-6">
+              {/* Anchor product header */}
+              <div className="flex items-start gap-4">
+                <img
+                  src={getImageUrl(selectedProduct.images[0], 'thumb')}
+                  alt={selectedProduct.title}
+                  className="w-28 h-28 rounded-lg object-cover flex-shrink-0"
+                />
                 <div>
-                  <label className="text-[10px] font-display tracking-widest text-muted-foreground mb-1 block">
-                    SPLIT ORIENTATION
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => updateRule(i, 'orientation', 'horizontal')}
-                      className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                        rule.orientation === 'horizontal'
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'border-border hover:bg-secondary'
-                      }`}
-                    >
-                      HORIZONTAL
-                    </button>
-                    <button
-                      onClick={() => updateRule(i, 'orientation', 'vertical')}
-                      className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                        rule.orientation === 'vertical'
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'border-border hover:bg-secondary'
-                      }`}
-                    >
-                      VERTICAL
-                    </button>
-                  </div>
+                  <h2 className="font-display text-base font-bold tracking-wide">{selectedProduct.title}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">${selectedProduct.price}</p>
+                  <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-display tracking-widest bg-secondary rounded text-muted-foreground">
+                    {classifyGroup(selectedProduct)}
+                  </span>
                 </div>
               </div>
 
-              <button
-                onClick={() => removeRule(i)}
-                className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              {/* PAIRS section */}
+              <div className="liquid-glass rounded-lg p-4">
+                <PresetList
+                  label="PAIRS"
+                  description="When building pairs, suggest these first:"
+                  items={pairsProducts}
+                  availableProducts={pairsAvailable}
+                  onAdd={(p) => addToPreset('pairs', p)}
+                  onRemove={(id) => removeFromPreset('pairs', id)}
+                  onMoveUp={(i) => moveInPreset('pairs', i, -1)}
+                  onMoveDown={(i) => moveInPreset('pairs', i, 1)}
+                />
+              </div>
+
+              {/* EXTRAS section */}
+              <div className="liquid-glass rounded-lg p-4">
+                <PresetList
+                  label="EXTRAS"
+                  description="When building extras, suggest these first:"
+                  items={extrasProducts}
+                  availableProducts={extrasAvailable}
+                  onAdd={(p) => addToPreset('extras', p)}
+                  onRemove={(id) => removeFromPreset('extras', id)}
+                  onMoveUp={(i) => moveInPreset('extras', i, -1)}
+                  onMoveDown={(i) => moveInPreset('extras', i, 1)}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          )}
+        </div>
       </div>
     </div>
   );
