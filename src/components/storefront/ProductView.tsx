@@ -279,7 +279,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
 
         {/* Category tabs — top left */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-0.5 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1 py-0.5">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-0.5 bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
           {CATEGORIES.map(cat => (
             <button
               key={cat}
@@ -293,8 +293,8 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               }}
               className={`text-[10px] font-display tracking-[0.12em] uppercase rounded-md px-2.5 py-1 transition-colors ${
                 activeCategory === cat
-                  ? 'bg-foreground/[0.12] text-foreground font-medium'
-                  : 'text-muted-foreground/50 hover:text-foreground/70'
+                  ? 'bg-foreground/[0.15] text-foreground font-medium'
+                  : 'text-foreground/40 hover:text-foreground/70'
               }`}
             >
               {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
@@ -320,27 +320,27 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         {/* Navigation arrows */}
         <button
           onClick={() => navigate('left')}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group pointer-events-auto"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
         >
-          <ChevronLeft className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <ChevronLeft className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
         <button
           onClick={() => navigate('right')}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group pointer-events-auto"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
         >
-          <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <ChevronRight className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
         <button
           onClick={() => navigate('up')}
-          className="absolute top-14 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group pointer-events-auto"
+          className="absolute top-14 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
         >
-          <ChevronUp className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <ChevronUp className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
         <button
           onClick={() => navigate('down')}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-secondary/80 rounded-full transition-all group pointer-events-auto"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
         >
-          <ChevronDown className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <ChevronDown className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
 
         {/* Product content */}
@@ -404,11 +404,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             </div>
 
             {/* Title + Price */}
-            <h2 className="font-display text-lg font-bold text-center tracking-wide">{product.title}</h2>
+            <h2 className="font-display text-lg font-bold text-center tracking-wide text-foreground">{product.title}</h2>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="font-display text-base">${product.price}</span>
+              <span className="font-display text-base text-foreground">${product.price}</span>
               {product.compare_at_price && (
-                <span className="text-sm text-muted-foreground line-through">${product.compare_at_price}</span>
+                <span className="text-sm text-foreground/50 line-through">${product.compare_at_price}</span>
               )}
             </div>
 
@@ -416,7 +416,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             <button
               onClick={() => setExpandDetails(!expandDetails)}
               onMouseEnter={() => setExpandDetails(true)}
-              className="mt-3 p-2 hover:bg-secondary rounded-full transition-colors"
+              className="mt-3 p-2 hover:bg-secondary rounded-full transition-colors text-foreground"
             >
               <Plus className={`w-5 h-5 transition-transform duration-200 ${expandDetails ? 'rotate-45' : ''}`} />
             </button>
@@ -432,7 +432,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                   className="overflow-hidden w-full"
                 >
                   <div className="pt-4 pb-2 space-y-4">
-                    <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                    <p className="text-sm text-foreground/70 text-center leading-relaxed">
                       {product.description}
                     </p>
 
@@ -445,10 +445,10 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                             onClick={() => setSelectedVariant(v.id)}
                             className={`px-4 py-2 text-sm font-display rounded-md border transition-all ${
                               selectedVariant === v.id
-                                ? 'border-primary bg-primary text-primary-foreground'
+                                ? 'border-foreground bg-foreground text-background'
                                 : v.inventory_count === 0
-                                ? 'border-border text-muted-foreground/40 cursor-not-allowed'
-                                : 'border-border hover:border-muted-foreground'
+                                ? 'border-foreground/20 text-foreground/30 cursor-not-allowed'
+                                : 'border-foreground/30 text-foreground hover:border-foreground/60'
                             }`}
                             disabled={v.inventory_count === 0}
                           >
@@ -477,8 +477,8 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         disabled={!canAdd || isOutOfStock}
                         className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center gap-2 transition-all ${
                           !canAdd || isOutOfStock
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                            : 'bg-primary text-primary-foreground hover:opacity-90'
+                            ? 'bg-foreground/10 text-foreground/50 cursor-not-allowed'
+                            : 'bg-foreground text-background hover:opacity-90'
                         }`}
                       >
                         <ShoppingBag className="w-4 h-4" />
@@ -489,15 +489,15 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                           const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
                           openStyleKit(product, 'counterparts', variantTitle);
                         }}
-                        className="px-4 py-3 border border-border font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center gap-2 hover:bg-secondary transition-colors"
+                        className="px-4 py-3 border border-foreground/30 text-foreground font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center gap-2 hover:bg-foreground/5 transition-colors"
                       >
                         <Layers className="w-4 h-4" />
                         BUILD A SET
                       </button>
                       <button
                         onClick={() => setIsSaved(!isSaved)}
-                        className={`p-3 border rounded-lg transition-colors ${
-                          isSaved ? 'border-accent text-accent' : 'border-border hover:border-muted-foreground'
+                        className={`p-3 border rounded-lg transition-colors text-foreground ${
+                          isSaved ? 'border-foreground/60' : 'border-foreground/30 hover:border-foreground/60'
                         }`}
                       >
                         <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
@@ -512,7 +512,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
         {/* Position indicator — bottom right */}
         <div className="absolute bottom-14 right-6 pointer-events-auto">
-          <span className="text-[10px] font-display tracking-widest text-muted-foreground/40">
+          <span className="text-[10px] font-display tracking-widest text-foreground/40">
             {posInFiltered} / {visibleIndices.length}
           </span>
         </div>
