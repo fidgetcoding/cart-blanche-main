@@ -157,16 +157,21 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const lastDragY = useRef(0);
   const lastDragTime = useRef(0);
 
-  // Container height ref
-  const containerHeight = useRef(0);
+  // Container height — use state so re-render happens when measured
+  const [containerHeight, setContainerHeight] = useState(0);
   useEffect(() => {
     const el = scrollContainerRef.current;
-    if (el) containerHeight.current = el.clientHeight;
-  });
+    if (!el) return;
+    const measure = () => setContainerHeight(el.clientHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [product?.id]);
 
   // Snap to nearest image with momentum
   const snapTo = useCallback((targetIndex: number, animated = true) => {
-    const h = containerHeight.current || 600;
+    const h = containerHeight || 600;
     const targetOffset = targetIndex * h;
     if (!animated) {
       offsetY.current = targetOffset;
@@ -198,13 +203,13 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     };
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     animFrameRef.current = requestAnimationFrame(animate);
-  }, [images.length]);
+  }, [images.length, containerHeight]);
 
   const goToImage = useCallback((dir: 1 | -1) => {
-    const h = containerHeight.current || 600;
+    const h = containerHeight || 600;
     const currentIdx = Math.round(offsetY.current / h);
     snapTo(currentIdx + dir);
-  }, [snapTo]);
+  }, [snapTo, containerHeight]);
 
   // Reset offset when product changes
   useEffect(() => {
@@ -221,7 +226,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       e.preventDefault();
       if (isDragging.current) return;
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      const h = containerHeight.current || 600;
+      const h = containerHeight || 600;
       offsetY.current += e.deltaY * 0.8;
       setRenderOffset(offsetY.current);
       const idx = Math.round(offsetY.current / h) % images.length;
@@ -233,7 +238,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       onWheel(e);
       if (wheelTimer) clearTimeout(wheelTimer);
       wheelTimer = setTimeout(() => {
-        const h = containerHeight.current || 600;
+        const h = containerHeight || 600;
         const nearest = Math.round(offsetY.current / h);
         snapTo(nearest);
       }, 120);
@@ -273,7 +278,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       lastDragTime.current = now;
       offsetY.current = dragStartOffset.current - dy;
       setRenderOffset(offsetY.current);
-      const h = containerHeight.current || 600;
+      const h = containerHeight || 600;
       const idx = Math.round(offsetY.current / h) % images.length;
       setCurrentVisibleImage(idx < 0 ? idx + images.length : idx);
     };
@@ -281,7 +286,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       if (!isDragging.current) return;
       isDragging.current = false;
       el.style.cursor = '';
-      const h = containerHeight.current || 600;
+      const h = containerHeight || 600;
       // Use velocity to determine target
       const momentum = -velocityRef.current * 150; // project forward
       const projected = offsetY.current + momentum;
@@ -300,7 +305,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   }, [images.length, snapTo]);
 
   // Compute which images to render (virtual strip with wrapping)
-  const h = containerHeight.current || 600;
+  const h = containerHeight || 600;
   const visibleImages = (() => {
     if (images.length === 0) return [];
     const result: { img: typeof images[0]; index: number; yPos: number }[] = [];
