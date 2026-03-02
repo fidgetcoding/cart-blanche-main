@@ -17,12 +17,13 @@ export function MaisonCanvas() {
   const { loading, layout, getOrderedProducts, getOrderedCategories } = useGridLayout();
   const { items, openCart, itemCount } = useCart();
   const { themeSettings } = useTheme();
-  const { openStyleKit } = useStyleKit();
+  const { openStyleKit, closeStyleKit, isOpen: styleKitOpen } = useStyleKit();
   const [viewMode, setViewMode] = useState<3 | 6>(3);
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [activeType, setActiveType] = useState('ALL');
   const [selectedProduct, setSelectedProduct] = useState<DemoProduct | null>(null);
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const [buildSetProduct, setBuildSetProduct] = useState<DemoProduct | null>(null);
   const typeCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastChangedFilter = useRef<'ribbon' | 'dropdown'>('ribbon');
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -42,7 +43,20 @@ export function MaisonCanvas() {
 
   const handleBuildSet = useCallback((product: DemoProduct) => {
     openStyleKit(product, 'counterparts');
+    setBuildSetProduct(product);
   }, [openStyleKit]);
+
+  const closeBuildSet = useCallback(() => {
+    setBuildSetProduct(null);
+    closeStyleKit();
+  }, [closeStyleKit]);
+
+  // Sync: when StyleKit closes itself (via X or Escape), close our modal too
+  useEffect(() => {
+    if (!styleKitOpen && buildSetProduct) {
+      setBuildSetProduct(null);
+    }
+  }, [styleKitOpen, buildSetProduct]);
 
   const scheduleCloseTypeDropdown = useCallback(() => {
     if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
@@ -126,6 +140,7 @@ export function MaisonCanvas() {
             <button
               key={cat}
               
+              onMouseEnter={() => handleRibbonChange(cat)}
               onClick={() => handleRibbonChange(cat)}
               className={`relative py-1 transition-all duration-200 ${
                 activeCategory === cat ? 'opacity-100' : 'opacity-50 hover:opacity-80'
@@ -232,6 +247,7 @@ export function MaisonCanvas() {
         <div className="flex items-center gap-3 flex-shrink-0">
           <button
             
+            onMouseEnter={() => setViewMode(3)}
             onClick={() => setViewMode(3)}
             className={`text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1 ${
               viewMode === 3 ? 'opacity-100 border-b border-current' : 'opacity-50 hover:opacity-80 border-b border-transparent'
@@ -241,6 +257,7 @@ export function MaisonCanvas() {
           </button>
           <button
             
+            onMouseEnter={() => setViewMode(6)}
             onClick={() => setViewMode(6)}
             className={`text-[11px] tracking-[0.15em] uppercase transition-all duration-200 px-2 py-1 ${
               viewMode === 6 ? 'opacity-100 border-b border-current' : 'opacity-50 hover:opacity-80 border-b border-transparent'
@@ -291,8 +308,34 @@ export function MaisonCanvas() {
       {/* Cart drawer */}
       <CartDrawer />
 
-      {/* Style Kit popup for Build a Set */}
-      <StyleKitView />
+      {/* Build a Set — Modal popup */}
+      <AnimatePresence>
+        {buildSetProduct && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onClick={closeBuildSet}
+          >
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+              className="relative z-10 w-[90%] max-w-[1000px] h-[70vh] rounded-xl border border-border overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              style={{ contain: 'paint layout' }}
+            >
+              <StyleKitView />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cart drawer */}
+      <CartDrawer />
     </div>
   );
 }
