@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo, useEffect, forwardRef, useImperativeHan
 import {
   ReactFlow,
   Background,
-  Controls,
   useNodesState,
   useEdgesState,
   addEdge,
@@ -174,7 +173,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 }, ref) => {
   const { fitView, setCenter, screenToFlowPosition } = useReactFlow();
   const nodeCountRef = useRef(0);
-  const [showHotkeys, setShowHotkeys] = useState(true);
   // Track pending connection source for blank node flow
   const pendingConnectionSourceRef = useRef<string | null>(null);
 
@@ -544,7 +542,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           fitView={initialNodes.length > 0}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.04)" />
-          <Controls className="!rounded-lg !shadow-lg !border !border-foreground/10 [&]:!bg-foreground/5 [&]:!backdrop-blur-xl [&>button]:!bg-transparent [&>button]:!border-foreground/8 [&>button]:!text-foreground/50 [&>button:hover]:!bg-foreground/10 [&>button:hover]:!text-foreground [&>button]:!fill-foreground/50 [&>button:hover]:!fill-foreground" />
         </ReactFlow>
 
         {/* Empty state */}
@@ -559,20 +556,12 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           </div>
         )}
 
-        {/* Hotkey hints */}
-        {showHotkeys && nodes.length > 0 && (
-          <div className="absolute bottom-4 left-14 z-10 flex items-center gap-1">
-            <div className="liquid-glass rounded-md px-3 py-1.5 text-[9px] text-muted-foreground/60 font-display tracking-wider flex items-center gap-3">
-              <span><kbd className="text-foreground/40">P</kbd> Add</span>
-              <span><kbd className="text-foreground/40">Del</kbd> Remove</span>
-              <span><kbd className="text-foreground/40">F</kbd> Fit</span>
-              <span><kbd className="text-foreground/40">⌘S</kbd> Save</span>
-              <button onClick={() => setShowHotkeys(false)} className="ml-1 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Navigation instructions — fade like storefront footer */}
+        <div className="absolute bottom-4 left-4 z-10 tracking-wider space-y-0.5 cursor-default transition-colors duration-500 text-muted-foreground/30 hover:text-foreground/80" style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
+          <p>SCROLL TO ZOOM · DRAG TO PAN · CLICK TO SELECT</p>
+          <p>P TO ADD · DEL TO REMOVE · F TO FIT · ⌘S TO SAVE</p>
+          <p>DRAG PORT TO CONNECT · DOUBLE-CLICK TO ADD NODE</p>
+        </div>
       </div>
 
       {/* Selected node sidebar */}
