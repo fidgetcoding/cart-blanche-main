@@ -136,7 +136,7 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
         {isCompact && isHovered && (
           <div
             className="absolute inset-0 backdrop-blur-sm flex flex-col items-center justify-end pb-4 transition-opacity duration-200 z-[1]"
-            style={{ backgroundColor: 'hsl(var(--background) / 0.92)' }}
+            style={{ backgroundColor: 'hsl(var(--background) / 0.8)' }}
           >
             <p
               className="tracking-[0.12em] uppercase leading-relaxed text-center px-3"
