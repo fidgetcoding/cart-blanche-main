@@ -77,17 +77,7 @@ function ThemeControls() {
   const colorInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="mx-3 mb-3 mt-2 rounded-xl border-2 border-foreground/30 bg-card/50 shadow-[0_0_20px_-2px_hsl(0_0%_100%/0.15),inset_0_0_20px_-5px_hsl(0_0%_100%/0.05)]">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-3 text-[11px] font-display tracking-[0.15em] text-foreground/70 hover:text-foreground transition-colors"
-      >
-        THEME SETTINGS
-        {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-      </button>
-
-      {expanded && (
-        <div className="px-4 pb-4 space-y-5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+    <div className="px-4 py-4 space-y-5">
           {/* Mode */}
           <div className="space-y-2">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">BACKGROUND MODE</label>
@@ -222,9 +212,7 @@ function ThemeControls() {
               <SizeSlider label="Navigator" value={themeSettings.bodyFontSize} min={8} max={16} onChange={v => updateTheme({ bodyFontSize: v })} />
               <SizeSlider label="Numeral" value={themeSettings.numeralFontSize} min={8} max={16} onChange={v => updateTheme({ numeralFontSize: v })} />
             </div>
-          </div>
         </div>
-      )}
     </div>
   );
 }
