@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { DemoProduct } from '@/data/demo-data';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCart } from '@/contexts/CartContext';
 
 interface MaisonProductCardProps {
   product: DemoProduct;
@@ -14,6 +15,8 @@ interface MaisonProductCardProps {
 export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonProductCardProps) {
   const [currentImage, setCurrentImage] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [showSizes, setShowSizes] = useState(false);
+  const { addItem } = useCart();
   const wheelAccumulator = useRef(0);
   const cooldown = useRef(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
@@ -298,12 +301,80 @@ export function MaisonProductCard({ product, viewMode, onClick, index }: MaisonP
           >
             ${product.price}
           </p>
-          <p
-            className="text-[10px] tracking-[0.2em] uppercase mt-2"
-            style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--font-size-body)', color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))' }}
+          <div
+            className="relative mt-2 h-6 flex items-center justify-center"
+            onMouseEnter={() => setShowSizes(true)}
+            onMouseLeave={() => setShowSizes(false)}
           >
-            {product.variants.some(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
-          </p>
+            <AnimatePresence mode="wait">
+              {!showSizes || product.variants.length <= 1 ? (
+                <motion.p
+                  key="cta"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="text-[10px] tracking-[0.2em] uppercase cursor-pointer"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--font-size-body)',
+                    color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (product.variants.length === 1 && product.variants[0].inventory_count > 0) {
+                      addItem({
+                        productId: product.id,
+                        variantId: product.variants[0].id,
+                        title: product.title,
+                        variantTitle: product.variants[0].title,
+                        price: product.variants[0].price ?? product.price,
+                        image: product.images[0],
+                      });
+                    }
+                  }}
+                >
+                  {product.variants.every(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
+                </motion.p>
+              ) : (
+                <motion.div
+                  key="sizes"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center justify-center gap-2"
+                >
+                  {product.variants.map(v => (
+                    <button
+                      key={v.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (v.inventory_count === 0) return;
+                        addItem({
+                          productId: product.id,
+                          variantId: v.id,
+                          title: product.title,
+                          variantTitle: v.title,
+                          price: v.price ?? product.price,
+                          image: product.images[0],
+                        });
+                      }}
+                      disabled={v.inventory_count === 0}
+                      className={`text-[10px] tracking-[0.12em] uppercase transition-colors ${
+                        v.inventory_count === 0
+                          ? 'text-muted-foreground/30 line-through cursor-not-allowed'
+                          : 'text-muted-foreground hover:text-foreground cursor-pointer'
+                      }`}
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      {v.title}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </motion.div>
