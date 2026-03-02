@@ -57,7 +57,7 @@ export default function AdminLayout() {
       <div className="h-screen dynamic-bg flex flex-col overflow-hidden">
         <header className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 gap-2">
           <FlaskConical className="w-3.5 h-3.5 text-sidebar-foreground/50" />
-          <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">THE LAB</h1>
+          <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">TEMPLATE LAB</h1>
           <div className="flex-1" />
           {isLabSub ? (
             <button
@@ -137,7 +137,7 @@ export default function AdminLayout() {
           <div className="flex-1" />
           <NavLink
             to="/admin/lab"
-            title="The Lab"
+            title="Template Lab"
             className={({ isActive }) =>
               `flex items-center gap-1.5 px-2 xl:px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap flex-shrink-0 ${
                 isActive
