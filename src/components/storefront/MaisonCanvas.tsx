@@ -1,18 +1,19 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ShoppingBag } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MaisonProductCard } from './MaisonProductCard';
 import { MaisonProductDetail } from './MaisonProductDetail';
 import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/contexts/CartContext';
-import { ShoppingBag } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 
 // Inject Cormorant Garamond
 const FONT_URL = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap';
 
 export function MaisonCanvas() {
+  const { themeSettings } = useTheme();
   const { loading, getOrderedProducts, getOrderedCategories } = useGridLayout();
   const { items, openCart, itemCount } = useCart();
   const [viewMode, setViewMode] = useState<3 | 6>(3);
@@ -30,6 +31,16 @@ export function MaisonCanvas() {
     }
   }, []);
 
+  // Derive theme colors
+  const bgColor = themeSettings.mode === 'light' ? '#FAF7F2' : '#0a0a0a';
+  const textColor = themeSettings.displayFontColor || (themeSettings.mode === 'light' ? '#1a1a1a' : '#f5f5f5');
+  const borderColor = themeSettings.mode === 'light' ? '#e8e4de' : '#222';
+  const mutedColor = themeSettings.mode === 'light' ? '#999' : '#666';
+  const displayFont = `'${themeSettings.displayFont}', Georgia, serif`;
+  const bodyFont = `'${themeSettings.bodyFont}', Georgia, serif`;
+  const storeName = themeSettings.storeName || 'CART BLANCHE';
+  const storeNameColor = themeSettings.storeNameColor || textColor;
+
   const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const categories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
 
@@ -40,8 +51,8 @@ export function MaisonCanvas() {
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center" style={{ backgroundColor: '#FAF7F2' }}>
-        <p style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", color: '#1a1a1a', letterSpacing: '0.3em', fontSize: '11px', textTransform: 'uppercase' }}>
+      <div className="h-screen w-full flex items-center justify-center" style={{ backgroundColor: bgColor }}>
+        <p style={{ fontFamily: displayFont, color: textColor, letterSpacing: '0.3em', fontSize: '11px', textTransform: 'uppercase' }}>
           Loading...
         </p>
       </div>
@@ -49,19 +60,25 @@ export function MaisonCanvas() {
   }
 
   return (
-    <div className="min-h-screen w-full" style={{ backgroundColor: '#FAF7F2', color: '#1a1a1a' }}>
+    <div className="min-h-screen w-full" style={{ backgroundColor: bgColor, color: textColor }}>
       {/* Sticky header */}
       <header
         className="sticky top-0 z-30 flex items-center justify-between px-6 py-4"
-        style={{ backgroundColor: '#FAF7F2', borderBottom: '1px solid #e8e4de', fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+        style={{ backgroundColor: bgColor, borderBottom: `1px solid ${borderColor}`, fontFamily: displayFont }}
       >
-        <div className="text-sm tracking-[0.3em] uppercase font-medium">
-          Cart Blanche
+        <div
+          className="tracking-[0.3em] uppercase font-medium"
+          style={{ fontSize: `${themeSettings.bodyFontSize}px`, color: storeNameColor, fontFamily: bodyFont }}
+        >
+          {storeName}
         </div>
-        <button onClick={openCart} className="relative p-2 text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors">
+        <button onClick={openCart} className="relative p-2 transition-colors" style={{ color: `${textColor}99` }}>
           <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
           {itemCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#1a1a1a] text-[#FAF7F2] rounded-full text-[9px] flex items-center justify-center">
+            <span
+              className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] flex items-center justify-center"
+              style={{ backgroundColor: textColor, color: bgColor }}
+            >
               {itemCount}
             </span>
           )}
@@ -71,7 +88,7 @@ export function MaisonCanvas() {
       {/* Category ribbon */}
       <nav
         className="sticky top-[57px] z-20 flex items-center justify-center gap-8 px-6 py-3"
-        style={{ backgroundColor: '#FAF7F2', borderBottom: '1px solid #e8e4de', fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+        style={{ backgroundColor: bgColor, borderBottom: `1px solid ${borderColor}`, fontFamily: bodyFont }}
       >
         {categories.map(cat => (
           <button
@@ -79,10 +96,10 @@ export function MaisonCanvas() {
             onClick={() => setActiveCategory(cat)}
             className="relative py-1 transition-colors"
             style={{
-              fontSize: '11px',
+              fontSize: `${themeSettings.bodyFontSize}px`,
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: activeCategory === cat ? '#1a1a1a' : '#999',
+              color: activeCategory === cat ? textColor : mutedColor,
               fontWeight: activeCategory === cat ? 600 : 400,
             }}
           >
@@ -91,7 +108,7 @@ export function MaisonCanvas() {
               <motion.div
                 layoutId="maison-cat-underline"
                 className="absolute bottom-0 left-0 right-0 h-[1px]"
-                style={{ backgroundColor: '#1a1a1a' }}
+                style={{ backgroundColor: textColor }}
               />
             )}
           </button>
@@ -101,13 +118,13 @@ export function MaisonCanvas() {
       {/* Sub-header: category dropdown + view toggle */}
       <div
         className="flex items-center justify-between px-6 py-3"
-        style={{ borderBottom: '1px solid #e8e4de', fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+        style={{ borderBottom: `1px solid ${borderColor}`, fontFamily: bodyFont }}
       >
-        {/* Category dropdown */}
         <div className="relative">
           <button
             onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-            className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-[#1a1a1a]/70 hover:text-[#1a1a1a] transition-colors"
+            className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase transition-colors"
+            style={{ color: `${textColor}B3` }}
           >
             {activeCategory === 'ALL' ? 'ALL PRODUCTS' : activeCategory}
             <ChevronDown className="w-3.5 h-3.5" />
@@ -119,14 +136,14 @@ export function MaisonCanvas() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 className="absolute top-full left-0 mt-1 py-2 min-w-[160px] z-20"
-                style={{ backgroundColor: '#FAF7F2', border: '1px solid #e8e4de' }}
+                style={{ backgroundColor: bgColor, border: `1px solid ${borderColor}` }}
               >
                 {categories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => { setActiveCategory(cat); setCategoryDropdownOpen(false); }}
-                    className="block w-full text-left px-4 py-2 text-[11px] tracking-[0.15em] uppercase hover:bg-[#e8e4de]/40 transition-colors"
-                    style={{ color: activeCategory === cat ? '#1a1a1a' : '#999' }}
+                    className="block w-full text-left px-4 py-2 text-[11px] tracking-[0.15em] uppercase transition-colors"
+                    style={{ color: activeCategory === cat ? textColor : mutedColor }}
                   >
                     {cat}
                   </button>
@@ -136,14 +153,13 @@ export function MaisonCanvas() {
           </AnimatePresence>
         </div>
 
-        {/* View toggle */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setViewMode(3)}
             className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
             style={{
-              color: viewMode === 3 ? '#1a1a1a' : '#999',
-              borderBottom: viewMode === 3 ? '1px solid #1a1a1a' : '1px solid transparent',
+              color: viewMode === 3 ? textColor : mutedColor,
+              borderBottom: viewMode === 3 ? `1px solid ${textColor}` : '1px solid transparent',
             }}
           >
             View by 3
@@ -152,8 +168,8 @@ export function MaisonCanvas() {
             onClick={() => setViewMode(6)}
             className="text-[11px] tracking-[0.15em] uppercase transition-colors px-2 py-1"
             style={{
-              color: viewMode === 6 ? '#1a1a1a' : '#999',
-              borderBottom: viewMode === 6 ? '1px solid #1a1a1a' : '1px solid transparent',
+              color: viewMode === 6 ? textColor : mutedColor,
+              borderBottom: viewMode === 6 ? `1px solid ${textColor}` : '1px solid transparent',
             }}
           >
             View by 6
@@ -161,7 +177,6 @@ export function MaisonCanvas() {
         </div>
       </div>
 
-      {/* Close dropdown on outside click */}
       {categoryDropdownOpen && (
         <div className="fixed inset-0 z-10" onClick={() => setCategoryDropdownOpen(false)} />
       )}
@@ -173,8 +188,8 @@ export function MaisonCanvas() {
           className="grid w-full"
           style={{
             gridTemplateColumns: `repeat(${viewMode}, 1fr)`,
-            borderLeft: '1px solid #e8e4de',
-            borderTop: '1px solid #e8e4de',
+            borderLeft: `1px solid ${borderColor}`,
+            borderTop: `1px solid ${borderColor}`,
           }}
         >
           <AnimatePresence mode="popLayout">
@@ -191,7 +206,6 @@ export function MaisonCanvas() {
         </motion.div>
       </div>
 
-      {/* Product detail overlay */}
       {selectedProduct && (
         <MaisonProductDetail
           product={selectedProduct}
@@ -201,7 +215,6 @@ export function MaisonCanvas() {
         />
       )}
 
-      {/* Cart drawer */}
       <CartDrawer />
     </div>
   );
