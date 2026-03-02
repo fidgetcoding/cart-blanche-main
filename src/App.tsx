@@ -17,7 +17,7 @@ import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminPageEditor from "./pages/admin/AdminPageEditor";
 import AdminStylingGuide from "./pages/admin/AdminStylingGuide";
 import LabIndex from "./pages/admin/lab/LabIndex";
-import YzyTemplate from "./pages/admin/lab/YzyTemplate";
+import YzTemplate from "./pages/admin/lab/YzTemplate";
 import SlTemplate from "./pages/admin/lab/SlTemplate";
 import NotFound from "./pages/NotFound";
 
@@ -34,7 +34,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/admin/lab/yzy" element={<YzyTemplate />} />
+            <Route path="/admin/lab/yz" element={<YzTemplate />} />
             <Route path="/admin/lab/sl" element={<SlTemplate />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
