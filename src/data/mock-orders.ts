@@ -144,3 +144,182 @@ export function getMockOrderStats() {
     avgOrderValue: nonCancelled.length > 0 ? nonCancelled.reduce((s, o) => s + o.total, 0) / nonCancelled.length : 0,
   };
 }
+
+// Time-range helpers
+const CHANNELS = ['Direct','Social','Referral','Email'] as const;
+const REGIONS = ['United States','Canada','United Kingdom','Germany','Australia','France'] as const;
+const REFERRERS = ['Direct / None','instagram.com','tiktok.com','google.com','pinterest.com'] as const;
+
+function getDaysForRange(range: string): number {
+  switch (range) {
+    case '1D': return 1;
+    case '7D': return 7;
+    case '1M': return 30;
+    case '3M': return 90;
+    case '6M': return 180;
+    case '1Y': return 365;
+    case 'YTD': {
+      const now = new Date();
+      const jan1 = new Date(now.getFullYear(), 0, 1);
+      return Math.ceil((now.getTime() - jan1.getTime()) / 86400000);
+    }
+    default: return 30;
+  }
+}
+
+function getPreviousPeriodOrders(orders: MockOrder[], days: number): MockOrder[] {
+  const now = Date.now();
+  const periodStart = now - days * 86400000;
+  const prevStart = periodStart - days * 86400000;
+  return orders.filter(o => {
+    const t = new Date(o.created_at).getTime();
+    return t >= prevStart && t < periodStart;
+  });
+}
+
+export interface DashboardData {
+  totalSales: number;
+  totalOrders: number;
+  avgOrderValue: number;
+  netProfit: number;
+  netProfitMargin: number;
+  salesChange: number;
+  ordersChange: number;
+  profitChange: number;
+  avgChange: number;
+  channelData: { name: string; value: number; color: string }[];
+  locationData: { region: string; amount: number }[];
+  referrerData: { source: string; amount: number }[];
+  plData: { label: string; amount: number }[];
+  salesChartData: { name: string; current: number; previous: number }[];
+  orderChartData: { name: string; current: number; previous: number }[];
+}
+
+export function getDashboardDataForRange(range: string): DashboardData {
+  const allOrders = generateMockOrders(100);
+  const days = getDaysForRange(range);
+  const now = Date.now();
+  const cutoff = now - days * 86400000;
+
+  const filtered = allOrders.filter(o => new Date(o.created_at).getTime() >= cutoff);
+  const previous = getPreviousPeriodOrders(allOrders, days);
+
+  const totalSales = filtered.reduce((s, o) => s + o.total, 0);
+  const prevSales = previous.reduce((s, o) => s + o.total, 0);
+  const nonCancelled = filtered.filter(o => o.status !== 'cancelled');
+  const prevNonCancelled = previous.filter(o => o.status !== 'cancelled');
+  const avgOrderValue = nonCancelled.length > 0 ? nonCancelled.reduce((s, o) => s + o.total, 0) / nonCancelled.length : 0;
+  const prevAvg = prevNonCancelled.length > 0 ? prevNonCancelled.reduce((s, o) => s + o.total, 0) / prevNonCancelled.length : 0;
+
+  // Costs are proportional
+  const discountRate = 0.06;
+  const refundRate = 0.02;
+  const shippingRate = 0.05;
+  const processingRate = 0.03;
+  const grossSales = totalSales;
+  const discounts = -(grossSales * discountRate);
+  const refunds = -(grossSales * refundRate);
+  const shipping = -(grossSales * shippingRate);
+  const processing = -(grossSales * processingRate);
+  const totalCosts = discounts + refunds + shipping + processing;
+  const netProfit = grossSales + totalCosts;
+  const netProfitMargin = grossSales > 0 ? (netProfit / grossSales) * 100 : 0;
+
+  const prevNet = prevSales > 0 ? prevSales * (1 - discountRate - refundRate - shippingRate - processingRate) : 0;
+
+  // Distribute orders across channels/locations/referrers deterministically using seeded hash
+  const rand = seededRandom(42);
+  const channelCounts: Record<string, number> = { Direct: 0, Social: 0, Referral: 0, Email: 0 };
+  const locationAmounts: Record<string, number> = {};
+  REGIONS.forEach(r => locationAmounts[r] = 0);
+  const referrerAmounts: Record<string, number> = {};
+  REFERRERS.forEach(r => referrerAmounts[r] = 0);
+
+  filtered.forEach(order => {
+    const ch = CHANNELS[Math.floor(rand() * CHANNELS.length)];
+    channelCounts[ch]++;
+    const reg = REGIONS[Math.floor(rand() * REGIONS.length)];
+    locationAmounts[reg] += order.total;
+    const ref = REFERRERS[Math.floor(rand() * REFERRERS.length)];
+    referrerAmounts[ref] += order.total;
+  });
+
+  const channelColors = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--accent-foreground))'];
+  const channelData = CHANNELS.map((c, i) => ({ name: c, value: channelCounts[c], color: channelColors[i] }));
+  const locationData = REGIONS.map(r => ({ region: r, amount: Math.round(locationAmounts[r]) })).filter(l => l.amount > 0).sort((a, b) => b.amount - a.amount);
+  const referrerData = REFERRERS.map(r => ({ source: r, amount: Math.round(referrerAmounts[r]) })).filter(r => r.amount > 0).sort((a, b) => b.amount - a.amount);
+
+  const plData = [
+    { label: 'Gross Sales', amount: Math.round(grossSales) },
+    { label: 'Discounts', amount: Math.round(discounts) },
+    { label: 'Refunds', amount: Math.round(refunds) },
+    { label: 'Shipping Costs', amount: Math.round(shipping) },
+    { label: 'Processing Fees', amount: Math.round(processing) },
+    { label: 'Total Costs', amount: Math.round(totalCosts) },
+  ];
+
+  // Build chart data — bucket orders into time segments
+  const numBuckets = Math.min(days <= 1 ? 24 : days <= 7 ? 7 : 12, days);
+  const bucketSize = (days * 86400000) / numBuckets;
+  const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const salesBuckets: number[] = new Array(numBuckets).fill(0);
+  const orderBuckets: number[] = new Array(numBuckets).fill(0);
+  const prevSalesBuckets: number[] = new Array(numBuckets).fill(0);
+  const prevOrderBuckets: number[] = new Array(numBuckets).fill(0);
+
+  filtered.forEach(o => {
+    const t = new Date(o.created_at).getTime();
+    const idx = Math.min(Math.floor((t - cutoff) / bucketSize), numBuckets - 1);
+    if (idx >= 0) {
+      salesBuckets[idx] += o.total;
+      orderBuckets[idx]++;
+    }
+  });
+
+  const prevCutoff = cutoff - days * 86400000;
+  previous.forEach(o => {
+    const t = new Date(o.created_at).getTime();
+    const idx = Math.min(Math.floor((t - prevCutoff) / bucketSize), numBuckets - 1);
+    if (idx >= 0) {
+      prevSalesBuckets[idx] += o.total;
+      prevOrderBuckets[idx]++;
+    }
+  });
+
+  const salesChartData = salesBuckets.map((v, i) => {
+    let name: string;
+    if (days <= 1) name = `${i}:00`;
+    else if (days <= 7) name = dayLabels[new Date(cutoff + i * bucketSize).getDay()];
+    else {
+      const d = new Date(cutoff + i * bucketSize);
+      name = `${monthLabels[d.getMonth()]} ${d.getDate()}`;
+    }
+    return { name, current: Math.round(v), previous: Math.round(prevSalesBuckets[i]) };
+  });
+
+  const orderChartData = orderBuckets.map((v, i) => ({
+    name: salesChartData[i].name,
+    current: v,
+    previous: prevOrderBuckets[i],
+  }));
+
+  return {
+    totalSales: Math.round(totalSales),
+    totalOrders: filtered.length,
+    avgOrderValue: Math.round(avgOrderValue),
+    netProfit: Math.round(netProfit),
+    netProfitMargin: Math.round(netProfitMargin),
+    salesChange: Math.round(totalSales - prevSales),
+    ordersChange: filtered.length - previous.length,
+    profitChange: Math.round(netProfit - prevNet),
+    avgChange: Math.round(avgOrderValue - prevAvg),
+    channelData,
+    locationData,
+    referrerData,
+    plData,
+    salesChartData,
+    orderChartData,
+  };
+}
