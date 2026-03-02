@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef } f
 
 export interface ThemeSettings {
   mode: 'dark' | 'light';
+  storeName: string;
   tileHoverGlow: string;
   tileHoverScale: number;
   displayFont: string;
@@ -14,6 +15,7 @@ export interface ThemeSettings {
 
 const DEFAULT_SETTINGS: ThemeSettings = {
   mode: 'dark',
+  storeName: 'CART BLANCHE',
   tileHoverGlow: 'hsla(0,0%,100%,0.08)',
   tileHoverScale: 1.04,
   displayFont: 'Space Grotesk',

@@ -709,7 +709,7 @@ export function SpatialCanvas() {
         {/* Left: Brand */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="font-display font-semibold tracking-[0.2em] text-foreground uppercase" style={{ fontSize: '11px' }}>
-            CART BLANCHE
+            {themeSettings.storeName}
           </span>
         </div>
 
