@@ -156,7 +156,7 @@ function ThemeControls() {
           <FontSelect
             label="NAVIGATOR FONT"
             value={themeSettings.bodyFont}
-            options={BODY_FONTS}
+            options={[...DISPLAY_FONTS, ...BODY_FONTS.filter(f => !DISPLAY_FONTS.includes(f))]}
             onChange={v => updateTheme({ bodyFont: v })}
           />
 
