@@ -33,7 +33,7 @@ const H_GAP = 80;
 const V_GAP = 80;
 const GROUP_GAP = 120;
 const PAIRS_STYLE = { stroke: '#facc15', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(250, 204, 21, 0.5))' };
-const EXTRAS_STYLE = { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' };
+const EXTRAS_STYLE = { stroke: '#f472b6', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' };
 const PENDING_STYLE = { stroke: '#60a5fa', strokeWidth: 2, strokeDasharray: '4 4', filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.4))' };
 
 /* ── Types ── */
