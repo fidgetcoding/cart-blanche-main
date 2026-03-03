@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, lazy, Suspense, useRef, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
 import { Save, Plus, X, GripVertical, Search, Pencil, Check } from 'lucide-react';
@@ -222,7 +223,7 @@ export default function AdminStylingGuide() {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [listDragHover, setListDragHover] = useState(false);
-  const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
+  const { isDirty, markDirty, markClean, BlockerDialog } = useUnsavedChanges();
 
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
   const canvasRef = useRef<StyleGuideCanvasHandle | null>(null);
@@ -286,6 +287,7 @@ export default function AdminStylingGuide() {
     }
     setSaving(false);
     markClean();
+    toast({ title: 'Saved', description: 'Your look book has been saved.' });
   };
 
   const updatePreset = (anchorId: string, field: 'pairs' | 'extras', ids: string[]) => {
@@ -541,6 +543,7 @@ export default function AdminStylingGuide() {
                 onCanvasLayoutChange={(l) => { setCanvasLayout(l); markDirty(); }}
                 onSave={saveGuide}
                 saving={saving}
+                isDirty={isDirty}
                 onCanvasNodeIdsChange={setCanvasNodeIds}
                 onBlankNodeChange={setBlankNodeActive}
               />
@@ -559,8 +562,12 @@ export default function AdminStylingGuide() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={saveGuide}
-                            disabled={saving}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-lg text-[10px] font-display tracking-wider hover:bg-foreground/90 transition-all disabled:opacity-50"
+                            disabled={saving || !isDirty}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-display tracking-wider transition-all disabled:opacity-50 ${
+                              isDirty 
+                                ? 'bg-foreground text-background hover:bg-foreground/90' 
+                                : 'bg-foreground/10 text-muted-foreground border border-foreground/10'
+                            }`}
                             title="Save"
                           >
                             <Save className="w-3.5 h-3.5" />
