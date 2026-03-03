@@ -237,6 +237,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   const nodeCountRef = useRef(0);
   // Track pending connection source for blank node flow
   const pendingConnectionSourceRef = useRef<string | null>(null);
+  // Track whether we're the source of a preset change (avoid circular sync)
+  const isInternalChangeRef = useRef(false);
 
   // Initialize from saved layout
   const initialNodes: Node[] = useMemo(() => {
@@ -295,8 +297,25 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   }, [nodes, onCanvasNodeIdsChange]);
 
   const syncPresetsFromEdges = useCallback((currentEdges: Edge[]) => {
+    isInternalChangeRef.current = true;
     onPresetsChange(edgesToPresets(currentEdges));
   }, [onPresetsChange]);
+
+  // Sync external preset changes (from list view) into canvas edges
+  useEffect(() => {
+    if (isInternalChangeRef.current) {
+      isInternalChangeRef.current = false;
+      return;
+    }
+    // Rebuild edges from presets for nodes that exist on canvas
+    const nodeIds = new Set(nodes.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
+    const newPresetEdges = presetsToEdges(presets).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+    // Keep pending/blank edges
+    setEdges(eds => {
+      const pendingEdges = eds.filter(e => (e.data as any)?.type === 'pending' || e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID);
+      return [...newPresetEdges, ...pendingEdges];
+    });
+  }, [presets]);
 
   const hasBlankNode = useCallback(() => {
     return nodes.some(n => n.id === BLANK_NODE_ID);
