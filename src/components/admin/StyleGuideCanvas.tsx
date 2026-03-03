@@ -295,14 +295,19 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+  // Ref to always read latest nodes in debounced callbacks
+  const nodesRef = useRef(nodes);
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+
   // Debounced auto-save for canvas layout changes
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveLayoutDebounced = useCallback(() => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(() => {
+      const currentNodes = nodesRef.current;
       const posMap: Record<string, { x: number; y: number }> = {};
       const nodeIds: string[] = [];
-      nodes.forEach(n => {
+      currentNodes.forEach(n => {
         if (n.id === BLANK_NODE_ID) return;
         posMap[n.id] = n.position;
         nodeIds.push(n.id);
@@ -310,7 +315,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       onCanvasLayoutChange({ positions: posMap, nodeIds });
       onSave();
     }, 800);
-  }, [nodes, onCanvasLayoutChange, onSave]);
+  }, [onCanvasLayoutChange, onSave]);
 
   useEffect(() => {
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
