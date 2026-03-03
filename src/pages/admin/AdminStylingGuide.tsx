@@ -296,9 +296,14 @@ export default function AdminStylingGuide() {
   const handleProductClick = (productId: string) => {
     if (activeView === 'list') {
       setSelectedProductId(productId);
-      // If this product already has a preset, auto-expand it
-      if (presets.some(p => p.anchorProductId === productId && (p.pairs.length > 0 || p.extras.length > 0))) {
+      // If this product already has a preset, expand it; otherwise create an empty one and expand
+      if (presets.some(p => p.anchorProductId === productId)) {
         setExpandedProductId(productId);
+      } else {
+        // Create empty preset so it appears in the grid
+        setPresets(prev => [...prev, { anchorProductId: productId, pairs: [], extras: [] }]);
+        setExpandedProductId(productId);
+        markDirty();
       }
       return;
     }
@@ -325,8 +330,8 @@ export default function AdminStylingGuide() {
     );
   }
 
-  const configuredPresets = presets.filter(p => p.pairs.length > 0 || p.extras.length > 0);
-  const showNewProductEditor = selectedProduct && !configuredPresets.some(p => p.anchorProductId === selectedProductId);
+  // Show all presets (including empty ones that were just created)
+  const allPresets = presets;
 
   return (
     <>
@@ -487,34 +492,8 @@ export default function AdminStylingGuide() {
             </Suspense>
           ) : (
             <div className="h-full overflow-y-auto p-6">
-              {showNewProductEditor ? (
-                /* New product selected from sidebar — show full editor */
-                <div className="max-w-2xl space-y-6">
-                  <div className="flex items-start gap-4">
-                    <img src={getImageUrl(selectedProduct.images[0], 'thumb')} alt={selectedProduct.title} className="w-28 h-28 rounded-lg object-cover flex-shrink-0" />
-                    <div className="flex-1">
-                      <h2 className="font-display text-base font-bold tracking-wide">{selectedProduct.title}</h2>
-                      <p className="text-sm text-muted-foreground mt-1">${selectedProduct.price}</p>
-                      <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-display tracking-widest bg-secondary rounded text-muted-foreground">{classifyGroup(selectedProduct)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button onClick={saveGuide} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50">
-                        <Save className="w-4 h-4" />{saving ? 'SAVING...' : 'SAVE'}
-                      </button>
-                      <button onClick={() => setSelectedProductId(null)} className="p-2 text-muted-foreground hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
-                    </div>
-                  </div>
-                  <div className="liquid-glass rounded-lg p-4">
-                    <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={pairsProducts} availableProducts={pairsAvailable} onAdd={(p) => addToPreset('pairs', p)} onRemove={(id) => removeFromPreset('pairs', id)} onReorder={(newItems) => updatePreset(selectedProductId!, 'pairs', newItems.map(p => p.id))} />
-                  </div>
-                  <div className="liquid-glass rounded-lg p-4">
-                    <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={extrasProducts} availableProducts={extrasAvailable} onAdd={(p) => addToPreset('extras', p)} onRemove={(id) => removeFromPreset('extras', id)} onReorder={(newItems) => updatePreset(selectedProductId!, 'extras', newItems.map(p => p.id))} />
-                  </div>
-                </div>
-              ) : (
-                /* Configured styles — cards expand inline as dropdowns */
                 <div className="space-y-4">
-                  {configuredPresets.length === 0 ? (
+                  {allPresets.length === 0 ? (
                     <div className="h-full flex items-center justify-center min-h-[300px]">
                       <p className="text-sm text-muted-foreground font-display tracking-wider">Select a product to configure its Style Kit presets</p>
                     </div>
@@ -522,7 +501,7 @@ export default function AdminStylingGuide() {
                     <>
                       <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED STYLES</p>
                       <div className="grid grid-cols-2 gap-3">
-                        {configuredPresets.map(preset => {
+                        {allPresets.map(preset => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
                           if (!product) return null;
                           const isExpanded = expandedProductId === preset.anchorProductId;
@@ -533,7 +512,7 @@ export default function AdminStylingGuide() {
                           const eAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; return getBodyZone(p) === zone; });
 
                           return (
-                            <div key={preset.anchorProductId} className="rounded-lg bg-foreground/5 border border-foreground/8 overflow-hidden transition-all">
+                            <div key={preset.anchorProductId} className={`rounded-lg bg-foreground/5 border border-foreground/8 overflow-hidden transition-all ${isExpanded ? 'col-span-2' : ''}`}>
                               {/* Card header — click to expand/collapse */}
                               <button
                                 onClick={() => {
@@ -548,6 +527,7 @@ export default function AdminStylingGuide() {
                                   <div className="flex items-center gap-2 mt-1">
                                     {preset.pairs.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#facc15]">{preset.pairs.length} PAIR{preset.pairs.length !== 1 ? 'S' : ''}</span>}
                                     {preset.extras.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#f472b6]">{preset.extras.length} EXTRA{preset.extras.length !== 1 ? 'S' : ''}</span>}
+                                    {preset.pairs.length === 0 && preset.extras.length === 0 && <span className="text-[8px] font-display tracking-wider text-muted-foreground/50">NO MATCHES YET</span>}
                                   </div>
                                 </div>
                                 <svg className={`w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -583,7 +563,6 @@ export default function AdminStylingGuide() {
                     </>
                   )}
                 </div>
-              )}
             </div>
           )}
         </div>
