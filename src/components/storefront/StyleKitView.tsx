@@ -233,9 +233,9 @@ function CarouselRow({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className={`absolute inset-0 no-scrollbar gap-3 flex items-start cursor-grab active:cursor-grabbing select-none ${
+        className={`absolute inset-0 no-scrollbar gap-3 flex cursor-grab active:cursor-grabbing select-none ${
           isHorizontal
-            ? 'flex-row overflow-x-auto overflow-y-hidden px-4 py-2'
+            ? 'flex-row items-stretch overflow-x-auto overflow-y-hidden px-4'
             : 'flex-col overflow-y-auto overflow-x-hidden px-2 py-3'
         }`}
         style={{
