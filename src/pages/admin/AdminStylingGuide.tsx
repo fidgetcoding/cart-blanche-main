@@ -84,14 +84,20 @@ function PresetList({
   };
 
   const handleDragOver = (idx: number) => (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setOverIdx(idx);
+    if (dragIdx !== null) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setOverIdx(idx);
+    }
   };
 
   const handleDrop = (idx: number) => (e: React.DragEvent) => {
+    if (dragIdx === null) {
+      setOverIdx(null);
+      return;
+    }
     e.preventDefault();
-    if (dragIdx === null || dragIdx === idx) { setDragIdx(null); setOverIdx(null); return; }
+    if (dragIdx === idx) { setDragIdx(null); setOverIdx(null); return; }
     const reordered = [...items];
     const [moved] = reordered.splice(dragIdx, 1);
     reordered.splice(idx, 0, moved);
