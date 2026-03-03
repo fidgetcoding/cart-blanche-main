@@ -22,7 +22,8 @@ import '@xyflow/react/dist/style.css';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import type { DemoProduct } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
-import { X, ChevronUp, ChevronDown, Save, Plus } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Save, Plus, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 /* ── Constants ── */
 const BLANK_NODE_ID = '__blank__';
@@ -773,98 +774,124 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           </div>
         )}
 
-        {/* Navigation instructions — fade like storefront footer */}
-        <div className="absolute bottom-4 left-4 z-10 tracking-wider space-y-0.5 cursor-default transition-colors duration-500 text-muted-foreground/30 hover:text-foreground/80" style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
-          <p>SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO SELECT</p>
-          <p>P TO ADD · DEL TO REMOVE · F TO FIT · ⌘S TO SAVE</p>
-          <p>DRAG PORT TO CONNECT · DOUBLE-CLICK TO ADD NODE</p>
+        {/* Navigation instructions — fade away when popup is open */}
+        <div
+          className="absolute bottom-4 left-4 z-10 tracking-wider space-y-0.5 cursor-default transition-all duration-500"
+          style={{
+            fontSize: '10px',
+            fontFamily: 'var(--font-body)',
+            opacity: selectedProduct ? 0 : undefined,
+            pointerEvents: selectedProduct ? 'none' : undefined,
+          }}
+        >
+          <p className="text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO SELECT</p>
+          <p className="text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">P TO ADD · DEL TO REMOVE · F TO FIT · ⌘S TO SAVE</p>
+          <p className="text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">DRAG PORT TO CONNECT · DOUBLE-CLICK TO ADD NODE</p>
         </div>
       </div>
 
-      {/* Selected node sidebar */}
-      {selectedProduct && (
-        <div className="w-[280px] border-l border-foreground/5 liquid-glass overflow-y-auto flex-shrink-0">
-          <div className="p-4 flex flex-col gap-4">
-            <div className="flex items-start justify-between">
+      {/* Selected node popup — slides up from bottom */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <motion.div
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 liquid-glass rounded-xl max-w-[520px] w-[90%]"
+          >
+            <div className="p-3 flex flex-col gap-3">
+              {/* Header */}
               <div className="flex items-center gap-3">
                 <img
                   src={getImageUrl(selectedProduct.images[0], 'thumb')}
                   alt={selectedProduct.title}
-                  className="w-16 h-16 rounded-lg object-cover"
+                  className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
                 />
-                <div>
-                  <p className="font-display text-xs tracking-wide font-bold">{selectedProduct.title}</p>
-                  <p className="text-[11px] text-muted-foreground">${selectedProduct.price}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 text-[8px] font-display tracking-widest bg-foreground/5 rounded text-muted-foreground">
-                    {classifyGroup(selectedProduct)}
-                  </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display text-xs tracking-wide font-bold truncate">{selectedProduct.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] text-muted-foreground">${selectedProduct.price}</p>
+                    <span className="px-1.5 py-0.5 text-[7px] font-display tracking-widest bg-foreground/5 rounded text-muted-foreground">
+                      {classifyGroup(selectedProduct)}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => removeNodeFromCanvas(selectedProduct.id)}
+                    className="p-1 hover:bg-destructive/20 rounded transition-colors"
+                    title="Remove from canvas"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedNodeId(null)}
+                    className="p-1 hover:bg-foreground/10 rounded transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => removeNodeFromCanvas(selectedProduct.id)}
-                  className="p-1 hover:bg-destructive/20 rounded transition-colors"
-                  title="Remove from canvas"
-                >
-                  <X className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                </button>
+
+              {/* Pairs & Extras side by side */}
+              <div className="flex gap-4">
+                {/* Pairs */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[8px] font-display tracking-[0.2em] text-[#facc15] mb-1.5">PAIRS</p>
+                  {(selectedPreset?.pairs ?? []).length === 0 ? (
+                    <p className="text-[9px] text-muted-foreground/40 italic">No connections</p>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {(selectedPreset?.pairs ?? []).map((id, i) => {
+                        const p = DEMO_PRODUCTS.find(x => x.id === id);
+                        if (!p) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-foreground/5">
+                            <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-6 h-6 rounded object-cover" />
+                            <span className="text-[9px] font-display tracking-wide flex-1 truncate">{p.title}</span>
+                            <div className="flex items-center gap-0.5">
+                              <button onClick={() => moveItem('pairs', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
+                              <button onClick={() => moveItem('pairs', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
+                              <button onClick={() => removeConnection(id, 'pairs')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Extras */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[8px] font-display tracking-[0.2em] text-[#f472b6] mb-1.5">EXTRAS</p>
+                  {(selectedPreset?.extras ?? []).length === 0 ? (
+                    <p className="text-[9px] text-muted-foreground/40 italic">No connections</p>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {(selectedPreset?.extras ?? []).map((id, i) => {
+                        const p = DEMO_PRODUCTS.find(x => x.id === id);
+                        if (!p) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-foreground/5">
+                            <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-6 h-6 rounded object-cover" />
+                            <span className="text-[9px] font-display tracking-wide flex-1 truncate">{p.title}</span>
+                            <div className="flex items-center gap-0.5">
+                              <button onClick={() => moveItem('extras', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
+                              <button onClick={() => moveItem('extras', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
+                              <button onClick={() => removeConnection(id, 'extras')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-
-            {/* Pairs */}
-            <div>
-              <p className="text-[9px] font-display tracking-[0.2em] text-[#facc15] mb-2">PAIRS</p>
-              {(selectedPreset?.pairs ?? []).length === 0 ? (
-                <p className="text-[10px] text-muted-foreground/50 italic">No pairs connections</p>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  {(selectedPreset?.pairs ?? []).map((id, i) => {
-                    const p = DEMO_PRODUCTS.find(x => x.id === id);
-                    if (!p) return null;
-                    return (
-                      <div key={id} className="flex items-center gap-2 px-2 py-1.5 rounded bg-foreground/5">
-                        <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-7 h-7 rounded object-cover" />
-                        <span className="text-[10px] font-display tracking-wide flex-1 truncate">{p.title}</span>
-                        <div className="flex items-center gap-0.5">
-                          <button onClick={() => moveItem('pairs', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
-                          <button onClick={() => moveItem('pairs', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
-                          <button onClick={() => removeConnection(id, 'pairs')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Extras */}
-            <div>
-              <p className="text-[9px] font-display tracking-[0.2em] text-[#f472b6] mb-2">EXTRAS</p>
-              {(selectedPreset?.extras ?? []).length === 0 ? (
-                <p className="text-[10px] text-muted-foreground/50 italic">No extras connections</p>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  {(selectedPreset?.extras ?? []).map((id, i) => {
-                    const p = DEMO_PRODUCTS.find(x => x.id === id);
-                    if (!p) return null;
-                    return (
-                      <div key={id} className="flex items-center gap-2 px-2 py-1.5 rounded bg-foreground/5">
-                        <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-7 h-7 rounded object-cover" />
-                        <span className="text-[10px] font-display tracking-wide flex-1 truncate">{p.title}</span>
-                        <div className="flex items-center gap-0.5">
-                          <button onClick={() => moveItem('extras', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
-                          <button onClick={() => moveItem('extras', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
-                          <button onClick={() => removeConnection(id, 'extras')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });
