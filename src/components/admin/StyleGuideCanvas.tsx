@@ -343,24 +343,68 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const missingIds = Array.from(presetProductIds).filter(id => !existingNodeIds.has(id));
 
     if (missingIds.length > 0) {
-      let startX = 0;
-      let startY = 0;
+      // Calculate starting position below existing nodes
+      let startX = 100;
+      let startY = 100;
       if (nodes.length > 0) {
-        const maxX = Math.max(...nodes.map(n => n.position.x));
-        startX = maxX + 200;
-        startY = nodes[0]?.position.y ?? 0;
+        const maxY = Math.max(...nodes.map(n => n.position.y));
+        startY = maxY + 250;
       }
 
+      // Layout missing nodes as anchor-paired rows: anchor on left, paired on right, one row per preset
       const newNodes: Node[] = [];
-      missingIds.forEach((id, i) => {
-        const product = DEMO_PRODUCTS.find(p => p.id === id);
+      const placed = new Set<string>();
+      let rowIndex = 0;
+
+      presets.forEach(p => {
+        if (p.pairs.length === 0 && p.extras.length === 0) return;
+        const anchorId = p.anchorProductId;
+        // Place anchor on the left if missing
+        if (missingIds.includes(anchorId) && !placed.has(anchorId)) {
+          const product = DEMO_PRODUCTS.find(pr => pr.id === anchorId);
+          if (product) {
+            newNodes.push({
+              id: product.id,
+              type: 'product',
+              position: { x: startX, y: startY + rowIndex * 250 },
+              data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+            });
+            placed.add(anchorId);
+          }
+        }
+        // Place paired products to the right
+        let colIndex = 1;
+        [...p.pairs, ...p.extras].forEach(pairedId => {
+          if (missingIds.includes(pairedId) && !placed.has(pairedId)) {
+            const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
+            if (product) {
+              newNodes.push({
+                id: product.id,
+                type: 'product',
+                position: { x: startX + colIndex * 220, y: startY + rowIndex * 250 },
+                data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+              });
+              placed.add(pairedId);
+              colIndex++;
+            }
+          }
+        });
+        if (placed.has(anchorId)) rowIndex++;
+      });
+
+      // Any remaining missing ids not part of a preset row
+      missingIds.forEach(id => {
+        if (placed.has(id)) return;
+        const product = DEMO_PRODUCTS.find(pr => pr.id === id);
         if (!product) return;
         newNodes.push({
           id: product.id,
           type: 'product',
-          position: { x: startX + (i % 3) * 180, y: startY + Math.floor(i / 3) * 180 },
+          position: { x: startX, y: startY + rowIndex * 250 },
           data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
         });
+        placed.add(id);
+        rowIndex++;
       });
 
       if (newNodes.length > 0) {
