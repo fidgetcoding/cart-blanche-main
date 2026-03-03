@@ -27,6 +27,8 @@ function PresetList({
   onAdd: handleAdd,
   onRemove,
   onReorder,
+  anchorZone,
+  listType,
 }: {
   label: string;
   description: string;
@@ -35,11 +37,14 @@ function PresetList({
   onAdd: (p: DemoProduct) => void;
   onRemove: (id: string) => void;
   onReorder: (newItems: DemoProduct[]) => void;
+  anchorZone: 'top' | 'bottom' | 'accessory';
+  listType: 'pairs' | 'extras';
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const [dropHover, setDropHover] = useState(false);
+  const [dropRejected, setDropRejected] = useState(false);
   const filtered = availableProducts.filter(p => !items.some(i => i.id === p.id));
 
   const handleDragStart = (idx: number) => (e: React.DragEvent) => {
@@ -85,15 +90,30 @@ function PresetList({
       onDrop={(e) => {
         const productId = e.dataTransfer.getData('application/product-id');
         if (productId && dragIdx === null) {
-          e.preventDefault();
           const product = DEMO_PRODUCTS.find(p => p.id === productId);
-          if (product && !items.some(i => i.id === productId)) {
+          if (!product) { setDropHover(false); return; }
+
+          const productZone = getBodyZone(product);
+          const isValidMatch = listType === 'pairs'
+            ? productZone !== anchorZone
+            : productZone === anchorZone;
+
+          if (!isValidMatch) {
+            setDropRejected(true);
+            setTimeout(() => setDropRejected(false), 1500);
+            setDropHover(false);
+            return;
+          }
+
+          e.preventDefault();
+          e.stopPropagation();
+          if (!items.some(i => i.id === productId)) {
             handleAdd(product);
           }
         }
         setDropHover(false);
       }}
-      className={`rounded-lg transition-all duration-200 ${dropHover ? 'ring-2 ring-primary/40 bg-primary/5' : ''}`}
+      className={`rounded-lg transition-all duration-200 ${dropHover ? 'ring-2 ring-primary/40 bg-primary/5' : ''} ${dropRejected ? 'ring-2 ring-destructive/60 bg-destructive/10' : ''}`}
     >
       <p className="text-[10px] font-display tracking-widest text-muted-foreground mb-1">{label}</p>
       <p className="text-xs text-muted-foreground mb-3">{description}</p>
@@ -170,6 +190,14 @@ function PresetList({
           )}
         </div>
       )}
+      {dropRejected && (
+        <div className="flex items-center gap-2 px-3 py-2 mt-2 rounded-md bg-destructive/10 border border-destructive/20">
+          <X className="w-3.5 h-3.5 text-destructive" />
+          <span className="text-[10px] font-display tracking-wider text-destructive">
+            {listType === 'pairs' ? 'PAIRS NEED OPPOSITE TYPES (TOP ↔ BOTTOM)' : 'EXTRAS NEED SAME TYPE'}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -189,6 +217,7 @@ export default function AdminStylingGuide() {
   const [editMode, setEditMode] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
+  const [listDragHover, setListDragHover] = useState(false);
   const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
 
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
@@ -466,21 +495,28 @@ export default function AdminStylingGuide() {
 
         {/* RIGHT: View-specific content */}
         <div
-          className="flex-1 min-h-0"
+          className={`flex-1 min-h-0 transition-all duration-200 ${listDragHover ? 'ring-2 ring-inset ring-primary/30 bg-primary/5' : ''}`}
           onDragOver={(e) => {
-            if (activeView === 'list' && e.target === e.currentTarget && e.dataTransfer.types.includes('application/product-id')) {
+            if (activeView === 'list' && e.dataTransfer.types.includes('application/product-id')) {
               e.preventDefault();
-              e.dataTransfer.dropEffect = 'move';
+              e.dataTransfer.dropEffect = 'copy';
+              setListDragHover(true);
+            }
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setListDragHover(false);
             }
           }}
           onDrop={(e) => {
-            if (activeView === 'list' && e.target === e.currentTarget) {
+            if (activeView === 'list') {
               const productId = e.dataTransfer.getData('application/product-id');
               if (productId) {
                 e.preventDefault();
-                setSelectedProductId(productId);
+                handleProductClick(productId);
               }
             }
+            setListDragHover(false);
           }}
         >
           {activeView === 'canvas' ? (
@@ -621,12 +657,14 @@ export default function AdminStylingGuide() {
                                 <div className="px-3 pb-3 space-y-3 border-t border-foreground/5">
                                   <div className="liquid-glass rounded-lg p-3 mt-3">
                                     <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={presetPairs} availableProducts={pAvail}
+                                      anchorZone={zone} listType="pairs"
                                       onAdd={(p) => addToPreset('pairs', p)}
                                       onRemove={(id) => removeFromPreset('pairs', id)}
                                       onReorder={(newItems) => updatePreset(preset.anchorProductId, 'pairs', newItems.map(p => p.id))} />
                                   </div>
                                   <div className="liquid-glass rounded-lg p-3">
                                     <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={presetExtras} availableProducts={eAvail}
+                                      anchorZone={zone} listType="extras"
                                       onAdd={(p) => addToPreset('extras', p)}
                                       onRemove={(id) => removeFromPreset('extras', id)}
                                       onReorder={(newItems) => updatePreset(preset.anchorProductId, 'extras', newItems.map(p => p.id))} />
