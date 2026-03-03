@@ -534,6 +534,9 @@ export default function AdminStylingGuide() {
                                     {preset.pairs.length === 0 && preset.extras.length === 0 && <span className="text-[8px] font-display tracking-wider text-muted-foreground/50">NO MATCHES YET</span>}
                                   </div>
                                 </div>
+                                <button onClick={(e) => { e.stopPropagation(); setPresets(prev => prev.filter(p => p.anchorProductId !== preset.anchorProductId)); if (expandedProductId === preset.anchorProductId) setExpandedProductId(null); markDirty(); }} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all flex-shrink-0" title="Remove style">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
                                 {isExpanded && (
                                   <button onClick={(e) => { e.stopPropagation(); saveGuide(); }} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground font-display text-[10px] tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0">
                                     <Save className="w-3 h-3" />{saving ? 'SAVING...' : 'SAVE'}
