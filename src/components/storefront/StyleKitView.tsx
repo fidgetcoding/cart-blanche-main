@@ -440,7 +440,7 @@ function LockedPairPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="flex flex-col bg-card/50 backdrop-blur-sm border-y border-border h-full"
+      className="flex flex-col bg-card/50 backdrop-blur-sm border-t border-border h-full"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
@@ -494,7 +494,7 @@ function AnchorPanel({
   // PAIRS mode: horizontal direction → thumbnail LEFT, details RIGHT
   if (direction === 'horizontal') {
     return (
-      <div className="flex flex-col bg-card/50 backdrop-blur-sm border-b border-border h-full">
+      <div className="flex flex-col bg-card/50 backdrop-blur-sm h-full">
         <div className="flex-1 flex flex-row overflow-hidden">
           <ProductThumbnail
             product={anchorProduct}
@@ -836,7 +836,7 @@ export function StyleKitView() {
               </div>
 
               {/* BOTTOM SLOT — always second */}
-              <div className="h-1/2 min-h-0 relative overflow-y-auto">
+              <div className="h-1/2 min-h-0 relative overflow-y-auto border-t border-border">
                 <AnimatePresence mode="wait">
                   {bottomProduct ? (
                     <LockedPairPanel
