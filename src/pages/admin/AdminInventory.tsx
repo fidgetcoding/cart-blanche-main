@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff, GripVertical, Globe, Home } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
@@ -112,6 +112,9 @@ export default function AdminInventory() {
   const [inlineValues, setInlineValues] = useState<Record<string, Record<string, string>>>({});
   const lowStockThreshold = 5;
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showArchives, setShowArchives] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'archive'; product: ProductRow } | null>(null);
   const [addForm, setAddForm] = useState({ title: '', price: '', comparePrice: '', description: '' });
   const [addTags, setAddTags] = useState<string[]>([]);
   const [addTagInput, setAddTagInput] = useState('');
@@ -199,6 +202,7 @@ export default function AdminInventory() {
 
     setDragIdx(null);
     setDragOverIdx(null);
+    setHasUnsavedChanges(true);
   }, [dragIdx, dragOverIdx, gridLayout?.categoryOrder, saveLayout]);
 
   async function fetchInventory() {
@@ -302,6 +306,8 @@ export default function AdminInventory() {
 
   const filtered = useMemo(() => {
     return products.filter(p => {
+      // Hide archived products from main inventory
+      if (p.status === 'archived') return false;
       if (activeFilter !== 'all') {
         if (p.category !== activeFilter && !p.tags?.includes(activeFilter)) return false;
       }
@@ -315,6 +321,10 @@ export default function AdminInventory() {
       return true;
     });
   }, [products, activeFilter, activeCategoryFilter, search]);
+
+  const archivedProducts = useMemo(() => {
+    return products.filter(p => p.status === 'archived');
+  }, [products]);
 
   const totalItems = filtered.length;
   const lowStockProducts = filtered.filter(p => {
@@ -372,8 +382,7 @@ export default function AdminInventory() {
 
     setEditingProduct(null);
   }
-  async function deleteProduct(p: ProductRow) {
-    if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
+  async function performDelete(p: ProductRow) {
     if (!p.isDemo) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -383,6 +392,66 @@ export default function AdminInventory() {
     }
     setProducts(prev => prev.filter(pr => pr.id !== p.id));
     if (expandedId === p.id) setExpandedId(null);
+    // Update grid layout
+    const remaining = products.filter(pr => pr.id !== p.id).map(pr => pr.id);
+    const categoryOrder = gridLayout?.categoryOrder || [];
+    saveLayout(remaining, categoryOrder);
+    // Remove from hiddenProductIds if applicable
+    const currentHidden = gridLayout?.hiddenProductIds || [];
+    const newHidden = currentHidden.filter(id => id !== p.id);
+    if (newHidden.length !== currentHidden.length) {
+      await saveHiddenProductIds(newHidden);
+    }
+  }
+
+  async function performArchive(p: ProductRow) {
+    setProducts(prev => prev.map(pr => 
+      pr.id === p.id ? { ...pr, status: 'archived' as const } : pr
+    ));
+    if (!p.isDemo) {
+      await supabase.from('products').update({ status: 'archived' }).eq('id', p.id);
+    }
+    if (expandedId === p.id) setExpandedId(null);
+    setHasUnsavedChanges(true);
+  }
+
+  async function restoreProduct(p: ProductRow) {
+    setProducts(prev => prev.map(pr => 
+      pr.id === p.id ? { ...pr, status: 'active' as const } : pr
+    ));
+    if (!p.isDemo) {
+      await supabase.from('products').update({ status: 'active' }).eq('id', p.id);
+    }
+    setHasUnsavedChanges(true);
+  }
+
+  async function saveAllChanges() {
+    if (!hasUnsavedChanges) return;
+    // Persist product order
+    const productOrder = products.map(p => p.id);
+    const categoryOrder = gridLayout?.categoryOrder || [];
+    await saveLayout(productOrder, categoryOrder);
+    // Persist visibility states for demo products
+    const hiddenIds = products.filter(p => p.isDemo && p.status === 'draft').map(p => p.id);
+    await saveHiddenProductIds(hiddenIds);
+    // Persist non-demo product changes
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      for (const p of products) {
+        if (!p.isDemo) {
+          await supabase.from('products').update({
+            title: p.title,
+            price: p.price,
+            compare_at_price: p.compare_at_price ?? null,
+            description: p.description,
+            category: p.category,
+            tags: p.tags,
+            status: p.status,
+          }).eq('id', p.id);
+        }
+      }
+    }
+    setHasUnsavedChanges(false);
   }
 
   function togglePendingDelete(productId: string) {
@@ -437,6 +506,7 @@ export default function AdminInventory() {
     } else if (product) {
       await supabase.from('products').update({ status: newStatus }).eq('id', productId);
     }
+    setHasUnsavedChanges(true);
   }
 
   function saveVariantStock(productId: string, variantId: string) {
@@ -550,9 +620,15 @@ export default function AdminInventory() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl font-bold">Inventory</h1>
-        <button onClick={() => setShowAddProduct(true)}
-          className="px-4 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
-          <Plus className="w-4 h-4" /> ADD PRODUCT
+        <button 
+          onClick={saveAllChanges} 
+          disabled={!hasUnsavedChanges}
+          className={`px-4 py-2.5 font-display text-sm tracking-wider rounded-lg transition-all flex items-center gap-2 ${
+            hasUnsavedChanges 
+              ? 'bg-foreground text-background hover:opacity-90' 
+              : 'bg-foreground/10 text-muted-foreground/50 cursor-not-allowed'
+          }`}>
+          <Save className="w-4 h-4" /> SAVE
         </button>
       </div>
 
@@ -564,9 +640,10 @@ export default function AdminInventory() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..."
               className="w-full pl-10 pr-4 py-2.5 liquid-glass rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
-          <span className="text-xs font-display px-3 py-1.5 bg-secondary rounded-lg text-muted-foreground whitespace-nowrap">
-            {totalItems} PRODUCTS
-          </span>
+          <button onClick={() => setShowAddProduct(true)}
+            className="px-3 py-1.5 text-xs font-display tracking-wider bg-foreground/10 text-foreground border border-foreground/20 rounded-lg hover:bg-foreground/20 transition-colors flex items-center gap-1.5 whitespace-nowrap">
+            <Plus className="w-3 h-3" /> ADD PRODUCT
+          </button>
           {lowStockProducts > 0 && (
             <span className="text-xs font-display px-3 py-1.5 bg-warning/20 text-warning rounded-lg flex items-center gap-1.5 whitespace-nowrap">
               <AlertTriangle className="w-3 h-3" /> {lowStockProducts} LOW
@@ -657,20 +734,6 @@ export default function AdminInventory() {
           >
             {tagEditMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
           </button>
-          {tagEditMode && (
-            <button
-              onClick={commitPendingDeletes}
-              disabled={pendingDeletes.size === 0}
-              className={`ml-1 px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-all ${
-                pendingDeletes.size > 0
-                  ? 'bg-foreground text-background border-foreground hover:opacity-90'
-                  : 'bg-muted/30 text-muted-foreground/40 border-border/30 cursor-not-allowed'
-              }`}
-              title={pendingDeletes.size > 0 ? `Save ${pendingDeletes.size} deletion(s)` : 'No pending deletions'}
-            >
-              SAVE ({pendingDeletes.size})
-            </button>
-          )}
         </div>
         {/* Secondary category strip */}
         <div className="flex flex-wrap gap-2 items-center">
@@ -694,6 +757,56 @@ export default function AdminInventory() {
         </div>
       </div>
 
+      {showArchives ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowArchives(false)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <h2 className="font-display text-lg tracking-wider text-muted-foreground">ARCHIVES</h2>
+              <span className="text-xs font-display px-2 py-1 bg-secondary rounded-lg text-muted-foreground">{archivedProducts.length}</span>
+            </div>
+          </div>
+          
+          {archivedProducts.length === 0 ? (
+            <div className="liquid-glass rounded-xl p-12 text-center">
+              <p className="text-muted-foreground font-display tracking-wider text-sm">No archived products</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {archivedProducts.map(p => (
+                <div key={p.id} className="liquid-glass rounded-xl flex items-center gap-4 px-4 py-3">
+                  <div className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: '#e0e0e0' }}>
+                    {p.images.length > 0 ? (
+                      <img src={p.images[0]} alt={p.title} className="w-full h-full object-contain opacity-50" />
+                    ) : (
+                      <div className="w-full h-full bg-muted/60" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display text-sm truncate text-muted-foreground">{p.title}</p>
+                    <p className="text-[10px] text-muted-foreground/50">${p.price}</p>
+                  </div>
+                  <button
+                    onClick={() => restoreProduct(p)}
+                    className="px-3 py-1.5 text-[10px] font-display tracking-wider border border-foreground/10 rounded-lg text-muted-foreground hover:bg-foreground/10 hover:text-foreground transition-colors"
+                  >
+                    RESTORE
+                  </button>
+                  <button
+                    onClick={() => setConfirmAction({ type: 'delete', product: p })}
+                    className="p-1.5 text-muted-foreground/30 hover:text-destructive transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+      <>
       {/* Product list */}
       {loading ? (
         <div className="text-center py-20 text-muted-foreground font-display tracking-wider animate-pulse">LOADING...</div>
@@ -722,33 +835,15 @@ export default function AdminInventory() {
                 onDragEnd={handleDragEnd}
                 className={`liquid-glass rounded-xl overflow-hidden transition-all ${
                   isDragging ? 'opacity-40 scale-[0.98]' : ''
-                } ${isDragOver ? 'ring-2 ring-primary/50 translate-y-[-2px]' : ''} ${
-                  pendingDeletes.has(p.id) ? 'opacity-40 ring-1 ring-destructive/40' : ''
-                }`}
+                } ${isDragOver ? 'ring-2 ring-primary/50 translate-y-[-2px]' : ''}`}
               >
                 {/* Product row */}
                 <div
                   className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
-                  onClick={() => tagEditMode ? togglePendingDelete(p.id) : setExpandedId(isExpanded ? null : p.id)}
+                  onClick={() => setExpandedId(isExpanded ? null : p.id)}
                 >
-                  {/* Delete toggle in edit mode */}
-                  {tagEditMode && (
-                    <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
-                      <button
-                        onClick={() => togglePendingDelete(p.id)}
-                        className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${
-                          pendingDeletes.has(p.id)
-                            ? 'bg-destructive border-destructive text-destructive-foreground'
-                            : 'border-muted-foreground/30 hover:border-destructive/60 text-transparent hover:text-destructive/60'
-                        }`}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-
                   {/* Drag handle */}
-                  {activeFilter === 'all' && !tagEditMode && (
+                  {activeFilter === 'all' && (
                     <div
                       className="text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors flex-shrink-0"
                       onMouseDown={e => e.stopPropagation()}
@@ -828,6 +923,24 @@ export default function AdminInventory() {
                     ) : (
                       <span className="text-[10px] font-display px-2 py-1 rounded bg-success/20 text-success">IN STOCK</span>
                     )}
+                  </div>
+
+                  {/* Action buttons — right side */}
+                  <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setConfirmAction({ type: 'archive', product: p })}
+                      className="p-1.5 rounded text-muted-foreground/30 hover:text-amber-400 hover:bg-amber-400/10 transition-colors"
+                      title="Archive product"
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setConfirmAction({ type: 'delete', product: p })}
+                      className="p-1.5 rounded text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Delete product"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 
@@ -997,14 +1110,6 @@ export default function AdminInventory() {
                               >
                                 EDIT
                               </button>
-                              {!p.isDemo && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); deleteProduct(p); }}
-                                  className="px-3 py-2 text-xs font-display tracking-wider border border-destructive/30 rounded-lg hover:bg-destructive/20 text-destructive transition-colors"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -1254,6 +1359,20 @@ export default function AdminInventory() {
             );
           })}
         </div>
+      )}
+
+      {/* Archives link at bottom */}
+      {!showArchives && archivedProducts.length > 0 && (
+        <div className="mt-12 mb-8 text-center">
+          <button
+            onClick={() => setShowArchives(true)}
+            className="px-6 py-3 text-xs font-display tracking-[0.2em] text-muted-foreground/50 hover:text-muted-foreground border border-foreground/5 hover:border-foreground/15 rounded-xl transition-all"
+          >
+            ARCHIVES ({archivedProducts.length})
+          </button>
+        </div>
+      )}
+      </>
       )}
 
       {/* Add product modal */}
@@ -1846,6 +1965,62 @@ export default function AdminInventory() {
                 <button onClick={() => setEditingProduct(null)}
                   className="px-6 py-2.5 border border-border rounded-lg text-sm hover:bg-secondary transition-colors">
                   Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation dialog for delete/archive */}
+      <AnimatePresence>
+        {confirmAction && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-8"
+            onClick={() => setConfirmAction(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="liquid-glass rounded-xl w-full max-w-sm p-6 space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="font-display text-lg font-bold">
+                {confirmAction.type === 'delete' ? 'Delete Product?' : 'Archive Product?'}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {confirmAction.type === 'delete' 
+                  ? `Are you sure you want to delete "${confirmAction.product.title}"? This cannot be undone.`
+                  : `Are you sure you want to archive "${confirmAction.product.title}"? You can restore it later from the Archives.`
+                }
+              </p>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    if (confirmAction.type === 'delete') {
+                      performDelete(confirmAction.product);
+                    } else {
+                      performArchive(confirmAction.product);
+                    }
+                    setConfirmAction(null);
+                  }}
+                  className={`flex-1 py-2.5 font-display text-sm tracking-wider rounded-lg transition-opacity ${
+                    confirmAction.type === 'delete'
+                      ? 'bg-destructive text-destructive-foreground hover:opacity-90'
+                      : 'bg-amber-500 text-white hover:opacity-90'
+                  }`}
+                >
+                  {confirmAction.type === 'delete' ? 'YES, DELETE' : 'YES, ARCHIVE'}
+                </button>
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="px-6 py-2.5 border border-border rounded-lg text-sm hover:bg-secondary transition-colors"
+                >
+                  CANCEL
                 </button>
               </div>
             </motion.div>
