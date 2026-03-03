@@ -257,8 +257,8 @@ function CarouselRow({
         ))}
 
         {products.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm font-display tracking-wider">
-            NO SUGGESTIONS FOUND
+          <div className="flex-1 flex items-center justify-center text-muted-foreground/40 text-xs font-display tracking-wider">
+            BROWSE MORE IN STORE
           </div>
         )}
       </div>
@@ -580,7 +580,7 @@ function AnchorPanel({
 }
 
 export function StyleKitView() {
-  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, lookItems, initialAnchorSize } = useStyleKit();
+  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, replaceInLook, lookItems, initialAnchorSize } = useStyleKit();
   const { items: cartItems, addItem } = useCart();
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);
   const [presets, setPresets] = useState<ProductPreset[]>([]);
@@ -676,13 +676,7 @@ export function StyleKitView() {
   };
 
   const handleAddToLook = (product: DemoProduct) => {
-    const zone = getBodyZone(product);
-    // Remove any existing product in the same zone (except keep the logic simple)
-    const existingInSlot = lookItems.find(p => getBodyZone(p) === zone && p.id !== product.id);
-    if (existingInSlot) {
-      removeFromLook(existingInSlot.id);
-    }
-    addToLook(product);
+    replaceInLook(product);
     setCarouselSide('right');
   };
 

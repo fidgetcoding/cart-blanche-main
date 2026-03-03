@@ -116,5 +116,25 @@ export function getSuggestedProducts({
   const presetProductIds = new Set(presetProducts.map(p => p.id));
   const autoCandidates = candidates.filter(p => !presetProductIds.has(p.id));
 
-  return [...presetProducts, ...autoCandidates];
+  const result = [...presetProducts, ...autoCandidates];
+
+  // Fallback: if no suggestions, return all products of the target zone (excluding only anchor and cart items)
+  if (result.length === 0) {
+    const fallbackExclude = new Set([anchor.id, ...cartProductIds]);
+    let fallback = DEMO_PRODUCTS.filter(p => !fallbackExclude.has(p.id));
+
+    if (mode === 'counterparts') {
+      if (anchorZone === 'top') {
+        fallback = fallback.filter(p => { const z = getBodyZone(p); return z === 'bottom' || z === 'accessory'; });
+      } else if (anchorZone === 'bottom') {
+        fallback = fallback.filter(p => { const z = getBodyZone(p); return z === 'top' || z === 'accessory'; });
+      }
+    } else {
+      fallback = fallback.filter(p => getBodyZone(p) === anchorZone);
+    }
+
+    return fallback;
+  }
+
+  return result;
 }
