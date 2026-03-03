@@ -301,7 +301,11 @@ export default function AdminStylingGuide() {
         setExpandedProductId(productId);
       } else {
         // Create empty preset so it appears in the grid
-        setPresets(prev => [...prev, { anchorProductId: productId, pairs: [], extras: [] }]);
+        setPresets(prev => {
+          // Guard against duplicates
+          if (prev.some(p => p.anchorProductId === productId)) return prev;
+          return [...prev, { anchorProductId: productId, pairs: [], extras: [] }];
+        });
         setExpandedProductId(productId);
         markDirty();
       }
