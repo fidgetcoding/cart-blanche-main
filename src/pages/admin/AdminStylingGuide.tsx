@@ -496,7 +496,24 @@ export default function AdminStylingGuide() {
         </div>
 
         {/* RIGHT: View-specific content */}
-        <div className="flex-1 min-h-0">
+        <div
+          className="flex-1 min-h-0"
+          onDragOver={(e) => {
+            if (activeView === 'list' && e.dataTransfer.types.includes('application/product-id')) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+            }
+          }}
+          onDrop={(e) => {
+            if (activeView === 'list') {
+              const productId = e.dataTransfer.getData('application/product-id');
+              if (productId) {
+                e.preventDefault();
+                setSelectedProductId(productId);
+              }
+            }
+          }}
+        >
           {activeView === 'canvas' ? (
             <Suspense fallback={null}>
               <StyleGuideCanvas
