@@ -48,6 +48,7 @@ interface StyleGuideCanvasProps {
   onCanvasLayoutChange: (layout: any) => void;
   onSave: () => void;
   saving: boolean;
+  isDirty: boolean;
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
   onBlankNodeChange: (active: boolean) => void;
 }
@@ -253,6 +254,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   onCanvasLayoutChange,
   onSave,
   saving,
+  isDirty,
   onCanvasNodeIdsChange,
   onBlankNodeChange,
 }, ref) => {
@@ -904,8 +906,12 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         <div className="absolute top-4 right-4 z-10">
           <button
             onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-lg text-[10px] font-display tracking-wider hover:bg-foreground/90 transition-all disabled:opacity-50"
+            disabled={saving || !isDirty}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-display tracking-wider transition-all disabled:opacity-50 ${
+              isDirty
+                ? 'bg-foreground text-background hover:bg-foreground/90'
+                : 'bg-foreground/10 text-muted-foreground border border-foreground/10'
+            }`}
           >
             <Save className="w-3.5 h-3.5" />
             {saving ? 'SAVING...' : 'SAVE'}
