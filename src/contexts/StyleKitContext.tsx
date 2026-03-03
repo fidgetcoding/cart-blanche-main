@@ -18,6 +18,7 @@ interface StyleKitContextType extends StyleKitState {
   addToLook: (product: DemoProduct) => void;
   removeFromLook: (productId: string) => void;
   changeAnchor: (product: DemoProduct) => void;
+  replaceInLook: (product: DemoProduct) => void;
 }
 
 const StyleKitContext = createContext<StyleKitContextType | undefined>(undefined);
@@ -73,8 +74,18 @@ export function StyleKitProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const replaceInLook = useCallback((product: DemoProduct) => {
+    setState(prev => {
+      const anchor = prev.anchorProduct;
+      const newItems = anchor
+        ? [anchor, ...(product.id === anchor.id ? [] : [product])]
+        : [product];
+      return { ...prev, lookItems: newItems };
+    });
+  }, []);
+
   return (
-    <StyleKitContext.Provider value={{ ...state, openStyleKit, closeStyleKit, setMode, addToLook, removeFromLook, changeAnchor }}>
+    <StyleKitContext.Provider value={{ ...state, openStyleKit, closeStyleKit, setMode, addToLook, removeFromLook, changeAnchor, replaceInLook }}>
       {children}
     </StyleKitContext.Provider>
   );
