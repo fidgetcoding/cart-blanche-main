@@ -311,7 +311,7 @@ export default function AdminDiscounts() {
                 const statusColor = !dc.is_active ? 'bg-muted text-muted-foreground' : expired || maxed ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success';
 
                 return (
-                  <tr key={dc.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                  <tr key={dc.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => openEdit(dc)}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Tag className="w-3.5 h-3.5 text-muted-foreground" />
@@ -338,14 +338,14 @@ export default function AdminDiscounts() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => handleToggleActive(dc)}
+                        <button onClick={(e) => { e.stopPropagation(); handleToggleActive(dc); }}
                           className="p-1.5 hover:bg-secondary rounded transition-colors" title={dc.is_active ? 'Deactivate' : 'Activate'}>
                           {dc.is_active ? <ToggleRight className="w-3.5 h-3.5 text-primary" /> : <ToggleLeft className="w-3.5 h-3.5" />}
                         </button>
-                        <button onClick={() => openEdit(dc)} className="p-1.5 hover:bg-secondary rounded transition-colors" title="Edit">
+                        <button onClick={(e) => { e.stopPropagation(); openEdit(dc); }} className="p-1.5 hover:bg-secondary rounded transition-colors" title="Edit">
                           <Edit className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => handleDelete(dc.id)} className="p-1.5 hover:bg-destructive/20 rounded transition-colors text-destructive" title="Delete">
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(dc.id); }} className="p-1.5 hover:bg-destructive/20 rounded transition-colors text-destructive" title="Delete">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
