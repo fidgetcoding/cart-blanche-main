@@ -291,6 +291,27 @@ export default function AdminStylingGuide() {
 
   useEffect(() => { loadGuide(); }, []);
 
+  const DEFAULT_CANVAS_RULES = {
+    version: 2,
+    presets: [
+      { anchorProductId: 'p2', pairs: ['p25'], extras: [] },
+      { anchorProductId: 'p25', pairs: ['p2', 'p12'], extras: [] },
+      { anchorProductId: 'p12', pairs: ['p25'], extras: [] },
+      { anchorProductId: 'p8', pairs: [], extras: ['p7'] },
+      { anchorProductId: 'p7', pairs: [], extras: ['p8'] },
+    ],
+    canvasLayout: {
+      nodeIds: ['p2', 'p25', 'p12', 'p7', 'p8'],
+      positions: {
+        p2: { x: -98.85, y: 224.81 },
+        p25: { x: 100, y: 215 },
+        p12: { x: 317.19, y: 201.16 },
+        p7: { x: -36.76, y: 514.08 },
+        p8: { x: 270.47, y: 524.32 },
+      },
+    },
+  };
+
   const loadGuide = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
@@ -300,17 +321,16 @@ export default function AdminStylingGuide() {
       .eq('merchant_id', user.id)
       .limit(1)
       .maybeSingle();
-    if (data) {
-      setGuideId(data.id);
-      const rules = data.rules as any;
-      if (rules?.version === 2 && Array.isArray(rules.presets)) {
-        setPresets(normalizeBidirectional(rules.presets));
-        const layout = rules.canvasLayout || null;
-        setCanvasLayout(layout);
-        // Initialize canvasNodeIds from saved layout so List view shows them before Canvas mounts
-        if (layout?.positions) {
-          setCanvasNodeIds(new Set(Object.keys(layout.positions)));
-        }
+
+    const rules = data ? (data.rules as any) : DEFAULT_CANVAS_RULES;
+    if (data) setGuideId(data.id);
+
+    if (rules?.version === 2 && Array.isArray(rules.presets)) {
+      setPresets(normalizeBidirectional(rules.presets));
+      const layout = rules.canvasLayout || null;
+      setCanvasLayout(layout);
+      if (layout?.positions) {
+        setCanvasNodeIds(new Set(Object.keys(layout.positions)));
       }
     }
     setLoading(false);
