@@ -11,9 +11,12 @@ import {
   Position,
   Handle,
   type NodeProps,
+  type EdgeProps,
   BackgroundVariant,
   useReactFlow,
   ReactFlowProvider,
+  getBezierPath,
+  BaseEdge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
@@ -56,6 +59,29 @@ function classifyGroup(product: DemoProduct): BodyZoneGroup {
   if (zone === 'bottom') return 'BOTTOMS';
   return 'ACCESSORIES';
 }
+
+/* ── Custom Edge with offset for bidirectional connections ── */
+
+function OffsetEdge({
+  sourceX, sourceY, targetX, targetY,
+  sourcePosition, targetPosition,
+  style, data, markerEnd, id,
+}: EdgeProps) {
+  const offset = (data as any)?.offset || 0;
+
+  const [path] = getBezierPath({
+    sourceX,
+    sourceY: sourceY + offset,
+    targetX,
+    targetY: targetY + offset,
+    sourcePosition,
+    targetPosition,
+  });
+
+  return <BaseEdge id={id} path={path} style={style} markerEnd={markerEnd} />;
+}
+
+const edgeTypes = { offset: OffsetEdge };
 
 /* ── Custom Node ── */
 
@@ -117,32 +143,43 @@ const nodeTypes = { product: ProductNode };
 
 function presetsToEdges(presets: ProductPreset[]): Edge[] {
   const edges: Edge[] = [];
+  const edgeSet = new Set<string>(); // track "source-target" keys
+
   presets.forEach(preset => {
-    preset.pairs.forEach(targetId => {
+    const allTargets = [
+      ...preset.pairs.map(id => ({ id, type: 'pairs' as const })),
+      ...preset.extras.map(id => ({ id, type: 'extras' as const })),
+    ];
+
+    allTargets.forEach(({ id: targetId, type }) => {
+      const key = `${preset.anchorProductId}-${targetId}`;
+      const reverseKey = `${targetId}-${preset.anchorProductId}`;
+      const hasReverse = edgeSet.has(reverseKey);
+      edgeSet.add(key);
+
+      const style = type === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE;
+
       edges.push({
-        id: `pairs-${preset.anchorProductId}-${targetId}`,
+        id: `${type}-${key}`,
         source: preset.anchorProductId,
         target: targetId,
         sourceHandle: 'source',
         targetHandle: 'target',
-        style: PAIRS_STYLE,
-        type: 'default',
-        data: { type: 'pairs' },
+        style,
+        type: 'offset',
+        data: { type, offset: hasReverse ? -15 : 0 },
       });
-    });
-    preset.extras.forEach(targetId => {
-      edges.push({
-        id: `extras-${preset.anchorProductId}-${targetId}`,
-        source: preset.anchorProductId,
-        target: targetId,
-        sourceHandle: 'source',
-        targetHandle: 'target',
-        style: EXTRAS_STYLE,
-        type: 'default',
-        data: { type: 'extras' },
-      });
+
+      // If reverse already exists, update its offset
+      if (hasReverse) {
+        const reverseEdge = edges.find(e => e.id.endsWith(reverseKey));
+        if (reverseEdge) {
+          reverseEdge.data = { ...reverseEdge.data, offset: 15 };
+        }
+      }
     });
   });
+
   return edges;
 }
 
@@ -321,8 +358,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
             sourceHandle: 'source',
             targetHandle: 'target',
             style,
-            type: 'default',
-            data: { type: connectionType },
+            type: 'offset',
+            data: { type: connectionType, offset: 0 },
           };
           newEdges = addEdge(newEdge, newEdges);
         }
@@ -347,16 +384,37 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const targetZone = getBodyZone(targetProduct);
     const connectionType = sourceZone === targetZone ? 'extras' : 'pairs';
 
+    // Check if reverse edge exists for offset
+    const reverseKey = `${connection.target}-${connection.source}`;
+
     const newEdge = {
       ...connection,
       id: `${connectionType}-${connection.source}-${connection.target}`,
       style: connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE,
-      data: { type: connectionType },
-      type: 'default' as const,
+      data: { type: connectionType, offset: 0 },
+      type: 'offset' as const,
     };
 
     setEdges(eds => {
-      const newEdges = addEdge(newEdge as Edge, eds);
+      // Check if reverse edge exists
+      const hasReverse = eds.some(e =>
+        e.source === connection.target && e.target === connection.source
+      );
+
+      let newEdges = addEdge(
+        { ...newEdge, data: { ...newEdge.data, offset: hasReverse ? -15 : 0 } } as Edge,
+        eds,
+      );
+
+      // If reverse exists, update its offset
+      if (hasReverse) {
+        newEdges = newEdges.map(e =>
+          e.source === connection.target && e.target === connection.source
+            ? { ...e, data: { ...e.data, offset: 15 } }
+            : e
+        );
+      }
+
       syncPresetsFromEdges(newEdges);
       return newEdges;
     });
@@ -534,8 +592,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         sourceHandle: 'source',
         targetHandle: 'target',
         style,
-        type: 'default' as const,
-        data: { type },
+        type: 'offset' as const,
+        data: { type, offset: 0 },
       }));
       const result = [...otherEdges, ...newEdges] as Edge[];
       syncPresetsFromEdges(result);
@@ -580,6 +638,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           onPaneClick={handlePaneClick}
           onDoubleClick={handleCanvasDoubleClick}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           style={{ background: '#0a0a0a' }}
           deleteKeyCode={['Backspace', 'Delete']}
           fitView={initialNodes.length > 0}
