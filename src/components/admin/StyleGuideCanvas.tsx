@@ -975,7 +975,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 liquid-glass rounded-xl max-w-[520px] w-[90%]"
+            className="absolute bottom-4 left-4 right-4 mx-auto z-20 liquid-glass rounded-xl max-w-[520px]"
           >
             <div className="p-3 flex flex-col gap-3">
               {/* Header */}
