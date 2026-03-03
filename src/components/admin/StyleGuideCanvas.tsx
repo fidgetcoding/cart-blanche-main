@@ -88,11 +88,19 @@ const edgeTypes = { offset: OffsetEdge };
 function ProductNode({ data, selected }: NodeProps) {
   const d = data as { product?: DemoProduct; zone?: BodyZoneGroup; isBlank?: boolean; onDelete?: (id: string) => void };
 
+  const handleClass = "!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20";
+
   if (d.isBlank) {
     return (
       <div className="w-[120px] h-[130px] bg-foreground/3 border-2 border-dashed border-foreground/15 rounded-lg p-4 flex flex-col items-center justify-center gap-2 animate-scale-in">
-        <Handle type="target" position={Position.Left} id="target" className="!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20" />
-        <Handle type="source" position={Position.Right} id="source" className="!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20" />
+        <Handle type="target" position={Position.Left} id="target-left" className={handleClass} />
+        <Handle type="target" position={Position.Top} id="target-top" className={handleClass} />
+        <Handle type="target" position={Position.Right} id="target-right" className={handleClass} />
+        <Handle type="target" position={Position.Bottom} id="target-bottom" className={handleClass} />
+        <Handle type="source" position={Position.Left} id="source-left" className={handleClass} />
+        <Handle type="source" position={Position.Top} id="source-top" className={handleClass} />
+        <Handle type="source" position={Position.Right} id="source-right" className={handleClass} />
+        <Handle type="source" position={Position.Bottom} id="source-bottom" className={handleClass} />
         <Plus className="w-6 h-6 text-muted-foreground/40" />
         <span className="text-[8px] text-muted-foreground/50 font-display tracking-widest">SELECT PRODUCT FROM PANEL</span>
       </div>
@@ -114,8 +122,14 @@ function ProductNode({ data, selected }: NodeProps) {
         boxShadow: selected ? '0 0 20px hsl(var(--primary) / 0.15)' : undefined,
       }}
     >
-      <Handle type="target" position={Position.Left} id="target" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      <Handle type="source" position={Position.Right} id="source" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      <Handle type="target" position={Position.Left} id="target-left" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      <Handle type="target" position={Position.Top} id="target-top" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      <Handle type="target" position={Position.Right} id="target-right" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      <Handle type="target" position={Position.Bottom} id="target-bottom" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      <Handle type="source" position={Position.Left} id="source-left" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      <Handle type="source" position={Position.Top} id="source-top" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      <Handle type="source" position={Position.Right} id="source-right" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
+      <Handle type="source" position={Position.Bottom} id="source-bottom" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
       {/* Hover delete button */}
       {d.onDelete && (
         <button
@@ -163,8 +177,6 @@ function presetsToEdges(presets: ProductPreset[]): Edge[] {
         id: `${type}-${key}`,
         source: preset.anchorProductId,
         target: targetId,
-        sourceHandle: 'source',
-        targetHandle: 'target',
         style,
         type: 'offset',
         data: { type, offset: hasReverse ? -15 : 0 },
@@ -308,8 +320,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         id: `pending-${pendingSourceId}-blank`,
         source: pendingSourceId,
         target: BLANK_NODE_ID,
-        sourceHandle: 'source',
-        targetHandle: 'target',
         style: PENDING_STYLE,
         type: 'default',
         data: { type: 'pending' },
@@ -355,8 +365,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
             id: `${connectionType}-${pendingSourceId}-${product.id}`,
             source: pendingSourceId,
             target: product.id,
-            sourceHandle: 'source',
-            targetHandle: 'target',
             style,
             type: 'offset',
             data: { type: connectionType, offset: 0 },
@@ -422,6 +430,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   // Drag-to-empty: create blank node at drop position
   const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, connectionState: any) => {
+    // If the connection was completed successfully, do nothing
     if (connectionState?.isValid) return;
     const sourceId = connectionState?.fromNode?.id;
     if (!sourceId) return;
@@ -430,9 +439,55 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const clientY = 'clientY' in event ? event.clientY : (event as TouchEvent).changedTouches?.[0]?.clientY;
     if (clientX == null || clientY == null) return;
 
+    // Check if the drop landed on an existing node by checking element under cursor
+    const targetElement = document.elementFromPoint(clientX, clientY);
+    const nodeElement = targetElement?.closest('.react-flow__node');
+    if (nodeElement) {
+      // Dropped on an existing node — find its ID and create connection
+      const targetNodeId = nodeElement.getAttribute('data-id');
+      if (targetNodeId && targetNodeId !== sourceId && targetNodeId !== BLANK_NODE_ID) {
+        const sourceProduct = DEMO_PRODUCTS.find(p => p.id === sourceId);
+        const targetProduct = DEMO_PRODUCTS.find(p => p.id === targetNodeId);
+        if (sourceProduct && targetProduct) {
+          const sourceZone = getBodyZone(sourceProduct);
+          const targetZone = getBodyZone(targetProduct);
+          const connectionType = sourceZone === targetZone ? 'extras' : 'pairs';
+          const style = connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE;
+
+          setEdges(eds => {
+            // Don't add duplicate
+            if (eds.some(e => e.source === sourceId && e.target === targetNodeId && (e.data as any)?.type === connectionType)) return eds;
+
+            const hasReverse = eds.some(e => e.source === targetNodeId && e.target === sourceId);
+            const newEdge: Edge = {
+              id: `${connectionType}-${sourceId}-${targetNodeId}`,
+              source: sourceId,
+              target: targetNodeId,
+              style,
+              type: 'offset',
+              data: { type: connectionType, offset: hasReverse ? -15 : 0 },
+            };
+
+            let newEdges = addEdge(newEdge, eds);
+            if (hasReverse) {
+              newEdges = newEdges.map(e =>
+                e.source === targetNodeId && e.target === sourceId
+                  ? { ...e, data: { ...e.data, offset: 15 } }
+                  : e
+              );
+            }
+            syncPresetsFromEdges(newEdges);
+            return newEdges;
+          });
+          return;
+        }
+      }
+    }
+
+    // Dropped on empty space — create blank node
     const position = screenToFlowPosition({ x: clientX, y: clientY });
     createBlankNode(position, sourceId);
-  }, [screenToFlowPosition, createBlankNode]);
+  }, [screenToFlowPosition, createBlankNode, setEdges, syncPresetsFromEdges]);
 
   const handleEdgesChange = useCallback((changes: any) => {
     onEdgesChange(changes);
@@ -589,8 +644,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         id: `${type}-${selectedNodeId}-${targetId}`,
         source: selectedNodeId!,
         target: targetId,
-        sourceHandle: 'source',
-        targetHandle: 'target',
         style,
         type: 'offset' as const,
         data: { type, offset: 0 },
