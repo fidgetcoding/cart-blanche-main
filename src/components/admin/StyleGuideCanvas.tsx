@@ -668,7 +668,21 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
-      <div className="flex-1 relative" onDragOver={onDragOver} onDrop={onDrop}>
+      <div
+        className="flex-1 relative"
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onDoubleClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (
+            target.classList.contains('react-flow__pane') ||
+            target.closest('.react-flow__pane')
+          ) {
+            if (target.closest('.react-flow__node') || target.closest('.react-flow__edge') || target.closest('[data-toolbar]') || target.closest('.react-flow__controls')) return;
+            handleCanvasDoubleClick(e);
+          }
+        }}
+      >
         {/* Floating toolbar — Add Node + Legend */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2 liquid-glass rounded-lg px-2 py-1.5">
           <button
@@ -712,11 +726,11 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           onConnectEnd={onConnectEnd}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
-          onDoubleClick={handleCanvasDoubleClick}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           style={{ background: '#0a0a0a' }}
           deleteKeyCode={['Backspace', 'Delete']}
+          zoomOnDoubleClick={false}
           fitView={initialNodes.length > 0}
           proOptions={{ hideAttribution: true }}
         >
