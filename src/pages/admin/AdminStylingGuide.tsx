@@ -18,7 +18,6 @@ function classifyGroup(product: DemoProduct): BodyZoneGroup {
   return 'ACCESSORIES';
 }
 
-
 /** Ordered preset list with drag reorder + remove */
 function PresetList({
   label,
@@ -133,16 +132,16 @@ function PresetList({
         ))}
       </div>
 
-      <div className="mt-2 relative">
+      <div className="mt-2">
         <button
           onClick={() => setPickerOpen(!pickerOpen)}
-          className="w-full flex items-center justify-center gap-1 px-3 py-1.5 border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/5 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/5 transition-colors"
         >
           <Plus className="w-3 h-3" />
           ADD MATCH
         </button>
         {pickerOpen && (
-          <div className="w-full mt-1 liquid-glass rounded-lg max-h-60 overflow-y-auto border border-foreground/10">
+          <div className="liquid-glass rounded-lg mt-1 max-h-60 overflow-y-auto">
             {filtered.map(p => (
               <button
                 key={p.id}
@@ -176,6 +175,7 @@ export default function AdminStylingGuide() {
   const [guideId, setGuideId] = useState<string | null>(null);
   const [presets, setPresets] = useState<ProductPreset[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGroup, setFilterGroup] = useState<'ALL' | BodyZoneGroup>('ALL');
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
@@ -183,11 +183,9 @@ export default function AdminStylingGuide() {
   const [blankNodeActive, setBlankNodeActive] = useState(false);
   const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
 
-  // Track which product IDs are on the canvas
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
   const canvasRef = useRef<StyleGuideCanvasHandle | null>(null);
 
-  // Group products by body zone, filtered by search and category
   const grouped = useMemo(() => {
     const groups: Record<BodyZoneGroup, DemoProduct[]> = { TOPS: [], BOTTOMS: [], ACCESSORIES: [] };
     const q = searchQuery.toLowerCase();
@@ -202,8 +200,6 @@ export default function AdminStylingGuide() {
 
   const selectedProduct = DEMO_PRODUCTS.find(p => p.id === selectedProductId) ?? null;
   const currentPreset = presets.find(p => p.anchorProductId === selectedProductId);
-
-  // Products that have a preset defined
   const presetProductIds = new Set(presets.map(p => p.anchorProductId));
 
   useEffect(() => { loadGuide(); }, []);
@@ -211,14 +207,12 @@ export default function AdminStylingGuide() {
   const loadGuide = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
-
     const { data } = await supabase
       .from('styling_guides')
       .select('*')
       .eq('merchant_id', user.id)
       .limit(1)
       .maybeSingle();
-
     if (data) {
       setGuideId(data.id);
       const rules = data.rules as any;
@@ -234,20 +228,11 @@ export default function AdminStylingGuide() {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
-
     const rules = { version: 2, presets, canvasLayout };
-
     if (guideId) {
-      await supabase
-        .from('styling_guides')
-        .update({ rules: rules as unknown as any })
-        .eq('id', guideId);
+      await supabase.from('styling_guides').update({ rules: rules as unknown as any }).eq('id', guideId);
     } else {
-      const { data } = await supabase
-        .from('styling_guides')
-        .insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as any })
-        .select('id')
-        .single();
+      const { data } = await supabase.from('styling_guides').insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as any }).select('id').single();
       if (data) setGuideId(data.id);
     }
     setSaving(false);
@@ -286,16 +271,9 @@ export default function AdminStylingGuide() {
     updatePreset(selectedProductId, field, current);
   };
 
-  // Resolve product IDs to DemoProduct objects
-  const pairsProducts = (currentPreset?.pairs ?? [])
-    .map(id => DEMO_PRODUCTS.find(p => p.id === id))
-    .filter(Boolean) as DemoProduct[];
+  const pairsProducts = (currentPreset?.pairs ?? []).map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
+  const extrasProducts = (currentPreset?.extras ?? []).map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
 
-  const extrasProducts = (currentPreset?.extras ?? [])
-    .map(id => DEMO_PRODUCTS.find(p => p.id === id))
-    .filter(Boolean) as DemoProduct[];
-
-  // Filter available products for pickers
   const anchorZone = selectedProduct ? getBodyZone(selectedProduct) : null;
   const pairsAvailable = DEMO_PRODUCTS.filter(p => {
     if (p.id === selectedProductId) return false;
@@ -304,7 +282,6 @@ export default function AdminStylingGuide() {
     if (anchorZone === 'bottom') return getBodyZone(p) === 'top';
     return true;
   });
-
   const extrasAvailable = DEMO_PRODUCTS.filter(p => {
     if (p.id === selectedProductId) return false;
     if (!anchorZone) return true;
@@ -314,27 +291,19 @@ export default function AdminStylingGuide() {
   const handleProductClick = (productId: string) => {
     if (activeView === 'list') {
       setSelectedProductId(productId);
+      // If this product already has a preset, auto-expand it
+      if (presets.some(p => p.anchorProductId === productId && (p.pairs.length > 0 || p.extras.length > 0))) {
+        setExpandedProductId(productId);
+      }
       return;
     }
-
-    // Canvas mode
     const product = DEMO_PRODUCTS.find(p => p.id === productId);
     if (!product) return;
-
-    // If blank node is active, fill it with this product
     if (blankNodeActive) {
-      if (canvasNodeIds.has(productId)) {
-        // Product already on canvas — connect pending to existing node and remove blank
-        // The fillBlankNode handles this by just completing with the product
-        canvasRef.current?.fillBlankNode(product);
-      } else {
-        canvasRef.current?.fillBlankNode(product);
-      }
+      canvasRef.current?.fillBlankNode(product);
       setSelectedProductId(productId);
       return;
     }
-
-    // Normal canvas click behavior
     if (canvasNodeIds.has(productId)) {
       canvasRef.current?.selectProduct(productId);
     } else {
@@ -350,6 +319,9 @@ export default function AdminStylingGuide() {
       </div>
     );
   }
+
+  const configuredPresets = presets.filter(p => p.pairs.length > 0 || p.extras.length > 0);
+  const showNewProductEditor = selectedProduct && !configuredPresets.some(p => p.anchorProductId === selectedProductId);
 
   return (
     <>
@@ -369,11 +341,9 @@ export default function AdminStylingGuide() {
           <button
             onClick={() => {
               setActiveView('canvas');
-              // If a product is selected in list view, auto-add it to canvas after mount
               if (selectedProductId && activeView === 'list') {
                 const product = DEMO_PRODUCTS.find(p => p.id === selectedProductId);
                 if (product) {
-                  // Delay to let canvas mount
                   setTimeout(() => {
                     if (!canvasNodeIds.has(selectedProductId)) {
                       canvasRef.current?.addProduct(product);
@@ -393,11 +363,9 @@ export default function AdminStylingGuide() {
 
       <div className="border-b border-border" />
 
-      {/* Two-column layout — LEFT sidebar always visible */}
       <div className="flex-1 flex min-h-0">
-        {/* LEFT: Product list — shared between both views */}
+        {/* LEFT: Product list sidebar */}
         <div className={`w-72 border-r border-foreground/5 overflow-y-auto flex-shrink-0 liquid-glass transition-shadow duration-500 ${activeView === 'canvas' && blankNodeActive ? 'shadow-[0_0_40px_8px_hsl(var(--primary)/0.25),inset_0_0_30px_-10px_hsl(var(--primary)/0.1)]' : ''}`}>
-          {/* Blank node banner */}
           {activeView === 'canvas' && blankNodeActive && (
             <div className="px-4 py-2.5 border-b border-foreground/5 bg-primary/5 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0" />
@@ -405,7 +373,6 @@ export default function AdminStylingGuide() {
             </div>
           )}
           <div className="px-4 py-3 border-b border-foreground/5">
-            {/* Search */}
             <div className="relative mb-3">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
               <input
@@ -416,7 +383,6 @@ export default function AdminStylingGuide() {
                 className="w-full pl-8 pr-3 py-1.5 bg-foreground/5 border border-foreground/10 rounded-lg text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 backdrop-blur-sm"
               />
             </div>
-            {/* Category pills */}
             <div className="flex flex-wrap gap-1.5">
               {(['ALL', 'TOPS', 'BOTTOMS', 'ACCESSORIES'] as const).map(cat => (
                 <button
@@ -468,11 +434,9 @@ export default function AdminStylingGuide() {
                       <p className="font-display text-xs tracking-wide truncate">{product.title}</p>
                       <p className="text-[10px] text-muted-foreground">${product.price}</p>
                     </div>
-                    {/* In list mode: green dot for products with presets */}
                     {activeView === 'list' && presetProductIds.has(product.id) && (
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'hsl(var(--success))' }} />
                     )}
-                    {/* In canvas mode: dot for products on the canvas */}
                     {isOnCanvas && (
                       <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
                     )}
@@ -517,122 +481,105 @@ export default function AdminStylingGuide() {
               />
             </Suspense>
           ) : (
-            <>
-              {!selectedProduct ? (
-                <div className="h-full overflow-y-auto p-6">
-                  {presets.filter(p => p.pairs.length > 0 || p.extras.length > 0).length === 0 ? (
-                    <div className="h-full flex items-center justify-center">
-                      <p className="text-sm text-muted-foreground font-display tracking-wider">
-                        Select a product to configure its Style Kit presets
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED STYLES</p>
-                      <div className="grid grid-cols-2 gap-3">
-                        {presets
-                          .filter(p => p.pairs.length > 0 || p.extras.length > 0)
-                          .map(preset => {
-                            const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
-                            if (!product) return null;
-                            return (
-                              <button
-                                key={preset.anchorProductId}
-                                onClick={() => setSelectedProductId(preset.anchorProductId)}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-foreground/5 border border-foreground/8 hover:bg-foreground/10 hover:border-foreground/15 transition-all text-left group"
-                              >
-                                <img
-                                  src={getImageUrl(product.images[0], 'thumb')}
-                                  alt={product.title}
-                                  className="w-12 h-12 rounded-md object-cover flex-shrink-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-display text-[11px] tracking-wide truncate group-hover:text-foreground transition-colors">{product.title}</p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    {preset.pairs.length > 0 && (
-                                      <span className="text-[8px] font-display tracking-wider text-[#facc15]">
-                                        {preset.pairs.length} PAIR{preset.pairs.length !== 1 ? 'S' : ''}
-                                      </span>
-                                    )}
-                                    {preset.extras.length > 0 && (
-                                      <span className="text-[8px] font-display tracking-wider text-[#f472b6]">
-                                        {preset.extras.length} EXTRA{preset.extras.length !== 1 ? 'S' : ''}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                      </div>
-                      <p className="text-[10px] text-muted-foreground/40 font-display tracking-wider text-center pt-2">
-                        Select a product from the sidebar to add more styles
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-6 max-w-2xl space-y-6 overflow-y-auto h-full">
-                  {/* Anchor product header */}
+            <div className="h-full overflow-y-auto p-6">
+              {showNewProductEditor ? (
+                /* New product selected from sidebar — show full editor */
+                <div className="max-w-2xl space-y-6">
                   <div className="flex items-start gap-4">
-                    <img
-                      src={getImageUrl(selectedProduct.images[0], 'thumb')}
-                      alt={selectedProduct.title}
-                      className="w-28 h-28 rounded-lg object-cover flex-shrink-0"
-                    />
+                    <img src={getImageUrl(selectedProduct.images[0], 'thumb')} alt={selectedProduct.title} className="w-28 h-28 rounded-lg object-cover flex-shrink-0" />
                     <div className="flex-1">
                       <h2 className="font-display text-base font-bold tracking-wide">{selectedProduct.title}</h2>
                       <p className="text-sm text-muted-foreground mt-1">${selectedProduct.price}</p>
-                      <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-display tracking-widest bg-secondary rounded text-muted-foreground">
-                        {classifyGroup(selectedProduct)}
-                      </span>
+                      <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-display tracking-widest bg-secondary rounded text-muted-foreground">{classifyGroup(selectedProduct)}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={saveGuide}
-                        disabled={saving}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                      >
-                        <Save className="w-4 h-4" />
-                        {saving ? 'SAVING...' : 'SAVE'}
+                      <button onClick={saveGuide} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50">
+                        <Save className="w-4 h-4" />{saving ? 'SAVING...' : 'SAVE'}
                       </button>
-                      <button
-                        onClick={() => setSelectedProductId(null)}
-                        className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      <button onClick={() => setSelectedProductId(null)} className="p-2 text-muted-foreground hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
                     </div>
                   </div>
-
-                  {/* PAIRS section */}
                   <div className="liquid-glass rounded-lg p-4">
-                    <PresetList
-                      label="PAIRS"
-                      description="When building pairs, suggest these first:"
-                      items={pairsProducts}
-                      availableProducts={pairsAvailable}
-                      onAdd={(p) => addToPreset('pairs', p)}
-                      onRemove={(id) => removeFromPreset('pairs', id)}
-                      onReorder={(newItems) => updatePreset(selectedProductId!, 'pairs', newItems.map(p => p.id))}
-                    />
+                    <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={pairsProducts} availableProducts={pairsAvailable} onAdd={(p) => addToPreset('pairs', p)} onRemove={(id) => removeFromPreset('pairs', id)} onReorder={(newItems) => updatePreset(selectedProductId!, 'pairs', newItems.map(p => p.id))} />
                   </div>
-
-                  {/* EXTRAS section */}
                   <div className="liquid-glass rounded-lg p-4">
-                    <PresetList
-                      label="EXTRAS"
-                      description="When building extras, suggest these first:"
-                      items={extrasProducts}
-                      availableProducts={extrasAvailable}
-                      onAdd={(p) => addToPreset('extras', p)}
-                      onRemove={(id) => removeFromPreset('extras', id)}
-                      onReorder={(newItems) => updatePreset(selectedProductId!, 'extras', newItems.map(p => p.id))}
-                    />
+                    <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={extrasProducts} availableProducts={extrasAvailable} onAdd={(p) => addToPreset('extras', p)} onRemove={(id) => removeFromPreset('extras', id)} onReorder={(newItems) => updatePreset(selectedProductId!, 'extras', newItems.map(p => p.id))} />
                   </div>
                 </div>
+              ) : (
+                /* Configured styles — cards expand inline as dropdowns */
+                <div className="space-y-4">
+                  {configuredPresets.length === 0 ? (
+                    <div className="h-full flex items-center justify-center min-h-[300px]">
+                      <p className="text-sm text-muted-foreground font-display tracking-wider">Select a product to configure its Style Kit presets</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED STYLES</p>
+                      <div className="space-y-3">
+                        {configuredPresets.map(preset => {
+                          const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
+                          if (!product) return null;
+                          const isExpanded = expandedProductId === preset.anchorProductId;
+                          const presetPairs = preset.pairs.map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
+                          const presetExtras = preset.extras.map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
+                          const zone = getBodyZone(product);
+                          const pAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; if (zone === 'top') return getBodyZone(p) === 'bottom'; if (zone === 'bottom') return getBodyZone(p) === 'top'; return true; });
+                          const eAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; return getBodyZone(p) === zone; });
+
+                          return (
+                            <div key={preset.anchorProductId} className="rounded-lg bg-foreground/5 border border-foreground/8 overflow-hidden transition-all">
+                              {/* Card header — click to expand/collapse */}
+                              <button
+                                onClick={() => {
+                                  setExpandedProductId(isExpanded ? null : preset.anchorProductId);
+                                  setSelectedProductId(preset.anchorProductId);
+                                }}
+                                className="w-full flex items-center gap-3 p-3 hover:bg-foreground/10 transition-all text-left group"
+                              >
+                                <img src={getImageUrl(product.images[0], 'thumb')} alt={product.title} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-display text-[11px] tracking-wide truncate group-hover:text-foreground transition-colors">{product.title}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {preset.pairs.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#facc15]">{preset.pairs.length} PAIR{preset.pairs.length !== 1 ? 'S' : ''}</span>}
+                                    {preset.extras.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#f472b6]">{preset.extras.length} EXTRA{preset.extras.length !== 1 ? 'S' : ''}</span>}
+                                  </div>
+                                </div>
+                                <svg className={`w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                              </button>
+
+                              {/* Expanded dropdown content */}
+                              {isExpanded && (
+                                <div className="px-3 pb-3 space-y-3 border-t border-foreground/5">
+                                  <div className="liquid-glass rounded-lg p-3 mt-3">
+                                    <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={presetPairs} availableProducts={pAvail}
+                                      onAdd={(p) => addToPreset('pairs', p)}
+                                      onRemove={(id) => removeFromPreset('pairs', id)}
+                                      onReorder={(newItems) => updatePreset(preset.anchorProductId, 'pairs', newItems.map(p => p.id))} />
+                                  </div>
+                                  <div className="liquid-glass rounded-lg p-3">
+                                    <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={presetExtras} availableProducts={eAvail}
+                                      onAdd={(p) => addToPreset('extras', p)}
+                                      onRemove={(id) => removeFromPreset('extras', id)}
+                                      onReorder={(newItems) => updatePreset(preset.anchorProductId, 'extras', newItems.map(p => p.id))} />
+                                  </div>
+                                  <div className="flex justify-end pt-1">
+                                    <button onClick={saveGuide} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50">
+                                      <Save className="w-4 h-4" />{saving ? 'SAVING...' : 'SAVE'}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground/40 font-display tracking-wider text-center pt-2">Select a product from the sidebar to add more styles</p>
+                    </>
+                  )}
+                </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
