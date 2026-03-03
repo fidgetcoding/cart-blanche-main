@@ -242,15 +242,20 @@ export default function AdminStylingGuide() {
 
   const selectedProduct = DEMO_PRODUCTS.find(p => p.id === selectedProductId) ?? null;
   const currentPreset = presets.find(p => p.anchorProductId === selectedProductId);
-  const presetProductIds = useMemo(() => {
+  const configuredAnchorIds = useMemo(() => {
+    return new Set(presets.filter(p => p.pairs.length > 0 || p.extras.length > 0).map(p => p.anchorProductId));
+  }, [presets]);
+
+  const involvedProductIds = useMemo(() => {
     const ids = new Set<string>();
     presets.forEach(p => {
       ids.add(p.anchorProductId);
       p.pairs.forEach(id => ids.add(id));
       p.extras.forEach(id => ids.add(id));
     });
+    canvasNodeIds.forEach(id => ids.add(id));
     return ids;
-  }, [presets]);
+  }, [presets, canvasNodeIds]);
 
   useEffect(() => { loadGuide(); }, []);
 
@@ -372,6 +377,17 @@ export default function AdminStylingGuide() {
     setSelectedProductId(productId);
   };
 
+  // Show all presets (including canvas-only nodes as empty presets)
+  const allPresets = useMemo(() => {
+    const presetsMap = new Map(presets.map(p => [p.anchorProductId, p]));
+    canvasNodeIds.forEach(id => {
+      if (!presetsMap.has(id)) {
+        presetsMap.set(id, { anchorProductId: id, pairs: [], extras: [] });
+      }
+    });
+    return Array.from(presetsMap.values());
+  }, [presets, canvasNodeIds]);
+
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center">
@@ -379,9 +395,6 @@ export default function AdminStylingGuide() {
       </div>
     );
   }
-
-  // Show all presets (including empty ones that were just created)
-  const allPresets = presets;
 
   return (
     <>
@@ -465,7 +478,6 @@ export default function AdminStylingGuide() {
                 <p className="text-[9px] font-display tracking-[0.2em] text-muted-foreground/60">{group}</p>
               </div>
               {grouped[group].map(product => {
-                const isOnCanvas = activeView === 'canvas' && canvasNodeIds.has(product.id);
                 return (
                   <button
                     key={product.id}
@@ -494,12 +506,13 @@ export default function AdminStylingGuide() {
                       <p className="font-display text-xs tracking-wide truncate">{product.title}</p>
                       <p className="text-[10px] text-muted-foreground">${product.price}</p>
                     </div>
-                    {activeView === 'list' && presetProductIds.has(product.id) && (
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'hsl(var(--success))' }} />
-                    )}
-                    {isOnCanvas && (
-                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                    )}
+                    {(() => {
+                      const isConfigured = configuredAnchorIds.has(product.id);
+                      const isInvolved = involvedProductIds.has(product.id);
+                      if (isConfigured) return <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />;
+                      if (isInvolved) return <div className="w-2 h-2 rounded-full bg-foreground/30 flex-shrink-0" />;
+                      return null;
+                    })()}
                   </button>
                 );
               })}
