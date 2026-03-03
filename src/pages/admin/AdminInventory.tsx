@@ -126,12 +126,13 @@ export default function AdminInventory() {
   const [addPublishToStorefront, setAddPublishToStorefront] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [pendingDeletes, setPendingDeletes] = useState<Set<string>>(new Set());
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
 
-  // Mark dirty when editing a product or adding a new one
-  useEffect(() => { if (editingProduct || showAddProduct) markDirty(); else markClean(); }, [editingProduct, showAddProduct, markDirty, markClean]);
+  // Mark dirty when editing a product, adding a new one, or pending deletes exist
+  useEffect(() => { if (editingProduct || showAddProduct || pendingDeletes.size > 0) markDirty(); else markClean(); }, [editingProduct, showAddProduct, pendingDeletes, markDirty, markClean]);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
@@ -384,6 +385,41 @@ export default function AdminInventory() {
     if (expandedId === p.id) setExpandedId(null);
   }
 
+  function togglePendingDelete(productId: string) {
+    setPendingDeletes(prev => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  }
+
+  async function commitPendingDeletes() {
+    if (pendingDeletes.size === 0) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    for (const id of pendingDeletes) {
+      const p = products.find(pr => pr.id === id);
+      if (p && !p.isDemo && session) {
+        await supabase.from('product_variants').delete().eq('product_id', id);
+        await supabase.from('products').delete().eq('id', id);
+      }
+    }
+    // Remove from local state
+    setProducts(prev => prev.filter(p => !pendingDeletes.has(p.id)));
+    // Update grid layout order
+    const remaining = products.filter(p => !pendingDeletes.has(p.id)).map(p => p.id);
+    const categoryOrder = gridLayout?.categoryOrder || [];
+    saveLayout(remaining, categoryOrder);
+    // Also remove from hiddenProductIds if applicable
+    const currentHidden = gridLayout?.hiddenProductIds || [];
+    const newHidden = currentHidden.filter(id => !pendingDeletes.has(id));
+    if (newHidden.length !== currentHidden.length) {
+      await saveHiddenProductIds(newHidden);
+    }
+    if (expandedId && pendingDeletes.has(expandedId)) setExpandedId(null);
+    setPendingDeletes(new Set());
+  }
+
   async function toggleProductVisibility(productId: string, currentStatus: string) {
     const newStatus = currentStatus === 'active' ? 'draft' : 'active';
     setProducts(prev => prev.map(p =>
@@ -613,7 +649,7 @@ export default function AdminInventory() {
               </div>
           ))}
           <button
-            onClick={() => setTagEditMode(prev => !prev)}
+            onClick={() => { setTagEditMode(prev => !prev); if (tagEditMode) setPendingDeletes(new Set()); }}
             className={`ml-1 px-2.5 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-colors ${
               tagEditMode ? 'bg-success/15 text-success border-success/30' : 'bg-card text-muted-foreground border-border hover:bg-secondary'
             }`}
@@ -621,6 +657,20 @@ export default function AdminInventory() {
           >
             {tagEditMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
           </button>
+          {tagEditMode && (
+            <button
+              onClick={commitPendingDeletes}
+              disabled={pendingDeletes.size === 0}
+              className={`ml-1 px-3 py-1.5 text-xs font-display tracking-wider rounded-lg border transition-all ${
+                pendingDeletes.size > 0
+                  ? 'bg-foreground text-background border-foreground hover:opacity-90'
+                  : 'bg-muted/30 text-muted-foreground/40 border-border/30 cursor-not-allowed'
+              }`}
+              title={pendingDeletes.size > 0 ? `Save ${pendingDeletes.size} deletion(s)` : 'No pending deletions'}
+            >
+              SAVE ({pendingDeletes.size})
+            </button>
+          )}
         </div>
         {/* Secondary category strip */}
         <div className="flex flex-wrap gap-2 items-center">
@@ -666,21 +716,39 @@ export default function AdminInventory() {
             return (
               <div
                 key={p.id}
-                draggable={activeFilter === 'all' && !isExpanded}
+                draggable={activeFilter === 'all' && !isExpanded && !tagEditMode}
                 onDragStart={() => handleDragStart(realIdx)}
                 onDragOver={(e) => { e.preventDefault(); handleDragOver(realIdx); }}
                 onDragEnd={handleDragEnd}
                 className={`liquid-glass rounded-xl overflow-hidden transition-all ${
                   isDragging ? 'opacity-40 scale-[0.98]' : ''
-                } ${isDragOver ? 'ring-2 ring-primary/50 translate-y-[-2px]' : ''}`}
+                } ${isDragOver ? 'ring-2 ring-primary/50 translate-y-[-2px]' : ''} ${
+                  pendingDeletes.has(p.id) ? 'opacity-40 ring-1 ring-destructive/40' : ''
+                }`}
               >
                 {/* Product row */}
                 <div
                   className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
-                  onClick={() => setExpandedId(isExpanded ? null : p.id)}
+                  onClick={() => tagEditMode ? togglePendingDelete(p.id) : setExpandedId(isExpanded ? null : p.id)}
                 >
+                  {/* Delete toggle in edit mode */}
+                  {tagEditMode && (
+                    <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => togglePendingDelete(p.id)}
+                        className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${
+                          pendingDeletes.has(p.id)
+                            ? 'bg-destructive border-destructive text-destructive-foreground'
+                            : 'border-muted-foreground/30 hover:border-destructive/60 text-transparent hover:text-destructive/60'
+                        }`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
                   {/* Drag handle */}
-                  {activeFilter === 'all' && (
+                  {activeFilter === 'all' && !tagEditMode && (
                     <div
                       className="text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors flex-shrink-0"
                       onMouseDown={e => e.stopPropagation()}
