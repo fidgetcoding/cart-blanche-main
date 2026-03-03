@@ -848,7 +848,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       ...n,
       position: newPositions[n.id] ?? n.position,
     })));
-    setTimeout(() => fitView({ duration: 400, padding: 0.5 }), 50);
+    setTimeout(() => fitView({ duration: 400, padding: selectedNodeId ? 1.2 : 0.7 }), 50);
     saveLayoutDebounced();
   }, [nodes, edges, setNodes, fitView, saveLayoutDebounced]);
 
@@ -867,7 +867,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         if (e.shiftKey) {
           autoArrangeNodes();
         } else {
-          fitView({ duration: 400, padding: 0.7 });
+          const hasPopup = selectedNodeId !== null;
+          fitView({ duration: 400, padding: hasPopup ? 1.2 : 0.7 });
         }
       }
       if (e.key === 'Escape') {
@@ -1041,7 +1042,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           deleteKeyCode={['Backspace', 'Delete']}
           zoomOnDoubleClick={false}
           fitView={initialNodes.length > 0}
-          fitViewOptions={{ padding: 0.25 }}
+          fitViewOptions={{ padding: 0.5 }}
           proOptions={{ hideAttribution: true }}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.04)" />
