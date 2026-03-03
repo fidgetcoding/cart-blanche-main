@@ -104,7 +104,7 @@ function PresetList({
             e.preventDefault();
             e.stopPropagation();
             setDropRejected(true);
-            setTimeout(() => setDropRejected(false), 1500);
+            setTimeout(() => setDropRejected(false), 2000);
             setDropHover(false);
             return;
           }
