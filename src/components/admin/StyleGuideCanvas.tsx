@@ -301,6 +301,9 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onPresetsChange(edgesToPresets(currentEdges));
   }, [onPresetsChange]);
 
+  // Track if we need to rebuild edges after nodes are added
+  const pendingEdgeRebuildRef = useRef(false);
+
   // Sync external preset changes (from list view) into canvas edges + auto-create missing nodes
   useEffect(() => {
     if (isInternalChangeRef.current) {
@@ -322,10 +325,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const existingNodeIds = new Set(nodes.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
     const missingIds = Array.from(presetProductIds).filter(id => !existingNodeIds.has(id));
 
-    // Auto-create nodes for missing products in a grid layout
     if (missingIds.length > 0) {
-      const newNodes: Node[] = [];
-      // Find bounding box of existing nodes to place new ones nearby
       let startX = 0;
       let startY = 0;
       if (nodes.length > 0) {
@@ -334,6 +334,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         startY = nodes[0]?.position.y ?? 0;
       }
 
+      const newNodes: Node[] = [];
       missingIds.forEach((id, i) => {
         const product = DEMO_PRODUCTS.find(p => p.id === id);
         if (!product) return;
@@ -347,18 +348,32 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
       if (newNodes.length > 0) {
         setNodes(nds => [...nds, ...newNodes]);
+        // Defer edge rebuild to next render when nodes exist
+        pendingEdgeRebuildRef.current = true;
+        return;
       }
     }
 
-    // Rebuild edges from presets — now all referenced nodes exist
-    const allNodeIds = new Set([...existingNodeIds, ...missingIds]);
-    const newPresetEdges = presetsToEdges(presets).filter(e => allNodeIds.has(e.source) && allNodeIds.has(e.target));
-    // Keep pending/blank edges
+    // No missing nodes — rebuild edges immediately
+    rebuildEdgesFromPresets();
+  }, [presets]);
+
+  // Deferred edge rebuild after nodes are added
+  useEffect(() => {
+    if (pendingEdgeRebuildRef.current) {
+      pendingEdgeRebuildRef.current = false;
+      rebuildEdgesFromPresets();
+    }
+  }, [nodes]);
+
+  const rebuildEdgesFromPresets = useCallback(() => {
+    const nodeIds = new Set(nodes.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
+    const newPresetEdges = presetsToEdges(presets).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
     setEdges(eds => {
       const pendingEdges = eds.filter(e => (e.data as any)?.type === 'pending' || e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID);
       return [...newPresetEdges, ...pendingEdges];
     });
-  }, [presets]);
+  }, [nodes, presets, setEdges]);
 
   const hasBlankNode = useCallback(() => {
     return nodes.some(n => n.id === BLANK_NODE_ID);
