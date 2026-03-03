@@ -20,7 +20,7 @@ const NAV_ITEMS = [
   { to: '/admin/grid', icon: Grid3X3, label: 'Grid Editor' },
   { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/admin/discounts', icon: Tag, label: 'Discounts' },
-  { to: '/admin/styling-guide', icon: Layers, label: 'Style Guide' },
+  { to: '/admin/styling-guide', icon: Layers, label: 'Look Book' },
   { to: '/admin/lab', icon: FlaskConical, label: 'Template Lab' },
 ];
 
