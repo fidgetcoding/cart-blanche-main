@@ -548,13 +548,23 @@ export default function AdminStylingGuide() {
                     <>
                       <div className="flex items-center justify-between">
                         <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED MATCHES</p>
-                        <button
-                          onClick={() => { if (editMode) { setEditMode(false); saveGuide(); } else { setEditMode(true); setExpandedProductId(null); } }}
-                          className={`p-1.5 rounded-md transition-all ${editMode ? 'bg-green-500/20 text-green-400' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
-                          title={editMode ? 'Done editing' : 'Edit matches'}
-                        >
-                          {editMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={saveGuide}
+                            disabled={saving}
+                            className="p-1.5 rounded-md transition-all text-muted-foreground/40 hover:text-primary hover:bg-primary/10"
+                            title="Save"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => { if (editMode) { setEditMode(false); } else { setEditMode(true); setExpandedProductId(null); } }}
+                            className={`p-1.5 rounded-md transition-all ${editMode ? 'bg-green-500/20 text-green-400' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                            title={editMode ? 'Done editing' : 'Edit matches'}
+                          >
+                            {editMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                       </div>
                       <p className="text-[9px] font-display tracking-wider text-muted-foreground/40 -mt-2">Select a product from the sidebar to add a new match</p>
                       <div className="space-y-3" ref={listContainerRef}>
