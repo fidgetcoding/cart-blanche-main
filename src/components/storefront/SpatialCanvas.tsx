@@ -833,7 +833,7 @@ export function SpatialCanvas() {
           <div className={`tracking-wider space-y-0.5 cursor-default transition-colors duration-500 ${themeSettings.mode === 'light' ? 'text-muted-foreground/60 hover:text-foreground/90' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
             <p className="block md:hidden">PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
             <div className="hidden md:block space-y-0.5">
-              <p>SCROLL TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
+              <p>SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
               <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
             </div>
           </div>
