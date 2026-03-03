@@ -596,37 +596,31 @@ export default function AdminStylingGuide() {
                                 onPointerDown={(e) => {
                                   if (!editMode) return;
                                   e.preventDefault();
-                                  const startY = e.clientY;
+                                  (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+                                  let currentIdx = presetIndex;
                                   setDragIdx(presetIndex);
                                   const container = listContainerRef.current;
                                   if (!container) return;
 
                                   const onMove = (ev: PointerEvent) => {
                                     const cards = Array.from(container.children) as HTMLElement[];
-                                    const currentY = ev.clientY;
-                                    // Find which card we're hovering over by checking midpoints
+                                    const y = ev.clientY;
                                     for (let i = 0; i < cards.length; i++) {
-                                      if (i === presetIndex) continue;
+                                      if (i === currentIdx) continue;
                                       const rect = cards[i].getBoundingClientRect();
                                       const mid = rect.top + rect.height / 2;
-                                      if (presetIndex < i && currentY > mid) {
+                                      const shouldSwap = (currentIdx < i && y > mid) || (currentIdx > i && y < mid);
+                                      if (shouldSwap) {
+                                        const from = currentIdx;
+                                        const to = i;
                                         setPresets(prev => {
                                           const next = [...prev];
-                                          const [moved] = next.splice(presetIndex, 1);
-                                          next.splice(i, 0, moved);
+                                          const [moved] = next.splice(from, 1);
+                                          next.splice(to, 0, moved);
                                           return next;
                                         });
-                                        presetIndex = i;
-                                        markDirty();
-                                        break;
-                                      } else if (presetIndex > i && currentY < mid) {
-                                        setPresets(prev => {
-                                          const next = [...prev];
-                                          const [moved] = next.splice(presetIndex, 1);
-                                          next.splice(i, 0, moved);
-                                          return next;
-                                        });
-                                        presetIndex = i;
+                                        currentIdx = to;
+                                        setDragIdx(to);
                                         markDirty();
                                         break;
                                       }
