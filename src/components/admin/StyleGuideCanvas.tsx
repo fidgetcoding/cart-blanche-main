@@ -91,18 +91,26 @@ function ProductNode({ data, selected }: NodeProps) {
   const handleClass = "!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20";
 
   if (d.isBlank) {
+    const blankHandleClass = "!w-3 !h-3 !bg-blue-400/60 !border-blue-400/40";
     return (
-      <div className="w-[120px] h-[130px] bg-foreground/3 border-2 border-dashed border-foreground/15 rounded-lg p-4 flex flex-col items-center justify-center gap-2 animate-scale-in">
-        <Handle type="target" position={Position.Left} id="target-left" className={handleClass} />
-        <Handle type="target" position={Position.Top} id="target-top" className={handleClass} />
-        <Handle type="target" position={Position.Right} id="target-right" className={handleClass} />
-        <Handle type="target" position={Position.Bottom} id="target-bottom" className={handleClass} />
-        <Handle type="source" position={Position.Left} id="source-left" className={handleClass} />
-        <Handle type="source" position={Position.Top} id="source-top" className={handleClass} />
-        <Handle type="source" position={Position.Right} id="source-right" className={handleClass} />
-        <Handle type="source" position={Position.Bottom} id="source-bottom" className={handleClass} />
-        <Plus className="w-6 h-6 text-muted-foreground/40" />
-        <span className="text-[8px] text-muted-foreground/50 font-display tracking-widest">SELECT PRODUCT FROM PANEL</span>
+      <div
+        className="w-[140px] h-[150px] rounded-lg p-4 flex flex-col items-center justify-center gap-3 animate-scale-in"
+        style={{
+          background: 'linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(139,92,246,0.06) 100%)',
+          border: '2px dashed rgba(96,165,250,0.45)',
+          boxShadow: '0 0 20px rgba(96,165,250,0.15), inset 0 0 20px rgba(96,165,250,0.05)',
+        }}
+      >
+        <Handle type="target" position={Position.Left} id="target-left" className={blankHandleClass} />
+        <Handle type="target" position={Position.Top} id="target-top" className={blankHandleClass} />
+        <Handle type="target" position={Position.Right} id="target-right" className={blankHandleClass} />
+        <Handle type="target" position={Position.Bottom} id="target-bottom" className={blankHandleClass} />
+        <Handle type="source" position={Position.Left} id="source-left" className={blankHandleClass} />
+        <Handle type="source" position={Position.Top} id="source-top" className={blankHandleClass} />
+        <Handle type="source" position={Position.Right} id="source-right" className={blankHandleClass} />
+        <Handle type="source" position={Position.Bottom} id="source-bottom" className={blankHandleClass} />
+        <Plus className="w-7 h-7 text-blue-400/70" />
+        <span className="text-[9px] text-blue-300/70 font-display tracking-widest text-center leading-tight">SELECT PRODUCT<br/>FROM PANEL</span>
       </div>
     );
   }
