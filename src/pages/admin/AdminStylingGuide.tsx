@@ -99,6 +99,8 @@ function PresetList({
             : productZone === anchorZone;
 
           if (!isValidMatch) {
+            e.preventDefault();
+            e.stopPropagation();
             setDropRejected(true);
             setTimeout(() => setDropRejected(false), 1500);
             setDropHover(false);
