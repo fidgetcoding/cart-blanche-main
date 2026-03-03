@@ -788,7 +788,7 @@ export default function AdminStylingGuide() {
                                   </button>
                                 )}
                                 {editMode ? (
-                                  <button onClick={(e) => { e.stopPropagation(); setPresets(prev => prev.filter(p => p.anchorProductId !== preset.anchorProductId)); markDirty(); }} className="p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all flex-shrink-0" title="Delete match">
+                                  <button onClick={(e) => { e.stopPropagation(); const anchorId = preset.anchorProductId; setPresets(prev => { let updated = prev.filter(p => p.anchorProductId !== anchorId); updated = updated.map(p => ({ ...p, pairs: p.pairs.filter(id => id !== anchorId), extras: p.extras.filter(id => id !== anchorId) })); return updated; }); markDirty(); }} className="p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all flex-shrink-0" title="Delete match">
                                     <X className="w-4 h-4" />
                                   </button>
                                 ) : (
