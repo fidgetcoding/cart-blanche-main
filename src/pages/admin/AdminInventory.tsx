@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Tag, ImageIcon, Video, Loader2, Trash2, Pencil, Eye, EyeOff, GripVertical, Globe, Home } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -127,6 +128,10 @@ export default function AdminInventory() {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
+
+  // Mark dirty when editing a product or adding a new one
+  useEffect(() => { if (editingProduct || showAddProduct) markDirty(); else markClean(); }, [editingProduct, showAddProduct, markDirty, markClean]);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
@@ -503,6 +508,8 @@ export default function AdminInventory() {
   }
 
   return (
+    <>
+    <BlockerDialog />
     <div className="p-8 max-w-[1200px]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -1778,5 +1785,6 @@ export default function AdminInventory() {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }

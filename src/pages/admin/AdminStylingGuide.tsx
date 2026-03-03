@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, lazy, Suspense, useRef, useCallback } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
 import { Save, Plus, X, GripVertical, Search } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
@@ -193,22 +193,11 @@ export default function AdminStylingGuide() {
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
   const [blankNodeActive, setBlankNodeActive] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
+  const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
 
   // Track which product IDs are on the canvas
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
   const canvasRef = useRef<StyleGuideCanvasHandle | null>(null);
-
-  // Block navigation when there are unsaved changes
-  const blocker = useBlocker(isDirty);
-
-  // Browser tab/refresh protection
-  useEffect(() => {
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [isDirty]);
 
   // Group products by body zone, filtered by search and category
   const grouped = useMemo(() => {
@@ -274,11 +263,11 @@ export default function AdminStylingGuide() {
       if (data) setGuideId(data.id);
     }
     setSaving(false);
-    setIsDirty(false);
+    markClean();
   };
 
   const updatePreset = (anchorId: string, field: 'pairs' | 'extras', ids: string[]) => {
-    setIsDirty(true);
+    markDirty();
     setPresets(prev => {
       const existing = prev.find(p => p.anchorProductId === anchorId);
       if (existing) {
@@ -376,31 +365,7 @@ export default function AdminStylingGuide() {
 
   return (
     <>
-      {/* Unsaved changes blocker dialog */}
-      {blocker.state === 'blocked' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="liquid-glass rounded-xl p-6 max-w-sm w-full mx-4 space-y-4 border border-foreground/10">
-            <h3 className="font-display text-sm tracking-wider font-bold">UNSAVED CHANGES</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              You have unsaved changes in your Style Guide. Are you sure you want to leave? Your changes will be lost.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => blocker.reset?.()}
-                className="px-4 py-2 text-[10px] font-display tracking-wider border border-foreground/10 rounded-md hover:bg-foreground/5 transition-colors"
-              >
-                STAY
-              </button>
-              <button
-                onClick={() => blocker.proceed?.()}
-                className="px-4 py-2 text-[10px] font-display tracking-wider bg-destructive text-destructive-foreground rounded-md hover:opacity-90 transition-opacity"
-              >
-                LEAVE WITHOUT SAVING
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <BlockerDialog />
     <div className="flex flex-col h-full border-t border-border">
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
         <h1 className="font-display text-2xl font-bold tracking-wide">Style Guide</h1>
@@ -537,9 +502,9 @@ export default function AdminStylingGuide() {
               <StyleGuideCanvas
                 ref={canvasRef}
                 presets={presets}
-                onPresetsChange={(p) => { setPresets(p); setIsDirty(true); }}
+                onPresetsChange={(p) => { setPresets(p); markDirty(); }}
                 canvasLayout={canvasLayout}
-                onCanvasLayoutChange={(l) => { setCanvasLayout(l); setIsDirty(true); }}
+                onCanvasLayoutChange={(l) => { setCanvasLayout(l); markDirty(); }}
                 onSave={saveGuide}
                 saving={saving}
                 onCanvasNodeIdsChange={setCanvasNodeIds}
