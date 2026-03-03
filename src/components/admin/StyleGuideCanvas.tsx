@@ -288,6 +288,27 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+  // Debounced auto-save for canvas layout changes
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveLayoutDebounced = useCallback(() => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      const posMap: Record<string, { x: number; y: number }> = {};
+      const nodeIds: string[] = [];
+      nodes.forEach(n => {
+        if (n.id === BLANK_NODE_ID) return;
+        posMap[n.id] = n.position;
+        nodeIds.push(n.id);
+      });
+      onCanvasLayoutChange({ positions: posMap, nodeIds });
+      onSave();
+    }, 800);
+  }, [nodes, onCanvasLayoutChange, onSave]);
+
+  useEffect(() => {
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, []);
+
   // Keep onDelete callback fresh on all nodes
   const removeNodeFromCanvas = useCallback((nodeId: string) => {
     if (nodeId === BLANK_NODE_ID) {
@@ -301,7 +322,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       return filtered;
     });
     if (selectedNodeId === nodeId) setSelectedNodeId(null);
-  }, [selectedNodeId]);
+    saveLayoutDebounced();
+  }, [selectedNodeId, saveLayoutDebounced]);
 
   // Inject onDelete into node data
   useEffect(() => {
@@ -552,7 +574,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     pendingConnectionSourceRef.current = null;
     onBlankNodeChange(false);
     setSelectedNodeId(product.id);
-  }, [nodes, setNodes, setEdges, syncPresetsFromEdges, removeNodeFromCanvas, onBlankNodeChange]);
+    saveLayoutDebounced();
+  }, [nodes, setNodes, setEdges, syncPresetsFromEdges, removeNodeFromCanvas, onBlankNodeChange, saveLayoutDebounced]);
 
   // Auto-detect pairs vs extras from body zone
   const onConnect = useCallback((connection: Connection) => {
@@ -604,7 +627,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       syncPresetsFromEdges(newEdges);
       return newEdges;
     });
-  }, [setEdges, syncPresetsFromEdges]);
+    saveLayoutDebounced();
+  }, [setEdges, syncPresetsFromEdges, saveLayoutDebounced]);
 
   // Drag-to-empty: create blank node at drop position
   const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, connectionState: any) => {
@@ -732,7 +756,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     };
     setNodes(nds => [...nds, newNode]);
     setSelectedNodeId(product.id);
-  }, [screenToFlowPosition, nodes, setNodes, removeNodeFromCanvas, fillBlankNode]);
+    saveLayoutDebounced();
+  }, [screenToFlowPosition, nodes, setNodes, removeNodeFromCanvas, fillBlankNode, saveLayoutDebounced]);
 
   const handleSave = useCallback(() => {
     const posMap: Record<string, { x: number; y: number }> = {};
@@ -789,6 +814,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       };
       setNodes(nds => [...nds, newNode]);
       setSelectedNodeId(product.id);
+      saveLayoutDebounced();
     },
     addProductAtPosition: (product: DemoProduct, screenX: number, screenY: number) => {
       const position = screenToFlowPosition({ x: screenX, y: screenY });
@@ -919,6 +945,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           onNodesChange={onNodesChange}
           onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
+          onNodeDragStop={saveLayoutDebounced}
           onConnectEnd={onConnectEnd}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
