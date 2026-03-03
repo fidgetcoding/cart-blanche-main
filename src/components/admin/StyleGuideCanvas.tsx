@@ -392,6 +392,25 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   // Auto-detect pairs vs extras from body zone
   const onConnect = useCallback((connection: Connection) => {
+    const isBlankSource = connection.source === BLANK_NODE_ID;
+    const isBlankTarget = connection.target === BLANK_NODE_ID;
+
+    // If either end is blank, create a pending (blue) edge
+    if (isBlankSource || isBlankTarget) {
+      const newEdge: Edge = {
+        id: `pending-${connection.source}-${connection.target}`,
+        source: connection.source!,
+        target: connection.target!,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
+        style: PENDING_STYLE,
+        data: { type: 'pending' },
+        type: 'default',
+      };
+      setEdges(eds => addEdge(newEdge, eds));
+      return;
+    }
+
     const sourceProduct = DEMO_PRODUCTS.find(p => p.id === connection.source);
     const targetProduct = DEMO_PRODUCTS.find(p => p.id === connection.target);
     if (!sourceProduct || !targetProduct) return;
@@ -401,8 +420,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const connectionType = sourceZone === targetZone ? 'extras' : 'pairs';
 
     // Check if reverse edge exists for offset
-    const reverseKey = `${connection.target}-${connection.source}`;
-
     const newEdge = {
       ...connection,
       id: `${connectionType}-${connection.source}-${connection.target}`,
@@ -412,7 +429,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     };
 
     setEdges(eds => {
-      // Check if reverse edge exists
       const hasReverse = eds.some(e =>
         e.source === connection.target && e.target === connection.source
       );
@@ -422,7 +438,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         eds,
       );
 
-      // If reverse exists, update its offset
       if (hasReverse) {
         newEdges = newEdges.map(e =>
           e.source === connection.target && e.target === connection.source
