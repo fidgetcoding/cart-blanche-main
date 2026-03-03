@@ -97,9 +97,10 @@ function PresetList({
           if (!product) { setDropHover(false); return; }
 
           const productZone = getBodyZone(product);
+          // Accessories are always pairs, never extras
           const isValidMatch = listType === 'pairs'
-            ? productZone !== anchorZone
-            : productZone === anchorZone;
+            ? (productZone !== anchorZone || productZone === 'accessory' || anchorZone === 'accessory')
+            : (productZone === anchorZone && productZone !== 'accessory' && anchorZone !== 'accessory');
 
           if (!isValidMatch) {
             e.preventDefault();
@@ -199,7 +200,7 @@ function PresetList({
         <div className="flex items-center gap-2 px-3 py-2 mt-2 rounded-md bg-destructive/10 border border-destructive/20">
           <X className="w-3.5 h-3.5 text-destructive" />
           <span className="text-[10px] font-display tracking-wider text-destructive">
-            {listType === 'pairs' ? 'PAIRS NEED OPPOSITE TYPES (TOP ↔ BOTTOM)' : 'EXTRAS NEED SAME TYPE'}
+            {listType === 'pairs' ? 'PAIRS NEED OPPOSITE TYPES OR ACCESSORIES' : 'EXTRAS NEED SAME TYPE (NO ACCESSORIES)'}
           </span>
         </div>
       )}
@@ -378,14 +379,20 @@ export default function AdminStylingGuide() {
   const pairsAvailable = DEMO_PRODUCTS.filter(p => {
     if (p.id === selectedProductId) return false;
     if (!anchorZone) return true;
-    if (anchorZone === 'top') return getBodyZone(p) === 'bottom';
-    if (anchorZone === 'bottom') return getBodyZone(p) === 'top';
+    const z = getBodyZone(p);
+    // Accessories are always pairs
+    if (z === 'accessory' || anchorZone === 'accessory') return true;
+    if (anchorZone === 'top') return z === 'bottom';
+    if (anchorZone === 'bottom') return z === 'top';
     return true;
   });
   const extrasAvailable = DEMO_PRODUCTS.filter(p => {
     if (p.id === selectedProductId) return false;
     if (!anchorZone) return true;
-    return getBodyZone(p) === anchorZone;
+    const z = getBodyZone(p);
+    // Accessories excluded from extras
+    if (z === 'accessory' || anchorZone === 'accessory') return false;
+    return z === anchorZone;
   });
 
   const handleProductClick = (productId: string) => {
@@ -669,8 +676,8 @@ export default function AdminStylingGuide() {
                           const presetPairs = preset.pairs.map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
                           const presetExtras = preset.extras.map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
                           const zone = getBodyZone(product);
-                          const pAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; if (zone === 'top') return getBodyZone(p) === 'bottom'; if (zone === 'bottom') return getBodyZone(p) === 'top'; return true; });
-                          const eAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; return getBodyZone(p) === zone; });
+                          const pAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; const z = getBodyZone(p); if (z === 'accessory' || zone === 'accessory') return true; if (zone === 'top') return z === 'bottom'; if (zone === 'bottom') return z === 'top'; return true; });
+                          const eAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; const z = getBodyZone(p); if (z === 'accessory' || zone === 'accessory') return false; return z === zone; });
 
                           return (
                             <div

@@ -77,21 +77,18 @@ export function getSuggestedProducts({
   let candidates = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id));
 
   if (mode === 'counterparts') {
+    // Accessories are always counterparts (pairs), not extras
     if (anchorZone === 'top') {
-      candidates = candidates.filter(p => getBodyZone(p) === 'bottom');
+      candidates = candidates.filter(p => { const z = getBodyZone(p); return z === 'bottom' || z === 'accessory'; });
     } else if (anchorZone === 'bottom') {
-      candidates = candidates.filter(p => getBodyZone(p) === 'top');
+      candidates = candidates.filter(p => { const z = getBodyZone(p); return z === 'top' || z === 'accessory'; });
     } else {
-      candidates.sort((a, b) => {
-        const zA = getBodyZone(a);
-        const zB = getBodyZone(b);
-        if (zA === 'top' && zB !== 'top') return -1;
-        if (zB === 'top' && zA !== 'top') return 1;
-        return 0;
-      });
+      // Accessory anchor: pair with tops and bottoms
+      candidates = candidates.filter(p => { const z = getBodyZone(p); return z === 'top' || z === 'bottom'; });
     }
   } else {
-    const sameZone = candidates.filter(p => getBodyZone(p) === anchorZone);
+    // Extras = same zone, but accessories are excluded (they belong in pairs)
+    const sameZone = candidates.filter(p => { const z = getBodyZone(p); return z === anchorZone && z !== 'accessory'; });
     if (sameZone.length > 0) {
       candidates = sameZone;
     }
