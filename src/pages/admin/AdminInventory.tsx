@@ -763,9 +763,9 @@ export default function AdminInventory() {
                   </div>
 
                   {/* Thumbnail */}
-                  <div className="w-12 h-12 bg-muted/40 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden" style={{ backgroundColor: '#e0e0e0' }}>
                     {p.images.length > 0 ? (
-                      <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover" />
+                      <img src={p.images[0]} alt={p.title} className="w-full h-full object-contain" />
                     ) : (
                       <div className="w-8 h-8 bg-muted/60 rounded-md" />
                     )}
@@ -1039,8 +1039,8 @@ export default function AdminInventory() {
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">IMAGES ({p.images?.length || 0})</p>
                           <div className="flex items-center gap-2 flex-wrap">
                             {p.images?.map((img, imgIdx) => (
-                              <div key={imgIdx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-border/50 bg-secondary/30 flex-shrink-0">
-                                <img src={img} alt={`${p.title} ${imgIdx + 1}`} className="w-full h-full object-cover" />
+                              <div key={imgIdx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-border/50 flex-shrink-0" style={{ backgroundColor: '#e0e0e0' }}>
+                                <img src={img} alt={`${p.title} ${imgIdx + 1}`} className="w-full h-full object-contain" />
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
