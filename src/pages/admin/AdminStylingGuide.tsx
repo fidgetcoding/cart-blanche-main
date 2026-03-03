@@ -521,7 +521,7 @@ export default function AdminStylingGuide() {
                   ) : (
                     <>
                       <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED STYLES</p>
-                      <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
                         {configuredPresets.map(preset => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
                           if (!product) return null;
