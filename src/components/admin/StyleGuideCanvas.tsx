@@ -421,8 +421,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         id: `pending-${connection.source}-${connection.target}`,
         source: connection.source!,
         target: connection.target!,
-        sourceHandle: connection.sourceHandle,
-        targetHandle: connection.targetHandle,
         style: PENDING_STYLE,
         data: { type: 'pending' },
         type: 'default',
@@ -441,8 +439,9 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
     // Check if reverse edge exists for offset
     const newEdge = {
-      ...connection,
       id: `${connectionType}-${connection.source}-${connection.target}`,
+      source: connection.source,
+      target: connection.target,
       style: connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE,
       data: { type: connectionType, offset: 0 },
       type: 'offset' as const,
