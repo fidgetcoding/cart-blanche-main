@@ -185,7 +185,7 @@ function CarouselRow({
   };
 
   return (
-    <div className="relative flex-1 w-full min-h-0 min-w-0">
+    <div className="relative h-full w-full min-h-0 min-w-0">
       {isHorizontal ? (
         <>
           <button
@@ -233,9 +233,9 @@ function CarouselRow({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className={`absolute inset-0 no-scrollbar gap-3 flex cursor-grab active:cursor-grabbing select-none ${
+        className={`absolute inset-0 no-scrollbar gap-3 flex items-start cursor-grab active:cursor-grabbing select-none ${
           isHorizontal
-            ? 'flex-row items-stretch overflow-x-auto overflow-y-hidden px-4'
+            ? 'flex-row overflow-x-auto overflow-y-hidden px-4 py-2'
             : 'flex-col overflow-y-auto overflow-x-hidden px-2 py-3'
         }`}
         style={{
@@ -440,7 +440,7 @@ function LockedPairPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-className="flex flex-col bg-card/50 backdrop-blur-sm flex-1"
+      className="flex flex-col bg-card/50 backdrop-blur-sm h-full"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
@@ -813,7 +813,7 @@ export function StyleKitView() {
           {splitDirection === 'horizontal' && (
             <>
               {/* TOP SLOT — always first */}
-              <div className="h-1/2 min-h-0 flex flex-col">
+              <div className="h-1/2 min-h-0 relative overflow-y-auto">
                 <AnimatePresence mode="wait">
                   {topProduct ? (
                     <LockedPairPanel
@@ -836,7 +836,7 @@ export function StyleKitView() {
               </div>
 
               {/* BOTTOM SLOT — always second */}
-              <div className="h-1/2 min-h-0 flex flex-col border-t border-border">
+              <div className="h-1/2 min-h-0 relative overflow-y-auto border-t border-border">
                 <AnimatePresence mode="wait">
                   {bottomProduct ? (
                     <LockedPairPanel
