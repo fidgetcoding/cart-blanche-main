@@ -241,7 +241,15 @@ export default function AdminStylingGuide() {
 
   const selectedProduct = DEMO_PRODUCTS.find(p => p.id === selectedProductId) ?? null;
   const currentPreset = presets.find(p => p.anchorProductId === selectedProductId);
-  const presetProductIds = new Set(presets.map(p => p.anchorProductId));
+  const presetProductIds = useMemo(() => {
+    const ids = new Set<string>();
+    presets.forEach(p => {
+      ids.add(p.anchorProductId);
+      p.pairs.forEach(id => ids.add(id));
+      p.extras.forEach(id => ids.add(id));
+    });
+    return ids;
+  }, [presets]);
 
   useEffect(() => { loadGuide(); }, []);
 
