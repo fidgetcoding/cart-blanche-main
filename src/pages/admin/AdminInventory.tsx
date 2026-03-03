@@ -134,8 +134,8 @@ export default function AdminInventory() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
 
-  // Mark dirty when editing a product, adding a new one, or pending deletes exist
-  useEffect(() => { if (editingProduct || showAddProduct || pendingDeletes.size > 0) markDirty(); else markClean(); }, [editingProduct, showAddProduct, pendingDeletes, markDirty, markClean]);
+  // Mark dirty when any unsaved state exists
+  useEffect(() => { if (hasUnsavedChanges || editingProduct || showAddProduct || pendingDeletes.size > 0) markDirty(); else markClean(); }, [hasUnsavedChanges, editingProduct, showAddProduct, pendingDeletes, markDirty, markClean]);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
