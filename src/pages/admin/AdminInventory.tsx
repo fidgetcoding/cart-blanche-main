@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
@@ -130,6 +130,9 @@ export default function AdminInventory() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [pendingDeletes, setPendingDeletes] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const lastClickedId = useRef<string | null>(null);
+  const [batchConfirm, setBatchConfirm] = useState<'delete' | 'archive' | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
@@ -424,6 +427,56 @@ export default function AdminInventory() {
     }
     setHasUnsavedChanges(true);
   }
+  // Batch selection logic
+  const handleRowSelect = useCallback((productId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (e.shiftKey && lastClickedId.current) {
+        // Range select between lastClicked and current
+        const ids = filtered.map(p => p.id);
+        const startIdx = ids.indexOf(lastClickedId.current);
+        const endIdx = ids.indexOf(productId);
+        if (startIdx !== -1 && endIdx !== -1) {
+          const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+          for (let i = from; i <= to; i++) next.add(ids[i]);
+        }
+      } else {
+        if (next.has(productId)) next.delete(productId); else next.add(productId);
+      }
+      lastClickedId.current = productId;
+      return next;
+    });
+  }, [filtered]);
+
+  const selectAll = useCallback(() => {
+    const allIds = filtered.map(p => p.id);
+    setSelectedIds(prev => prev.size === allIds.length ? new Set() : new Set(allIds));
+  }, [filtered]);
+
+  async function batchArchive() {
+    setProducts(prev => prev.map(p => selectedIds.has(p.id) ? { ...p, status: 'archived' as const } : p));
+    for (const id of selectedIds) {
+      const p = products.find(pr => pr.id === id);
+      if (p && !p.isDemo) {
+        await supabase.from('products').update({ status: 'archived' }).eq('id', id);
+      }
+    }
+    setSelectedIds(new Set());
+    setBatchConfirm(null);
+    setHasUnsavedChanges(true);
+  }
+
+  async function batchDelete() {
+    for (const id of selectedIds) {
+      const p = products.find(pr => pr.id === id);
+      if (p) await performDelete(p);
+    }
+    setSelectedIds(new Set());
+    setBatchConfirm(null);
+    setHasUnsavedChanges(true);
+  }
+
 
   async function saveAllChanges() {
     if (!hasUnsavedChanges) return;
@@ -807,6 +860,69 @@ export default function AdminInventory() {
         </div>
       ) : (
       <>
+      {/* Batch action bar */}
+      {selectedIds.size > 0 && (
+        <div className="liquid-glass rounded-xl px-4 py-3 mb-3 flex items-center justify-between border border-foreground/10">
+          <div className="flex items-center gap-3">
+            <button onClick={selectAll} className="text-[10px] font-display tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+              {selectedIds.size === filtered.length ? 'DESELECT ALL' : 'SELECT ALL'}
+            </button>
+            <span className="text-[10px] font-display tracking-wider text-foreground/60">{selectedIds.size} SELECTED</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setBatchConfirm('archive')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border border-amber-500/20 text-amber-400 hover:bg-amber-400/10 transition-colors"
+            >
+              <Archive className="w-3.5 h-3.5" /> ARCHIVE ({selectedIds.size})
+            </button>
+            <button
+              onClick={() => setBatchConfirm('delete')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> DELETE ({selectedIds.size})
+            </button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="p-1.5 text-muted-foreground/50 hover:text-foreground transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Batch confirm dialog */}
+      <AnimatePresence>
+        {batchConfirm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="liquid-glass rounded-xl p-6 max-w-sm w-full mx-4 space-y-4 border border-foreground/10">
+              <h3 className="font-display text-sm tracking-wider font-bold">
+                {batchConfirm === 'delete' ? 'DELETE' : 'ARCHIVE'} {selectedIds.size} PRODUCTS?
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {batchConfirm === 'delete'
+                  ? 'This will permanently remove these products from your catalog.'
+                  : 'These products will be moved to the archive and hidden from the storefront.'}
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setBatchConfirm(null)} className="px-4 py-2 text-[10px] font-display tracking-wider border border-foreground/10 rounded-md hover:bg-foreground/5 transition-colors">
+                  CANCEL
+                </button>
+                <button
+                  onClick={batchConfirm === 'delete' ? batchDelete : batchArchive}
+                  className={`px-4 py-2 text-[10px] font-display tracking-wider rounded-md transition-opacity hover:opacity-90 ${
+                    batchConfirm === 'delete' ? 'bg-destructive text-destructive-foreground' : 'bg-amber-500 text-black'
+                  }`}
+                >
+                  {batchConfirm === 'delete' ? 'DELETE ALL' : 'ARCHIVE ALL'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Product list */}
       {loading ? (
         <div className="text-center py-20 text-muted-foreground font-display tracking-wider animate-pulse">LOADING...</div>
@@ -835,13 +951,24 @@ export default function AdminInventory() {
                 onDragEnd={handleDragEnd}
                 className={`liquid-glass rounded-xl overflow-hidden transition-all ${
                   isDragging ? 'opacity-40 scale-[0.98]' : ''
-                } ${isDragOver ? 'ring-2 ring-primary/50 translate-y-[-2px]' : ''}`}
+                } ${isDragOver ? 'ring-2 ring-primary/50 translate-y-[-2px]' : ''} ${selectedIds.has(p.id) ? 'ring-1 ring-foreground/30' : ''}`}
               >
                 {/* Product row */}
                 <div
                   className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}
                 >
+                  {/* Selection checkbox */}
+                  <button
+                    className="flex-shrink-0 text-muted-foreground/40 hover:text-foreground transition-colors"
+                    onClick={(e) => handleRowSelect(p.id, e)}
+                  >
+                    {selectedIds.has(p.id) ? (
+                      <CheckSquare className="w-4 h-4 text-foreground" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                  </button>
                   {/* Drag handle */}
                   {activeFilter === 'all' && (
                     <div
