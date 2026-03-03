@@ -657,18 +657,17 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
       <div className="flex-1 relative" onDragOver={onDragOver} onDrop={onDrop}>
-        {/* Floating toolbar */}
+        {/* Floating toolbar — Add Node + Legend */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2 liquid-glass rounded-lg px-2 py-1.5">
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground/10 text-foreground border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/15 transition-all disabled:opacity-50"
+            onClick={() => createBlankNode({ x: 300, y: 300 })}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground/10 text-foreground border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/15 transition-all"
           >
-            <Save className="w-3.5 h-3.5" />
-            {saving ? 'SAVING...' : 'SAVE'}
+            <Plus className="w-3.5 h-3.5" />
+            ADD NODE
           </button>
           {/* Legend */}
-          <div className="flex items-center gap-3 ml-3 text-[9px] text-muted-foreground font-display tracking-wider">
+          <div className="flex items-center gap-3 ml-2 text-[9px] text-muted-foreground font-display tracking-wider">
             <span className="flex items-center gap-1.5">
               <span className="w-5 h-0.5 rounded" style={{ background: '#60a5fa', boxShadow: '0 0 6px rgba(96, 165, 250, 0.6)' }} />
               PAIRS
@@ -678,6 +677,18 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
               EXTRAS
             </span>
           </div>
+        </div>
+
+        {/* Save button — top right */}
+        <div className="absolute top-4 right-4 z-10">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-3 py-1.5 liquid-glass bg-foreground/10 text-foreground border border-foreground/10 rounded-lg text-[10px] font-display tracking-wider hover:bg-foreground/15 transition-all disabled:opacity-50"
+          >
+            <Save className="w-3.5 h-3.5" />
+            {saving ? 'SAVING...' : 'SAVE'}
+          </button>
         </div>
 
         <ReactFlow
