@@ -316,7 +316,7 @@ export default function AdminStylingGuide() {
     setLoading(false);
   };
 
-  const saveGuide = async () => {
+  const saveGuide = async (silent = false) => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
@@ -329,8 +329,12 @@ export default function AdminStylingGuide() {
     }
     setSaving(false);
     markClean();
-    toast({ title: 'Saved', description: 'Your look book has been saved.' });
+    if (!silent) {
+      toast({ title: 'Saved', description: 'Your look book has been saved.' });
+    }
   };
+
+  const saveGuideSilent = useCallback(() => saveGuide(true), [presets, canvasLayout, guideId]);
 
   const updatePreset = (anchorId: string, field: 'pairs' | 'extras', ids: string[]) => {
     markDirty();
@@ -640,7 +644,8 @@ export default function AdminStylingGuide() {
                 onPresetsChange={(p) => { setPresets(normalizeBidirectional(p)); markDirty(); }}
                 canvasLayout={canvasLayout}
                 onCanvasLayoutChange={(l) => { setCanvasLayout(l); markDirty(); }}
-                onSave={saveGuide}
+                onSave={saveGuideSilent}
+                onManualSave={() => saveGuide()}
                 saving={saving}
                 isDirty={isDirty}
                 onCanvasNodeIdsChange={setCanvasNodeIds}
@@ -677,7 +682,7 @@ export default function AdminStylingGuide() {
                         </div>
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={saveGuide}
+                            onClick={() => saveGuide()}
                             disabled={saving || !isDirty}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-display tracking-wider transition-all disabled:opacity-50 ${
                               isDirty 

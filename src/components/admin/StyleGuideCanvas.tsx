@@ -47,6 +47,7 @@ interface StyleGuideCanvasProps {
   canvasLayout: { positions: Record<string, { x: number; y: number }>; nodeIds?: string[] } | null;
   onCanvasLayoutChange: (layout: any) => void;
   onSave: () => void;
+  onManualSave: () => void;
   saving: boolean;
   isDirty: boolean;
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
@@ -250,6 +251,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   canvasLayout,
   onCanvasLayoutChange,
   onSave,
+  onManualSave,
   saving,
   isDirty,
   onCanvasNodeIdsChange,
@@ -768,7 +770,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       nodeIds.push(n.id);
     });
     onCanvasLayoutChange({ positions: posMap, nodeIds });
-    onSave();
+    onManualSave();
   }, [nodes, onCanvasLayoutChange, onSave]);
 
   // Hotkeys
