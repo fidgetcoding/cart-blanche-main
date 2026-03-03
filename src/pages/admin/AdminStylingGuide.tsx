@@ -574,7 +574,7 @@ export default function AdminStylingGuide() {
                           </button>
                         </div>
                       </div>
-                      <p className="text-[9px] font-display tracking-wider text-foreground/50 -mt-2">Select a product from the sidebar to add a new match</p>
+                      
                       <div className="space-y-3" ref={listContainerRef}>
                         {allPresets.map((preset, presetIndex) => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
@@ -691,7 +691,7 @@ export default function AdminStylingGuide() {
                           );
                         })}
                       </div>
-                      <p className="text-[10px] text-foreground/50 font-display tracking-wider text-center pt-2">Select a product from the sidebar to add more styles</p>
+                      <p className="text-[10px] text-foreground/50 font-display tracking-wider text-center pt-2">Add a new match</p>
                     </>
                   )}
                 </div>
