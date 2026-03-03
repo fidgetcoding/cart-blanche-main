@@ -61,14 +61,31 @@ function classifyGroup(product: DemoProduct): BodyZoneGroup {
   return 'ACCESSORIES';
 }
 
-/* ── Custom Edge with offset for bidirectional connections ── */
+/* ── Custom Edge with smart routing + offset for bidirectional connections ── */
 
 function OffsetEdge({
   sourceX, sourceY, targetX, targetY,
-  sourcePosition, targetPosition,
+  sourcePosition: _sp, targetPosition: _tp,
   style, data, markerEnd, id,
 }: EdgeProps) {
   const offset = (data as any)?.offset || 0;
+
+  // Determine smart source/target positions based on relative node positions
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+
+  let sourcePosition: Position;
+  let targetPosition: Position;
+
+  if (absDx >= absDy) {
+    sourcePosition = dx > 0 ? Position.Right : Position.Left;
+    targetPosition = dx > 0 ? Position.Left : Position.Right;
+  } else {
+    sourcePosition = dy > 0 ? Position.Bottom : Position.Top;
+    targetPosition = dy > 0 ? Position.Top : Position.Bottom;
+  }
 
   const [path] = getBezierPath({
     sourceX,
