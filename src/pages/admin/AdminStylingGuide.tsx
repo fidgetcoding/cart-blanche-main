@@ -510,7 +510,7 @@ export default function AdminStylingGuide() {
                         <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED MATCHES</p>
                         <button
                           onClick={() => { if (editMode) { setEditMode(false); saveGuide(); } else { setEditMode(true); setExpandedProductId(null); } }}
-                          className={`p-1.5 rounded-md transition-all ${editMode ? 'bg-primary/20 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                          className={`p-1.5 rounded-md transition-all ${editMode ? 'bg-green-500/20 text-green-400' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
                           title={editMode ? 'Done editing' : 'Edit matches'}
                         >
                           {editMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
