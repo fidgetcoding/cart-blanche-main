@@ -221,6 +221,7 @@ export default function AdminStylingGuide() {
   const [blankNodeActive, setBlankNodeActive] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [matchFilter, setMatchFilter] = useState<'ALL' | BodyZoneGroup>('ALL');
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [listDragHover, setListDragHover] = useState(false);
   const { isDirty, markDirty, markClean, BlockerDialog } = useUnsavedChanges();
@@ -613,8 +614,25 @@ export default function AdminStylingGuide() {
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-display tracking-[0.2em] text-foreground/80">CONFIGURED MATCHES</p>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-3">
+                          <p className="text-[10px] font-display tracking-[0.2em] text-foreground/80">CONFIGURED MATCHES</p>
+                          <div className="flex flex-wrap gap-1">
+                            {(['ALL', 'TOPS', 'BOTTOMS', 'ACCESSORIES'] as const).map(cat => (
+                              <button
+                                key={cat}
+                                onClick={() => setMatchFilter(cat)}
+                                className={`px-2.5 py-1 rounded-full text-[9px] font-display tracking-wider transition-all duration-200 ${
+                                  matchFilter === cat
+                                    ? 'bg-foreground/15 text-foreground border border-foreground/20 shadow-[0_0_8px_rgba(255,255,255,0.05)]'
+                                    : 'bg-foreground/5 text-muted-foreground border border-foreground/8 hover:bg-foreground/10 hover:text-foreground/80'
+                                }`}
+                              >
+                                {cat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={saveGuide}
@@ -640,7 +658,11 @@ export default function AdminStylingGuide() {
                       </div>
                       
                       <div className="space-y-3" ref={listContainerRef}>
-                        {allPresets.map((preset, presetIndex) => {
+                        {allPresets.filter(preset => {
+                          if (matchFilter === 'ALL') return true;
+                          const p = DEMO_PRODUCTS.find(pr => pr.id === preset.anchorProductId);
+                          return p ? classifyGroup(p) === matchFilter : false;
+                        }).map((preset, presetIndex) => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
                           if (!product) return null;
                           const isExpanded = expandedProductId === preset.anchorProductId;
