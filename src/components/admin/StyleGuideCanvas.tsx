@@ -1071,7 +1071,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           }}
         >
           <p className="text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO SELECT</p>
-          <p className="text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">P TO ADD · DEL TO REMOVE · F TO FIT · ⌘S TO SAVE</p>
+          <p className="text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">P TO ADD · DEL TO REMOVE · F TO FIT · ⇧F TO ARRANGE · ⌘S TO SAVE</p>
           <p className="text-muted-foreground/30 hover:text-foreground/80 transition-colors duration-500">DRAG PORT TO CONNECT · DOUBLE-CLICK TO ADD NODE</p>
         </div>
       </div>
