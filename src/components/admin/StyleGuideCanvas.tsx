@@ -301,15 +301,58 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onPresetsChange(edgesToPresets(currentEdges));
   }, [onPresetsChange]);
 
-  // Sync external preset changes (from list view) into canvas edges
+  // Sync external preset changes (from list view) into canvas edges + auto-create missing nodes
   useEffect(() => {
     if (isInternalChangeRef.current) {
       isInternalChangeRef.current = false;
       return;
     }
-    // Rebuild edges from presets for nodes that exist on canvas
-    const nodeIds = new Set(nodes.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
-    const newPresetEdges = presetsToEdges(presets).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+
+    // Collect all product IDs referenced in presets
+    const presetProductIds = new Set<string>();
+    presets.forEach(p => {
+      if (p.pairs.length > 0 || p.extras.length > 0) {
+        presetProductIds.add(p.anchorProductId);
+        p.pairs.forEach(id => presetProductIds.add(id));
+        p.extras.forEach(id => presetProductIds.add(id));
+      }
+    });
+
+    // Find which ones are missing from canvas
+    const existingNodeIds = new Set(nodes.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
+    const missingIds = Array.from(presetProductIds).filter(id => !existingNodeIds.has(id));
+
+    // Auto-create nodes for missing products in a grid layout
+    if (missingIds.length > 0) {
+      const newNodes: Node[] = [];
+      // Find bounding box of existing nodes to place new ones nearby
+      let startX = 0;
+      let startY = 0;
+      if (nodes.length > 0) {
+        const maxX = Math.max(...nodes.map(n => n.position.x));
+        startX = maxX + 200;
+        startY = nodes[0]?.position.y ?? 0;
+      }
+
+      missingIds.forEach((id, i) => {
+        const product = DEMO_PRODUCTS.find(p => p.id === id);
+        if (!product) return;
+        newNodes.push({
+          id: product.id,
+          type: 'product',
+          position: { x: startX + (i % 3) * 180, y: startY + Math.floor(i / 3) * 180 },
+          data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+        });
+      });
+
+      if (newNodes.length > 0) {
+        setNodes(nds => [...nds, ...newNodes]);
+      }
+    }
+
+    // Rebuild edges from presets — now all referenced nodes exist
+    const allNodeIds = new Set([...existingNodeIds, ...missingIds]);
+    const newPresetEdges = presetsToEdges(presets).filter(e => allNodeIds.has(e.source) && allNodeIds.has(e.target));
     // Keep pending/blank edges
     setEdges(eds => {
       const pendingEdges = eds.filter(e => (e.data as any)?.type === 'pending' || e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID);
