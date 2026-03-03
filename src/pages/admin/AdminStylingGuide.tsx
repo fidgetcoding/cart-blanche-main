@@ -298,11 +298,54 @@ export default function AdminStylingGuide() {
   const updatePreset = (anchorId: string, field: 'pairs' | 'extras', ids: string[]) => {
     markDirty();
     setPresets(prev => {
-      const existing = prev.find(p => p.anchorProductId === anchorId);
+      let updated = [...prev];
+      
+      // Update the anchor's preset
+      const existing = updated.find(p => p.anchorProductId === anchorId);
       if (existing) {
-        return prev.map(p => p.anchorProductId === anchorId ? { ...p, [field]: ids } : p);
+        updated = updated.map(p => p.anchorProductId === anchorId ? { ...p, [field]: ids } : p);
+      } else {
+        updated.push({ anchorProductId: anchorId, pairs: field === 'pairs' ? ids : [], extras: field === 'extras' ? ids : [] });
       }
-      return [...prev, { anchorProductId: anchorId, pairs: field === 'pairs' ? ids : [], extras: field === 'extras' ? ids : [] }];
+      
+      // Detect additions and removals for bidirectional sync
+      const oldIds = existing?.[field] ?? [];
+      const addedIds = ids.filter(id => !oldIds.includes(id));
+      const removedIds = oldIds.filter(id => !ids.includes(id));
+      
+      // For each ADDED target, create the reverse relationship
+      addedIds.forEach(targetId => {
+        const targetPreset = updated.find(p => p.anchorProductId === targetId);
+        if (targetPreset) {
+          if (!targetPreset[field].includes(anchorId)) {
+            updated = updated.map(p => 
+              p.anchorProductId === targetId 
+                ? { ...p, [field]: [...p[field], anchorId] }
+                : p
+            );
+          }
+        } else {
+          updated.push({
+            anchorProductId: targetId,
+            pairs: field === 'pairs' ? [anchorId] : [],
+            extras: field === 'extras' ? [anchorId] : [],
+          });
+        }
+      });
+      
+      // For each REMOVED target, remove the reverse relationship
+      removedIds.forEach(targetId => {
+        const targetPreset = updated.find(p => p.anchorProductId === targetId);
+        if (targetPreset) {
+          updated = updated.map(p =>
+            p.anchorProductId === targetId
+              ? { ...p, [field]: p[field].filter(id => id !== anchorId) }
+              : p
+          );
+        }
+      });
+      
+      return updated;
     });
   };
 
