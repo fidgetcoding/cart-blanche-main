@@ -681,34 +681,24 @@ export function StyleKitView() {
   };
 
   const handleAddSetToCart = () => {
-    if (topProduct) {
-      const variant = topSize
-        ? topProduct.variants.find(v => v.title === topSize)
-        : topProduct.variants[0];
+    // Add every item in the look to cart — works for both PAIRS and EXTRAS
+    lookItems.forEach(product => {
+      const selectedSize = getBodyZone(product) === 'top' ? topSize : bottomSize;
+      
+      const variant = selectedSize
+        ? product.variants.find(v => v.title === selectedSize)
+        : product.variants[0];
+      
       if (variant) {
         addItem({
-          productId: topProduct.id,
+          productId: product.id,
           variantId: variant.id,
-          title: topProduct.title,
+          title: product.title,
           variantTitle: variant.title,
-          price: variant.price ?? topProduct.price,
+          price: variant.price ?? product.price,
         });
       }
-    }
-    if (bottomProduct) {
-      const variant = bottomSize
-        ? bottomProduct.variants.find(v => v.title === bottomSize)
-        : bottomProduct.variants[0];
-      if (variant) {
-        addItem({
-          productId: bottomProduct.id,
-          variantId: variant.id,
-          title: bottomProduct.title,
-          variantTitle: variant.title,
-          price: variant.price ?? bottomProduct.price,
-        });
-      }
-    }
+    });
     closeStyleKit();
   };
 
@@ -736,7 +726,7 @@ export function StyleKitView() {
   const bothFilled = topProduct && bottomProduct;
   const topSizeReady = !topProduct || topProduct.variants.length <= 1 || topSize !== null;
   const bottomSizeReady = !bottomProduct || bottomProduct.variants.length <= 1 || bottomSize !== null;
-  const canAddSet = bothFilled && topSizeReady && bottomSizeReady;
+  const canAddSet = !!bothFilled;
 
   // For extras mode, use the old anchor/paired ready checks
   const extrasPairedSizeReady = !pairedProduct || pairedProduct.variants.length <= 1;
@@ -931,15 +921,10 @@ export function StyleKitView() {
               </div>
               <button
                 onClick={handleAddSetToCart}
-                disabled={!canAddSet}
-                className={`w-full py-3.5 rounded-lg font-display text-sm font-bold tracking-[0.15em] flex items-center justify-center gap-2 transition-all ${
-                  canAddSet
-                    ? 'bg-primary text-primary-foreground hover:opacity-90'
-                    : 'bg-muted text-muted-foreground cursor-not-allowed'
-                }`}
+                className="w-full py-3.5 rounded-lg font-display text-sm font-bold tracking-[0.15em] flex items-center justify-center gap-2 transition-all bg-primary text-primary-foreground hover:opacity-90"
               >
                 <ShoppingBag className="w-4 h-4" />
-                {canAddSet ? 'ADD SET TO CART' : 'SELECT SIZES TO CONTINUE'}
+                ADD SET TO CART
               </button>
             </motion.div>
           )}
