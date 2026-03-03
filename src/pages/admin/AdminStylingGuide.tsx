@@ -19,7 +19,37 @@ function classifyGroup(product: DemoProduct): BodyZoneGroup {
   return 'ACCESSORIES';
 }
 
-/** Ordered preset list with drag reorder + remove */
+/** Normalize presets so every A→B also has B→A (idempotent) */
+function normalizeBidirectional(presets: ProductPreset[]): ProductPreset[] {
+  const map = new Map<string, { pairs: Set<string>; extras: Set<string> }>();
+  presets.forEach(p => {
+    if (!map.has(p.anchorProductId)) {
+      map.set(p.anchorProductId, { pairs: new Set(p.pairs), extras: new Set(p.extras) });
+    } else {
+      const entry = map.get(p.anchorProductId)!;
+      p.pairs.forEach(id => entry.pairs.add(id));
+      p.extras.forEach(id => entry.extras.add(id));
+    }
+  });
+  const snapshot = Array.from(map.entries());
+  snapshot.forEach(([anchorId, { pairs, extras }]) => {
+    pairs.forEach(targetId => {
+      if (!map.has(targetId)) map.set(targetId, { pairs: new Set([anchorId]), extras: new Set() });
+      else map.get(targetId)!.pairs.add(anchorId);
+    });
+    extras.forEach(targetId => {
+      if (!map.has(targetId)) map.set(targetId, { pairs: new Set(), extras: new Set([anchorId]) });
+      else map.get(targetId)!.extras.add(anchorId);
+    });
+  });
+  return Array.from(map.entries()).map(([anchorProductId, { pairs, extras }]) => ({
+    anchorProductId,
+    pairs: Array.from(pairs),
+    extras: Array.from(extras),
+  }));
+}
+
+
 function PresetList({
   label,
   description,
@@ -274,7 +304,7 @@ export default function AdminStylingGuide() {
       setGuideId(data.id);
       const rules = data.rules as any;
       if (rules?.version === 2 && Array.isArray(rules.presets)) {
-        setPresets(rules.presets);
+        setPresets(normalizeBidirectional(rules.presets));
         setCanvasLayout(rules.canvasLayout || null);
       }
     }
@@ -602,7 +632,7 @@ export default function AdminStylingGuide() {
               <StyleGuideCanvas
                 ref={canvasRef}
                 presets={presets}
-                onPresetsChange={(p) => { setPresets(p); markDirty(); }}
+                onPresetsChange={(p) => { setPresets(normalizeBidirectional(p)); markDirty(); }}
                 canvasLayout={canvasLayout}
                 onCanvasLayoutChange={(l) => { setCanvasLayout(l); markDirty(); }}
                 onSave={saveGuide}
