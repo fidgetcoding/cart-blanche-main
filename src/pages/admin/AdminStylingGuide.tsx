@@ -498,18 +498,17 @@ export default function AdminStylingGuide() {
         {/* RIGHT: View-specific content */}
         <div
           className="flex-1 min-h-0"
-          onDragOverCapture={(e) => {
-            if (activeView === 'list' && e.dataTransfer.types.includes('application/product-id')) {
+          onDragOver={(e) => {
+            if (activeView === 'list' && e.target === e.currentTarget && e.dataTransfer.types.includes('application/product-id')) {
               e.preventDefault();
               e.dataTransfer.dropEffect = 'copy';
             }
           }}
-          onDropCapture={(e) => {
-            if (activeView === 'list') {
+          onDrop={(e) => {
+            if (activeView === 'list' && e.target === e.currentTarget) {
               const productId = e.dataTransfer.getData('application/product-id');
               if (productId) {
                 e.preventDefault();
-                e.stopPropagation();
                 setSelectedProductId(productId);
               }
             }
