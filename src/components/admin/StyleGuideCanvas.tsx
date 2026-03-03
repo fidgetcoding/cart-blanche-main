@@ -322,9 +322,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onPresetsChange(edgesToPresets(currentEdges));
   }, [onPresetsChange]);
 
-  // Track if we need to rebuild edges after nodes are added
-  const pendingEdgeRebuildRef = useRef(false);
-
   // Sync external preset changes (from list view) into canvas edges + auto-create missing nodes
   useEffect(() => {
     if (isInternalChangeRef.current) {
@@ -355,48 +352,63 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         startY = maxY + 250;
       }
 
-      // Layout missing nodes as anchor-paired rows: anchor on left, paired on right, one row per preset
+      // Layout: anchor on left, pairs to right, extras below
       const newNodes: Node[] = [];
       const placed = new Set<string>();
-      let rowIndex = 0;
+      let groupY = startY;
 
       presets.forEach(p => {
         if (p.pairs.length === 0 && p.extras.length === 0) return;
         const anchorId = p.anchorProductId;
-        // Place anchor on the left if missing
+
         if (missingIds.includes(anchorId) && !placed.has(anchorId)) {
           const product = DEMO_PRODUCTS.find(pr => pr.id === anchorId);
           if (product) {
             newNodes.push({
               id: product.id,
               type: 'product',
-              position: { x: startX, y: startY + rowIndex * 250 },
+              position: { x: startX, y: groupY },
               data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
             });
             placed.add(anchorId);
           }
         }
-        // Place paired products to the right
-        let colIndex = 1;
-        [...p.pairs, ...p.extras].forEach(pairedId => {
+
+        p.pairs.forEach((pairedId, i) => {
           if (missingIds.includes(pairedId) && !placed.has(pairedId)) {
             const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
             if (product) {
               newNodes.push({
                 id: product.id,
                 type: 'product',
-                position: { x: startX + colIndex * 220, y: startY + rowIndex * 250 },
+                position: { x: startX + 250 + (i * 200), y: groupY },
                 data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
               });
               placed.add(pairedId);
-              colIndex++;
             }
           }
         });
-        if (placed.has(anchorId)) rowIndex++;
+
+        p.extras.forEach((extraId, i) => {
+          if (missingIds.includes(extraId) && !placed.has(extraId)) {
+            const product = DEMO_PRODUCTS.find(pr => pr.id === extraId);
+            if (product) {
+              newNodes.push({
+                id: product.id,
+                type: 'product',
+                position: { x: startX, y: groupY + 200 + (i * 180) },
+                data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+              });
+              placed.add(extraId);
+            }
+          }
+        });
+
+        const groupHeight = Math.max(1, p.extras.length) * 200 + 100;
+        groupY += groupHeight;
       });
 
-      // Any remaining missing ids not part of a preset row
+      // Remaining missing ids not in any preset
       missingIds.forEach(id => {
         if (placed.has(id)) return;
         const product = DEMO_PRODUCTS.find(pr => pr.id === id);
@@ -404,17 +416,27 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         newNodes.push({
           id: product.id,
           type: 'product',
-          position: { x: startX, y: startY + rowIndex * 250 },
+          position: { x: startX, y: groupY },
           data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
         });
         placed.add(id);
-        rowIndex++;
+        groupY += 250;
       });
 
       if (newNodes.length > 0) {
-        setNodes(nds => [...nds, ...newNodes]);
-        // Defer edge rebuild to next render when nodes exist
-        pendingEdgeRebuildRef.current = true;
+        setNodes(nds => {
+          const allNodes = [...nds, ...newNodes];
+          // Rebuild edges using the combined node list (avoids stale closure)
+          const allNodeIds = new Set(allNodes.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
+          const newEdges = presetsToEdges(presets).filter(e => allNodeIds.has(e.source) && allNodeIds.has(e.target));
+          setTimeout(() => {
+            setEdges(eds => {
+              const pendingEdges = eds.filter(e => (e.data as any)?.type === 'pending');
+              return [...newEdges, ...pendingEdges];
+            });
+          }, 0);
+          return allNodes;
+        });
         return;
       }
     }
@@ -423,16 +445,9 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     rebuildEdgesFromPresets();
   }, [presets]);
 
-  // Deferred edge rebuild after nodes are added
-  useEffect(() => {
-    if (pendingEdgeRebuildRef.current) {
-      pendingEdgeRebuildRef.current = false;
-      rebuildEdgesFromPresets();
-    }
-  }, [nodes]);
-
-  const rebuildEdgesFromPresets = useCallback(() => {
-    const nodeIds = new Set(nodes.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
+  const rebuildEdgesFromPresets = useCallback((currentNodes?: Node[]) => {
+    const nodesForEdges = currentNodes ?? nodes;
+    const nodeIds = new Set(nodesForEdges.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
     const newPresetEdges = presetsToEdges(presets).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
     setEdges(eds => {
       const pendingEdges = eds.filter(e => (e.data as any)?.type === 'pending' || e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID);
@@ -798,7 +813,10 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   // Sidebar helpers
   const selectedProduct = selectedNodeId ? DEMO_PRODUCTS.find(p => p.id === selectedNodeId) : null;
-  const selectedPreset = selectedNodeId ? edgesToPresets(edges).find(p => p.anchorProductId === selectedNodeId) : null;
+  const selectedPreset = selectedNodeId 
+    ? (edgesToPresets(edges).find(p => p.anchorProductId === selectedNodeId) 
+       ?? presets.find(p => p.anchorProductId === selectedNodeId))
+    : null;
 
   const removeConnection = useCallback((targetId: string, type: 'pairs' | 'extras') => {
     setEdges(eds => {
