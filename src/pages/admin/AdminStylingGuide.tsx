@@ -504,7 +504,7 @@ export default function AdminStylingGuide() {
                   ) : (
                     <>
                       <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED STYLES</p>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-3">
                         {allPresets.map(preset => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
                           if (!product) return null;
@@ -516,7 +516,7 @@ export default function AdminStylingGuide() {
                           const eAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; return getBodyZone(p) === zone; });
 
                           return (
-                            <div key={preset.anchorProductId} className={`rounded-lg bg-foreground/5 border border-foreground/8 overflow-hidden transition-all ${isExpanded ? 'col-span-2' : ''}`}>
+                            <div key={preset.anchorProductId} className="rounded-lg bg-foreground/5 border border-foreground/8 overflow-hidden transition-all">
                               {/* Card header — click to expand/collapse */}
                               <button
                                 onClick={() => {
