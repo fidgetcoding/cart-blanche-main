@@ -691,7 +691,7 @@ export default function AdminStylingGuide() {
                           );
                         })}
                       </div>
-                      <p className="text-[10px] text-foreground/50 font-display tracking-wider text-center pt-2">Add a new match</p>
+                      <p className="text-[10px] text-foreground/50 font-display tracking-wider text-center pt-2">Select a product from the sidebar to create a new match</p>
                     </>
                   )}
                 </div>
