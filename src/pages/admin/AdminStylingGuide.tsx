@@ -368,7 +368,7 @@ export default function AdminStylingGuide() {
       <BlockerDialog />
     <div className="flex flex-col h-full border-t border-border">
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
-        <h1 className="font-display text-2xl font-bold tracking-wide">Style Guide</h1>
+        <h1 className="font-display text-2xl font-bold tracking-wide">Look Book</h1>
         <div className="flex items-center bg-secondary rounded-lg p-1">
           <button
             onClick={() => setActiveView('list')}
