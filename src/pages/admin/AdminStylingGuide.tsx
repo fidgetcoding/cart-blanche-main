@@ -494,7 +494,7 @@ export default function AdminStylingGuide() {
         <h1 className="font-display text-2xl font-bold tracking-wide">Look Book</h1>
         <div className="flex items-center bg-secondary rounded-lg p-1">
           <button
-            onClick={() => setActiveView('list')}
+            onClick={() => { setActiveView('list'); setExpandedProductId(null); }}
             className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
               activeView === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
             }`}
