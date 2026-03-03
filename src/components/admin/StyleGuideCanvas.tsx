@@ -769,7 +769,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       }
       if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        fitView({ duration: 400, padding: 0.45 });
+        fitView({ duration: 400, padding: 0.7 });
       }
       if (e.key === 'Escape') {
         if (hasBlankNode()) {
