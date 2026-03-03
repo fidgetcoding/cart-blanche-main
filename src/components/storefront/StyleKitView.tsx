@@ -235,7 +235,7 @@ function CarouselRow({
         onPointerLeave={handlePointerUp}
         className={`absolute inset-0 no-scrollbar gap-3 flex items-start cursor-grab active:cursor-grabbing select-none ${
           isHorizontal
-            ? 'flex-row overflow-x-auto overflow-y-hidden p-4'
+            ? 'flex-row overflow-x-auto overflow-y-hidden px-4 py-2'
             : 'flex-col overflow-y-auto overflow-x-hidden px-2 py-3'
         }`}
         style={{
@@ -440,7 +440,7 @@ function LockedPairPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="flex flex-col bg-card/50 backdrop-blur-sm border-t border-border h-full"
+      className="flex flex-col bg-card/50 backdrop-blur-sm h-full"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
