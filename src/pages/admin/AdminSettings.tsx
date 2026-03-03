@@ -69,7 +69,7 @@ export default function AdminSettings() {
   return (
     <>
     <BlockerDialog />
-    <div className="p-5 max-w-2xl">
+    <div className="p-5 max-w-3xl mx-auto w-full">
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-display text-xl font-bold">Settings</h1>
         <button onClick={handleSave} disabled={saving}
