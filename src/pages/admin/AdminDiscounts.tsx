@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight, Tag, Percent, DollarSign, Truck } from 'lucide-react';
+import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 
 interface DiscountCode {
   id: string;
@@ -41,6 +42,10 @@ export default function AdminDiscounts() {
   const [formExpiresAt, setFormExpiresAt] = useState('');
   const [formActive, setFormActive] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
+
+  // Mark dirty when form is open with changes
+  useEffect(() => { if (showForm) markDirty(); else markClean(); }, [showForm, markDirty, markClean]);
 
   useEffect(() => {
     fetchCodes();
@@ -150,6 +155,8 @@ export default function AdminDiscounts() {
   }
 
   return (
+    <>
+    <BlockerDialog />
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl font-bold">Discount Codes</h1>
@@ -351,5 +358,6 @@ export default function AdminDiscounts() {
         </div>
       )}
     </div>
+    </>
   );
 }

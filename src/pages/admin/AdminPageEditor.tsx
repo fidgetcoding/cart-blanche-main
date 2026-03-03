@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { GripVertical, Save, RotateCcw, Plus, Loader2, Pencil, Check, Eye, EyeOff, X } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
@@ -118,6 +119,10 @@ export default function AdminPageEditor() {
   const [hasChanges, setHasChanges] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { markDirty: markGridDirty, markClean: markGridClean, BlockerDialog: GridBlockerDialog } = useUnsavedChanges();
+
+  // Sync hasChanges with navigation blocker
+  useEffect(() => { if (hasChanges) markGridDirty(); else markGridClean(); }, [hasChanges, markGridDirty, markGridClean]);
   const [addingTab, setAddingTab] = useState(false);
   const [newTabName, setNewTabName] = useState('');
 
@@ -282,6 +287,8 @@ export default function AdminPageEditor() {
   }
 
   return (
+    <>
+    <GridBlockerDialog />
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between p-6 pb-4 flex-shrink-0">
@@ -483,5 +490,6 @@ export default function AdminPageEditor() {
         </div>
       </div>
     </div>
+    </>
   );
 }
