@@ -530,6 +530,18 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     if (!product) return;
     // Don't add duplicates
     if (nodes.some(n => n.id === productId)) return;
+
+    // Check if dropped on a blank node
+    const targetElement = document.elementFromPoint(event.clientX, event.clientY);
+    const nodeElement = targetElement?.closest('.react-flow__node');
+    if (nodeElement) {
+      const targetNodeId = nodeElement.getAttribute('data-id');
+      if (targetNodeId === BLANK_NODE_ID) {
+        fillBlankNode(product);
+        return;
+      }
+    }
+
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
     const newNode: Node = {
       id: product.id,
@@ -539,7 +551,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     };
     setNodes(nds => [...nds, newNode]);
     setSelectedNodeId(product.id);
-  }, [screenToFlowPosition, nodes, setNodes, removeNodeFromCanvas]);
+  }, [screenToFlowPosition, nodes, setNodes, removeNodeFromCanvas, fillBlankNode]);
 
   const handleSave = useCallback(() => {
     const posMap: Record<string, { x: number; y: number }> = {};
