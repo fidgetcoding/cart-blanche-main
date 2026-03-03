@@ -187,6 +187,8 @@ export default function AdminStylingGuide() {
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
   const [blankNodeActive, setBlankNodeActive] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
   const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
 
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
@@ -515,8 +517,8 @@ export default function AdminStylingGuide() {
                         </button>
                       </div>
                       <p className="text-[9px] font-display tracking-wider text-muted-foreground/40 -mt-2">Select a product from the sidebar to add a new match</p>
-                      <div className="space-y-3">
-                        {allPresets.map(preset => {
+                      <div className="space-y-3" ref={listContainerRef}>
+                        {allPresets.map((preset, presetIndex) => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
                           if (!product) return null;
                           const isExpanded = expandedProductId === preset.anchorProductId;
@@ -529,38 +531,66 @@ export default function AdminStylingGuide() {
                           return (
                             <div
                               key={preset.anchorProductId}
-                              className="rounded-lg bg-foreground/5 border border-foreground/8 overflow-hidden transition-all"
-                              draggable={editMode}
-                              onDragStart={(e) => { e.dataTransfer.setData('preset-index', String(allPresets.indexOf(preset))); }}
-                              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary/50'); }}
-                              onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary/50'); }}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                e.currentTarget.classList.remove('border-primary/50');
-                                const fromIdx = parseInt(e.dataTransfer.getData('preset-index'));
-                                const toIdx = allPresets.indexOf(preset);
-                                if (fromIdx !== toIdx && !isNaN(fromIdx)) {
-                                  setPresets(prev => {
-                                    const next = [...prev];
-                                    const [moved] = next.splice(fromIdx, 1);
-                                    next.splice(toIdx, 0, moved);
-                                    return next;
-                                  });
-                                  markDirty();
-                                }
-                              }}
+                              className={`rounded-lg bg-foreground/5 border border-foreground/8 overflow-hidden transition-all ${dragIdx === presetIndex ? 'opacity-50 scale-95' : ''}`}
                             >
                               {/* Card header */}
-                              <button
+                              <div
+                                onPointerDown={(e) => {
+                                  if (!editMode) return;
+                                  e.preventDefault();
+                                  const startY = e.clientY;
+                                  setDragIdx(presetIndex);
+                                  const container = listContainerRef.current;
+                                  if (!container) return;
+
+                                  const onMove = (ev: PointerEvent) => {
+                                    const cards = Array.from(container.children) as HTMLElement[];
+                                    const currentY = ev.clientY;
+                                    // Find which card we're hovering over by checking midpoints
+                                    for (let i = 0; i < cards.length; i++) {
+                                      if (i === presetIndex) continue;
+                                      const rect = cards[i].getBoundingClientRect();
+                                      const mid = rect.top + rect.height / 2;
+                                      if (presetIndex < i && currentY > mid) {
+                                        setPresets(prev => {
+                                          const next = [...prev];
+                                          const [moved] = next.splice(presetIndex, 1);
+                                          next.splice(i, 0, moved);
+                                          return next;
+                                        });
+                                        presetIndex = i;
+                                        markDirty();
+                                        break;
+                                      } else if (presetIndex > i && currentY < mid) {
+                                        setPresets(prev => {
+                                          const next = [...prev];
+                                          const [moved] = next.splice(presetIndex, 1);
+                                          next.splice(i, 0, moved);
+                                          return next;
+                                        });
+                                        presetIndex = i;
+                                        markDirty();
+                                        break;
+                                      }
+                                    }
+                                  };
+
+                                  const onUp = () => {
+                                    setDragIdx(null);
+                                    window.removeEventListener('pointermove', onMove);
+                                    window.removeEventListener('pointerup', onUp);
+                                  };
+
+                                  window.addEventListener('pointermove', onMove);
+                                  window.addEventListener('pointerup', onUp);
+                                }}
                                 onClick={() => {
-                                  if (editMode) {
-                                    // In edit mode, clicking deletes
-                                  } else {
+                                  if (!editMode) {
                                     setExpandedProductId(isExpanded ? null : preset.anchorProductId);
                                     setSelectedProductId(preset.anchorProductId);
                                   }
                                 }}
-                                className={`w-full flex items-center gap-3 p-3 hover:bg-foreground/10 transition-all text-left group ${editMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                                className={`w-full flex items-center gap-3 p-3 hover:bg-foreground/10 transition-all text-left group ${editMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
                               >
                                 {editMode && <GripVertical className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />}
                                 <img src={getImageUrl(product.images[0], 'thumb')} alt={product.title} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
@@ -584,7 +614,7 @@ export default function AdminStylingGuide() {
                                 ) : (
                                   <svg className={`w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                 )}
-                              </button>
+                              </div>
 
                               {/* Expanded dropdown content */}
                               {isExpanded && (
