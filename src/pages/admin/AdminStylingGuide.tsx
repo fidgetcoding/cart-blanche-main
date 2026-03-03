@@ -534,6 +534,11 @@ export default function AdminStylingGuide() {
                                     {preset.pairs.length === 0 && preset.extras.length === 0 && <span className="text-[8px] font-display tracking-wider text-muted-foreground/50">NO MATCHES YET</span>}
                                   </div>
                                 </div>
+                                {isExpanded && (
+                                  <button onClick={(e) => { e.stopPropagation(); saveGuide(); }} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground font-display text-[10px] tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0">
+                                    <Save className="w-3 h-3" />{saving ? 'SAVING...' : 'SAVE'}
+                                  </button>
+                                )}
                                 <svg className={`w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                               </button>
 
@@ -551,11 +556,6 @@ export default function AdminStylingGuide() {
                                       onAdd={(p) => addToPreset('extras', p)}
                                       onRemove={(id) => removeFromPreset('extras', id)}
                                       onReorder={(newItems) => updatePreset(preset.anchorProductId, 'extras', newItems.map(p => p.id))} />
-                                  </div>
-                                  <div className="flex justify-end pt-1">
-                                    <button onClick={saveGuide} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50">
-                                      <Save className="w-4 h-4" />{saving ? 'SAVING...' : 'SAVE'}
-                                    </button>
                                   </div>
                                 </div>
                               )}
