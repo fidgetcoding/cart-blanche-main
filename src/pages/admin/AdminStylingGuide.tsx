@@ -168,7 +168,7 @@ function PresetList({
           className="flex items-center gap-1 px-3 py-1.5 border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/5 transition-colors"
         >
           <Plus className="w-3 h-3" />
-          ADD PRODUCT
+          ADD MATCH
         </button>
         {pickerOpen && (
           <ProductPicker
