@@ -555,7 +555,7 @@ export default function AdminStylingGuide() {
                   ) : (
                     <>
                       <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED MATCHES</p>
+                        <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">CONFIGURED MATCHES</p>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={saveGuide}
@@ -574,7 +574,7 @@ export default function AdminStylingGuide() {
                           </button>
                         </div>
                       </div>
-                      <p className="text-[9px] font-display tracking-wider text-muted-foreground/40 -mt-2">Select a product from the sidebar to add a new match</p>
+                      <p className="text-[9px] font-display tracking-wider text-muted-foreground/60 -mt-2">Select a product from the sidebar to add a new match</p>
                       <div className="space-y-3" ref={listContainerRef}>
                         {allPresets.map((preset, presetIndex) => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
@@ -691,7 +691,7 @@ export default function AdminStylingGuide() {
                           );
                         })}
                       </div>
-                      <p className="text-[10px] text-muted-foreground/40 font-display tracking-wider text-center pt-2">Select a product from the sidebar to add more styles</p>
+                      <p className="text-[10px] text-muted-foreground/60 font-display tracking-wider text-center pt-2">Select a product from the sidebar to add more styles</p>
                     </>
                   )}
                 </div>
