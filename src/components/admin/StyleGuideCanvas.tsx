@@ -27,6 +27,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /* ── Constants ── */
 const BLANK_NODE_ID = '__blank__';
+const NODE_W = 120;
+const NODE_H = 150;
+const H_GAP = 80;
+const V_GAP = 80;
+const GROUP_GAP = 120;
 const PAIRS_STYLE = { stroke: '#facc15', strokeWidth: 2, filter: 'drop-shadow(0 0 4px rgba(250, 204, 21, 0.5))' };
 const EXTRAS_STYLE = { stroke: '#f472b6', strokeWidth: 2, strokeDasharray: '6 4', filter: 'drop-shadow(0 0 4px rgba(244, 114, 182, 0.5))' };
 const PENDING_STYLE = { stroke: '#60a5fa', strokeWidth: 2, strokeDasharray: '4 4', filter: 'drop-shadow(0 0 4px rgba(96, 165, 250, 0.4))' };
@@ -374,78 +379,80 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       let startY = 100;
       if (nodes.length > 0) {
         const maxY = Math.max(...nodes.map(n => n.position.y));
-        startY = maxY + 250;
+        startY = maxY + NODE_H + GROUP_GAP;
       }
 
-      // Layout: anchor on left, pairs to right, extras below
       const newNodes: Node[] = [];
       const placed = new Set<string>();
-      let groupY = startY;
+      let currentY = startY;
 
       presets.forEach(p => {
         if (p.pairs.length === 0 && p.extras.length === 0) return;
         const anchorId = p.anchorProductId;
+        const anchorAlreadyExists = !missingIds.includes(anchorId) || placed.has(anchorId);
+        const newPairIds = p.pairs.filter(id => missingIds.includes(id) && !placed.has(id));
+        const newExtraIds = p.extras.filter(id => missingIds.includes(id) && !placed.has(id));
+        const needsAnchor = missingIds.includes(anchorId) && !placed.has(anchorId);
 
-        if (missingIds.includes(anchorId) && !placed.has(anchorId)) {
+        if (!needsAnchor && newPairIds.length === 0 && newExtraIds.length === 0) return;
+
+        let anchorX = startX;
+        let anchorY = currentY;
+
+        if (needsAnchor) {
           const product = DEMO_PRODUCTS.find(pr => pr.id === anchorId);
           if (product) {
             newNodes.push({
-              id: product.id,
-              type: 'product',
-              position: { x: startX, y: groupY },
+              id: product.id, type: 'product',
+              position: { x: anchorX, y: anchorY },
               data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
             });
             placed.add(anchorId);
           }
+        } else {
+          const existingAnchor = nodes.find(n => n.id === anchorId);
+          if (existingAnchor) { anchorX = existingAnchor.position.x; anchorY = existingAnchor.position.y; }
         }
 
-        p.pairs.forEach((pairedId, i) => {
-          if (missingIds.includes(pairedId) && !placed.has(pairedId)) {
-            const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
-            if (product) {
-              newNodes.push({
-                id: product.id,
-                type: 'product',
-                position: { x: startX + 250 + (i * 200), y: groupY },
-                data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
-              });
-              placed.add(pairedId);
-            }
+        newPairIds.forEach((pairedId, i) => {
+          const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
+          if (product) {
+            newNodes.push({
+              id: product.id, type: 'product',
+              position: { x: anchorX + (NODE_W + H_GAP) * (i + 1), y: anchorY },
+              data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+            });
+            placed.add(pairedId);
           }
         });
 
-        p.extras.forEach((extraId, i) => {
-          if (missingIds.includes(extraId) && !placed.has(extraId)) {
-            const product = DEMO_PRODUCTS.find(pr => pr.id === extraId);
-            if (product) {
-              newNodes.push({
-                id: product.id,
-                type: 'product',
-                position: { x: startX, y: groupY + 200 + (i * 180) },
-                data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
-              });
-              placed.add(extraId);
-            }
+        newExtraIds.forEach((extraId, i) => {
+          const product = DEMO_PRODUCTS.find(pr => pr.id === extraId);
+          if (product) {
+            newNodes.push({
+              id: product.id, type: 'product',
+              position: { x: anchorX, y: anchorY + (NODE_H + V_GAP) * (i + 1) },
+              data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+            });
+            placed.add(extraId);
           }
         });
 
-        const groupHeight = Math.max(1, p.extras.length) * 200 + 100;
-        groupY += groupHeight;
+        const groupRows = 1 + newExtraIds.length;
+        currentY += groupRows * (NODE_H + V_GAP) + GROUP_GAP;
       });
 
-      // Remaining missing ids not in any preset
       missingIds.forEach(id => {
         if (placed.has(id)) return;
         const product = DEMO_PRODUCTS.find(pr => pr.id === id);
         if (!product) return;
         newNodes.push({
-          id: product.id,
-          type: 'product',
-          position: { x: startX, y: groupY },
+          id: product.id, type: 'product',
+          position: { x: startX, y: currentY },
           data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
         });
         placed.add(id);
-        groupY += 250;
+        currentY += NODE_H + V_GAP;
       });
 
       if (newNodes.length > 0) {
@@ -773,6 +780,78 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onManualSave();
   }, [nodes, onCanvasLayoutChange, onSave]);
 
+  // Auto-arrange all nodes by their connections (Shift+F)
+  const autoArrangeNodes = useCallback(() => {
+    const connections = new Map<string, Set<string>>();
+    edges.forEach(e => {
+      if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return;
+      if (!connections.has(e.source)) connections.set(e.source, new Set());
+      if (!connections.has(e.target)) connections.set(e.target, new Set());
+      connections.get(e.source)!.add(e.target);
+      connections.get(e.target)!.add(e.source);
+    });
+
+    const visited = new Set<string>();
+    const groups: string[][] = [];
+    nodes.forEach(n => {
+      if (n.id === BLANK_NODE_ID || visited.has(n.id)) return;
+      const group: string[] = [];
+      const queue = [n.id];
+      while (queue.length > 0) {
+        const id = queue.shift()!;
+        if (visited.has(id)) continue;
+        visited.add(id);
+        group.push(id);
+        connections.get(id)?.forEach(neighbor => {
+          if (!visited.has(neighbor)) queue.push(neighbor);
+        });
+      }
+      groups.push(group);
+    });
+    nodes.forEach(n => {
+      if (n.id !== BLANK_NODE_ID && !visited.has(n.id)) {
+        groups.push([n.id]);
+        visited.add(n.id);
+      }
+    });
+
+    let currentY = 100;
+    const newPositions: Record<string, { x: number; y: number }> = {};
+    groups.forEach(group => {
+      if (group.length === 1) {
+        newPositions[group[0]] = { x: 100, y: currentY };
+        currentY += NODE_H + V_GAP;
+        return;
+      }
+      let hubId = group[0];
+      let maxConns = 0;
+      group.forEach(id => {
+        const count = connections.get(id)?.size ?? 0;
+        if (count > maxConns) { maxConns = count; hubId = id; }
+      });
+      newPositions[hubId] = { x: 100, y: currentY };
+      const others = group.filter(id => id !== hubId);
+      const maxPerRow = 3;
+      others.forEach((id, i) => {
+        const col = (i % maxPerRow) + 1;
+        const row = Math.floor(i / maxPerRow);
+        newPositions[id] = {
+          x: 100 + col * (NODE_W + H_GAP),
+          y: currentY + row * (NODE_H + V_GAP),
+        };
+      });
+      const totalRows = Math.ceil(others.length / maxPerRow) + 1;
+      currentY += totalRows * (NODE_H + V_GAP) + GROUP_GAP;
+    });
+
+    setNodes(nds => nds.map(n => ({
+      ...n,
+      position: newPositions[n.id] ?? n.position,
+    })));
+    setTimeout(() => fitView({ duration: 400, padding: 0.5 }), 50);
+    saveLayoutDebounced();
+  }, [nodes, edges, setNodes, fitView, saveLayoutDebounced]);
+
   // Hotkeys
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -785,7 +864,11 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       }
       if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        fitView({ duration: 400, padding: 0.7 });
+        if (e.shiftKey) {
+          autoArrangeNodes();
+        } else {
+          fitView({ duration: 400, padding: 0.7 });
+        }
       }
       if (e.key === 'Escape') {
         if (hasBlankNode()) {
@@ -800,7 +883,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [createBlankNode, fitView, hasBlankNode, removeNodeFromCanvas, handleSave]);
+  }, [createBlankNode, fitView, hasBlankNode, removeNodeFromCanvas, handleSave, autoArrangeNodes]);
 
   // Imperative handle for parent
   useImperativeHandle(ref, () => ({
