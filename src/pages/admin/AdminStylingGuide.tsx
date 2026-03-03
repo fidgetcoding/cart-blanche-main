@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, lazy, Suspense, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Plus, X, GripVertical, Search } from 'lucide-react';
+import { Save, Plus, X, GripVertical, Search, Pencil } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import type { DemoProduct } from '@/data/demo-data';
@@ -186,6 +186,7 @@ export default function AdminStylingGuide() {
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
   const [blankNodeActive, setBlankNodeActive] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const { markDirty, markClean, BlockerDialog } = useUnsavedChanges();
 
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
@@ -503,7 +504,17 @@ export default function AdminStylingGuide() {
                     </div>
                   ) : (
                     <>
-                      <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED STYLES</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED MATCHES</p>
+                        <button
+                          onClick={() => setEditMode(!editMode)}
+                          className={`p-1.5 rounded-md transition-all ${editMode ? 'bg-primary/20 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                          title={editMode ? 'Done editing' : 'Edit matches'}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-[9px] font-display tracking-wider text-muted-foreground/40 -mt-2">Select a product from the sidebar to add a new match</p>
                       <div className="space-y-3">
                         {allPresets.map(preset => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
@@ -520,11 +531,14 @@ export default function AdminStylingGuide() {
                               {/* Card header — click to expand/collapse */}
                               <button
                                 onClick={() => {
-                                  setExpandedProductId(isExpanded ? null : preset.anchorProductId);
-                                  setSelectedProductId(preset.anchorProductId);
+                                  if (!editMode) {
+                                    setExpandedProductId(isExpanded ? null : preset.anchorProductId);
+                                    setSelectedProductId(preset.anchorProductId);
+                                  }
                                 }}
                                 className="w-full flex items-center gap-3 p-3 hover:bg-foreground/10 transition-all text-left group"
                               >
+                                {editMode && <GripVertical className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 cursor-grab" />}
                                 <img src={getImageUrl(product.images[0], 'thumb')} alt={product.title} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
                                   <p className="font-display text-[11px] tracking-wide truncate group-hover:text-foreground transition-colors">{product.title}</p>
@@ -534,9 +548,11 @@ export default function AdminStylingGuide() {
                                     {preset.pairs.length === 0 && preset.extras.length === 0 && <span className="text-[8px] font-display tracking-wider text-muted-foreground/50">NO MATCHES YET</span>}
                                   </div>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); setPresets(prev => prev.filter(p => p.anchorProductId !== preset.anchorProductId)); if (expandedProductId === preset.anchorProductId) setExpandedProductId(null); markDirty(); }} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all flex-shrink-0" title="Remove style">
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
+                                {editMode && (
+                                  <button onClick={(e) => { e.stopPropagation(); setPresets(prev => prev.filter(p => p.anchorProductId !== preset.anchorProductId)); if (expandedProductId === preset.anchorProductId) setExpandedProductId(null); markDirty(); }} className="p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all flex-shrink-0" title="Remove match">
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                                 {isExpanded && (
                                   <button onClick={(e) => { e.stopPropagation(); saveGuide(); }} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground font-display text-[10px] tracking-wider rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0">
                                     <Save className="w-3 h-3" />{saving ? 'SAVING...' : 'SAVE'}
