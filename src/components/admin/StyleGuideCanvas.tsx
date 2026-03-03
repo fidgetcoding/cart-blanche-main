@@ -533,7 +533,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           const targetZone = getBodyZone(product);
           const connectionType = sourceZone === targetZone ? 'extras' : 'pairs';
           const style = connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE;
-          const newEdge: Edge = {
+          // Forward edge
+          const forwardEdge: Edge = {
             id: `${connectionType}-${pendingSourceId}-${product.id}`,
             source: pendingSourceId,
             target: product.id,
@@ -541,9 +542,21 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
             targetHandle: 'target-left',
             style,
             type: 'offset',
-            data: { type: connectionType, offset: 0 },
+            data: { type: connectionType, offset: -15 },
           };
-          newEdges = addEdge(newEdge, newEdges);
+          // Reverse edge
+          const reverseEdge: Edge = {
+            id: `${connectionType}-${product.id}-${pendingSourceId}`,
+            source: product.id,
+            target: pendingSourceId,
+            sourceHandle: 'source-left',
+            targetHandle: 'target-right',
+            style,
+            type: 'offset',
+            data: { type: connectionType, offset: 15 },
+          };
+          if (!newEdges.some(e => e.id === forwardEdge.id)) newEdges = addEdge(forwardEdge, newEdges);
+          if (!newEdges.some(e => e.id === reverseEdge.id)) newEdges = addEdge(reverseEdge, newEdges);
         }
       }
 
@@ -585,36 +598,36 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const targetZone = getBodyZone(targetProduct);
     const connectionType = sourceZone === targetZone ? 'extras' : 'pairs';
 
-    // Check if reverse edge exists for offset
-    const newEdge = {
+    // Create forward edge
+    const forwardEdge = {
       id: `${connectionType}-${connection.source}-${connection.target}`,
       source: connection.source,
       target: connection.target,
       sourceHandle: connection.sourceHandle || 'source-right',
       targetHandle: connection.targetHandle || 'target-left',
       style: connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE,
-      data: { type: connectionType, offset: 0 },
+      data: { type: connectionType, offset: -15 },
+      type: 'offset' as const,
+    };
+
+    // Create reverse edge
+    const reverseEdge = {
+      id: `${connectionType}-${connection.target}-${connection.source}`,
+      source: connection.target,
+      target: connection.source,
+      sourceHandle: 'source-left',
+      targetHandle: 'target-right',
+      style: connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE,
+      data: { type: connectionType, offset: 15 },
       type: 'offset' as const,
     };
 
     setEdges(eds => {
-      const hasReverse = eds.some(e =>
-        e.source === connection.target && e.target === connection.source
-      );
-
-      let newEdges = addEdge(
-        { ...newEdge, data: { ...newEdge.data, offset: hasReverse ? -15 : 0 } } as Edge,
-        eds,
-      );
-
-      if (hasReverse) {
-        newEdges = newEdges.map(e =>
-          e.source === connection.target && e.target === connection.source
-            ? { ...e, data: { ...e.data, offset: 15 } }
-            : e
-        );
-      }
-
+      const hasForward = eds.some(e => e.id === forwardEdge.id);
+      const hasReverse = eds.some(e => e.id === reverseEdge.id);
+      let newEdges = eds;
+      if (!hasForward) newEdges = addEdge(forwardEdge as Edge, newEdges);
+      if (!hasReverse) newEdges = addEdge(reverseEdge as Edge, newEdges);
       syncPresetsFromEdges(newEdges);
       return newEdges;
     });
@@ -682,6 +695,28 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   }, [screenToFlowPosition, createBlankNode, setEdges, syncPresetsFromEdges]);
 
   const handleEdgesChange = useCallback((changes: any) => {
+    // For edge removals, also remove reverse edges
+    const removals = changes.filter((c: any) => c.type === 'remove');
+    if (removals.length > 0) {
+      const removedIds = new Set<string>(removals.map((c: any) => c.id as string));
+      // Find reverse edge IDs
+      setEdges(eds => {
+        const edgesToRemove = new Set<string>([...removedIds]);
+        eds.forEach(e => {
+          if (removedIds.has(e.id)) {
+            const edgeType = (e.data as any)?.type;
+            if (edgeType === 'pairs' || edgeType === 'extras') {
+              const reverseId = `${edgeType}-${e.target}-${e.source}`;
+              edgesToRemove.add(reverseId);
+            }
+          }
+        });
+        const filtered = eds.filter(e => !edgesToRemove.has(e.id));
+        syncPresetsFromEdges(filtered);
+        return filtered;
+      });
+      return;
+    }
     onEdgesChange(changes);
     setTimeout(() => {
       setEdges(eds => {
@@ -832,7 +867,13 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   const removeConnection = useCallback((targetId: string, type: 'pairs' | 'extras') => {
     setEdges(eds => {
-      const filtered = eds.filter(e => !(e.source === selectedNodeId && e.target === targetId && (e.data as any)?.type === type));
+      const filtered = eds.filter(e => {
+        const edgeType = (e.data as any)?.type;
+        if (edgeType !== type) return true;
+        const isForward = e.source === selectedNodeId && e.target === targetId;
+        const isReverse = e.source === targetId && e.target === selectedNodeId;
+        return !isForward && !isReverse;
+      });
       syncPresetsFromEdges(filtered);
       return filtered;
     });
