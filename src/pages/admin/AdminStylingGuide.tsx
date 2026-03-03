@@ -55,6 +55,7 @@ function PresetList({
   const handleDragOver = (idx: number) => (e: React.DragEvent) => {
     if (dragIdx !== null) {
       e.preventDefault();
+      e.stopPropagation();
       e.dataTransfer.dropEffect = 'move';
       setOverIdx(idx);
     }
@@ -66,6 +67,7 @@ function PresetList({
       return;
     }
     e.preventDefault();
+    e.stopPropagation();
     if (dragIdx === idx) { setDragIdx(null); setOverIdx(null); return; }
     const reordered = [...items];
     const [moved] = reordered.splice(dragIdx, 1);
