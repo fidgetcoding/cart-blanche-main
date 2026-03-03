@@ -985,8 +985,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   // Sidebar helpers
   const selectedProduct = selectedNodeId ? DEMO_PRODUCTS.find(p => p.id === selectedNodeId) : null;
   const selectedPreset = selectedNodeId 
-    ? (edgesToPresets(edges).find(p => p.anchorProductId === selectedNodeId) 
-       ?? presets.find(p => p.anchorProductId === selectedNodeId))
+    ? (presets.find(p => p.anchorProductId === selectedNodeId) 
+       ?? edgesToPresets(edges).find(p => p.anchorProductId === selectedNodeId))
     : null;
 
   const removeConnection = useCallback((targetId: string, type: 'pairs' | 'extras') => {
@@ -1005,32 +1005,21 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
   const moveItem = useCallback((type: 'pairs' | 'extras', index: number, dir: -1 | 1) => {
     if (!selectedNodeId || !selectedPreset) return;
-    const items = type === 'pairs' ? [...(selectedPreset.pairs)] : [...(selectedPreset.extras)];
+    const items = type === 'pairs' ? [...selectedPreset.pairs] : [...selectedPreset.extras];
     const newIndex = index + dir;
     if (newIndex < 0 || newIndex >= items.length) return;
     [items[index], items[newIndex]] = [items[newIndex], items[index]];
 
-    // Update presets directly (not via edges) so order is preserved and syncs to list view
-    const updatedPreset: ProductPreset = {
-      ...selectedPreset,
-      [type]: items,
-    };
-
-    // Build full preset list with the updated one
-    const currentPresets = edgesToPresets(edges);
-    const existingIdx = currentPresets.findIndex(p => p.anchorProductId === selectedNodeId);
-    let newPresets: ProductPreset[];
-    if (existingIdx >= 0) {
-      newPresets = [...currentPresets];
-      newPresets[existingIdx] = updatedPreset;
-    } else {
-      newPresets = [...currentPresets, updatedPreset];
-    }
+    // Update presets directly from the presets prop (preserves order)
+    const newPresets = presets.map(p => 
+      p.anchorProductId === selectedNodeId 
+        ? { ...p, [type]: items }
+        : p
+    );
 
     isInternalChangeRef.current = true;
     onPresetsChange(newPresets);
-    saveLayoutDebounced();
-  }, [selectedNodeId, selectedPreset, edges, onPresetsChange, saveLayoutDebounced]);
+  }, [selectedNodeId, selectedPreset, presets, onPresetsChange]);
 
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
