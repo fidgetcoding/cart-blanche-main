@@ -413,7 +413,7 @@ export function SmartChatPanel() {
   const isNewChat = activeConversationId === null && messages.length === 0;
 
   return (
-    <div className="flex flex-shrink-0 flex-1" style={{ width: panelWidth }}>
+    <div className="flex flex-shrink-0 flex-1 min-h-0" style={{ width: panelWidth }}>
       {/* Conversation history sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -468,7 +468,7 @@ export function SmartChatPanel() {
       </AnimatePresence>
 
       {/* Main chat panel */}
-      <div className="flex-1 flex flex-col bg-sidebar overflow-hidden">
+      <div className="flex-1 flex flex-col bg-sidebar overflow-hidden min-h-0">
         {/* Inline toolbar */}
         <div className="flex items-center gap-2 px-3 py-1.5 flex-shrink-0">
           <button

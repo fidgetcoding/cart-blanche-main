@@ -627,6 +627,7 @@ Guidelines:
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: systemPrompt }, ...messages],
         tools,
+        max_tokens: 8192,
         stream: true,
       }),
     });
