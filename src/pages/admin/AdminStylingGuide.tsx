@@ -531,10 +531,57 @@ export default function AdminStylingGuide() {
           ) : (
             <>
               {!selectedProduct ? (
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground font-display tracking-wider">
-                    Select a product to configure its Style Kit presets
-                  </p>
+                <div className="h-full overflow-y-auto p-6">
+                  {presets.filter(p => p.pairs.length > 0 || p.extras.length > 0).length === 0 ? (
+                    <div className="h-full flex items-center justify-center">
+                      <p className="text-sm text-muted-foreground font-display tracking-wider">
+                        Select a product to configure its Style Kit presets
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-display tracking-[0.2em] text-muted-foreground/60">CONFIGURED STYLES</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {presets
+                          .filter(p => p.pairs.length > 0 || p.extras.length > 0)
+                          .map(preset => {
+                            const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
+                            if (!product) return null;
+                            return (
+                              <button
+                                key={preset.anchorProductId}
+                                onClick={() => setSelectedProductId(preset.anchorProductId)}
+                                className="flex items-center gap-3 p-3 rounded-lg bg-foreground/5 border border-foreground/8 hover:bg-foreground/10 hover:border-foreground/15 transition-all text-left group"
+                              >
+                                <img
+                                  src={getImageUrl(product.images[0], 'thumb')}
+                                  alt={product.title}
+                                  className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-display text-[11px] tracking-wide truncate group-hover:text-foreground transition-colors">{product.title}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {preset.pairs.length > 0 && (
+                                      <span className="text-[8px] font-display tracking-wider text-[#facc15]">
+                                        {preset.pairs.length} PAIR{preset.pairs.length !== 1 ? 'S' : ''}
+                                      </span>
+                                    )}
+                                    {preset.extras.length > 0 && (
+                                      <span className="text-[8px] font-display tracking-wider text-[#f472b6]">
+                                        {preset.extras.length} EXTRA{preset.extras.length !== 1 ? 'S' : ''}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground/40 font-display tracking-wider text-center pt-2">
+                        Select a product from the sidebar to add more styles
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-6 max-w-2xl space-y-6 overflow-y-auto h-full">
