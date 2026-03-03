@@ -28,7 +28,7 @@ function CarouselCard({
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer"
+      className="flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer h-full flex flex-col"
       onClick={() => { if (!hasDraggedRef.current) onSelect(product); }}
     >
       <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full relative overflow-hidden">
@@ -233,10 +233,10 @@ function CarouselRow({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className={`absolute inset-0 no-scrollbar gap-3 flex items-start cursor-grab active:cursor-grabbing select-none ${
+        className={`absolute inset-0 no-scrollbar gap-3 flex cursor-grab active:cursor-grabbing select-none ${
           isHorizontal
-            ? 'flex-row overflow-x-auto overflow-y-hidden px-4 py-2'
-            : 'flex-col overflow-y-auto overflow-x-hidden px-2 py-3'
+            ? 'flex-row overflow-x-auto overflow-y-hidden px-4 py-2 items-stretch'
+            : 'flex-col overflow-y-auto overflow-x-hidden px-2 py-3 items-start'
         }`}
         style={{
           WebkitOverflowScrolling: 'touch',
@@ -245,7 +245,7 @@ function CarouselRow({
         }}
       >
         {loopedProducts.map((product, idx) => (
-          <div key={`${product.id}-${idx}`} className={`flex-shrink-0 ${cardWidthClass}`}>
+          <div key={`${product.id}-${idx}`} className={`flex-shrink-0 ${cardWidthClass} ${isHorizontal ? 'h-full' : ''}`}>
             <CarouselCard
               product={product}
               onSelect={onSelect}
