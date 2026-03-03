@@ -109,14 +109,14 @@ function ProductNode({ data, selected }: NodeProps) {
   const handleClass = "!w-2.5 !h-2.5 !bg-foreground/20 !border-foreground/20";
 
   if (d.isBlank) {
-    const blankHandleClass = "!w-3 !h-3 !bg-blue-400/60 !border-blue-400/40";
+    const blankHandleClass = "!w-3 !h-3 !bg-white/40 !border-white/30";
     return (
       <div
         className="w-[140px] h-[150px] rounded-lg p-4 flex flex-col items-center justify-center gap-3 animate-scale-in"
         style={{
-          background: 'linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(139,92,246,0.06) 100%)',
-          border: '2px dashed rgba(96,165,250,0.45)',
-          boxShadow: '0 0 20px rgba(96,165,250,0.15), inset 0 0 20px rgba(96,165,250,0.05)',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)',
+          border: '2px dashed rgba(255,255,255,0.4)',
+          boxShadow: '0 0 25px rgba(255,255,255,0.15), inset 0 0 20px rgba(255,255,255,0.05)',
         }}
       >
         <Handle type="target" position={Position.Left} id="target-left" className={blankHandleClass} />
@@ -127,36 +127,40 @@ function ProductNode({ data, selected }: NodeProps) {
         <Handle type="source" position={Position.Top} id="source-top" className={blankHandleClass} />
         <Handle type="source" position={Position.Right} id="source-right" className={blankHandleClass} />
         <Handle type="source" position={Position.Bottom} id="source-bottom" className={blankHandleClass} />
-        <Plus className="w-7 h-7 text-blue-400/70" />
-        <span className="text-[9px] text-blue-300/70 font-display tracking-widest text-center leading-tight">SELECT PRODUCT<br/>FROM PANEL</span>
+        <Plus className="w-7 h-7 text-white/60" />
+        <span className="text-[9px] text-white/50 font-display tracking-widest text-center leading-tight">SELECT PRODUCT<br/>FROM PANEL</span>
       </div>
     );
   }
 
   if (!d.product) return null;
 
-  const borderColor =
-    d.zone === 'TOPS' ? 'border-blue-500/30' :
-    d.zone === 'BOTTOMS' ? 'border-amber-500/30' :
-    'border-zinc-500/30';
+  // Zone-based color system
+  const zoneColors = {
+    TOPS: { border: 'rgba(96,165,250,0.4)', glow: 'rgba(96,165,250,0.2)', handle: '!bg-blue-400/40 !border-blue-400/30' },
+    BOTTOMS: { border: 'rgba(74,222,128,0.4)', glow: 'rgba(74,222,128,0.2)', handle: '!bg-green-400/40 !border-green-400/30' },
+    ACCESSORIES: { border: 'rgba(168,85,247,0.4)', glow: 'rgba(168,85,247,0.2)', handle: '!bg-purple-400/40 !border-purple-400/30' },
+  };
+  const colors = zoneColors[d.zone || 'TOPS'] || zoneColors.TOPS;
+  const handleNodeClass = `!w-3 !h-3 ${colors.handle}`;
 
   return (
     <div
-      className={`relative rounded-lg border-2 ${borderColor} ${selected ? 'ring-2 ring-primary/50' : ''} p-2 flex flex-col items-center gap-1.5 w-[120px] transition-shadow group`}
+      className={`relative rounded-lg p-2 flex flex-col items-center gap-1.5 w-[120px] transition-shadow group ${selected ? 'ring-2 ring-primary/50' : ''}`}
       style={{
         background: '#141414',
-        boxShadow: selected ? '0 0 20px hsl(var(--primary) / 0.15)' : undefined,
+        border: `2px solid ${colors.border}`,
+        boxShadow: `0 0 20px ${colors.glow}${selected ? ', 0 0 25px hsl(var(--primary) / 0.15)' : ''}`,
       }}
     >
-      <Handle type="target" position={Position.Left} id="target-left" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      <Handle type="target" position={Position.Top} id="target-top" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      <Handle type="target" position={Position.Right} id="target-right" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      <Handle type="target" position={Position.Bottom} id="target-bottom" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      <Handle type="source" position={Position.Left} id="source-left" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      <Handle type="source" position={Position.Top} id="source-top" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      <Handle type="source" position={Position.Right} id="source-right" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      <Handle type="source" position={Position.Bottom} id="source-bottom" className="!w-3 !h-3 !bg-foreground/20 !border-foreground/30" />
-      {/* Hover delete button */}
+      <Handle type="target" position={Position.Left} id="target-left" className={handleNodeClass} />
+      <Handle type="target" position={Position.Top} id="target-top" className={handleNodeClass} />
+      <Handle type="target" position={Position.Right} id="target-right" className={handleNodeClass} />
+      <Handle type="target" position={Position.Bottom} id="target-bottom" className={handleNodeClass} />
+      <Handle type="source" position={Position.Left} id="source-left" className={handleNodeClass} />
+      <Handle type="source" position={Position.Top} id="source-top" className={handleNodeClass} />
+      <Handle type="source" position={Position.Right} id="source-right" className={handleNodeClass} />
+      <Handle type="source" position={Position.Bottom} id="source-bottom" className={handleNodeClass} />
       {d.onDelete && (
         <button
           onClick={(e) => { e.stopPropagation(); d.onDelete!(d.product!.id); }}
