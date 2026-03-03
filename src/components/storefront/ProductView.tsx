@@ -283,13 +283,24 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           {CATEGORIES.map(cat => (
             <button
               key={cat}
+              onMouseEnter={() => {
+                if (cat !== activeCategory) {
+                  onCategoryChange(cat);
+                  const firstInCat = DEMO_PRODUCTS.findIndex(p =>
+                    cat === 'ALL' || p.category.toUpperCase() === cat
+                  );
+                  if (firstInCat >= 0) onNavigate(firstInCat);
+                }
+              }}
               onClick={(e) => {
                 e.stopPropagation();
-                onCategoryChange(cat);
-                const firstInCat = DEMO_PRODUCTS.findIndex(p =>
-                  cat === 'ALL' || p.category.toUpperCase() === cat
-                );
-                if (firstInCat >= 0) onNavigate(firstInCat);
+                if (cat !== activeCategory) {
+                  onCategoryChange(cat);
+                  const firstInCat = DEMO_PRODUCTS.findIndex(p =>
+                    cat === 'ALL' || p.category.toUpperCase() === cat
+                  );
+                  if (firstInCat >= 0) onNavigate(firstInCat);
+                }
               }}
               className={`text-[10px] font-display tracking-[0.12em] uppercase rounded-md px-2.5 py-1 transition-colors ${
                 activeCategory === cat
