@@ -305,7 +305,12 @@ export default function AdminStylingGuide() {
       const rules = data.rules as any;
       if (rules?.version === 2 && Array.isArray(rules.presets)) {
         setPresets(normalizeBidirectional(rules.presets));
-        setCanvasLayout(rules.canvasLayout || null);
+        const layout = rules.canvasLayout || null;
+        setCanvasLayout(layout);
+        // Initialize canvasNodeIds from saved layout so List view shows them before Canvas mounts
+        if (layout?.positions) {
+          setCanvasNodeIds(new Set(Object.keys(layout.positions)));
+        }
       }
     }
     setLoading(false);
