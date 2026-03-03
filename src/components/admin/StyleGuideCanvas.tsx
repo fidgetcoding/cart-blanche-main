@@ -888,6 +888,17 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           </div>
         </div>
 
+        {/* Save button — top right */}
+        <div className="absolute top-4 right-4 z-10">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-lg text-[10px] font-display tracking-wider hover:bg-foreground/90 transition-all disabled:opacity-50"
+          >
+            <Save className="w-3.5 h-3.5" />
+            {saving ? 'SAVING...' : 'SAVE'}
+          </button>
+        </div>
 
         <ReactFlow
           nodes={nodes}

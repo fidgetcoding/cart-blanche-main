@@ -560,10 +560,11 @@ export default function AdminStylingGuide() {
                           <button
                             onClick={saveGuide}
                             disabled={saving}
-                            className="p-1.5 rounded-md transition-all text-muted-foreground/40 hover:text-primary hover:bg-primary/10"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-lg text-[10px] font-display tracking-wider hover:bg-foreground/90 transition-all disabled:opacity-50"
                             title="Save"
                           >
                             <Save className="w-3.5 h-3.5" />
+                            {saving ? 'SAVING...' : 'SAVE'}
                           </button>
                           <button
                             onClick={() => { if (editMode) { setEditMode(false); } else { setEditMode(true); setExpandedProductId(null); } }}
