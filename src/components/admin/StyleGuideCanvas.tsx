@@ -414,17 +414,38 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           if (existingAnchor) { anchorX = existingAnchor.position.x; anchorY = existingAnchor.position.y; }
         }
 
-        newPairIds.forEach((pairedId, i) => {
-          const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
-          if (product) {
-            newNodes.push({
-              id: product.id, type: 'product',
-              position: { x: anchorX + (NODE_W + H_GAP) * (i + 1), y: anchorY },
-              data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
-            });
-            placed.add(pairedId);
+        if (newPairIds.length >= 2) {
+          const stackHeight = newPairIds.length * NODE_H + (newPairIds.length - 1) * V_GAP;
+          if (needsAnchor) {
+            const anchorNode = newNodes.find(n => n.id === anchorId);
+            if (anchorNode) {
+              anchorNode.position.y = anchorY + stackHeight / 2 - NODE_H / 2;
+            }
           }
-        });
+          newPairIds.forEach((pairedId, i) => {
+            const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
+            if (product) {
+              newNodes.push({
+                id: product.id, type: 'product',
+                position: { x: anchorX + NODE_W + H_GAP * 1.5, y: anchorY + i * (NODE_H + V_GAP) },
+                data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+              });
+              placed.add(pairedId);
+            }
+          });
+        } else {
+          newPairIds.forEach((pairedId, i) => {
+            const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
+            if (product) {
+              newNodes.push({
+                id: product.id, type: 'product',
+                position: { x: anchorX + (NODE_W + H_GAP) * (i + 1), y: anchorY },
+                data: { product, zone: classifyGroup(product), onDelete: removeNodeFromCanvas },
+              });
+              placed.add(pairedId);
+            }
+          });
+        }
 
         newExtraIds.forEach((extraId, i) => {
           const product = DEMO_PRODUCTS.find(pr => pr.id === extraId);
@@ -823,25 +844,57 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         currentY += NODE_H + V_GAP;
         return;
       }
+
       let hubId = group[0];
       let maxConns = 0;
       group.forEach(id => {
         const count = connections.get(id)?.size ?? 0;
         if (count > maxConns) { maxConns = count; hubId = id; }
       });
-      newPositions[hubId] = { x: 100, y: currentY };
+
       const others = group.filter(id => id !== hubId);
-      const maxPerRow = 3;
+      const count = others.length;
+
+      if (count === 1) {
+        newPositions[hubId] = { x: 100, y: currentY };
+        newPositions[others[0]] = { x: 100 + NODE_W + H_GAP, y: currentY };
+        currentY += NODE_H + GROUP_GAP;
+        return;
+      }
+
+      if (count === 2) {
+        newPositions[hubId] = { x: 100, y: currentY + (NODE_H + V_GAP) / 2 };
+        newPositions[others[0]] = { x: 100 + NODE_W + H_GAP * 1.5, y: currentY };
+        newPositions[others[1]] = { x: 100 + NODE_W + H_GAP * 1.5, y: currentY + NODE_H + V_GAP };
+        currentY += (NODE_H + V_GAP) * 2 + GROUP_GAP;
+        return;
+      }
+
+      if (count === 3) {
+        const totalHeight = count * NODE_H + (count - 1) * V_GAP;
+        newPositions[hubId] = { x: 100, y: currentY + totalHeight / 2 - NODE_H / 2 };
+        others.forEach((id, i) => {
+          newPositions[id] = { x: 100 + NODE_W + H_GAP * 1.5, y: currentY + i * (NODE_H + V_GAP) };
+        });
+        currentY += totalHeight + GROUP_GAP;
+        return;
+      }
+
+      // 5+ nodes: radial fan layout
+      const radius = Math.max(NODE_W + H_GAP, count * 40);
+      const centerX = 100 + radius;
+      const centerY2 = currentY + radius;
+      newPositions[hubId] = { x: centerX, y: centerY2 };
       others.forEach((id, i) => {
-        const col = (i % maxPerRow) + 1;
-        const row = Math.floor(i / maxPerRow);
+        const startAngle = -Math.PI / 2;
+        const endAngle = Math.PI / 2;
+        const angle = count === 1 ? 0 : startAngle + (endAngle - startAngle) * (i / (count - 1));
         newPositions[id] = {
-          x: 100 + col * (NODE_W + H_GAP),
-          y: currentY + row * (NODE_H + V_GAP),
+          x: centerX + Math.cos(angle) * radius,
+          y: centerY2 + Math.sin(angle) * radius,
         };
       });
-      const totalRows = Math.ceil(others.length / maxPerRow) + 1;
-      currentY += totalRows * (NODE_H + V_GAP) + GROUP_GAP;
+      currentY += radius * 2 + NODE_H + GROUP_GAP;
     });
 
     setNodes(nds => nds.map(n => ({
