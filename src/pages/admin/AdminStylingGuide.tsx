@@ -132,39 +132,44 @@ function PresetList({
         ))}
       </div>
 
-      <div className="mt-2">
+      {!pickerOpen ? (
         <button
-          onClick={() => setPickerOpen(!pickerOpen)}
+          onClick={() => setPickerOpen(true)}
           className="flex items-center gap-1 px-3 py-1.5 border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/5 transition-colors"
         >
           <Plus className="w-3 h-3" />
           ADD MATCH
         </button>
-        {pickerOpen && (
-          <div className="liquid-glass rounded-lg mt-1 max-h-60 overflow-y-auto">
-            {filtered.map(p => (
-              <button
-                key={p.id}
-                onClick={() => { handleAdd(p); setPickerOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2 hover:bg-foreground/5 transition-colors text-left"
-              >
-                <img
-                  src={getImageUrl(p.images[0], 'thumb')}
-                  alt={p.title}
-                  className="w-10 h-10 rounded object-cover flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-display text-xs tracking-wide truncate">{p.title}</p>
-                  <p className="text-[10px] text-muted-foreground">${p.price}</p>
-                </div>
-              </button>
-            ))}
-            {filtered.length === 0 && (
-              <p className="px-3 py-4 text-xs text-muted-foreground text-center font-display tracking-wider">NO PRODUCTS AVAILABLE</p>
-            )}
+      ) : (
+        <div className="liquid-glass rounded-lg mt-1 max-h-60 overflow-y-auto border border-foreground/10">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-foreground/5">
+            <span className="text-[10px] font-display tracking-wider text-muted-foreground">SELECT A MATCH</span>
+            <button onClick={() => setPickerOpen(false)} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
-        )}
-      </div>
+          {filtered.map(p => (
+            <button
+              key={p.id}
+              onClick={() => { handleAdd(p); setPickerOpen(false); }}
+              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-foreground/5 transition-colors text-left"
+            >
+              <img
+                src={getImageUrl(p.images[0], 'thumb')}
+                alt={p.title}
+                className="w-10 h-10 rounded object-cover flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-xs tracking-wide truncate">{p.title}</p>
+                <p className="text-[10px] text-muted-foreground">${p.price}</p>
+              </div>
+            </button>
+          ))}
+          {filtered.length === 0 && (
+            <p className="px-3 py-4 text-xs text-muted-foreground text-center font-display tracking-wider">NO PRODUCTS AVAILABLE</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
