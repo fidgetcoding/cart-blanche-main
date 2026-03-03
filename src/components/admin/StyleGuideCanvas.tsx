@@ -862,7 +862,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         e.preventDefault();
         createBlankNode({ x: 300, y: 300 });
       }
-      if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
+      if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         if (e.shiftKey) {
           autoArrangeNodes();
