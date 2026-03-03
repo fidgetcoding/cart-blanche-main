@@ -664,7 +664,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
             className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground/10 text-foreground border border-foreground/10 rounded-md text-[10px] font-display tracking-wider hover:bg-foreground/15 transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
-            ADD NODE
+            ADD PRODUCT
           </button>
           {/* Legend */}
           <div className="flex items-center gap-3 ml-2 text-[9px] text-muted-foreground font-display tracking-wider">
