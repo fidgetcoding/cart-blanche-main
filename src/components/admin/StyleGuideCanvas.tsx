@@ -725,7 +725,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
         {/* Navigation instructions — fade like storefront footer */}
         <div className="absolute bottom-4 left-4 z-10 tracking-wider space-y-0.5 cursor-default transition-colors duration-500 text-muted-foreground/30 hover:text-foreground/80" style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
-          <p>SCROLL TO ZOOM · DRAG TO PAN · CLICK TO SELECT</p>
+          <p>SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO SELECT</p>
           <p>P TO ADD · DEL TO REMOVE · F TO FIT · ⌘S TO SAVE</p>
           <p>DRAG PORT TO CONNECT · DOUBLE-CLICK TO ADD NODE</p>
         </div>
