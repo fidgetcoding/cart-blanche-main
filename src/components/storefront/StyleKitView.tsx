@@ -3,7 +3,7 @@ import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, Chevro
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
-import { getSuggestedProducts, getSmartOrientation, type ProductPreset } from '@/lib/pairing-logic';
+import { getSuggestedProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { DemoProduct } from '@/data/demo-data';
 
@@ -585,14 +585,18 @@ export function StyleKitView() {
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);
   const [presets, setPresets] = useState<ProductPreset[]>([]);
   
-  // Size selections: anchor + paired
-  const [anchorSize, setAnchorSize] = useState<string | null>(null);
-  const [pairedSize, setPairedSize] = useState<string | null>(null);
+  // Zone-locked size selections: top slot + bottom slot
+  const [topSize, setTopSize] = useState<string | null>(null);
+  const [bottomSize, setBottomSize] = useState<string | null>(null);
 
   // Track which side the carousel should appear on in extras mode
   const [carouselSide, setCarouselSide] = useState<'left' | 'right'>('right');
 
-  // The locked paired product (non-anchor item in lookItems)
+  // Zone-locked slot assignments: tops always in top slot, bottoms always in bottom slot
+  const topProduct = lookItems.find(p => getBodyZone(p) === 'top') ?? null;
+  const bottomProduct = lookItems.find(p => getBodyZone(p) === 'bottom') ?? null;
+
+  // For extras mode, the paired product is still the non-anchor item
   const pairedProduct = lookItems.length > 1
     ? lookItems.find(p => p.id !== anchorProduct?.id) ?? null
     : null;
@@ -615,16 +619,24 @@ export function StyleKitView() {
     loadPresets();
   }, []);
 
-  // Reset sizes when anchor changes, using initial size if provided
+  // Initialize sizes based on anchor's zone
   useEffect(() => {
-    setAnchorSize(initialAnchorSize ?? null);
-    setPairedSize(null);
+    if (anchorProduct) {
+      const zone = getBodyZone(anchorProduct);
+      if (zone === 'top') setTopSize(initialAnchorSize ?? null);
+      else setBottomSize(initialAnchorSize ?? null);
+    }
   }, [anchorProduct?.id, initialAnchorSize]);
 
-  // Reset paired size when paired product changes
+  // Reset top size when top product changes
   useEffect(() => {
-    setPairedSize(null);
-  }, [pairedProduct?.id]);
+    if (!topProduct) setTopSize(null);
+  }, [topProduct?.id]);
+
+  // Reset bottom size when bottom product changes
+  useEffect(() => {
+    if (!bottomProduct) setBottomSize(null);
+  }, [bottomProduct?.id]);
 
   // Close on Escape
   useEffect(() => {
@@ -637,7 +649,6 @@ export function StyleKitView() {
 
   if (!isOpen || !anchorProduct) return null;
 
-  const orientation = getSmartOrientation(anchorProduct.category);
   const isCounterparts = mode === 'counterparts';
   const splitDirection = isCounterparts ? 'horizontal' : 'vertical';
 
@@ -649,78 +660,77 @@ export function StyleKitView() {
     presets,
   });
 
+  const handleRemoveProduct = (productId: string) => {
+    const removedProduct = lookItems.find(p => p.id === productId);
+    if (removedProduct) {
+      const zone = getBodyZone(removedProduct);
+      if (zone === 'top') setTopSize(null);
+      else setBottomSize(null);
+    }
+    removeFromLook(productId);
+    // If removing the anchor, promote remaining product
+    if (productId === anchorProduct.id) {
+      const remaining = lookItems.find(p => p.id !== productId);
+      if (remaining) changeAnchor(remaining);
+    }
+  };
+
   const handleAddToLook = (product: DemoProduct) => {
-    // Only keep one paired product at a time in both modes
-    lookItems.forEach(item => {
-      if (item.id !== anchorProduct.id) {
-        removeFromLook(item.id);
-      }
-    });
+    const zone = getBodyZone(product);
+    // Remove any existing product in the same zone (except keep the logic simple)
+    const existingInSlot = lookItems.find(p => getBodyZone(p) === zone && p.id !== product.id);
+    if (existingInSlot) {
+      removeFromLook(existingInSlot.id);
+    }
     addToLook(product);
-    setCarouselSide('right'); // reset carousel side when adding a new pair
+    setCarouselSide('right');
   };
 
   const handleAddSetToCart = () => {
-    // Add anchor product with selected size
-    const anchorVariant = anchorSize
-      ? anchorProduct.variants.find(v => v.title === anchorSize)
-      : anchorProduct.variants[0];
-    if (anchorVariant) {
-      addItem({
-        productId: anchorProduct.id,
-        variantId: anchorVariant.id,
-        title: anchorProduct.title,
-        variantTitle: anchorVariant.title,
-        price: anchorVariant.price ?? anchorProduct.price,
-      });
-    }
-
-    // Add paired product with selected size
-    if (pairedProduct) {
-      const pairedVariant = pairedSize
-        ? pairedProduct.variants.find(v => v.title === pairedSize)
-        : pairedProduct.variants[0];
-      if (pairedVariant) {
+    if (topProduct) {
+      const variant = topSize
+        ? topProduct.variants.find(v => v.title === topSize)
+        : topProduct.variants[0];
+      if (variant) {
         addItem({
-          productId: pairedProduct.id,
-          variantId: pairedVariant.id,
-          title: pairedProduct.title,
-          variantTitle: pairedVariant.title,
-          price: pairedVariant.price ?? pairedProduct.price,
+          productId: topProduct.id,
+          variantId: variant.id,
+          title: topProduct.title,
+          variantTitle: variant.title,
+          price: variant.price ?? topProduct.price,
         });
       }
     }
-
+    if (bottomProduct) {
+      const variant = bottomSize
+        ? bottomProduct.variants.find(v => v.title === bottomSize)
+        : bottomProduct.variants[0];
+      if (variant) {
+        addItem({
+          productId: bottomProduct.id,
+          variantId: variant.id,
+          title: bottomProduct.title,
+          variantTitle: variant.title,
+          price: variant.price ?? bottomProduct.price,
+        });
+      }
+    }
     closeStyleKit();
   };
 
+  // Extras mode handlers (unchanged logic)
   const handleRemovePairedDirect = () => {
     if (pairedProduct) {
       removeFromLook(pairedProduct.id);
-      setPairedSize(null);
       setCarouselSide('right');
     }
   };
 
-  const handleRemoveAnchor = () => {
+  const handleRemoveAnchorExtras = () => {
     if (pairedProduct) {
-      // Swap: paired becomes new anchor, old anchor goes away
       removeFromLook(anchorProduct.id);
       changeAnchor(pairedProduct);
-      // Move paired size to anchor size, reset paired
-      setAnchorSize(pairedSize);
-      setPairedSize(null);
-      // Carousel should appear on the LEFT (where anchor was)
       setCarouselSide('left');
-    }
-  };
-
-  const handleRemovePaired = () => {
-    if (pairedProduct) {
-      removeFromLook(pairedProduct.id);
-      setPairedSize(null);
-      // Carousel stays/returns to the RIGHT (where paired was)
-      setCarouselSide('right');
     }
   };
 
@@ -728,12 +738,16 @@ export function StyleKitView() {
     ? `Goes well with ${anchorProduct.title}`
     : `More like ${anchorProduct.title}`;
 
-  const setTotal = (anchorProduct?.price ?? 0) + (pairedProduct?.price ?? 0);
+  const setTotal = (topProduct?.price ?? 0) + (bottomProduct?.price ?? 0);
+  const bothFilled = topProduct && bottomProduct;
+  const topSizeReady = !topProduct || topProduct.variants.length <= 1 || topSize !== null;
+  const bottomSizeReady = !bottomProduct || bottomProduct.variants.length <= 1 || bottomSize !== null;
+  const canAddSet = bothFilled && topSizeReady && bottomSizeReady;
 
-  // Check if both sizes are selected (or products only have 1 variant)
-  const anchorSizeReady = anchorProduct.variants.length <= 1 || anchorSize !== null;
-  const pairedSizeReady = !pairedProduct || pairedProduct.variants.length <= 1 || pairedSize !== null;
-  const canAddSet = pairedProduct && anchorSizeReady && pairedSizeReady;
+  // For extras mode, use the old anchor/paired ready checks
+  const extrasPairedSizeReady = !pairedProduct || pairedProduct.variants.length <= 1;
+  const anchorZone = getBodyZone(anchorProduct);
+  const anchorSizeForExtras = anchorZone === 'top' ? topSize : bottomSize;
 
   return (
     <AnimatePresence>
@@ -795,26 +809,24 @@ export function StyleKitView() {
             splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'
           }`}
         >
-          {/* PAIRS MODE */}
-          {splitDirection === 'horizontal' && orientation === 'top' && (
+          {/* PAIRS MODE — zone-locked: top slot always first, bottom slot always second */}
+          {splitDirection === 'horizontal' && (
             <>
-              <div className="h-1/2 min-h-0 overflow-y-auto">
-                <AnchorPanel direction="horizontal" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={pairedProduct ? handleRemoveAnchor : undefined} />
-              </div>
-              <div className="h-1/2 min-h-0 relative">
+              {/* TOP SLOT — always first */}
+              <div className="h-1/2 min-h-0 relative overflow-y-auto">
                 <AnimatePresence mode="wait">
-                  {pairedProduct ? (
+                  {topProduct ? (
                     <LockedPairPanel
-                      key="locked"
-                      product={pairedProduct}
-                      selectedSize={pairedSize}
-                      setSelectedSize={setPairedSize}
-                      onRemove={handleRemovePairedDirect}
+                      key={`top-${topProduct.id}`}
+                      product={topProduct}
+                      selectedSize={topSize}
+                      setSelectedSize={setTopSize}
+                      onRemove={() => handleRemoveProduct(topProduct.id)}
                     />
                   ) : (
                     <CarouselRow
-                      key="carousel"
-                      products={suggestions}
+                      key="carousel-top"
+                      products={suggestions.filter(p => getBodyZone(p) === 'top' || getBodyZone(p) === 'accessory')}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="horizontal"
@@ -822,34 +834,28 @@ export function StyleKitView() {
                   )}
                 </AnimatePresence>
               </div>
-            </>
-          )}
 
-          {splitDirection === 'horizontal' && orientation === 'bottom' && (
-            <>
-              <div className="h-1/2 min-h-0 relative">
+              {/* BOTTOM SLOT — always second */}
+              <div className="h-1/2 min-h-0 relative overflow-y-auto">
                 <AnimatePresence mode="wait">
-                  {pairedProduct ? (
+                  {bottomProduct ? (
                     <LockedPairPanel
-                      key="locked"
-                      product={pairedProduct}
-                      selectedSize={pairedSize}
-                      setSelectedSize={setPairedSize}
-                      onRemove={handleRemovePairedDirect}
+                      key={`bottom-${bottomProduct.id}`}
+                      product={bottomProduct}
+                      selectedSize={bottomSize}
+                      setSelectedSize={setBottomSize}
+                      onRemove={() => handleRemoveProduct(bottomProduct.id)}
                     />
                   ) : (
                     <CarouselRow
-                      key="carousel"
-                      products={suggestions}
+                      key="carousel-bottom"
+                      products={suggestions.filter(p => getBodyZone(p) === 'bottom')}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="horizontal"
                     />
                   )}
                 </AnimatePresence>
-              </div>
-              <div className="h-1/2 min-h-0 overflow-y-auto">
-                <AnchorPanel direction="horizontal" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={pairedProduct ? handleRemoveAnchor : undefined} />
               </div>
             </>
           )}
@@ -869,7 +875,7 @@ export function StyleKitView() {
                     cardSize="large"
                   />
                 ) : (
-                  <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={pairedProduct ? handleRemoveAnchor : undefined} />
+                  <AnchorPanel direction="vertical" selectedSize={anchorSizeForExtras} setSelectedSize={anchorZone === 'top' ? setTopSize : setBottomSize} onRemove={pairedProduct ? handleRemoveAnchorExtras : undefined} />
                 )}
               </div>
               {/* Right side: paired/carousel (default) */}
@@ -879,8 +885,8 @@ export function StyleKitView() {
                     <LockedPairPanel
                       key="locked"
                       product={pairedProduct}
-                      selectedSize={pairedSize}
-                      setSelectedSize={setPairedSize}
+                      selectedSize={getBodyZone(pairedProduct) === 'top' ? topSize : bottomSize}
+                      setSelectedSize={getBodyZone(pairedProduct) === 'top' ? setTopSize : setBottomSize}
                       onRemove={handleRemovePairedDirect}
                       direction="vertical"
                     />
@@ -894,8 +900,7 @@ export function StyleKitView() {
                       cardSize="large"
                     />
                   ) : (
-                    /* Right side shows the "new anchor" (formerly paired) as static panel */
-                    <AnchorPanel direction="vertical" selectedSize={anchorSize} setSelectedSize={setAnchorSize} onRemove={undefined} />
+                    <AnchorPanel direction="vertical" selectedSize={anchorSizeForExtras} setSelectedSize={anchorZone === 'top' ? setTopSize : setBottomSize} onRemove={undefined} />
                   )}
                 </AnimatePresence>
               </div>
@@ -903,9 +908,9 @@ export function StyleKitView() {
           )}
         </div>
 
-        {/* ADD SET TO CART — big floating button when a pair is locked */}
+        {/* ADD SET TO CART — floating footer when both slots are filled (PAIRS) or paired exists (EXTRAS) */}
         <AnimatePresence>
-          {pairedProduct && (
+          {isCounterparts && bothFilled && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -915,16 +920,16 @@ export function StyleKitView() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${anchorSizeReady ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                    <div className={`w-2 h-2 rounded-full ${topSizeReady ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
                     <span className="text-[10px] font-display tracking-wider text-muted-foreground">
-                      {anchorProduct.title} {anchorSize ? `· ${anchorSize}` : '· Select size'}
+                      {topProduct!.title} {topSize ? `· ${topSize}` : '· Select size'}
                     </span>
                   </div>
                   <span className="text-muted-foreground/30">+</span>
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${pairedSizeReady ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                    <div className={`w-2 h-2 rounded-full ${bottomSizeReady ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
                     <span className="text-[10px] font-display tracking-wider text-muted-foreground">
-                      {pairedProduct.title} {pairedSize ? `· ${pairedSize}` : '· Select size'}
+                      {bottomProduct!.title} {bottomSize ? `· ${bottomSize}` : '· Select size'}
                     </span>
                   </div>
                 </div>
@@ -941,6 +946,22 @@ export function StyleKitView() {
               >
                 <ShoppingBag className="w-4 h-4" />
                 {canAddSet ? 'ADD SET TO CART' : 'SELECT SIZES TO CONTINUE'}
+              </button>
+            </motion.div>
+          )}
+          {!isCounterparts && pairedProduct && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              className="flex-shrink-0 border-t border-border bg-card/80 backdrop-blur-sm px-6 py-4"
+            >
+              <button
+                onClick={handleAddSetToCart}
+                className="w-full py-3.5 rounded-lg font-display text-sm font-bold tracking-[0.15em] flex items-center justify-center gap-2 transition-all bg-primary text-primary-foreground hover:opacity-90"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                ADD SET TO CART
               </button>
             </motion.div>
           )}
