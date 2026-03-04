@@ -865,7 +865,13 @@ export function SpatialCanvas() {
             }}
             onNavigate={(newIdx) => setSelectedIndex(newIdx)}
             activeCategory={activeCategory}
-            onCategoryChange={(cat) => setActiveCategory(cat)}
+            onCategoryChange={(cat) => {
+              setActiveCategory(cat);
+              // Schedule re-fit after positions recompute for the new category
+              requestAnimationFrame(() => {
+                setTimeout(() => fitToVisibleProducts(), 50);
+              });
+            }}
           />
         )}
       </AnimatePresence>
