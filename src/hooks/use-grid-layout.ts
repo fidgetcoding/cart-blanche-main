@@ -43,12 +43,19 @@ export function useGridLayout() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { data: layoutData } = await supabase
+        // Wait for auth before fetching — RLS requires authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+
+        let query = supabase
           .from('grid_layouts')
           .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids')
-          .eq('layout_type', 'default')
-          .limit(1)
-          .maybeSingle();
+          .eq('layout_type', 'default');
+
+        if (user) {
+          query = query.eq('merchant_id', user.id);
+        }
+
+        const { data: layoutData } = await query.limit(1).maybeSingle();
 
         if (layoutData) {
           setLayout({
@@ -123,6 +130,7 @@ export function useGridLayout() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
+    const current = layout || EMPTY_LAYOUT;
     const { error } = await supabase
       .from('grid_layouts')
       .upsert({
@@ -130,11 +138,14 @@ export function useGridLayout() {
         layout_type: 'default',
         product_order: productOrder,
         category_order: categoryOrder,
+        hidden_tags: current.hiddenTags,
+        hidden_product_types: current.hiddenProductTypes,
+        hidden_product_ids: current.hiddenProductIds,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, productOrder, categoryOrder };
+      const updated: GridLayout = { ...current, productOrder, categoryOrder };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
@@ -146,17 +157,22 @@ export function useGridLayout() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
+    const current = layout || EMPTY_LAYOUT;
     const { error } = await supabase
       .from('grid_layouts')
       .upsert({
         merchant_id: user.id,
         layout_type: 'default',
+        product_order: current.productOrder,
+        category_order: current.categoryOrder,
         hidden_tags: hiddenTags,
+        hidden_product_types: current.hiddenProductTypes,
+        hidden_product_ids: current.hiddenProductIds,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, hiddenTags };
+      const updated: GridLayout = { ...current, hiddenTags };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
@@ -168,17 +184,22 @@ export function useGridLayout() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
+    const current = layout || EMPTY_LAYOUT;
     const { error } = await supabase
       .from('grid_layouts')
       .upsert({
         merchant_id: user.id,
         layout_type: 'default',
+        product_order: current.productOrder,
+        category_order: current.categoryOrder,
+        hidden_tags: current.hiddenTags,
         hidden_product_types: hiddenProductTypes,
+        hidden_product_ids: current.hiddenProductIds,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, hiddenProductTypes };
+      const updated: GridLayout = { ...current, hiddenProductTypes };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
@@ -190,17 +211,22 @@ export function useGridLayout() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
+    const current = layout || EMPTY_LAYOUT;
     const { error } = await supabase
       .from('grid_layouts')
       .upsert({
         merchant_id: user.id,
         layout_type: 'default',
+        product_order: current.productOrder,
+        category_order: current.categoryOrder,
+        hidden_tags: current.hiddenTags,
+        hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: hiddenProductIds,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, hiddenProductIds };
+      const updated: GridLayout = { ...current, hiddenProductIds };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
