@@ -324,7 +324,13 @@ export function SpatialCanvas() {
     applyTransform();
   }, [fitToVisibleProducts, applyTransform]);
 
+  // Re-fit when category changes or positions recompute — but NOT on initial mount
+  const isFirstRenderRef = useRef(true);
   useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return; // Skip first run — initial fit effect handles mount
+    }
     fitToVisibleProducts();
   }, [fitToVisibleProducts]);
 
