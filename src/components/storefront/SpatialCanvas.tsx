@@ -144,7 +144,7 @@ export function SpatialCanvas() {
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     setScaleState(s);
     applyTransform();
-  }, [applyTransform, isMobile]);
+  }, [applyTransform, isMobile, CANVAS_W, CANVAS_H]);
 
   // Self-terminating animation loop — starts on demand, stops when idle
   const startAnimation = useCallback(() => {
@@ -279,7 +279,10 @@ export function SpatialCanvas() {
 
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     startAnimation();
-    if (activeCategory !== 'ALL') {
+    if (activeCategory === 'ALL') {
+      // Update min zoom to the ALL-fit scale — this is the furthest you can zoom out
+      minScaleRef.current = s;
+    } else {
       categoryZoomRef.current = { x: cx, y: cy, scale: s };
     }
     setScaleState(s);

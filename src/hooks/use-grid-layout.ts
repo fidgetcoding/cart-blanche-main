@@ -43,12 +43,20 @@ export function useGridLayout() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { data: layoutData } = await supabase
+        // Wait for auth to be ready before fetching
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        let query = supabase
           .from('grid_layouts')
           .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids')
-          .eq('layout_type', 'default')
-          .limit(1)
-          .maybeSingle();
+          .eq('layout_type', 'default');
+        
+        // Explicitly filter by merchant_id if authenticated
+        if (user) {
+          query = query.eq('merchant_id', user.id);
+        }
+        
+        const { data: layoutData } = await query.limit(1).maybeSingle();
 
         if (layoutData) {
           setLayout({
