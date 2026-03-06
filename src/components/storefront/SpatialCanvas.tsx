@@ -311,14 +311,16 @@ export function SpatialCanvas() {
     for (let i = 0; i < DEMO_PRODUCTS.length; i++) {
       const p = DEMO_PRODUCTS[i];
       if (activeCategory !== 'ALL' && p.category.toUpperCase() !== activeCategory) continue;
-      const gx = p.grid_position.x;
-      const gy = p.grid_position.y;
+      const pos = overridePositions ? overridePositions[i] : p.grid_position;
+      if (!pos) continue;
+      const gx = pos.x;
+      const gy = pos.y;
       if (canvasX >= gx && canvasX <= gx + 220 && canvasY >= gy && canvasY <= gy + 280) {
         return i;
       }
     }
     return null;
-  }, [activeCategory]);
+  }, [activeCategory, overridePositions]);
 
   // Wheel zoom
   useEffect(() => {
