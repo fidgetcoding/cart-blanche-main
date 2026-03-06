@@ -286,6 +286,15 @@ export function SpatialCanvas() {
     setPeekingAll(false);
   }, [activeCategory, overridePositions, isMobile, startAnimation]);
 
+  // Instant version of fitToVisibleProducts — snaps transform without animation
+  const snapToFitVisible = useCallback(() => {
+    fitToVisibleProducts();
+    // Copy target to current transform immediately — no lerp
+    const target = targetTransformRef.current;
+    transformRef.current = { x: target.x, y: target.y, scale: target.scale };
+    applyTransform();
+  }, [fitToVisibleProducts, applyTransform]);
+
   useEffect(() => {
     fitToVisibleProducts();
   }, [fitToVisibleProducts]);
