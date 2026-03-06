@@ -286,6 +286,15 @@ export function SpatialCanvas() {
     setPeekingAll(false);
   }, [activeCategory, overridePositions, isMobile, startAnimation]);
 
+  // Instant version of fitToVisibleProducts — snaps transform without animation
+  const snapToFitVisible = useCallback(() => {
+    fitToVisibleProducts();
+    // Copy target to current transform immediately — no lerp
+    const target = targetTransformRef.current;
+    transformRef.current = { x: target.x, y: target.y, scale: target.scale };
+    applyTransform();
+  }, [fitToVisibleProducts, applyTransform]);
+
   useEffect(() => {
     fitToVisibleProducts();
   }, [fitToVisibleProducts]);
@@ -591,7 +600,7 @@ export function SpatialCanvas() {
         // Close product detail overlay, reset zoom, and refocus root
         setSelectedIndex(null);
         maxZoomTriggeredRef.current = false;
-        fitToVisibleProducts();
+        snapToFitVisible();
         requestAnimationFrame(() => rootRef.current?.focus());
         return;
       }
@@ -867,7 +876,9 @@ export function SpatialCanvas() {
               setFocusedIndex(selectedIndex);
               setSelectedIndex(null);
               maxZoomTriggeredRef.current = false;
-              fitToVisibleProducts();
+              snapToFitVisible();
+              // Safety: re-snap after overlay exit animation completes
+              setTimeout(() => snapToFitVisible(), 350);
               setTimeout(() => rootRef.current?.focus(), 50);
             }}
             onNavigate={(newIdx) => setSelectedIndex(newIdx)}
