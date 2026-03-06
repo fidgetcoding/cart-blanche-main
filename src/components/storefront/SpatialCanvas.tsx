@@ -319,6 +319,13 @@ export function SpatialCanvas() {
       e.preventDefault();
       
       const target = targetTransformRef.current;
+
+      // Dead zone check: if cursor is NOT over a product tile, only allow zoom OUT
+      const isOverProduct = getProductAtCursor(e.clientX, e.clientY) !== null;
+      if (!isOverProduct && e.deltaY < 0) {
+        return;
+      }
+
       if (target.scale >= MAX_ZOOM_THRESHOLD && e.deltaY < 0 && !maxZoomTriggeredRef.current) {
         const idx = getProductAtCursor(e.clientX, e.clientY);
         if (idx !== null) {
