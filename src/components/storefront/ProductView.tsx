@@ -317,13 +317,13 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         {/* Navigation arrows */}
         <button
           onClick={() => navigate('left')}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto opacity-0 hover:opacity-100"
         >
           <ChevronLeft className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
         <button
           onClick={() => navigate('right')}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto opacity-0 hover:opacity-100"
         >
           <ChevronRight className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
