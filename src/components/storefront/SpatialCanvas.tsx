@@ -318,6 +318,7 @@ export function SpatialCanvas() {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      setFooterIntroVisible(false);
       
       const target = targetTransformRef.current;
 
