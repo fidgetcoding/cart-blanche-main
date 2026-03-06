@@ -144,7 +144,7 @@ export function SpatialCanvas() {
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     setScaleState(s);
     applyTransform();
-  }, [applyTransform, isMobile]);
+  }, [applyTransform, isMobile, CANVAS_W, CANVAS_H]);
 
   // Self-terminating animation loop — starts on demand, stops when idle
   const startAnimation = useCallback(() => {
