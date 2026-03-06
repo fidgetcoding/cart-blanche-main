@@ -876,7 +876,9 @@ export function SpatialCanvas() {
               setFocusedIndex(selectedIndex);
               setSelectedIndex(null);
               maxZoomTriggeredRef.current = false;
-              fitToVisibleProducts();
+              snapToFitVisible();
+              // Safety: re-snap after overlay exit animation completes
+              setTimeout(() => snapToFitVisible(), 350);
               setTimeout(() => rootRef.current?.focus(), 50);
             }}
             onNavigate={(newIdx) => setSelectedIndex(newIdx)}
