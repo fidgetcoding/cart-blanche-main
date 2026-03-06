@@ -144,40 +144,6 @@ export function SpatialCanvas() {
         const dy = Math.abs(t.y - target.y);
         const ds = Math.abs(t.scale - target.scale);
 
-        if (ds < 0.001 && activeCategoryRef.current === 'ALL') {
-          const container = containerRef.current;
-          if (container) {
-            const rect = container.getBoundingClientRect();
-            const scaledW = canvasDimsRef.current.w * target.scale;
-            const scaledH = canvasDimsRef.current.h * target.scale;
-            const headerPad = 100;
-            const bottomPad = 80;
-            const sidePad = 80;
-
-            if (scaledW <= rect.width && scaledH <= rect.height - headerPad) {
-              target.x = (rect.width - scaledW) / 2;
-              const availH = rect.height - headerPad - bottomPad;
-              target.y = headerPad + (availH - scaledH) / 2;
-            } else {
-              if (scaledW > rect.width) {
-                const minX = rect.width - scaledW - sidePad;
-                const maxX = sidePad;
-                target.x = Math.max(minX, Math.min(maxX, target.x));
-              } else {
-                target.x = (rect.width - scaledW) / 2;
-              }
-              if (scaledH > rect.height - headerPad) {
-                const minY = rect.height - scaledH - bottomPad;
-                const maxY = headerPad;
-                target.y = Math.max(minY, Math.min(maxY, target.y));
-              } else {
-                const availH = rect.height - headerPad;
-                target.y = headerPad + (availH - scaledH) / 2;
-              }
-            }
-          }
-        }
-
         if (dx > 0.1 || dy > 0.1 || ds > 0.0001) {
           t.x = lerp(t.x, target.x, LERP_SPEED);
           t.y = lerp(t.y, target.y, LERP_SPEED);
@@ -219,16 +185,17 @@ export function SpatialCanvas() {
     };
   }, [startAnimation]);
 
-  // Fit canvas to visible products when category changes
-  const fitToVisibleProducts = useCallback(() => {
+  // ─── Single source of truth for fitting products to viewport ───
+  const computeFit = useCallback((category: string) => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) return null;
     const rect = container.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
 
     const visibleWithIndex = DEMO_PRODUCTS
       .map((p, i) => ({ p, i }))
-      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
-    if (visibleWithIndex.length === 0) return;
+      .filter(({ p }) => category === 'ALL' || p.category.toUpperCase() === category);
+    if (visibleWithIndex.length === 0) return null;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const { p, i } of visibleWithIndex) {
@@ -242,9 +209,9 @@ export function SpatialCanvas() {
 
     const bboxW = maxX - minX;
     const bboxH = maxY - minY;
-    const padX = isMobile ? 20 : 120;
-    const headerPad = isMobile ? 90 : 120;
-    const bottomPad = isMobile ? 80 : 60;
+    const padX = isMobile ? 20 : 80;
+    const headerPad = isMobile ? 90 : 110;
+    const bottomPad = isMobile ? 80 : 70;
     const fitScale = Math.min(
       (rect.width - padX * 2) / bboxW,
       (rect.height - headerPad - bottomPad) / bboxH
@@ -255,69 +222,83 @@ export function SpatialCanvas() {
     const cx = (rect.width - scaledW) / 2 - minX * s;
     const cy = headerPad + ((rect.height - headerPad - bottomPad) - scaledH) / 2 - minY * s;
 
-    targetTransformRef.current = { x: cx, y: cy, scale: s };
+    return { x: cx, y: cy, scale: s };
+  }, [DEMO_PRODUCTS, overridePositions, isMobile]);
+
+  // Animate to fit visible products
+  const fitToVisibleProducts = useCallback(() => {
+    const fit = computeFit(activeCategory);
+    if (!fit) return;
+
+    targetTransformRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
     startAnimation();
+
     if (activeCategory === 'ALL') {
-      // Update min zoom to the ALL-fit scale — this is the furthest you can zoom out
-      minScaleRef.current = s;
+      minScaleRef.current = fit.scale;
     } else {
-      categoryZoomRef.current = { x: cx, y: cy, scale: s };
+      categoryZoomRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
     }
-    setScaleState(s);
+    setScaleState(fit.scale);
     setPeekingAll(false);
-  }, [activeCategory, overridePositions, isMobile, startAnimation]);
+  }, [activeCategory, computeFit, startAnimation]);
 
-  // Instant version of fitToVisibleProducts — snaps transform without animation
+  // Snap to fit (no animation) — used on initial load and closing detail view
   const snapToFitVisible = useCallback(() => {
-    fitToVisibleProducts();
-    // Copy target to current transform immediately — no lerp
-    const target = targetTransformRef.current;
-    transformRef.current = { x: target.x, y: target.y, scale: target.scale };
+    const fit = computeFit(activeCategory);
+    if (!fit) return;
+
+    transformRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
+    targetTransformRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
     applyTransform();
-  }, [fitToVisibleProducts, applyTransform]);
 
-  // Re-fit when category changes or positions recompute — but NOT on initial mount
-  const isFirstRenderRef = useRef(true);
-  useEffect(() => {
-    if (isFirstRenderRef.current) {
-      isFirstRenderRef.current = false;
-      return; // Skip first run — initial fit effect handles mount
+    if (activeCategory === 'ALL') {
+      minScaleRef.current = fit.scale;
+    } else {
+      categoryZoomRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
     }
-    fitToVisibleProducts();
-  }, [fitToVisibleProducts]);
+    setScaleState(fit.scale);
+    setPeekingAll(false);
+  }, [activeCategory, computeFit, applyTransform]);
 
-  // Initial fit: snap to ALL fit-to-frame on mount and when products change
-  const hasInitialFitRef = useRef(false);
-  
-  useEffect(() => {
-    hasInitialFitRef.current = false;
-  }, [CANVAS_W, CANVAS_H]);
-
+  // ─── Initial fit on mount ───
+  // Also computes the ALL-view minScale even if we start on a category
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || hasInitialFitRef.current) return;
+    if (!container) return;
 
-    const tryFit = () => {
+    const doInitialFit = () => {
       const rect = container.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return false;
-      
-      fitToVisibleProducts();
-      const target = targetTransformRef.current;
-      transformRef.current = { x: target.x, y: target.y, scale: target.scale };
-      minScaleRef.current = target.scale;
-      applyTransform();
-      hasInitialFitRef.current = true;
+
+      // Always compute ALL-view scale for min zoom limit
+      const allFit = computeFit('ALL');
+      if (allFit) {
+        minScaleRef.current = allFit.scale;
+      }
+
+      // Snap to current category (which is ALL on mount)
+      snapToFitVisible();
       return true;
     };
 
-    if (!tryFit()) {
+    if (!doInitialFit()) {
       const observer = new ResizeObserver(() => {
-        if (tryFit()) observer.disconnect();
+        if (doInitialFit()) observer.disconnect();
       });
       observer.observe(container);
       return () => observer.disconnect();
     }
-  }, [applyTransform, CANVAS_W, CANVAS_H, fitToVisibleProducts]);
+  }, [computeFit, snapToFitVisible]);
+
+  // ─── Re-fit when category changes (NOT on initial mount) ───
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    fitToVisibleProducts();
+  }, [fitToVisibleProducts]);
 
   // Find the product index under a given screen coordinate
   const getProductAtCursor = useCallback((screenX: number, screenY: number) => {
