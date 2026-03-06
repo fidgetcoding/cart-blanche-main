@@ -732,6 +732,17 @@ export function SpatialCanvas() {
 
   const compactHeader = isMobile;
 
+  // Wait for layout data before rendering to ensure correct product order
+  if (layoutLoading) {
+    return (
+      <div ref={rootRef} tabIndex={0} className="h-screen w-full bg-background flex items-center justify-center outline-none">
+        <p className="text-muted-foreground tracking-[0.3em] text-[11px] uppercase animate-pulse">
+          Loading...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div ref={rootRef} className={`relative w-full h-full overflow-hidden dynamic-bg select-none outline-none ${themeSettings.mode === 'light' ? 'light' : ''}`} tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
       {/* Top bar */}
