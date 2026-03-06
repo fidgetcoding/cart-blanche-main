@@ -123,40 +123,6 @@ export function SpatialCanvas() {
     el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
   }, []);
 
-  // Initial fit: snap to ALL fit-to-frame on mount and when products change
-  const hasInitialFitRef = useRef(false);
-  
-  useEffect(() => {
-    hasInitialFitRef.current = false;
-  }, [CANVAS_W, CANVAS_H]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || hasInitialFitRef.current) return;
-
-    const tryFit = () => {
-      const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return false;
-      
-      // Use fitToVisibleProducts to calculate the target, then snap immediately
-      fitToVisibleProducts();
-      const target = targetTransformRef.current;
-      transformRef.current = { x: target.x, y: target.y, scale: target.scale };
-      minScaleRef.current = target.scale;
-      applyTransform();
-      hasInitialFitRef.current = true;
-      return true;
-    };
-
-    if (!tryFit()) {
-      // Container not ready yet — use ResizeObserver, disconnect after first success
-      const observer = new ResizeObserver(() => {
-        if (tryFit()) observer.disconnect();
-      });
-      observer.observe(container);
-      return () => observer.disconnect();
-    }
-  }, [applyTransform, CANVAS_W, CANVAS_H, fitToVisibleProducts]);
 
   // Self-terminating animation loop — starts on demand, stops when idle
   const startAnimation = useCallback(() => {
