@@ -123,6 +123,7 @@ export function useGridLayout() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
+    const current = layout || EMPTY_LAYOUT;
     const { error } = await supabase
       .from('grid_layouts')
       .upsert({
@@ -130,11 +131,14 @@ export function useGridLayout() {
         layout_type: 'default',
         product_order: productOrder,
         category_order: categoryOrder,
+        hidden_tags: current.hiddenTags,
+        hidden_product_types: current.hiddenProductTypes,
+        hidden_product_ids: current.hiddenProductIds,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
-      const updated: GridLayout = { ...EMPTY_LAYOUT, ...layout, productOrder, categoryOrder };
+      const updated: GridLayout = { ...current, productOrder, categoryOrder };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
