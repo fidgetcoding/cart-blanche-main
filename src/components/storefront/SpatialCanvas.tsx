@@ -123,54 +123,6 @@ export function SpatialCanvas() {
     el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
   }, []);
 
-  // Calculate initial scale to fit everything, and center.
-  // Runs once on mount. Uses a ResizeObserver that disconnects after the first successful fit.
-  const hasInitialFitRef = useRef(false);
-
-  useEffect(() => {
-    hasInitialFitRef.current = false; // Reset on dependency change (products loaded, etc.)
-  }, [CANVAS_W, CANVAS_H]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const doInitialFit = () => {
-      if (hasInitialFitRef.current) return;
-      const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-
-      const padX = isMobile ? 16 : 40;
-      const headerPad = isMobile ? 90 : 100;
-      const bottomPad = isMobile ? 80 : 60;
-      const fitScale = Math.min(
-        (rect.width - padX * 2) / CANVAS_W,
-        (rect.height - headerPad - bottomPad) / CANVAS_H
-      );
-      const s = Math.max(0.2, Math.min(1, fitScale));
-      minScaleRef.current = s;
-      const cx = (rect.width - CANVAS_W * s) / 2;
-      const availH = rect.height - headerPad - bottomPad;
-      const cy = headerPad + (availH - CANVAS_H * s) / 2;
-      transformRef.current = { x: cx, y: cy, scale: s };
-      targetTransformRef.current = { x: cx, y: cy, scale: s };
-      setScaleState(s);
-      applyTransform();
-      hasInitialFitRef.current = true;
-    };
-
-    doInitialFit();
-
-    // If container wasn't ready, wait for it — then disconnect
-    if (!hasInitialFitRef.current) {
-      const observer = new ResizeObserver(() => {
-        doInitialFit();
-        if (hasInitialFitRef.current) observer.disconnect();
-      });
-      observer.observe(container);
-      return () => observer.disconnect();
-    }
-  }, [applyTransform, isMobile, CANVAS_W, CANVAS_H]);
 
   // Self-terminating animation loop — starts on demand, stops when idle
   const startAnimation = useCallback(() => {
@@ -333,6 +285,39 @@ export function SpatialCanvas() {
     }
     fitToVisibleProducts();
   }, [fitToVisibleProducts]);
+
+  // Initial fit: snap to ALL fit-to-frame on mount and when products change
+  const hasInitialFitRef = useRef(false);
+  
+  useEffect(() => {
+    hasInitialFitRef.current = false;
+  }, [CANVAS_W, CANVAS_H]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || hasInitialFitRef.current) return;
+
+    const tryFit = () => {
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+      
+      fitToVisibleProducts();
+      const target = targetTransformRef.current;
+      transformRef.current = { x: target.x, y: target.y, scale: target.scale };
+      minScaleRef.current = target.scale;
+      applyTransform();
+      hasInitialFitRef.current = true;
+      return true;
+    };
+
+    if (!tryFit()) {
+      const observer = new ResizeObserver(() => {
+        if (tryFit()) observer.disconnect();
+      });
+      observer.observe(container);
+      return () => observer.disconnect();
+    }
+  }, [applyTransform, CANVAS_W, CANVAS_H, fitToVisibleProducts]);
 
   // Find the product index under a given screen coordinate
   const getProductAtCursor = useCallback((screenX: number, screenY: number) => {
