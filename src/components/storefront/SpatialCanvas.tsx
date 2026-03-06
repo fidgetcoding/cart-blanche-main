@@ -151,6 +151,34 @@ export function SpatialCanvas() {
           applyTransform();
           needsNextFrame = true;
         }
+        // Boundary clamping — prevent canvas from drifting off screen
+        if (ds < 0.001) {
+          const container = containerRef.current;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const scaledW = canvasDimsRef.current.w * target.scale;
+            const scaledH = canvasDimsRef.current.h * target.scale;
+            const headerPad = 110;
+            const bottomPad = 70;
+            const sidePad = 80;
+
+            if (scaledW <= rect.width) {
+              target.x = (rect.width - scaledW) / 2;
+            } else {
+              const minX = rect.width - scaledW - sidePad;
+              const maxX = sidePad;
+              target.x = Math.max(minX, Math.min(maxX, target.x));
+            }
+            if (scaledH <= rect.height - headerPad) {
+              const availH = rect.height - headerPad - bottomPad;
+              target.y = headerPad + (availH - scaledH) / 2;
+            } else {
+              const minY = rect.height - scaledH - bottomPad;
+              const maxY = headerPad;
+              target.y = Math.max(minY, Math.min(maxY, target.y));
+            }
+          }
+        }
       } else {
         needsNextFrame = true;
       }
@@ -278,6 +306,8 @@ export function SpatialCanvas() {
 
       // Snap to current category (which is ALL on mount)
       snapToFitVisible();
+      // Safety: re-snap after a short delay in case layout shifted
+      setTimeout(() => snapToFitVisible(), 100);
       return true;
     };
 
@@ -607,28 +637,19 @@ export function SpatialCanvas() {
         requestAnimationFrame(() => rootRef.current?.focus());
         return;
       }
-      // Zoom out to fit-all view
-      const container = containerRef.current;
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        const padX = isMobile ? 16 : 40;
-        const padY = isMobile ? 60 : 80;
-        const fitScale = Math.min(
-          (rect.width - padX * 2) / CANVAS_W,
-          (rect.height - padY * 2) / CANVAS_H
-        );
-        const s = Math.max(0.3, Math.min(1, fitScale));
-        const cx = (rect.width - CANVAS_W * s) / 2;
-        const cy = (rect.height - CANVAS_H * s) / 2;
-        targetTransformRef.current = { x: cx, y: cy, scale: s };
-        setScaleState(s);
-        setFocusedIndex(-1);
-        setHoveredIndex(null);
-        if (activeCategory !== 'ALL') {
-          setActiveCategory('ALL');
-          categoryZoomRef.current = null;
-          setPeekingAll(false);
-        }
+      // Zoom out to fit-all view — use computeFit for consistent padding
+      setActiveCategory('ALL');
+      categoryZoomRef.current = null;
+      setPeekingAll(false);
+      setFocusedIndex(-1);
+      setHoveredIndex(null);
+      const allFit = computeFit('ALL');
+      if (allFit) {
+        targetTransformRef.current = { x: allFit.x, y: allFit.y, scale: allFit.scale };
+        transformRef.current = { x: allFit.x, y: allFit.y, scale: allFit.scale };
+        minScaleRef.current = allFit.scale;
+        setScaleState(allFit.scale);
+        applyTransform();
       }
       return;
     }
