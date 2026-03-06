@@ -527,6 +527,7 @@ export function SpatialCanvas() {
       dragging: true,
     };
     setIsDragging(true);
+    setFooterIntroVisible(false);
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
