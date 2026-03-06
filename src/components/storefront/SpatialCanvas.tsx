@@ -838,19 +838,19 @@ export function SpatialCanvas() {
       <div className={`absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-500 ${footerGlass ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <div className="flex items-end justify-between px-4 md:px-6 py-3 md:py-5">
           {/* Hints */}
-          <div className={`tracking-wider space-y-0.5 cursor-default transition-colors duration-500 ${themeSettings.mode === 'light' ? 'text-muted-foreground/60 hover:text-foreground/90' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
-            <p className="block md:hidden">PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
+          <div className={`tracking-wider space-y-0.5 cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : themeSettings.mode === 'light' ? 'text-muted-foreground/60 hover:text-foreground/90' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
+            <p className="block md:hidden">HOVER OVER ITEMS AND PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
             <div className="hidden md:block space-y-0.5">
-              <p>SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
+              <p>HOVER OVER ITEMS AND SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
               <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
             </div>
           </div>
           {/* Social icons */}
           <div className="flex items-center gap-2 md:gap-3">
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className={`p-1.5 md:p-2 transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/50 hover:text-foreground'}`}>
               <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </a>
-            <a href="https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1&pp=ygUJcmljayByb2xsoAcB" target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 text-muted-foreground/50 hover:text-foreground transition-colors">
+            <a href="https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1&pp=ygUJcmljayByb2xsoAcB" target="_blank" rel="noopener noreferrer" className={`p-1.5 md:p-2 transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/50 hover:text-foreground'}`}>
               <Twitter className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </a>
           </div>
