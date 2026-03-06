@@ -600,7 +600,7 @@ export function SpatialCanvas() {
         // Close product detail overlay, reset zoom, and refocus root
         setSelectedIndex(null);
         maxZoomTriggeredRef.current = false;
-        fitToVisibleProducts();
+        snapToFitVisible();
         requestAnimationFrame(() => rootRef.current?.focus());
         return;
       }
