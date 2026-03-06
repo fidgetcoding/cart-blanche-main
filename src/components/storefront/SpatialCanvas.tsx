@@ -151,6 +151,34 @@ export function SpatialCanvas() {
           applyTransform();
           needsNextFrame = true;
         }
+        // Boundary clamping — prevent canvas from drifting off screen
+        if (ds < 0.001) {
+          const container = containerRef.current;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const scaledW = canvasDimsRef.current.w * target.scale;
+            const scaledH = canvasDimsRef.current.h * target.scale;
+            const headerPad = 110;
+            const bottomPad = 70;
+            const sidePad = 80;
+
+            if (scaledW <= rect.width) {
+              target.x = (rect.width - scaledW) / 2;
+            } else {
+              const minX = rect.width - scaledW - sidePad;
+              const maxX = sidePad;
+              target.x = Math.max(minX, Math.min(maxX, target.x));
+            }
+            if (scaledH <= rect.height - headerPad) {
+              const availH = rect.height - headerPad - bottomPad;
+              target.y = headerPad + (availH - scaledH) / 2;
+            } else {
+              const minY = rect.height - scaledH - bottomPad;
+              const maxY = headerPad;
+              target.y = Math.max(minY, Math.min(maxY, target.y));
+            }
+          }
+        }
       } else {
         needsNextFrame = true;
       }
