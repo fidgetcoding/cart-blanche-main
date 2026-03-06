@@ -842,10 +842,7 @@ export function SpatialCanvas() {
           {/* Hints */}
           <div className={`tracking-wider space-y-0.5 cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : themeSettings.mode === 'light' ? 'text-muted-foreground/60 hover:text-foreground/90' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
             <p className="block md:hidden">HOVER OVER ITEMS AND PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
-            <div className="hidden md:block space-y-0.5">
-              <p>HOVER OVER ITEMS AND SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
-              <p>ARROW KEYS TO NAVIGATE · ENTER TO VIEW</p>
-            </div>
+            <p className="hidden md:block">HOVER OVER ITEMS AND SCROLL OR PINCH TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
           </div>
           {/* Social icons */}
           <div className="flex items-center gap-2 md:gap-3">
