@@ -123,6 +123,28 @@ export function SpatialCanvas() {
     el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
   }, []);
 
+  // Calculate initial scale to fit everything, and center
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const padX = isMobile ? 16 : 40;
+    const headerPad = isMobile ? 90 : 100;
+    const bottomPad = isMobile ? 80 : 60;
+    const fitScale = Math.min(
+      (rect.width - padX * 2) / CANVAS_W,
+      (rect.height - headerPad - bottomPad) / CANVAS_H
+    );
+    const s = Math.max(0.2, Math.min(1, fitScale));
+    minScaleRef.current = s;
+    const cx = (rect.width - CANVAS_W * s) / 2;
+    const availH = rect.height - headerPad - bottomPad;
+    const cy = headerPad + (availH - CANVAS_H * s) / 2;
+    transformRef.current = { x: cx, y: cy, scale: s };
+    targetTransformRef.current = { x: cx, y: cy, scale: s };
+    setScaleState(s);
+    applyTransform();
+  }, [applyTransform, isMobile]);
 
   // Self-terminating animation loop — starts on demand, stops when idle
   const startAnimation = useCallback(() => {
@@ -144,40 +166,46 @@ export function SpatialCanvas() {
         const dy = Math.abs(t.y - target.y);
         const ds = Math.abs(t.scale - target.scale);
 
+        if (ds < 0.001 && activeCategoryRef.current === 'ALL') {
+          const container = containerRef.current;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const scaledW = canvasDimsRef.current.w * target.scale;
+            const scaledH = canvasDimsRef.current.h * target.scale;
+            const headerPad = 100;
+            const bottomPad = 80;
+            const sidePad = 80;
+
+            if (scaledW <= rect.width && scaledH <= rect.height - headerPad) {
+              target.x = (rect.width - scaledW) / 2;
+              const availH = rect.height - headerPad - bottomPad;
+              target.y = headerPad + (availH - scaledH) / 2;
+            } else {
+              if (scaledW > rect.width) {
+                const minX = rect.width - scaledW - sidePad;
+                const maxX = sidePad;
+                target.x = Math.max(minX, Math.min(maxX, target.x));
+              } else {
+                target.x = (rect.width - scaledW) / 2;
+              }
+              if (scaledH > rect.height - headerPad) {
+                const minY = rect.height - scaledH - bottomPad;
+                const maxY = headerPad;
+                target.y = Math.max(minY, Math.min(maxY, target.y));
+              } else {
+                const availH = rect.height - headerPad;
+                target.y = headerPad + (availH - scaledH) / 2;
+              }
+            }
+          }
+        }
+
         if (dx > 0.1 || dy > 0.1 || ds > 0.0001) {
           t.x = lerp(t.x, target.x, LERP_SPEED);
           t.y = lerp(t.y, target.y, LERP_SPEED);
           t.scale = lerp(t.scale, target.scale, LERP_SPEED);
           applyTransform();
           needsNextFrame = true;
-        }
-        // Boundary clamping — prevent canvas from drifting off screen
-        if (ds < 0.001) {
-          const container = containerRef.current;
-          if (container) {
-            const rect = container.getBoundingClientRect();
-            const scaledW = canvasDimsRef.current.w * target.scale;
-            const scaledH = canvasDimsRef.current.h * target.scale;
-            const headerPad = 110;
-            const bottomPad = 70;
-            const sidePad = 80;
-
-            if (scaledW <= rect.width) {
-              target.x = (rect.width - scaledW) / 2;
-            } else {
-              const minX = rect.width - scaledW - sidePad;
-              const maxX = sidePad;
-              target.x = Math.max(minX, Math.min(maxX, target.x));
-            }
-            if (scaledH <= rect.height - headerPad) {
-              const availH = rect.height - headerPad - bottomPad;
-              target.y = headerPad + (availH - scaledH) / 2;
-            } else {
-              const minY = rect.height - scaledH - bottomPad;
-              const maxY = headerPad;
-              target.y = Math.max(minY, Math.min(maxY, target.y));
-            }
-          }
         }
       } else {
         needsNextFrame = true;
@@ -213,17 +241,16 @@ export function SpatialCanvas() {
     };
   }, [startAnimation]);
 
-  // ─── Single source of truth for fitting products to viewport ───
-  const computeFit = useCallback((category: string) => {
+  // Fit canvas to visible products when category changes
+  const fitToVisibleProducts = useCallback(() => {
     const container = containerRef.current;
-    if (!container) return null;
+    if (!container) return;
     const rect = container.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return null;
 
     const visibleWithIndex = DEMO_PRODUCTS
       .map((p, i) => ({ p, i }))
-      .filter(({ p }) => category === 'ALL' || p.category.toUpperCase() === category);
-    if (visibleWithIndex.length === 0) return null;
+      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
+    if (visibleWithIndex.length === 0) return;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const { p, i } of visibleWithIndex) {
@@ -237,9 +264,9 @@ export function SpatialCanvas() {
 
     const bboxW = maxX - minX;
     const bboxH = maxY - minY;
-    const padX = isMobile ? 20 : 80;
-    const headerPad = isMobile ? 90 : 110;
-    const bottomPad = isMobile ? 80 : 70;
+    const padX = isMobile ? 20 : 120;
+    const headerPad = isMobile ? 90 : 120;
+    const bottomPad = isMobile ? 80 : 60;
     const fitScale = Math.min(
       (rect.width - padX * 2) / bboxW,
       (rect.height - headerPad - bottomPad) / bboxH
@@ -250,83 +277,25 @@ export function SpatialCanvas() {
     const cx = (rect.width - scaledW) / 2 - minX * s;
     const cy = headerPad + ((rect.height - headerPad - bottomPad) - scaledH) / 2 - minY * s;
 
-    return { x: cx, y: cy, scale: s };
-  }, [DEMO_PRODUCTS, overridePositions, isMobile]);
-
-  // Animate to fit visible products
-  const fitToVisibleProducts = useCallback(() => {
-    const fit = computeFit(activeCategory);
-    if (!fit) return;
-
-    targetTransformRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
+    targetTransformRef.current = { x: cx, y: cy, scale: s };
     startAnimation();
-
-    if (activeCategory === 'ALL') {
-      minScaleRef.current = fit.scale;
-    } else {
-      categoryZoomRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
+    if (activeCategory !== 'ALL') {
+      categoryZoomRef.current = { x: cx, y: cy, scale: s };
     }
-    setScaleState(fit.scale);
+    setScaleState(s);
     setPeekingAll(false);
-  }, [activeCategory, computeFit, startAnimation]);
+  }, [activeCategory, overridePositions, isMobile, startAnimation]);
 
-  // Snap to fit (no animation) — used on initial load and closing detail view
+  // Instant version of fitToVisibleProducts — snaps transform without animation
   const snapToFitVisible = useCallback(() => {
-    const fit = computeFit(activeCategory);
-    if (!fit) return;
-
-    transformRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
-    targetTransformRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
+    fitToVisibleProducts();
+    // Copy target to current transform immediately — no lerp
+    const target = targetTransformRef.current;
+    transformRef.current = { x: target.x, y: target.y, scale: target.scale };
     applyTransform();
+  }, [fitToVisibleProducts, applyTransform]);
 
-    if (activeCategory === 'ALL') {
-      minScaleRef.current = fit.scale;
-    } else {
-      categoryZoomRef.current = { x: fit.x, y: fit.y, scale: fit.scale };
-    }
-    setScaleState(fit.scale);
-    setPeekingAll(false);
-  }, [activeCategory, computeFit, applyTransform]);
-
-  // ─── Initial fit on mount ───
-  // Also computes the ALL-view minScale even if we start on a category
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const doInitialFit = () => {
-      const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return false;
-
-      // Always compute ALL-view scale for min zoom limit
-      const allFit = computeFit('ALL');
-      if (allFit) {
-        minScaleRef.current = allFit.scale;
-      }
-
-      // Snap to current category (which is ALL on mount)
-      snapToFitVisible();
-      // Safety: re-snap after a short delay in case layout shifted
-      setTimeout(() => snapToFitVisible(), 100);
-      return true;
-    };
-
-    if (!doInitialFit()) {
-      const observer = new ResizeObserver(() => {
-        if (doInitialFit()) observer.disconnect();
-      });
-      observer.observe(container);
-      return () => observer.disconnect();
-    }
-  }, [computeFit, snapToFitVisible]);
-
-  // ─── Re-fit when category changes (NOT on initial mount) ───
-  const mountedRef = useRef(false);
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
     fitToVisibleProducts();
   }, [fitToVisibleProducts]);
 
@@ -342,16 +311,14 @@ export function SpatialCanvas() {
     for (let i = 0; i < DEMO_PRODUCTS.length; i++) {
       const p = DEMO_PRODUCTS[i];
       if (activeCategory !== 'ALL' && p.category.toUpperCase() !== activeCategory) continue;
-      const pos = overridePositions ? overridePositions[i] : p.grid_position;
-      if (!pos) continue;
-      const gx = pos.x;
-      const gy = pos.y;
+      const gx = p.grid_position.x;
+      const gy = p.grid_position.y;
       if (canvasX >= gx && canvasX <= gx + 220 && canvasY >= gy && canvasY <= gy + 280) {
         return i;
       }
     }
     return null;
-  }, [activeCategory, overridePositions]);
+  }, [activeCategory]);
 
   // Wheel zoom
   useEffect(() => {
@@ -637,19 +604,28 @@ export function SpatialCanvas() {
         requestAnimationFrame(() => rootRef.current?.focus());
         return;
       }
-      // Zoom out to fit-all view — use computeFit for consistent padding
-      setActiveCategory('ALL');
-      categoryZoomRef.current = null;
-      setPeekingAll(false);
-      setFocusedIndex(-1);
-      setHoveredIndex(null);
-      const allFit = computeFit('ALL');
-      if (allFit) {
-        targetTransformRef.current = { x: allFit.x, y: allFit.y, scale: allFit.scale };
-        transformRef.current = { x: allFit.x, y: allFit.y, scale: allFit.scale };
-        minScaleRef.current = allFit.scale;
-        setScaleState(allFit.scale);
-        applyTransform();
+      // Zoom out to fit-all view
+      const container = containerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const padX = isMobile ? 16 : 40;
+        const padY = isMobile ? 60 : 80;
+        const fitScale = Math.min(
+          (rect.width - padX * 2) / CANVAS_W,
+          (rect.height - padY * 2) / CANVAS_H
+        );
+        const s = Math.max(0.3, Math.min(1, fitScale));
+        const cx = (rect.width - CANVAS_W * s) / 2;
+        const cy = (rect.height - CANVAS_H * s) / 2;
+        targetTransformRef.current = { x: cx, y: cy, scale: s };
+        setScaleState(s);
+        setFocusedIndex(-1);
+        setHoveredIndex(null);
+        if (activeCategory !== 'ALL') {
+          setActiveCategory('ALL');
+          categoryZoomRef.current = null;
+          setPeekingAll(false);
+        }
       }
       return;
     }
@@ -753,17 +729,6 @@ export function SpatialCanvas() {
   }, [focusedIndex]);
 
   const compactHeader = isMobile;
-
-  // Wait for layout data before rendering to ensure correct product order
-  if (layoutLoading) {
-    return (
-      <div ref={rootRef} tabIndex={0} className="h-screen w-full bg-background flex items-center justify-center outline-none">
-        <p className="text-muted-foreground tracking-[0.3em] text-[11px] uppercase animate-pulse">
-          Loading...
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div ref={rootRef} className={`relative w-full h-full overflow-hidden dynamic-bg select-none outline-none ${themeSettings.mode === 'light' ? 'light' : ''}`} tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
