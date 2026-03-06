@@ -306,6 +306,8 @@ export function SpatialCanvas() {
 
       // Snap to current category (which is ALL on mount)
       snapToFitVisible();
+      // Safety: re-snap after a short delay in case layout shifted
+      setTimeout(() => snapToFitVisible(), 100);
       return true;
     };
 
