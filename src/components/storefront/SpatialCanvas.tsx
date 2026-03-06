@@ -607,28 +607,19 @@ export function SpatialCanvas() {
         requestAnimationFrame(() => rootRef.current?.focus());
         return;
       }
-      // Zoom out to fit-all view
-      const container = containerRef.current;
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        const padX = isMobile ? 16 : 40;
-        const padY = isMobile ? 60 : 80;
-        const fitScale = Math.min(
-          (rect.width - padX * 2) / CANVAS_W,
-          (rect.height - padY * 2) / CANVAS_H
-        );
-        const s = Math.max(0.3, Math.min(1, fitScale));
-        const cx = (rect.width - CANVAS_W * s) / 2;
-        const cy = (rect.height - CANVAS_H * s) / 2;
-        targetTransformRef.current = { x: cx, y: cy, scale: s };
-        setScaleState(s);
-        setFocusedIndex(-1);
-        setHoveredIndex(null);
-        if (activeCategory !== 'ALL') {
-          setActiveCategory('ALL');
-          categoryZoomRef.current = null;
-          setPeekingAll(false);
-        }
+      // Zoom out to fit-all view — use computeFit for consistent padding
+      setActiveCategory('ALL');
+      categoryZoomRef.current = null;
+      setPeekingAll(false);
+      setFocusedIndex(-1);
+      setHoveredIndex(null);
+      const allFit = computeFit('ALL');
+      if (allFit) {
+        targetTransformRef.current = { x: allFit.x, y: allFit.y, scale: allFit.scale };
+        transformRef.current = { x: allFit.x, y: allFit.y, scale: allFit.scale };
+        minScaleRef.current = allFit.scale;
+        setScaleState(allFit.scale);
+        applyTransform();
       }
       return;
     }
