@@ -51,6 +51,7 @@ export function SpatialCanvas() {
   // React state for UI that needs re-renders
   const [scaleState, setScaleState] = useState(0.5);
   const [footerGlass, setFooterGlass] = useState(false);
+  const [footerIntroVisible, setFooterIntroVisible] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, panStartX: 0, panStartY: 0, dragging: false });
   const didDragRef = useRef(false);
