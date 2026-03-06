@@ -123,15 +123,23 @@ export function SpatialCanvas() {
     el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
   }, []);
 
-  // Calculate initial scale to fit everything, and center
-  // Use ResizeObserver to handle cases where container isn't sized on first frame
+  // Calculate initial scale to fit everything, and center.
+  // Runs once on mount. Uses a ResizeObserver that disconnects after the first successful fit.
+  const hasInitialFitRef = useRef(false);
+
+  useEffect(() => {
+    hasInitialFitRef.current = false; // Reset on dependency change (products loaded, etc.)
+  }, [CANVAS_W, CANVAS_H]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const doFit = () => {
+    const doInitialFit = () => {
+      if (hasInitialFitRef.current) return;
       const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return; // not laid out yet
+      if (rect.width === 0 || rect.height === 0) return;
+
       const padX = isMobile ? 16 : 40;
       const headerPad = isMobile ? 90 : 100;
       const bottomPad = isMobile ? 80 : 60;
@@ -148,16 +156,20 @@ export function SpatialCanvas() {
       targetTransformRef.current = { x: cx, y: cy, scale: s };
       setScaleState(s);
       applyTransform();
+      hasInitialFitRef.current = true;
     };
 
-    // Try immediately
-    doFit();
+    doInitialFit();
 
-    // Also observe resize in case container wasn't ready
-    const observer = new ResizeObserver(() => doFit());
-    observer.observe(container);
-
-    return () => observer.disconnect();
+    // If container wasn't ready, wait for it — then disconnect
+    if (!hasInitialFitRef.current) {
+      const observer = new ResizeObserver(() => {
+        doInitialFit();
+        if (hasInitialFitRef.current) observer.disconnect();
+      });
+      observer.observe(container);
+      return () => observer.disconnect();
+    }
   }, [applyTransform, isMobile, CANVAS_W, CANVAS_H]);
 
   // Self-terminating animation loop — starts on demand, stops when idle
@@ -312,7 +324,13 @@ export function SpatialCanvas() {
     applyTransform();
   }, [fitToVisibleProducts, applyTransform]);
 
+  // Re-fit when category changes or positions recompute — but NOT on initial mount
+  const isFirstRenderRef = useRef(true);
   useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return; // Skip first run — initial fit effect handles mount
+    }
     fitToVisibleProducts();
   }, [fitToVisibleProducts]);
 
