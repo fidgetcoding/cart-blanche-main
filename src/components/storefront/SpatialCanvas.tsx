@@ -286,6 +286,39 @@ export function SpatialCanvas() {
     fitToVisibleProducts();
   }, [fitToVisibleProducts]);
 
+  // Initial fit: snap to ALL fit-to-frame on mount and when products change
+  const hasInitialFitRef = useRef(false);
+  
+  useEffect(() => {
+    hasInitialFitRef.current = false;
+  }, [CANVAS_W, CANVAS_H]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || hasInitialFitRef.current) return;
+
+    const tryFit = () => {
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+      
+      fitToVisibleProducts();
+      const target = targetTransformRef.current;
+      transformRef.current = { x: target.x, y: target.y, scale: target.scale };
+      minScaleRef.current = target.scale;
+      applyTransform();
+      hasInitialFitRef.current = true;
+      return true;
+    };
+
+    if (!tryFit()) {
+      const observer = new ResizeObserver(() => {
+        if (tryFit()) observer.disconnect();
+      });
+      observer.observe(container);
+      return () => observer.disconnect();
+    }
+  }, [applyTransform, CANVAS_W, CANVAS_H, fitToVisibleProducts]);
+
   // Find the product index under a given screen coordinate
   const getProductAtCursor = useCallback((screenX: number, screenY: number) => {
     const container = containerRef.current;
