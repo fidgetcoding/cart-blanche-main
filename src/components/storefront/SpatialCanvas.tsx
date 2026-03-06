@@ -124,26 +124,40 @@ export function SpatialCanvas() {
   }, []);
 
   // Calculate initial scale to fit everything, and center
+  // Use ResizeObserver to handle cases where container isn't sized on first frame
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const padX = isMobile ? 16 : 40;
-    const headerPad = isMobile ? 90 : 100;
-    const bottomPad = isMobile ? 80 : 60;
-    const fitScale = Math.min(
-      (rect.width - padX * 2) / CANVAS_W,
-      (rect.height - headerPad - bottomPad) / CANVAS_H
-    );
-    const s = Math.max(0.2, Math.min(1, fitScale));
-    minScaleRef.current = s;
-    const cx = (rect.width - CANVAS_W * s) / 2;
-    const availH = rect.height - headerPad - bottomPad;
-    const cy = headerPad + (availH - CANVAS_H * s) / 2;
-    transformRef.current = { x: cx, y: cy, scale: s };
-    targetTransformRef.current = { x: cx, y: cy, scale: s };
-    setScaleState(s);
-    applyTransform();
+
+    const doFit = () => {
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return; // not laid out yet
+      const padX = isMobile ? 16 : 40;
+      const headerPad = isMobile ? 90 : 100;
+      const bottomPad = isMobile ? 80 : 60;
+      const fitScale = Math.min(
+        (rect.width - padX * 2) / CANVAS_W,
+        (rect.height - headerPad - bottomPad) / CANVAS_H
+      );
+      const s = Math.max(0.2, Math.min(1, fitScale));
+      minScaleRef.current = s;
+      const cx = (rect.width - CANVAS_W * s) / 2;
+      const availH = rect.height - headerPad - bottomPad;
+      const cy = headerPad + (availH - CANVAS_H * s) / 2;
+      transformRef.current = { x: cx, y: cy, scale: s };
+      targetTransformRef.current = { x: cx, y: cy, scale: s };
+      setScaleState(s);
+      applyTransform();
+    };
+
+    // Try immediately
+    doFit();
+
+    // Also observe resize in case container wasn't ready
+    const observer = new ResizeObserver(() => doFit());
+    observer.observe(container);
+
+    return () => observer.disconnect();
   }, [applyTransform, isMobile, CANVAS_W, CANVAS_H]);
 
   // Self-terminating animation loop — starts on demand, stops when idle
