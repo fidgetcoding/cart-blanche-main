@@ -328,10 +328,10 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
       <div>
         <div className="flex items-center gap-2">
           {label && <span className="text-[10px] font-display tracking-widest text-primary">{label}</span>}
-          <h3 className="font-display text-base font-bold tracking-wide">{anchorProduct.title}</h3>
+          <h3 className="font-display text-base font-bold tracking-wide text-foreground">{anchorProduct.title}</h3>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <span className="font-display text-sm text-muted-foreground">${anchorProduct.price}</span>
+          <span className="font-display text-sm text-foreground">${anchorProduct.price}</span>
           {anchorProduct.compare_at_price && (
             <span className="text-xs text-muted-foreground/60 line-through">
               ${anchorProduct.compare_at_price}
