@@ -340,7 +340,7 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground leading-relaxed">
+      <p className="text-xs text-foreground/70 leading-relaxed">
         {anchorProduct.description}
       </p>
 
