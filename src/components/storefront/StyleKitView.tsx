@@ -63,11 +63,11 @@ function CarouselCard({
       </div>
       <div className="p-3 flex flex-col justify-between flex-1">
         <div>
-          <p className={`font-display font-medium tracking-wide truncate ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>
+          <p className={`font-display font-medium tracking-wide truncate text-foreground ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>
             {product.title}
           </p>
           <div className="flex items-center gap-2 mt-1">
-            <span className={`font-display ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>${product.price}</span>
+            <span className={`font-display text-foreground ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>${product.price}</span>
             {product.compare_at_price && (
               <span className="text-[10px] text-muted-foreground line-through">
                 ${product.compare_at_price}
@@ -328,10 +328,10 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
       <div>
         <div className="flex items-center gap-2">
           {label && <span className="text-[10px] font-display tracking-widest text-primary">{label}</span>}
-          <h3 className="font-display text-base font-bold tracking-wide">{anchorProduct.title}</h3>
+          <h3 className="font-display text-base font-bold tracking-wide text-foreground">{anchorProduct.title}</h3>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <span className="font-display text-sm text-muted-foreground">${anchorProduct.price}</span>
+          <span className="font-display text-sm text-foreground">${anchorProduct.price}</span>
           {anchorProduct.compare_at_price && (
             <span className="text-xs text-muted-foreground/60 line-through">
               ${anchorProduct.compare_at_price}
@@ -340,7 +340,7 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground leading-relaxed">
+      <p className="text-xs text-foreground/70 leading-relaxed">
         {anchorProduct.description}
       </p>
 
@@ -746,8 +746,8 @@ export function StyleKitView() {
         {/* Top bar */}
         <div className="h-12 flex items-center justify-between px-4 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-3">
-            <span className="font-display text-xs font-bold tracking-[0.15em]">STYLE KIT</span>
-            <span className="text-[10px] text-muted-foreground font-display tracking-wider">
+            <span className="font-display text-xs font-bold tracking-[0.15em] text-foreground">STYLE KIT</span>
+            <span className="text-[10px] text-foreground/60 font-display tracking-wider">
               {contextLabel}
             </span>
           </div>
