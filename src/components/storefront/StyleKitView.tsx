@@ -746,8 +746,8 @@ export function StyleKitView() {
         {/* Top bar */}
         <div className="h-12 flex items-center justify-between px-4 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-3">
-            <span className="font-display text-xs font-bold tracking-[0.15em]">STYLE KIT</span>
-            <span className="text-[10px] text-muted-foreground font-display tracking-wider">
+            <span className="font-display text-xs font-bold tracking-[0.15em] text-foreground">STYLE KIT</span>
+            <span className="text-[10px] text-foreground/60 font-display tracking-wider">
               {contextLabel}
             </span>
           </div>
