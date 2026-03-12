@@ -63,11 +63,11 @@ function CarouselCard({
       </div>
       <div className="p-3 flex flex-col justify-between flex-1">
         <div>
-          <p className={`font-display font-medium tracking-wide truncate ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>
+          <p className={`font-display font-medium tracking-wide truncate text-foreground ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>
             {product.title}
           </p>
           <div className="flex items-center gap-2 mt-1">
-            <span className={`font-display ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>${product.price}</span>
+            <span className={`font-display text-foreground ${cardSize === 'large' ? 'text-sm' : 'text-xs'}`}>${product.price}</span>
             {product.compare_at_price && (
               <span className="text-[10px] text-muted-foreground line-through">
                 ${product.compare_at_price}
