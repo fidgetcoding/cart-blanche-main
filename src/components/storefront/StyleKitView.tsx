@@ -782,7 +782,7 @@ export function StyleKitView() {
               onClick={closeStyleKit}
               className="p-2 hover:bg-secondary rounded-lg transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-foreground" />
             </button>
           </div>
         </div>
