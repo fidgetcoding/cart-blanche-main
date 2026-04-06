@@ -276,7 +276,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       />
 
       {/* Content layer — pointer-events-none container, auto on interactive children */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+      <div className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto pt-20 pb-8 pointer-events-none">
 
         {/* Category tabs — top left */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-0.5 bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
@@ -348,7 +348,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="flex flex-col items-center max-w-lg w-full px-6 pointer-events-auto"
+            className="flex flex-col items-center max-w-lg w-full px-6 pointer-events-auto my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Product image area */}
