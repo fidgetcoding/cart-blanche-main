@@ -855,8 +855,8 @@ export function SpatialCanvas() {
             <p className="hidden md:block">HOVER OVER ITEMS AND SCROLL OR PINCH TO ZOOM</p>
             <p className="hidden md:block">DRAG TO PAN · CLICK TO VIEW</p>
           </div>
-          {/* Item count — centered */}
-          <div className={`absolute left-1/2 -translate-x-1/2 tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
+          {/* Item count — centered, aligned to top of hints */}
+          <div className={`absolute left-1/2 -translate-x-1/2 bottom-0 mb-[calc(theme(spacing.3)+theme(lineHeight.4))] md:mb-[calc(theme(spacing.5)+theme(lineHeight.4))] tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
             {activeCategory === 'ALL'
               ? `${DEMO_PRODUCTS.length} ITEMS`
               : `${DEMO_PRODUCTS.filter(p => p.category.toUpperCase() === activeCategory).length} OF ${DEMO_PRODUCTS.length} ITEMS`
