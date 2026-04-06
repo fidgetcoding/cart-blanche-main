@@ -353,7 +353,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             onWheelCapture={(e) => e.stopPropagation()}
           >
             {/* Product image area */}
-            <div className="w-full max-w-[32rem] aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 [@media(max-height:820px)]:max-w-[28rem] [@media(max-height:760px)]:max-w-[24rem] [@media(max-height:760px)]:mb-4 relative overflow-hidden shrink-0">
+            <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0" style={{ maxHeight: 'min(60vh, 32rem)' }}>
               {/* Close button */}
               <button
                 onClick={onClose}
