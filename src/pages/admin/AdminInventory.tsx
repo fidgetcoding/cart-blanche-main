@@ -158,9 +158,13 @@ export default function AdminInventory() {
     await saveHiddenTags(newHidden);
   };
 
-  // Drag-and-drop state for product reordering
+  // Pointer-based drag-and-drop state for product reordering
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [dragCurrentY, setDragCurrentY] = useState(0);
+  const [liveProducts, setLiveProducts] = useState<typeof products>([]);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const isDraggingRow = dragIdx !== null;
 
   // Initialize products from hook's ordered list
   const [initialized, setInitialized] = useState(false);
@@ -176,37 +180,56 @@ export default function AdminInventory() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gridLayout]);
 
-  const handleDragStart = useCallback((idx: number) => {
-    setDragIdx(idx);
-  }, []);
+  // Keep liveProducts synced when not dragging
+  useEffect(() => {
+    if (!isDraggingRow) setLiveProducts(products);
+  }, [products, isDraggingRow]);
 
-  const handleDragOver = useCallback((idx: number) => {
-    if (dragIdx === null || idx === dragIdx) return;
-    setDragOverIdx(idx);
-  }, [dragIdx]);
+  const handleGripPointerDown = useCallback((e: React.PointerEvent, realIdx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setDragIdx(realIdx);
+    setDragStartY(e.clientY);
+    setDragCurrentY(e.clientY);
+    setLiveProducts([...products]);
+  }, [products]);
 
-  const handleDragEnd = useCallback(() => {
-    if (dragIdx === null || dragOverIdx === null || dragIdx === dragOverIdx) {
-      setDragIdx(null);
-      setDragOverIdx(null);
-      return;
-    }
+  const handleListPointerMove = useCallback((e: React.PointerEvent) => {
+    if (dragIdx === null || !listContainerRef.current) return;
+    e.preventDefault();
+    setDragCurrentY(e.clientY);
 
-    setProducts(prev => {
-      const next = [...prev];
-      const [moved] = next.splice(dragIdx, 1);
-      next.splice(dragOverIdx, 0, moved);
-      // Save the new order
-      const productOrder = next.map(p => p.id);
-      const categoryOrder = gridLayout?.categoryOrder || [];
-      saveLayout(productOrder, categoryOrder);
-      return next;
+    const rows = listContainerRef.current.querySelectorAll('[data-drag-row]');
+    let hoverIdx: number | null = null;
+    rows.forEach((row, i) => {
+      const rect = row.getBoundingClientRect();
+      if (e.clientY >= rect.top && e.clientY < rect.bottom) {
+        hoverIdx = i;
+      }
     });
 
+    if (hoverIdx !== null && hoverIdx !== dragIdx) {
+      setLiveProducts(prev => {
+        const next = [...prev];
+        const [moved] = next.splice(dragIdx, 1);
+        next.splice(hoverIdx!, 0, moved);
+        return next;
+      });
+      setDragIdx(hoverIdx);
+      setDragStartY(e.clientY);
+    }
+  }, [dragIdx]);
+
+  const handleListPointerUp = useCallback(() => {
+    if (dragIdx === null) return;
+    setProducts(liveProducts);
+    const productOrder = liveProducts.map(p => p.id);
+    const categoryOrder = gridLayout?.categoryOrder || [];
+    saveLayout(productOrder, categoryOrder);
     setDragIdx(null);
-    setDragOverIdx(null);
     setHasUnsavedChanges(true);
-  }, [dragIdx, dragOverIdx, gridLayout?.categoryOrder, saveLayout]);
+  }, [dragIdx, liveProducts, gridLayout?.categoryOrder, saveLayout]);
 
   async function fetchInventory() {
     const ordered = getAllProductsUnfiltered();
@@ -931,27 +954,28 @@ export default function AdminInventory() {
           <p className="text-muted-foreground font-display tracking-wider text-sm">No products match your criteria</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map((p, filteredIdx) => {
+        <div
+          ref={listContainerRef}
+          className="space-y-2"
+          onPointerMove={handleListPointerMove}
+          onPointerUp={handleListPointerUp}
+        >
+          {(isDraggingRow ? liveProducts : filtered).map((p, filteredIdx) => {
             const avgStock = p.variants.length > 0 ? p.totalStock / p.variants.length : 0;
             const isLow = avgStock > 0 && avgStock <= lowStockThreshold;
             const isOut = p.totalStock === 0;
             const isExpanded = expandedId === p.id;
             // Get the actual index in the full products array for drag reordering
             const realIdx = products.findIndex(pp => pp.id === p.id);
-            const isDragging = dragIdx === realIdx;
-            const isDragOver = dragOverIdx === realIdx;
 
             return (
               <div
                 key={p.id}
-                draggable={activeFilter === 'all' && !isExpanded && !tagEditMode}
-                onDragStart={() => handleDragStart(realIdx)}
-                onDragOver={(e) => { e.preventDefault(); handleDragOver(realIdx); }}
-                onDragEnd={handleDragEnd}
+                data-drag-row
                 className={`liquid-glass rounded-xl overflow-hidden transition-all ${
-                  isDragging ? 'opacity-40 scale-[0.98]' : ''
-                } ${isDragOver ? 'ring-2 ring-primary/50 translate-y-[-2px]' : ''} ${selectedIds.has(p.id) ? 'ring-1 ring-foreground/30' : ''}`}
+                  isDraggingRow && dragIdx === filteredIdx ? 'opacity-60 scale-[1.02] shadow-2xl ring-2 ring-primary/40 z-10 relative' : ''
+                } ${selectedIds.has(p.id) ? 'ring-1 ring-foreground/30' : ''}`}
+                style={isDraggingRow && dragIdx === filteredIdx ? { transform: `translateY(${dragCurrentY - dragStartY}px) scale(1.02)`, transition: 'none' } : undefined}
               >
                 {/* Product row */}
                 <div
@@ -970,10 +994,10 @@ export default function AdminInventory() {
                     )}
                   </button>
                   {/* Drag handle */}
-                  {activeFilter === 'all' && (
+                  {activeFilter === 'all' && !isExpanded && !tagEditMode && (
                     <div
-                      className="text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors flex-shrink-0"
-                      onMouseDown={e => e.stopPropagation()}
+                      className="text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors flex-shrink-0 touch-none"
+                      onPointerDown={(e) => handleGripPointerDown(e, realIdx)}
                     >
                       <GripVertical className="w-4 h-4" />
                     </div>
