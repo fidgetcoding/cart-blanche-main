@@ -494,7 +494,7 @@ export function CartDrawer() {
                   }`}
                 >
                   <Sparkles className="w-3 h-3" />
-                  AI STYLE ASSISTANT
+                  AI STYLIST
                   {hasUnread && activeTab !== 'assistant' && (
                     <span className="w-1.5 h-1.5 rounded-full bg-foreground animate-pulse" />
                   )}
@@ -622,7 +622,7 @@ export function CartDrawer() {
                     {messages.length === 0 && !isLoading ? (
                       <div className="flex flex-col items-center justify-center h-full text-center px-4">
                         <Sparkles className="w-8 h-8 mb-3 text-muted-foreground/40" />
-                        <h3 className="font-display text-sm font-semibold tracking-[0.12em] mb-1.5">AI STYLE ASSISTANT</h3>
+                        <h3 className="font-display text-sm font-semibold tracking-[0.12em] mb-1.5">AI STYLIST</h3>
                         <p className="text-xs text-muted-foreground leading-relaxed max-w-[260px] whitespace-pre-line mb-6">
                           {emptyAssistantMessage}
                         </p>
