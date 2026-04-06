@@ -348,7 +348,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="flex flex-col items-center max-w-lg w-full px-6 pointer-events-auto my-auto"
+            className="flex flex-col items-center max-w-lg w-full max-h-[calc(100vh-7rem)] overflow-y-auto px-6 pointer-events-auto my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Product image area */}
