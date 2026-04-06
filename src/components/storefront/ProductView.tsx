@@ -348,8 +348,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="flex flex-col items-center max-w-lg w-full max-h-[calc(100vh-7rem)] overflow-y-auto px-6 pointer-events-auto my-auto"
+            className="flex flex-col items-center max-w-lg w-full max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain px-6 pointer-events-auto my-auto"
             onClick={(e) => e.stopPropagation()}
+            onWheelCapture={(e) => e.stopPropagation()}
           >
             {/* Product image area */}
             <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-6 relative overflow-hidden">
@@ -413,7 +414,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             <button
               onClick={() => setExpandDetails(!expandDetails)}
               onMouseEnter={() => setExpandDetails(true)}
-              className="mt-3 p-2 hover:bg-secondary rounded-full transition-colors text-foreground"
+              className={`mt-3 p-2 hover:bg-secondary rounded-full transition-colors text-foreground ${expandDetails ? '[@media(max-height:760px)]:hidden' : ''}`}
             >
               <Plus className={`w-5 h-5 transition-transform duration-200 ${expandDetails ? 'rotate-45' : ''}`} />
             </button>
@@ -435,7 +436,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
                     {/* Variants */}
                     {product.variants.length > 1 && (
-                      <div className="flex flex-wrap justify-center gap-2">
+                      <div className="flex flex-wrap items-center justify-center gap-2">
                         {product.variants.map(v => (
                           <button
                             key={v.id}
@@ -452,6 +453,13 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                             {v.title}
                           </button>
                         ))}
+                        <button
+                          onClick={() => setExpandDetails(false)}
+                          className="hidden [@media(max-height:760px)]:inline-flex h-10 w-10 items-center justify-center rounded-md border border-foreground/30 text-foreground transition-colors hover:border-foreground/60 hover:bg-foreground/5"
+                          aria-label="Collapse details"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
                     )}
 
