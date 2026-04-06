@@ -482,7 +482,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-wrap justify-center gap-3 [@media(max-height:760px)]:col-start-2 [@media(max-height:760px)]:row-start-1 [@media(max-height:760px)]:flex-nowrap [@media(max-height:760px)]:items-center [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-2 [@media(max-height:760px)]:min-w-0">
+                      <div className="flex flex-wrap justify-center gap-3 mt-2 [@media(max-height:760px)]:col-start-2 [@media(max-height:760px)]:row-start-1 [@media(max-height:760px)]:flex-nowrap [@media(max-height:760px)]:items-center [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-2 [@media(max-height:760px)]:min-w-0 [@media(max-height:760px)]:mt-0">
                         <button
                           onClick={handleAddToCart}
                           disabled={!canAdd || isOutOfStock}
