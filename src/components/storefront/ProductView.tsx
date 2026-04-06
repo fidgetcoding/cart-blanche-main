@@ -355,7 +355,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             {/* Close button — above image, left-aligned */}
             <button
               onClick={onClose}
-              className="self-start mb-3 p-2 rounded-xl backdrop-blur-md bg-foreground/[0.08] border border-foreground/[0.12] hover:bg-foreground/[0.15] transition-all"
+              className="self-end mb-3 p-2 rounded-xl backdrop-blur-md bg-foreground/[0.08] border border-foreground/[0.12] hover:bg-foreground/[0.15] transition-all"
             >
               <X className="w-5 h-5 text-foreground/60" />
             </button>
