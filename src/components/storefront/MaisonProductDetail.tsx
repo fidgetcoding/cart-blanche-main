@@ -339,6 +339,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       price: v.price ?? product.price,
       image: product.images[0]?.thumb,
     });
+    onClose();
   };
 
   return (
