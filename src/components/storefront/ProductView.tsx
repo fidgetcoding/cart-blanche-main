@@ -444,11 +444,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       {product.description}
                     </p>
 
-                    <div className="flex flex-col items-center gap-4 [@media(max-height:760px)]:gap-3">
-                      <div className="space-y-4 [@media(max-height:760px)]:space-y-2.5">
+                    <div className="[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-x-4 [@media(max-height:760px)]:gap-y-2">
+                      <div className="space-y-4 [@media(max-height:760px)]:min-w-[10.5rem] [@media(max-height:760px)]:space-y-2.5">
                         {/* Variants */}
                         {product.variants.length > 1 && (
-                          <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:gap-1.5">
+                          <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-1.5">
                             {product.variants.map(v => (
                               <button
                                 key={v.id}
@@ -470,7 +470,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
                         {/* Stock */}
                         {variant && (
-                          <p className={`text-xs text-center ${
+                          <p className={`text-xs text-center [@media(max-height:760px)]:text-left ${
                             variant.inventory_count === 0 ? 'text-destructive' :
                             variant.inventory_count <= 5 ? 'text-warning' : 'text-success'
                           }`}>
@@ -482,7 +482,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-wrap justify-center items-center gap-3 [@media(max-height:760px)]:flex-nowrap [@media(max-height:760px)]:gap-2">
+                      <div className="flex flex-wrap justify-center gap-3 [@media(max-height:760px)]:col-start-2 [@media(max-height:760px)]:row-start-1 [@media(max-height:760px)]:flex-nowrap [@media(max-height:760px)]:items-center [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-2 [@media(max-height:760px)]:min-w-0">
                         <button
                           onClick={handleAddToCart}
                           disabled={!canAdd || isOutOfStock}
