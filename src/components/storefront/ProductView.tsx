@@ -353,7 +353,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             onWheelCapture={(e) => e.stopPropagation()}
           >
             {/* Product image area */}
-            <div className="w-full aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0" style={{ maxHeight: 'min(60vh, 32rem)' }}>
+            <div className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: 'min(100%, 32rem, 56vh)' }}>
               {/* Close button */}
               <button
                 onClick={onClose}
@@ -426,11 +426,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               onMouseEnter={() => setExpandDetails(true)}
               className="mt-3 [@media(max-height:760px)]:mt-2 p-2 hover:bg-secondary rounded-full transition-colors text-foreground"
             >
-              {expandDetails ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Plus className="w-5 h-5 transition-transform duration-200" />
-              )}
+              <Plus className={`w-5 h-5 transition-transform duration-200 ${expandDetails ? 'rotate-45' : ''}`} />
             </button>
 
             {/* Expandable details */}
@@ -448,79 +444,78 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       {product.description}
                     </p>
 
-                    {/* Variants */}
-                    {product.variants.length > 1 && (
-                      <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:gap-1.5">
-                        {product.variants.map(v => (
-                          <button
-                            key={v.id}
-                            onClick={() => setSelectedVariant(v.id)}
-                            className={`px-4 py-2 text-sm font-display rounded-md border transition-all [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:py-1.5 ${
-                              selectedVariant === v.id
-                                ? 'border-foreground bg-foreground text-background'
-                                : v.inventory_count === 0
-                                ? 'border-foreground/20 text-foreground/30 cursor-not-allowed'
-                                : 'border-foreground/30 text-foreground hover:border-foreground/60'
-                            }`}
-                            disabled={v.inventory_count === 0}
-                          >
-                            {v.title}
-                          </button>
-                        ))}
-                        <button
-                          onClick={() => setExpandDetails(false)}
-                          className="hidden [@media(max-height:760px)]:inline-flex h-10 w-10 items-center justify-center rounded-md border border-foreground/30 text-foreground transition-colors hover:border-foreground/60 hover:bg-foreground/5"
-                          aria-label="Collapse details"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                    <div className="[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[minmax(0,1fr)_auto] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-x-3 [@media(max-height:760px)]:gap-y-2">
+                      <div className="space-y-4 [@media(max-height:760px)]:space-y-2.5">
+                        {/* Variants */}
+                        {product.variants.length > 1 && (
+                          <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-1.5">
+                            {product.variants.map(v => (
+                              <button
+                                key={v.id}
+                                onClick={() => setSelectedVariant(v.id)}
+                                className={`px-4 py-2 text-sm font-display rounded-md border transition-all [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:py-1.5 ${
+                                  selectedVariant === v.id
+                                    ? 'border-foreground bg-foreground text-background'
+                                    : v.inventory_count === 0
+                                    ? 'border-foreground/20 text-foreground/30 cursor-not-allowed'
+                                    : 'border-foreground/30 text-foreground hover:border-foreground/60'
+                                }`}
+                                disabled={v.inventory_count === 0}
+                              >
+                                {v.title}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Stock */}
+                        {variant && (
+                          <p className={`text-xs text-center [@media(max-height:760px)]:text-left ${
+                            variant.inventory_count === 0 ? 'text-destructive' :
+                            variant.inventory_count <= 5 ? 'text-warning' : 'text-success'
+                          }`}>
+                            {variant.inventory_count === 0 ? 'Out of Stock' :
+                             variant.inventory_count <= 5 ? `Low Stock — ${variant.inventory_count} left` :
+                              'In Stock'}
+                          </p>
+                        )}
                       </div>
-                    )}
 
-                    {/* Stock */}
-                    {variant && (
-                      <p className={`text-xs text-center ${
-                        variant.inventory_count === 0 ? 'text-destructive' :
-                        variant.inventory_count <= 5 ? 'text-warning' : 'text-success'
-                      }`}>
-                        {variant.inventory_count === 0 ? 'Out of Stock' :
-                         variant.inventory_count <= 5 ? `Low Stock — ${variant.inventory_count} left` :
-                         'In Stock'}
-                      </p>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex flex-wrap justify-center gap-3 [@media(max-height:760px)]:gap-2">
-                      <button
-                        onClick={handleAddToCart}
-                        disabled={!canAdd || isOutOfStock}
-                        className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center gap-2 transition-all [@media(max-height:760px)]:px-5 [@media(max-height:760px)]:py-2.5 [@media(max-height:760px)]:text-[12px] ${
-                          !canAdd || isOutOfStock
-                            ? 'bg-foreground/10 text-foreground/50 cursor-not-allowed'
-                            : 'bg-foreground text-background hover:opacity-90'
-                        }`}
-                      >
-                        <ShoppingBag className="w-4 h-4" />
-                        {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
-                          openStyleKit(product, 'counterparts', variantTitle);
-                        }}
-                        className="px-4 py-3 border border-foreground/30 text-foreground font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center gap-2 hover:bg-foreground/5 transition-colors [@media(max-height:760px)]:px-4 [@media(max-height:760px)]:py-2.5"
-                      >
-                        <Layers className="w-4 h-4" />
-                        BUILD A SET
-                      </button>
-                      <button
-                        onClick={() => setIsSaved(!isSaved)}
-                        className={`p-3 border rounded-lg transition-colors text-foreground [@media(max-height:760px)]:p-2.5 ${
-                          isSaved ? 'border-foreground/60' : 'border-foreground/30 hover:border-foreground/60'
-                        }`}
-                      >
-                        <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                      </button>
+                      {/* Actions */}
+                      <div className="flex flex-wrap justify-center gap-3 [@media(max-height:760px)]:col-start-2 [@media(max-height:760px)]:row-start-1 [@media(max-height:760px)]:flex-col [@media(max-height:760px)]:items-stretch [@media(max-height:760px)]:gap-2 [@media(max-height:760px)]:min-w-[11rem]">
+                        <button
+                          onClick={handleAddToCart}
+                          disabled={!canAdd || isOutOfStock}
+                          className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all [@media(max-height:760px)]:px-4 [@media(max-height:760px)]:py-2.5 [@media(max-height:760px)]:text-[12px] ${
+                            !canAdd || isOutOfStock
+                              ? 'bg-foreground/10 text-foreground/50 cursor-not-allowed'
+                              : 'bg-foreground text-background hover:opacity-90'
+                          }`}
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                          {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
+                        </button>
+                        <div className="flex items-center justify-center gap-3 [@media(max-height:760px)]:gap-2">
+                          <button
+                            onClick={() => {
+                              const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
+                              openStyleKit(product, 'counterparts', variantTitle);
+                            }}
+                            className="px-4 py-3 border border-foreground/30 text-foreground font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center justify-center gap-2 hover:bg-foreground/5 transition-colors [@media(max-height:760px)]:flex-1 [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:py-2.5"
+                          >
+                            <Layers className="w-4 h-4" />
+                            BUILD A SET
+                          </button>
+                          <button
+                            onClick={() => setIsSaved(!isSaved)}
+                            className={`p-3 border rounded-lg transition-colors text-foreground [@media(max-height:760px)]:p-2.5 ${
+                              isSaved ? 'border-foreground/60' : 'border-foreground/30 hover:border-foreground/60'
+                            }`}
+                          >
+                            <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
