@@ -426,7 +426,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               onMouseEnter={() => setExpandDetails(true)}
               className="mt-3 [@media(max-height:760px)]:mt-2 p-2 hover:bg-secondary rounded-full transition-colors text-foreground"
             >
-              {expandDetails ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              {expandDetails ? <X className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
 
             {/* Expandable details */}
