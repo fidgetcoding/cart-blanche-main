@@ -850,10 +850,8 @@ export function SpatialCanvas() {
         <div className="flex items-end justify-between px-4 md:px-6 py-3 md:py-5 relative">
           {/* Hints */}
           <div className={`tracking-wider space-y-0.5 cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : themeSettings.mode === 'light' ? 'text-muted-foreground/60 hover:text-foreground/90' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
-            <p className="block md:hidden">HOVER OVER ITEMS AND PINCH TO ZOOM</p>
-            <p className="block md:hidden">DRAG TO PAN · TAP TO VIEW</p>
-            <p className="hidden md:block">HOVER OVER ITEMS AND SCROLL OR PINCH TO ZOOM</p>
-            <p className="hidden md:block">DRAG TO PAN · CLICK TO VIEW</p>
+            <p className="block md:hidden">HOVER OVER ITEMS & PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
+            <p className="hidden md:block">HOVER OVER ITEMS & SCROLL / PINCH TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
           </div>
           {/* Item count — centered, top-aligned with first hint line */}
           <div className={`absolute left-1/2 -translate-x-1/2 top-3 md:top-5 tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
