@@ -352,15 +352,16 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             onClick={(e) => e.stopPropagation()}
             onWheelCapture={(e) => e.stopPropagation()}
           >
+            {/* Close button — above image, left-aligned */}
+            <button
+              onClick={onClose}
+              className="self-start mb-3 p-2 rounded-xl backdrop-blur-md bg-foreground/[0.08] border border-foreground/[0.12] hover:bg-foreground/[0.15] transition-all"
+            >
+              <X className="w-5 h-5 text-foreground/60" />
+            </button>
+
             {/* Product image area */}
             <div className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
-              {/* Close button */}
-              <button
-                onClick={onClose}
-                className="absolute top-3 right-3 z-10 p-1.5 bg-background/80 hover:bg-secondary rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
               {product.images && product.images.length > 0 ? (
                 <img
                   key={`${product.id}-${activeImage}`}
