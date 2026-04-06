@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Heart, X, ShoppingBag, Layers } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Heart, X, ShoppingBag, Layers } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, useMemo, forwardRef } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
@@ -348,12 +348,12 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="flex flex-col items-center max-w-lg w-full max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain px-6 pointer-events-auto my-auto"
+            className="flex flex-col items-center w-full max-w-lg [@media(max-height:760px)]:max-w-[min(42rem,calc(100vw-7rem))] max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain px-6 [@media(max-height:760px)]:px-5 pointer-events-auto my-auto"
             onClick={(e) => e.stopPropagation()}
             onWheelCapture={(e) => e.stopPropagation()}
           >
             {/* Product image area */}
-            <div className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: 'min(100%, 32rem, 56vh)' }}>
+            <div className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
               {/* Close button */}
               <button
                 onClick={onClose}
@@ -426,7 +426,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               onMouseEnter={() => setExpandDetails(true)}
               className="mt-3 [@media(max-height:760px)]:mt-2 p-2 hover:bg-secondary rounded-full transition-colors text-foreground"
             >
-              <Plus className={`w-5 h-5 transition-transform duration-200 ${expandDetails ? 'rotate-45' : ''}`} />
+              {expandDetails ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
 
             {/* Expandable details */}
@@ -444,8 +444,8 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       {product.description}
                     </p>
 
-                    <div className="[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-x-3 [@media(max-height:760px)]:gap-y-2">
-                      <div className="space-y-4 [@media(max-height:760px)]:space-y-2.5">
+                    <div className="[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-x-4 [@media(max-height:760px)]:gap-y-2">
+                      <div className="space-y-4 [@media(max-height:760px)]:min-w-[10.5rem] [@media(max-height:760px)]:space-y-2.5">
                         {/* Variants */}
                         {product.variants.length > 1 && (
                           <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-1.5">
@@ -482,11 +482,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-wrap justify-center gap-3 [@media(max-height:760px)]:col-start-2 [@media(max-height:760px)]:row-start-1 [@media(max-height:760px)]:flex-row [@media(max-height:760px)]:items-start [@media(max-height:760px)]:justify-end [@media(max-height:760px)]:gap-2 [@media(max-height:760px)]:min-w-0">
+                      <div className="flex flex-wrap justify-center gap-3 [@media(max-height:760px)]:col-start-2 [@media(max-height:760px)]:row-start-1 [@media(max-height:760px)]:flex-nowrap [@media(max-height:760px)]:items-center [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-2 [@media(max-height:760px)]:min-w-0">
                         <button
                           onClick={handleAddToCart}
                           disabled={!canAdd || isOutOfStock}
-                          className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all [@media(max-height:760px)]:px-4 [@media(max-height:760px)]:py-2.5 [@media(max-height:760px)]:text-[12px] [@media(max-height:760px)]:shrink-0 ${
+                          className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all [@media(max-height:760px)]:px-3.5 [@media(max-height:760px)]:py-2.5 [@media(max-height:760px)]:text-[11px] [@media(max-height:760px)]:shrink-0 ${
                             !canAdd || isOutOfStock
                               ? 'bg-foreground/10 text-foreground/50 cursor-not-allowed'
                               : 'bg-foreground text-background hover:opacity-90'
@@ -495,26 +495,24 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                           <ShoppingBag className="w-4 h-4" />
                           {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
                         </button>
-                        <div className="flex items-center justify-center gap-3 [@media(max-height:760px)]:gap-2 [@media(max-height:760px)]:shrink-0">
-                          <button
-                            onClick={() => {
-                              const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
-                              openStyleKit(product, 'counterparts', variantTitle);
-                            }}
-                            className="px-4 py-3 border border-foreground/30 text-foreground font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center justify-center gap-2 hover:bg-foreground/5 transition-colors [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:py-2.5 [@media(max-height:760px)]:whitespace-nowrap"
-                          >
-                            <Layers className="w-4 h-4" />
-                            BUILD A SET
-                          </button>
-                          <button
-                            onClick={() => setIsSaved(!isSaved)}
-                            className={`p-3 border rounded-lg transition-colors text-foreground [@media(max-height:760px)]:p-2.5 ${
-                              isSaved ? 'border-foreground/60' : 'border-foreground/30 hover:border-foreground/60'
-                            }`}
-                          >
-                            <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => {
+                            const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
+                            openStyleKit(product, 'counterparts', variantTitle);
+                          }}
+                          className="px-4 py-3 border border-foreground/30 text-foreground font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center justify-center gap-2 hover:bg-foreground/5 transition-colors [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:py-2.5 [@media(max-height:760px)]:text-[10.5px] [@media(max-height:760px)]:whitespace-nowrap [@media(max-height:760px)]:shrink-0"
+                        >
+                          <Layers className="w-4 h-4" />
+                          BUILD A SET
+                        </button>
+                        <button
+                          onClick={() => setIsSaved(!isSaved)}
+                          className={`p-3 border rounded-lg transition-colors text-foreground [@media(max-height:760px)]:p-2.5 [@media(max-height:760px)]:shrink-0 ${
+                            isSaved ? 'border-foreground/60' : 'border-foreground/30 hover:border-foreground/60'
+                          }`}
+                        >
+                          <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                        </button>
                       </div>
                     </div>
                   </div>
