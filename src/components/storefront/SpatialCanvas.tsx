@@ -39,6 +39,7 @@ export function SpatialCanvas() {
   // Pagination: filter by Navigation Tag first, then paginate
   const [currentPage, setCurrentPage] = useState(0);
   const pageSwipeRef = useRef<number>(0);
+  const arrowHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [activeCategory, setActiveCategory] = useState('ALL');
   const activeCategoryRef = useRef('ALL');
@@ -906,6 +907,51 @@ export function SpatialCanvas() {
           })}
         </div>
       </div>
+
+      {/* Page navigation arrows — left and right margins */}
+      {totalPages > 1 && (
+        <>
+          {/* Left arrow — previous page */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-16 z-30 flex items-center justify-center cursor-pointer group"
+            onMouseEnter={() => {
+              arrowHoverTimerRef.current = setTimeout(() => {
+                setCurrentPage(prev => prev <= 0 ? totalPages - 1 : prev - 1);
+              }, 200);
+            }}
+            onMouseLeave={() => {
+              if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
+              setCurrentPage(prev => prev <= 0 ? totalPages - 1 : prev - 1);
+            }}
+          >
+            <ChevronLeft className="w-10 h-10 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300" />
+          </div>
+
+          {/* Right arrow — next page */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-16 z-30 flex items-center justify-center cursor-pointer group"
+            onMouseEnter={() => {
+              arrowHoverTimerRef.current = setTimeout(() => {
+                setCurrentPage(prev => prev >= totalPages - 1 ? 0 : prev + 1);
+              }, 200);
+            }}
+            onMouseLeave={() => {
+              if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
+              setCurrentPage(prev => prev >= totalPages - 1 ? 0 : prev + 1);
+            }}
+          >
+            <ChevronRight className="w-10 h-10 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300" />
+          </div>
+        </>
+      )}
 
       {/* Unified bottom footer */}
       <div className={`absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-500 ${footerGlass ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
