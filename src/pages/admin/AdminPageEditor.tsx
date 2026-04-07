@@ -151,8 +151,8 @@ export default function AdminPageEditor() {
     function resize() {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const sx = (rect.width - 48) / CANVAS_W;
-      const sy = (rect.height - 48) / canvasH;
+      const sx = (rect.width - 200) / CANVAS_W;
+      const sy = (rect.height - 160) / canvasH;
       setScale(Math.min(sx, sy, 1));
     }
     resize();
