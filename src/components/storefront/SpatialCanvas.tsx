@@ -73,8 +73,7 @@ export function SpatialCanvas() {
   const [peekingAll, setPeekingAll] = useState(false);
 
   const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
-  const activeProductCount = peekingAll ? DEMO_PRODUCTS.length : pageProducts.length;
-  const CANVAS_H = Math.max(1, Math.ceil(activeProductCount / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
+  const CANVAS_H = Math.max(1, Math.ceil(DEMO_PRODUCTS.length / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
 
   // Keep canvas dimensions in refs for the animation loop
   const canvasDimsRef = useRef({ w: CANVAS_W, h: CANVAS_H });
@@ -673,28 +672,14 @@ export function SpatialCanvas() {
         return;
       }
       // Zoom out to fit-all view
-      const container = containerRef.current;
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        const padX = isMobile ? 16 : 40;
-        const padY = isMobile ? 60 : 80;
-        const fitScale = Math.min(
-          (rect.width - padX * 2) / CANVAS_W,
-          (rect.height - padY * 2) / CANVAS_H
-        );
-        const s = Math.max(0.3, Math.min(1, fitScale));
-        const cx = (rect.width - CANVAS_W * s) / 2;
-        const cy = (rect.height - CANVAS_H * s) / 2;
-        targetTransformRef.current = { x: cx, y: cy, scale: s };
-        setScaleState(s);
-        setFocusedIndex(-1);
-        setHoveredIndex(null);
-        if (activeCategory !== 'ALL') {
-          setActiveCategory('ALL');
-          categoryZoomRef.current = null;
-          setPeekingAll(false);
-        }
+      setFocusedIndex(-1);
+      setHoveredIndex(null);
+      if (activeCategory !== 'ALL') {
+        setActiveCategory('ALL');
+        categoryZoomRef.current = null;
+        setPeekingAll(false);
       }
+      fitToVisibleProducts();
       return;
     }
     if (selectedIndex !== null) return;
