@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Menu, X } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { ProductTile } from '@/components/storefront/ProductTile';
@@ -21,6 +21,7 @@ const MAX_ZOOM_THRESHOLD = 1.9;
 const ZOOM_SENSITIVITY = 0.004;
 const PINCH_ZOOM_SENSITIVITY = 0.012;
 const COLS = 5;
+const ITEMS_PER_PAGE = 20;
 
 export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,8 +35,43 @@ export function SpatialCanvas() {
   const { loading: layoutLoading, getOrderedProducts, getOrderedCategories } = useGridLayout();
   const DEMO_PRODUCTS = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const CATEGORIES = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
+
+  // Pagination: filter by Navigation Tag first, then paginate
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSwipeRef = useRef<number>(0);
+
+  const [activeCategory, setActiveCategory] = useState('ALL');
+  const activeCategoryRef = useRef('ALL');
+
+  const filteredProducts = useMemo(() => {
+    if (activeCategory === 'ALL') return DEMO_PRODUCTS;
+    return DEMO_PRODUCTS.filter(p => p.category.toUpperCase() === activeCategory);
+  }, [DEMO_PRODUCTS, activeCategory]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+  const pageProducts = useMemo(() => {
+    const start = currentPage * ITEMS_PER_PAGE;
+    return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredProducts, currentPage]);
+
+  // Compute page-local grid positions for current page's products
+  const displayPositions = useMemo(() => {
+    const positions: Record<number, { x: number; y: number }> = {};
+    const cols = COLS;
+    pageProducts.forEach((product, idx) => {
+      const globalIdx = DEMO_PRODUCTS.indexOf(product);
+      if (globalIdx !== -1) {
+        positions[globalIdx] = {
+          x: (idx % cols) * (TILE_W + TILE_GAP),
+          y: Math.floor(idx / cols) * (TILE_H + TILE_GAP),
+        };
+      }
+    });
+    return positions;
+  }, [pageProducts, DEMO_PRODUCTS]);
+
   const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
-  const CANVAS_H = Math.max(1, Math.ceil(DEMO_PRODUCTS.length / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
+  const CANVAS_H = Math.max(1, Math.ceil(pageProducts.length / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
 
   // Keep canvas dimensions in refs for the animation loop
   const canvasDimsRef = useRef({ w: CANVAS_W, h: CANVAS_H });
@@ -58,8 +94,6 @@ export function SpatialCanvas() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [activeCategory, setActiveCategory] = useState('ALL');
-  const activeCategoryRef = useRef('ALL');
   const [peekingAll, setPeekingAll] = useState(false);
   const categoryZoomRef = useRef<{ x: number; y: number; scale: number } | null>(null);
   const peekTimerRef = useRef<number>(0);
@@ -83,6 +117,11 @@ export function SpatialCanvas() {
   // Keep ref in sync for animation loop
   useEffect(() => { activeCategoryRef.current = activeCategory; }, [activeCategory]);
 
+  // Reset page when Navigation Tag changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [activeCategory]);
+
   // When StyleKit closes (e.g. after "ADD SET TO CART"), reset back to zoomed-out home view
   const prevStyleKitOpen = useRef(styleKitOpen);
   useEffect(() => {
@@ -93,27 +132,6 @@ export function SpatialCanvas() {
     }
     prevStyleKitOpen.current = styleKitOpen;
   }, [styleKitOpen]);
-
-  // Compute reflowed positions when filtering by category
-  const overridePositions = useMemo(() => {
-    if (activeCategory === 'ALL') return null;
-    const visible = DEMO_PRODUCTS
-      .map((p, i) => ({ p, i }))
-      .filter(({ p }) => p.category.toUpperCase() === activeCategory);
-    if (visible.length === 0) return null;
-
-    const count = visible.length;
-    const cols = isMobile ? 2 : Math.ceil(Math.sqrt(count));
-
-    const positions: Record<number, { x: number; y: number }> = {};
-    visible.forEach(({ i }, idx) => {
-      positions[i] = {
-        x: (idx % cols) * (TILE_W + TILE_GAP),
-        y: Math.floor(idx / cols) * (TILE_H + TILE_GAP),
-      };
-    });
-    return positions;
-  }, [activeCategory, isMobile]);
 
   // Apply transform directly to DOM
   const applyTransform = useCallback(() => {
@@ -241,21 +259,17 @@ export function SpatialCanvas() {
     };
   }, [startAnimation]);
 
-  // Fit canvas to visible products when category changes
+  // Fit canvas to visible products when category/page changes
   const fitToVisibleProducts = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
 
-    const visibleWithIndex = DEMO_PRODUCTS
-      .map((p, i) => ({ p, i }))
-      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
-    if (visibleWithIndex.length === 0) return;
+    const posEntries = Object.entries(displayPositions);
+    if (posEntries.length === 0) return;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const { p, i } of visibleWithIndex) {
-      const pos = overridePositions ? overridePositions[i] : p.grid_position;
-      if (!pos) continue;
+    for (const [, pos] of posEntries) {
       minX = Math.min(minX, pos.x);
       minY = Math.min(minY, pos.y);
       maxX = Math.max(maxX, pos.x + TILE_W);
@@ -284,7 +298,7 @@ export function SpatialCanvas() {
     }
     setScaleState(s);
     setPeekingAll(false);
-  }, [activeCategory, overridePositions, isMobile, startAnimation]);
+  }, [activeCategory, displayPositions, isMobile, startAnimation]);
 
   // Instant version of fitToVisibleProducts — snaps transform without animation
   const snapToFitVisible = useCallback(() => {
@@ -299,6 +313,11 @@ export function SpatialCanvas() {
     fitToVisibleProducts();
   }, [fitToVisibleProducts]);
 
+  // Re-fit when page changes
+  useEffect(() => {
+    fitToVisibleProducts();
+  }, [currentPage, fitToVisibleProducts]);
+
   // Find the product index under a given screen coordinate
   const getProductAtCursor = useCallback((screenX: number, screenY: number) => {
     const container = containerRef.current;
@@ -308,17 +327,14 @@ export function SpatialCanvas() {
     const canvasX = (screenX - rect.left - t.x) / t.scale;
     const canvasY = (screenY - rect.top - t.y) / t.scale;
 
-    for (let i = 0; i < DEMO_PRODUCTS.length; i++) {
-      const p = DEMO_PRODUCTS[i];
-      if (activeCategory !== 'ALL' && p.category.toUpperCase() !== activeCategory) continue;
-      const gx = p.grid_position.x;
-      const gy = p.grid_position.y;
-      if (canvasX >= gx && canvasX <= gx + 220 && canvasY >= gy && canvasY <= gy + 280) {
+    for (const [idxStr, pos] of Object.entries(displayPositions)) {
+      const i = Number(idxStr);
+      if (canvasX >= pos.x && canvasX <= pos.x + TILE_W && canvasY >= pos.y && canvasY <= pos.y + TILE_H) {
         return i;
       }
     }
     return null;
-  }, [activeCategory]);
+  }, [displayPositions]);
 
   // Wheel zoom
   useEffect(() => {
@@ -331,10 +347,30 @@ export function SpatialCanvas() {
       
       const target = targetTransformRef.current;
 
-      // Dead zone check: if cursor is NOT over a product tile, only allow zoom OUT
+      // Dead zone check: if cursor is NOT over a product tile
       const isOverProduct = getProductAtCursor(e.clientX, e.clientY) !== null;
-      if (!isOverProduct && e.deltaY < 0) {
-        return;
+      if (!isOverProduct) {
+        // Horizontal scroll in dead zone = page change (carousel swipe) — only if multiple pages exist
+        if (totalPages > 1) {
+          const absX = Math.abs(e.deltaX);
+          const absY = Math.abs(e.deltaY);
+          if (absX > absY && absX > 15) {
+            const now = Date.now();
+            if (now - pageSwipeRef.current > 400) {
+              pageSwipeRef.current = now;
+              setCurrentPage(prev => {
+                if (e.deltaX > 0) {
+                  return prev >= totalPages - 1 ? 0 : prev + 1;
+                } else {
+                  return prev <= 0 ? totalPages - 1 : prev - 1;
+                }
+              });
+            }
+            return;
+          }
+        }
+        // Vertical scroll in dead zone: only allow zoom OUT
+        if (e.deltaY < 0) return;
       }
 
       if (target.scale >= MAX_ZOOM_THRESHOLD && e.deltaY < 0 && !maxZoomTriggeredRef.current) {
@@ -404,7 +440,7 @@ export function SpatialCanvas() {
     return () => {
       container.removeEventListener('wheel', onWheel);
     };
-  }, [getProductAtCursor, activeCategory, startAnimation]);
+  }, [getProductAtCursor, activeCategory, startAnimation, totalPages]);
 
   // Touch gestures (pan + pinch-to-zoom)
   useEffect(() => {
@@ -506,6 +542,25 @@ export function SpatialCanvas() {
         touchRef.current.pinching = false;
       }
       if (e.touches.length === 0) {
+        // Check for horizontal swipe in dead zone = page change (only if multiple pages)
+        if (!touchRef.current.pinching && totalPages > 1) {
+          const dx = e.changedTouches[0].clientX - touchRef.current.startX;
+          const dy = e.changedTouches[0].clientY - touchRef.current.startY;
+          const absX = Math.abs(dx);
+          const absY = Math.abs(dy);
+          if (absX > 60 && absX > absY * 2) {
+            const wasOverProduct = getProductAtCursor(touchRef.current.startX, touchRef.current.startY) !== null;
+            if (!wasOverProduct) {
+              setCurrentPage(prev => {
+                if (dx < 0) {
+                  return prev >= totalPages - 1 ? 0 : prev + 1;
+                } else {
+                  return prev <= 0 ? totalPages - 1 : prev - 1;
+                }
+              });
+            }
+          }
+        }
         touchRef.current.touching = false;
         setScaleState(targetTransformRef.current.scale);
         startAnimation();
@@ -521,7 +576,7 @@ export function SpatialCanvas() {
       container.removeEventListener('touchmove', onTouchMove);
       container.removeEventListener('touchend', onTouchEnd);
     };
-  }, [applyTransform, startAnimation]);
+  }, [applyTransform, startAnimation, totalPages, getProductAtCursor]);
 
   // Drag to pan (mouse)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -633,7 +688,7 @@ export function SpatialCanvas() {
 
     const visibleWithIndex = DEMO_PRODUCTS
       .map((p, i) => ({ p, i }))
-      .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory);
+      .filter(({ i }) => displayPositions[i] !== undefined);
 
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
@@ -642,22 +697,22 @@ export function SpatialCanvas() {
         return;
       }
 
-      const positions = overridePositions;
-      const yPositions = [...new Set(visibleWithIndex.map(({ p, i }) => {
-        const pos = positions?.[i] ?? p.grid_position;
-        return pos.y;
+      const positions = displayPositions;
+      const yPositions = [...new Set(visibleWithIndex.map(({ i }) => {
+        const pos = positions[i];
+        return pos ? pos.y : 0;
       }))].sort((a, b) => a - b);
 
       const rows: number[][] = yPositions.map(y =>
         visibleWithIndex
-          .filter(({ p, i }) => {
-            const pos = positions?.[i] ?? p.grid_position;
-            return pos.y === y;
+          .filter(({ i }) => {
+            const pos = positions[i];
+            return pos && pos.y === y;
           })
           .sort((a, b) => {
-            const posA = positions?.[a.i] ?? a.p.grid_position;
-            const posB = positions?.[b.i] ?? b.p.grid_position;
-            return posA.x - posB.x;
+            const posA = positions[a.i];
+            const posB = positions[b.i];
+            return (posA?.x ?? 0) - (posB?.x ?? 0);
           })
           .map(({ i }) => i)
       );
@@ -695,13 +750,14 @@ export function SpatialCanvas() {
 
     if (e.key === 'Enter' && focusedIndex >= 0) {
       const p = DEMO_PRODUCTS[focusedIndex];
+      const pos = displayPositions[focusedIndex];
       const container = containerRef.current;
-      if (p && container) {
+      if (p && container && pos) {
         const rect = container.getBoundingClientRect();
         const zoomScale = 1.2;
         targetTransformRef.current.scale = zoomScale;
-        targetTransformRef.current.x = rect.width / 2 - (p.grid_position.x + 110) * zoomScale;
-        targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * zoomScale;
+        targetTransformRef.current.x = rect.width / 2 - (pos.x + 110) * zoomScale;
+        targetTransformRef.current.y = rect.height / 2 - (pos.y + 140) * zoomScale;
         setScaleState(zoomScale);
         setTimeout(() => setSelectedIndex(focusedIndex), 350);
       } else {
@@ -710,23 +766,24 @@ export function SpatialCanvas() {
     }
     if (e.key === '=' || e.key === '+') setScaleSmooth(Math.min(MAX_SCALE, targetTransformRef.current.scale * 1.15));
     if (e.key === '-') setScaleSmooth(Math.max(minScaleRef.current, targetTransformRef.current.scale * 0.85));
-  }, [focusedIndex, selectedIndex, setScaleSmooth, isMobile, activeCategory, overridePositions, fitToVisibleProducts]);
+  }, [focusedIndex, selectedIndex, setScaleSmooth, isMobile, activeCategory, displayPositions, fitToVisibleProducts]);
 
   // Pan to focused product when zoomed in
   useEffect(() => {
     if (focusedIndex < 0) return;
     const p = DEMO_PRODUCTS[focusedIndex];
+    const pos = displayPositions[focusedIndex];
     const container = containerRef.current;
-    if (!container || !p) return;
+    if (!container || !p || !pos) return;
     const rect = container.getBoundingClientRect();
     const s = targetTransformRef.current.scale;
 
     const fitScale = Math.min(rect.width / CANVAS_W, rect.height / CANVAS_H);
     if (s <= fitScale * 1.1) return;
 
-    targetTransformRef.current.x = rect.width / 2 - (p.grid_position.x + 110) * s;
-    targetTransformRef.current.y = rect.height / 2 - (p.grid_position.y + 140) * s;
-  }, [focusedIndex]);
+    targetTransformRef.current.x = rect.width / 2 - (pos.x + 110) * s;
+    targetTransformRef.current.y = rect.height / 2 - (pos.y + 140) * s;
+  }, [focusedIndex, displayPositions]);
 
   const compactHeader = isMobile;
 
@@ -816,12 +873,12 @@ export function SpatialCanvas() {
           }}
         >
           {DEMO_PRODUCTS.map((product, i) => {
-            const isInCategory = activeCategory === 'ALL' || product.category.toUpperCase() === activeCategory;
-            // Hide non-matching products unless we're peeking
-            if (!isInCategory && !peekingAll) return null;
-            // When peeking, use original positions for all; when filtered, use overrides
-            const posOverride = peekingAll ? undefined : (overridePositions ? overridePositions[i] : undefined);
-            const isDimmed = peekingAll && !isInCategory;
+            const isOnPage = displayPositions[i] !== undefined;
+            // Hide products not on current page unless peeking
+            if (!isOnPage && !peekingAll) return null;
+            // When peeking, use original positions for all; otherwise use page positions
+            const posOverride = peekingAll ? undefined : displayPositions[i];
+            const isDimmed = peekingAll && !isOnPage;
             return (
               <ProductTile key={product.id} product={product} scale={scaleState}
                 isFocused={focusedIndex === i && hoveredIndex === null}
@@ -853,12 +910,9 @@ export function SpatialCanvas() {
             <p className="block md:hidden">HOVER OVER ITEMS & PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
             <p className="hidden md:block">HOVER OVER ITEMS & SCROLL / PINCH TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
           </div>
-          {/* Item count — centered */}
+          {/* Pagination indicator — centered */}
           <div className={`absolute left-1/2 -translate-x-1/2 bottom-3 md:bottom-5 tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
-            {activeCategory === 'ALL'
-              ? `${DEMO_PRODUCTS.length} ITEMS`
-              : `${DEMO_PRODUCTS.filter(p => p.category.toUpperCase() === activeCategory).length} OF ${DEMO_PRODUCTS.length} ITEMS`
-            }
+            PAGE {currentPage + 1} / {totalPages}
           </div>
           {/* Social icons */}
           <div className="flex items-center gap-2 md:gap-3">
@@ -876,8 +930,8 @@ export function SpatialCanvas() {
       <AnimatePresence>
         {selectedIndex !== null && (
           <ProductView
-            productIndex={selectedIndex}
-            products={DEMO_PRODUCTS}
+            productIndex={pageProducts.findIndex(p => p === DEMO_PRODUCTS[selectedIndex!])}
+            products={pageProducts}
             categories={CATEGORIES}
             onClose={() => {
               setFocusedIndex(selectedIndex);
@@ -888,7 +942,14 @@ export function SpatialCanvas() {
               setTimeout(() => snapToFitVisible(), 350);
               setTimeout(() => rootRef.current?.focus(), 50);
             }}
-            onNavigate={(newIdx) => setSelectedIndex(newIdx)}
+            onNavigate={(newIdx) => {
+              // Convert page-local index back to global index
+              const product = pageProducts[newIdx];
+              if (product) {
+                const globalIdx = DEMO_PRODUCTS.indexOf(product);
+                if (globalIdx !== -1) setSelectedIndex(globalIdx);
+              }
+            }}
             activeCategory={activeCategory}
             onCategoryChange={(cat) => {
               setActiveCategory(cat);
