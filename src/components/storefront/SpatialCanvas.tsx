@@ -913,7 +913,7 @@ export function SpatialCanvas() {
         <>
           {/* Left arrow — previous page */}
           <div
-            className="absolute left-0 top-0 bottom-0 w-[30%] z-30 flex items-center justify-center cursor-pointer group pointer-events-none"
+            className="absolute left-0 top-0 bottom-0 z-30 flex items-center justify-center cursor-pointer group" style={{ width: 'calc((100% - 500px) / 2)' }}
             onMouseEnter={() => {
               arrowHoverTimerRef.current = setTimeout(() => {
                 setCurrentPage(prev => prev <= 0 ? totalPages - 1 : prev - 1);
@@ -928,12 +928,12 @@ export function SpatialCanvas() {
               setCurrentPage(prev => prev <= 0 ? totalPages - 1 : prev - 1);
             }}
           >
-            <ChevronLeft className="w-14 h-14 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300 pointer-events-auto" />
+            <ChevronLeft className="w-14 h-14 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300" />
           </div>
 
           {/* Right arrow — next page */}
           <div
-            className="absolute right-0 top-0 bottom-0 w-[30%] z-30 flex items-center justify-center cursor-pointer group pointer-events-none"
+            className="absolute right-0 top-0 bottom-0 z-30 flex items-center justify-center cursor-pointer group" style={{ width: 'calc((100% - 500px) / 2)' }}
             onMouseEnter={() => {
               arrowHoverTimerRef.current = setTimeout(() => {
                 setCurrentPage(prev => prev >= totalPages - 1 ? 0 : prev + 1);
@@ -948,7 +948,7 @@ export function SpatialCanvas() {
               setCurrentPage(prev => prev >= totalPages - 1 ? 0 : prev + 1);
             }}
           >
-            <ChevronRight className="w-14 h-14 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300 pointer-events-auto" />
+            <ChevronRight className="w-14 h-14 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300" />
           </div>
         </>
       )}
