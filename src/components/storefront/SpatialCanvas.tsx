@@ -309,7 +309,11 @@ export function SpatialCanvas() {
     const cy = headerPad + ((rect.height - headerPad - bottomPad) - scaledH) / 2 - minY * s;
 
     targetTransformRef.current = { x: cx, y: cy, scale: s };
-    minScaleRef.current = s;
+    if (activeCategory === 'ALL') {
+      minScaleRef.current = s;
+    } else {
+      minScaleRef.current = s * 0.5;
+    }
     startAnimation();
     if (activeCategory !== 'ALL') {
       categoryZoomRef.current = { x: cx, y: cy, scale: s };
