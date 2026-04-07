@@ -8,6 +8,7 @@ const TILE_W = 220;
 const TILE_H = 300;
 const GAP = 6;
 const COLS = 5;
+const ITEMS_PER_PAGE = 20;
 const CANVAS_W = COLS * (TILE_W + GAP) - GAP;
 
 interface GridProduct {
@@ -412,7 +413,7 @@ export default function AdminPageEditor() {
       {/* Grid canvas */}
       <div className="flex-1 overflow-auto px-6 pb-6" ref={containerRef}>
         <label className="text-[10px] font-display tracking-widest text-muted-foreground mb-3 block">
-          PRODUCT GRID — drag tiles to reorder
+          PRODUCT GRID — drag tiles to reorder · {Math.ceil(products.length / ITEMS_PER_PAGE)} {Math.ceil(products.length / ITEMS_PER_PAGE) === 1 ? 'PAGE' : 'PAGES'}
         </label>
         <div
           className="relative mx-auto"
@@ -432,6 +433,24 @@ export default function AdminPageEditor() {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
           >
+            {/* Page break dividers */}
+            {Array.from({ length: Math.ceil(liveOrder.length / ITEMS_PER_PAGE) - 1 }, (_, pageIdx) => {
+              const breakAfterRow = ((pageIdx + 1) * ITEMS_PER_PAGE) / COLS;
+              const y = breakAfterRow * (TILE_H + GAP) - GAP / 2;
+              return (
+                <div
+                  key={`page-break-${pageIdx}`}
+                  className="absolute left-0 flex items-center gap-3 pointer-events-none z-40"
+                  style={{ top: y, width: CANVAS_W }}
+                >
+                  <div className="flex-1 border-t border-dashed border-primary/30" />
+                  <span className="text-[9px] font-display tracking-widest text-primary/50 whitespace-nowrap px-2">
+                    PAGE {pageIdx + 2}
+                  </span>
+                  <div className="flex-1 border-t border-dashed border-primary/30" />
+                </div>
+              );
+            })}
             {liveOrder.map((p, idx) => {
               const pos = getGridPos(idx);
               const isBeingDragged = dragIdx === idx;
@@ -457,7 +476,14 @@ export default function AdminPageEditor() {
                 >
                   <div className={`liquid-glass rounded-xl w-full h-full flex flex-col p-3 overflow-hidden group ${isBeingDragged ? 'opacity-90' : ''}`}>
                     <div className="flex items-center justify-between mb-2">
-                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                      <div className="flex items-center gap-1.5">
+                        <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                        {products.length > ITEMS_PER_PAGE && (
+                          <span className="text-[7px] font-display tracking-wider text-muted-foreground/40 tabular-nums">
+                            P{Math.floor(idx / ITEMS_PER_PAGE) + 1}
+                          </span>
+                        )}
+                      </div>
                       <span className={`text-[8px] font-display px-1.5 py-0.5 rounded border ${getCatColor(p.category)}`}>
                         {p.category.toUpperCase().replace('-', ' ')}
                       </span>
