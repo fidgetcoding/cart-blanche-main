@@ -79,6 +79,11 @@ export function SpatialCanvas() {
   const canvasDimsRef = useRef({ w: CANVAS_W, h: CANVAS_H });
   canvasDimsRef.current = { w: CANVAS_W, h: CANVAS_H };
 
+  // Visible content height — based on current page, not full canvas
+  const visibleH = Math.max(1, Math.ceil(pageProducts.length / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
+  const visibleHRef = useRef(visibleH);
+  visibleHRef.current = visibleH;
+
   // Transform refs for high-frequency updates
   const transformRef = useRef({ x: 0, y: 0, scale: 0.5 });
   const targetTransformRef = useRef({ x: 0, y: 0, scale: 0.5 });
@@ -152,13 +157,13 @@ export function SpatialCanvas() {
     const bottomPad = isMobile ? 80 : 60;
     const fitScale = Math.min(
       (rect.width - padX * 2) / CANVAS_W,
-      (rect.height - headerPad - bottomPad) / CANVAS_H
+      (rect.height - headerPad - bottomPad) / visibleH
     );
     const s = Math.max(0.2, Math.min(1, fitScale));
     minScaleRef.current = s;
     const cx = (rect.width - CANVAS_W * s) / 2;
     const availH = rect.height - headerPad - bottomPad;
-    const cy = headerPad + (availH - CANVAS_H * s) / 2;
+    const cy = headerPad + (availH - visibleH * s) / 2;
     transformRef.current = { x: cx, y: cy, scale: s };
     targetTransformRef.current = { x: cx, y: cy, scale: s };
     setScaleState(s);
@@ -234,7 +239,7 @@ export function SpatialCanvas() {
       const ctr = containerRef.current;
       if (ctr) {
         const r = ctr.getBoundingClientRect();
-        const canvasBottom = t.y + canvasDimsRef.current.h * t.scale;
+        const canvasBottom = t.y + visibleHRef.current * t.scale;
         const footerZone = r.height - 50;
         const shouldGlass = canvasBottom > footerZone;
         const shouldClear = canvasBottom < footerZone - 20;
@@ -304,6 +309,7 @@ export function SpatialCanvas() {
     const cy = headerPad + ((rect.height - headerPad - bottomPad) - scaledH) / 2 - minY * s;
 
     targetTransformRef.current = { x: cx, y: cy, scale: s };
+    minScaleRef.current = s;
     startAnimation();
     if (activeCategory !== 'ALL') {
       categoryZoomRef.current = { x: cx, y: cy, scale: s };
@@ -321,14 +327,11 @@ export function SpatialCanvas() {
     applyTransform();
   }, [fitToVisibleProducts, applyTransform]);
 
-  useEffect(() => {
-    fitToVisibleProducts();
-  }, [fitToVisibleProducts]);
-
   // Re-fit when page changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fitToVisibleProducts();
-  }, [currentPage, fitToVisibleProducts]);
+  }, [currentPage]);
 
   // Find the product index under a given screen coordinate
   const getProductAtCursor = useCallback((screenX: number, screenY: number) => {
