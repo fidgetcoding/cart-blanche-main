@@ -331,11 +331,11 @@ export function SpatialCanvas() {
     applyTransform();
   }, [fitToVisibleProducts, applyTransform]);
 
-  // Re-fit when page changes
+  // Re-fit when page or category changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fitToVisibleProducts();
-  }, [currentPage]);
+  }, [currentPage, activeCategory]);
 
   // Find the product index under a given screen coordinate
   const getProductAtCursor = useCallback((screenX: number, screenY: number) => {
