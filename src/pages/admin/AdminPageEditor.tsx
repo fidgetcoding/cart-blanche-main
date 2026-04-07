@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
-import { GripVertical, Save, RotateCcw, Plus, Loader2, Pencil, Check, Eye, EyeOff, X } from 'lucide-react';
+import { GripVertical, Save, RotateCcw, Plus, Loader2, Pencil, Check, Eye, EyeOff, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 
 const TILE_W = 220;
@@ -70,6 +70,9 @@ export default function AdminPageEditor() {
   const [products, setProducts] = useState<GridProduct[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const [editorPage, setEditorPage] = useState(0);
+  const editorTotalPages = Math.max(1, Math.ceil(products.length / ITEMS_PER_PAGE));
+  const arrowHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize from Supabase layout once loaded
   useEffect(() => {
@@ -108,7 +111,6 @@ export default function AdminPageEditor() {
     if (!confirm(`Remove "${cat}" tab? Products won't be deleted.`)) return;
     const newCats = categories.filter(c => c !== cat);
     setCategories(newCats);
-    // Also remove from hiddenTags if present
     if (hiddenTags.includes(cat)) {
       const newHidden = hiddenTags.filter(t => t !== cat);
       setHiddenTags(newHidden);
@@ -122,7 +124,6 @@ export default function AdminPageEditor() {
   const [saving, setSaving] = useState(false);
   const { markDirty: markGridDirty, markClean: markGridClean, BlockerDialog: GridBlockerDialog } = useUnsavedChanges();
 
-  // Sync hasChanges with navigation blocker
   useEffect(() => { if (hasChanges) markGridDirty(); else markGridClean(); }, [hasChanges, markGridDirty, markGridClean]);
   const [addingTab, setAddingTab] = useState(false);
   const [newTabName, setNewTabName] = useState('');
@@ -135,7 +136,6 @@ export default function AdminPageEditor() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const isDragging = dragIdx !== null;
 
-  // Keep liveOrder synced when not dragging
   useEffect(() => {
     if (!isDragging) setLiveOrder(products);
   }, [products, isDragging]);
@@ -143,7 +143,8 @@ export default function AdminPageEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.6);
 
-  const rows = Math.ceil(products.length / COLS);
+  const pageProductCount = Math.min(ITEMS_PER_PAGE, Math.max(0, products.length - editorPage * ITEMS_PER_PAGE));
+  const rows = Math.max(1, Math.ceil(pageProductCount / COLS));
   const canvasH = rows * (TILE_H + GAP) - GAP;
 
   useEffect(() => {
@@ -159,7 +160,6 @@ export default function AdminPageEditor() {
     return () => window.removeEventListener('resize', resize);
   }, [canvasH]);
 
-  // Determine which grid slot a point falls into
   const pointToSlot = useCallback((clientX: number, clientY: number): number | null => {
     if (!canvasRef.current) return null;
     const rect = canvasRef.current.getBoundingClientRect();
@@ -167,22 +167,25 @@ export default function AdminPageEditor() {
     const y = (clientY - rect.top) / scale;
     const col = Math.round(x / (TILE_W + GAP));
     const row = Math.round(y / (TILE_H + GAP));
-    const idx = row * COLS + col;
-    if (idx < 0 || idx >= liveOrder.length) return null;
-    return idx;
-  }, [scale, liveOrder.length]);
+    const pageLocalIdx = row * COLS + col;
+    if (pageLocalIdx < 0 || pageLocalIdx >= ITEMS_PER_PAGE) return null;
+    const globalIdx = editorPage * ITEMS_PER_PAGE + pageLocalIdx;
+    if (globalIdx < 0 || globalIdx >= liveOrder.length) return null;
+    return globalIdx;
+  }, [scale, liveOrder.length, editorPage]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, idx: number) => {
     e.preventDefault();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    const pos = getGridPos(idx);
+    const pageLocalIdx = idx - editorPage * ITEMS_PER_PAGE;
+    const pos = getGridPos(pageLocalIdx);
     setDragIdx(idx);
     setDragPos({ x: pos.x, y: pos.y });
     setDragOffset({
       x: e.clientX / scale - pos.x,
       y: e.clientY / scale - pos.y,
     });
-  }, [scale]);
+  }, [scale, editorPage]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (dragIdx === null) return;
@@ -210,6 +213,22 @@ export default function AdminPageEditor() {
     setDragIdx(null);
     setHasChanges(true);
   }, [dragIdx, liveOrder]);
+
+  const moveProductToPage = useCallback((fromIdx: number, direction: 'prev' | 'next') => {
+    const targetPage = direction === 'next' ? editorPage + 1 : editorPage - 1;
+    if (targetPage < 0 || targetPage >= editorTotalPages) return;
+    const targetIdx = direction === 'next'
+      ? Math.min((targetPage + 1) * ITEMS_PER_PAGE - 1, products.length - 1)
+      : targetPage * ITEMS_PER_PAGE;
+    if (targetIdx === fromIdx) return;
+    setProducts(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(targetIdx > fromIdx ? targetIdx - 1 : targetIdx, 0, moved);
+      return next;
+    });
+    setHasChanges(true);
+  }, [editorPage, editorTotalPages, products.length]);
 
   // --- Category drag ---
   const [catDragIdx, setCatDragIdx] = useState<number | null>(null);
@@ -412,107 +431,180 @@ export default function AdminPageEditor() {
 
       {/* Grid canvas */}
       <div className="flex-1 overflow-auto px-6 pb-6" ref={containerRef}>
-        <label className="text-[10px] font-display tracking-widest text-muted-foreground mb-3 block">
-          PRODUCT GRID — drag tiles to reorder · {Math.ceil(products.length / ITEMS_PER_PAGE)} {Math.ceil(products.length / ITEMS_PER_PAGE) === 1 ? 'PAGE' : 'PAGES'}
-        </label>
-        <div
-          className="relative mx-auto"
-          style={{
-            width: CANVAS_W * scale,
-            height: canvasH * scale,
-          }}
-        >
-          <div
-            ref={canvasRef}
-            className="absolute top-0 left-0 origin-top-left"
-            style={{
-              width: CANVAS_W,
-              height: canvasH,
-              transform: `scale(${scale})`,
-            }}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-          >
-            {/* Page break dividers */}
-            {Array.from({ length: Math.ceil(liveOrder.length / ITEMS_PER_PAGE) - 1 }, (_, pageIdx) => {
-              const breakAfterRow = ((pageIdx + 1) * ITEMS_PER_PAGE) / COLS;
-              const y = breakAfterRow * (TILE_H + GAP) - GAP / 2;
-              return (
-                <div
-                  key={`page-break-${pageIdx}`}
-                  className="absolute left-0 flex items-center gap-3 pointer-events-none z-40"
-                  style={{ top: y, width: CANVAS_W }}
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-[10px] font-display tracking-widest text-muted-foreground">
+            PRODUCT GRID — drag tiles to reorder
+          </label>
+          {editorTotalPages > 1 && (
+            <div className="flex items-center gap-1">
+              {Array.from({ length: editorTotalPages }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setEditorPage(i)}
+                  className={`px-2.5 py-1 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                    editorPage === i
+                      ? 'bg-primary/20 text-primary border-primary/40'
+                      : 'text-muted-foreground border-border/50 hover:border-primary/30 hover:text-foreground'
+                  }`}
                 >
-                  <div className="flex-1 border-t border-dashed border-primary/30" />
-                  <span className="text-[9px] font-display tracking-widest text-primary/50 whitespace-nowrap px-2">
-                    PAGE {pageIdx + 2}
-                  </span>
-                  <div className="flex-1 border-t border-dashed border-primary/30" />
-                </div>
-              );
-            })}
-            {liveOrder.map((p, idx) => {
-              const pos = getGridPos(idx);
-              const isBeingDragged = dragIdx === idx;
+                  PAGE {i + 1}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-              return (
-                <div
-                  key={p.id}
-                  onPointerDown={e => handlePointerDown(e, idx)}
-                  className={`
-                    absolute rounded-xl border select-none touch-none
-                    ${isBeingDragged
-                      ? 'z-50 cursor-grabbing scale-105 shadow-2xl ring-2 ring-primary/50'
-                      : 'z-10 cursor-grab transition-all duration-300 ease-out'
-                    }
-                  `}
-                  style={{
-                    left: isBeingDragged ? dragPos.x : pos.x,
-                    top: isBeingDragged ? dragPos.y : pos.y,
-                    width: TILE_W,
-                    height: TILE_H,
-                    ...(isBeingDragged ? {} : { transition: 'left 300ms ease-out, top 300ms ease-out' }),
-                  }}
-                >
-                  <div className={`liquid-glass rounded-xl w-full h-full flex flex-col p-3 overflow-hidden group ${isBeingDragged ? 'opacity-90' : ''}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
-                        {products.length > ITEMS_PER_PAGE && (
-                          <span className="text-[7px] font-display tracking-wider text-muted-foreground/40 tabular-nums">
-                            P{Math.floor(idx / ITEMS_PER_PAGE) + 1}
-                          </span>
+        <div className="relative flex items-center">
+          {/* Left page arrow */}
+          {editorTotalPages > 1 && (
+            <div
+              className="flex-shrink-0 w-12 flex items-center justify-center cursor-pointer group"
+              onMouseEnter={() => {
+                arrowHoverTimerRef.current = setTimeout(() => {
+                  setEditorPage(prev => prev <= 0 ? editorTotalPages - 1 : prev - 1);
+                }, 200);
+              }}
+              onMouseLeave={() => {
+                if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
+              }}
+              onClick={() => {
+                if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
+                setEditorPage(prev => prev <= 0 ? editorTotalPages - 1 : prev - 1);
+              }}
+            >
+              <ChevronLeft className="w-8 h-8 text-muted-foreground/20 group-hover:text-muted-foreground/60 transition-colors" />
+            </div>
+          )}
+
+          <div
+            className="relative mx-auto"
+            style={{
+              width: CANVAS_W * scale,
+              height: canvasH * scale,
+            }}
+          >
+            <div
+              ref={canvasRef}
+              className="absolute top-0 left-0 origin-top-left"
+              style={{
+                width: CANVAS_W,
+                height: canvasH,
+                transform: `scale(${scale})`,
+              }}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+            >
+              {liveOrder.map((p, idx) => {
+                const pageStart = editorPage * ITEMS_PER_PAGE;
+                const pageEnd = pageStart + ITEMS_PER_PAGE;
+                if (idx < pageStart || idx >= pageEnd) return null;
+
+                const pageLocalIdx = idx - pageStart;
+                const pos = getGridPos(pageLocalIdx);
+                const isBeingDragged = dragIdx === idx;
+
+                return (
+                  <div
+                    key={p.id}
+                    onPointerDown={e => handlePointerDown(e, idx)}
+                    className={`
+                      absolute rounded-xl border select-none touch-none
+                      ${isBeingDragged
+                        ? 'z-50 cursor-grabbing scale-105 shadow-2xl ring-2 ring-primary/50'
+                        : 'z-10 cursor-grab transition-all duration-300 ease-out'
+                      }
+                    `}
+                    style={{
+                      left: isBeingDragged ? dragPos.x : pos.x,
+                      top: isBeingDragged ? dragPos.y : pos.y,
+                      width: TILE_W,
+                      height: TILE_H,
+                      ...(isBeingDragged ? {} : { transition: 'left 300ms ease-out, top 300ms ease-out' }),
+                    }}
+                  >
+                    <div className={`liquid-glass rounded-xl w-full h-full flex flex-col p-3 overflow-hidden group ${isBeingDragged ? 'opacity-90' : ''}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                          {editorTotalPages > 1 && (
+                            <div className="flex items-center gap-0.5">
+                              {editorPage > 0 && (
+                                <button
+                                  onPointerDown={e => e.stopPropagation()}
+                                  onClick={(e) => { e.stopPropagation(); moveProductToPage(idx, 'prev'); }}
+                                  className="p-0.5 rounded hover:bg-primary/20 transition-colors"
+                                  title={`Move to page ${editorPage}`}
+                                >
+                                  <ChevronLeft className="w-3 h-3 text-muted-foreground/40 hover:text-primary" />
+                                </button>
+                              )}
+                              <span className="text-[7px] font-display tracking-wider text-muted-foreground/40 tabular-nums">
+                                P{Math.floor(idx / ITEMS_PER_PAGE) + 1}
+                              </span>
+                              {editorPage < editorTotalPages - 1 && (
+                                <button
+                                  onPointerDown={e => e.stopPropagation()}
+                                  onClick={(e) => { e.stopPropagation(); moveProductToPage(idx, 'next'); }}
+                                  className="p-0.5 rounded hover:bg-primary/20 transition-colors"
+                                  title={`Move to page ${editorPage + 2}`}
+                                >
+                                  <ChevronRight className="w-3 h-3 text-muted-foreground/40 hover:text-primary" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-[8px] font-display px-1.5 py-0.5 rounded border ${getCatColor(p.category)}`}>
+                          {p.category.toUpperCase().replace('-', ' ')}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 bg-muted/20 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+                        {p.images.length > 0 ? (
+                          <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover rounded-lg pointer-events-none" />
+                        ) : (
+                          <div className="text-[10px] font-display text-muted-foreground/30 tracking-wider">
+                            {idx + 1}
+                          </div>
                         )}
                       </div>
-                      <span className={`text-[8px] font-display px-1.5 py-0.5 rounded border ${getCatColor(p.category)}`}>
-                        {p.category.toUpperCase().replace('-', ' ')}
-                      </span>
-                    </div>
 
-                    <div className="flex-1 bg-muted/20 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
-                      {p.images.length > 0 ? (
-                        <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover rounded-lg pointer-events-none" />
-                      ) : (
-                        <div className="text-[10px] font-display text-muted-foreground/30 tracking-wider">
-                          {idx + 1}
+                      <div>
+                        <p className="text-[11px] font-display font-medium truncate leading-tight">{p.title}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="text-[10px] font-display text-foreground/70">${p.price}</span>
+                          {p.compare_at_price && (
+                            <span className="text-[8px] text-muted-foreground line-through">${p.compare_at_price}</span>
+                          )}
                         </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] font-display font-medium truncate leading-tight">{p.title}</p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[10px] font-display text-foreground/70">${p.price}</span>
-                        {p.compare_at_price && (
-                          <span className="text-[8px] text-muted-foreground line-through">${p.compare_at_price}</span>
-                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
+
+          {/* Right page arrow */}
+          {editorTotalPages > 1 && (
+            <div
+              className="flex-shrink-0 w-12 flex items-center justify-center cursor-pointer group"
+              onMouseEnter={() => {
+                arrowHoverTimerRef.current = setTimeout(() => {
+                  setEditorPage(prev => prev >= editorTotalPages - 1 ? 0 : prev + 1);
+                }, 200);
+              }}
+              onMouseLeave={() => {
+                if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
+              }}
+              onClick={() => {
+                if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
+                setEditorPage(prev => prev >= editorTotalPages - 1 ? 0 : prev + 1);
+              }}
+            >
+              <ChevronRight className="w-8 h-8 text-muted-foreground/20 group-hover:text-muted-foreground/60 transition-colors" />
+            </div>
+          )}
         </div>
       </div>
     </div>
