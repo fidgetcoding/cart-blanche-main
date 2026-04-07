@@ -70,6 +70,8 @@ export function SpatialCanvas() {
     return positions;
   }, [pageProducts, DEMO_PRODUCTS]);
 
+  const [peekingAll, setPeekingAll] = useState(false);
+
   const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
   const activeProductCount = peekingAll ? DEMO_PRODUCTS.length : pageProducts.length;
   const CANVAS_H = Math.max(1, Math.ceil(activeProductCount / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
@@ -95,7 +97,6 @@ export function SpatialCanvas() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [peekingAll, setPeekingAll] = useState(false);
   const categoryZoomRef = useRef<{ x: number; y: number; scale: number } | null>(null);
   const peekTimerRef = useRef<number>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
