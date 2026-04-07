@@ -70,8 +70,11 @@ export function SpatialCanvas() {
     return positions;
   }, [pageProducts, DEMO_PRODUCTS]);
 
+  const [peekingAll, setPeekingAll] = useState(false);
+
   const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
-  const CANVAS_H = Math.max(1, Math.ceil(pageProducts.length / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
+  const activeProductCount = peekingAll ? DEMO_PRODUCTS.length : pageProducts.length;
+  const CANVAS_H = Math.max(1, Math.ceil(activeProductCount / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
 
   // Keep canvas dimensions in refs for the animation loop
   const canvasDimsRef = useRef({ w: CANVAS_W, h: CANVAS_H });
@@ -94,7 +97,6 @@ export function SpatialCanvas() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [peekingAll, setPeekingAll] = useState(false);
   const categoryZoomRef = useRef<{ x: number; y: number; scale: number } | null>(null);
   const peekTimerRef = useRef<number>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -265,16 +267,27 @@ export function SpatialCanvas() {
     if (!container) return;
     const rect = container.getBoundingClientRect();
 
-    const posEntries = Object.entries(displayPositions);
-    if (posEntries.length === 0) return;
-
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const [, pos] of posEntries) {
-      minX = Math.min(minX, pos.x);
-      minY = Math.min(minY, pos.y);
-      maxX = Math.max(maxX, pos.x + TILE_W);
-      maxY = Math.max(maxY, pos.y + TILE_H);
+
+    if (peekingAll) {
+      for (const p of DEMO_PRODUCTS) {
+        const pos = p.grid_position;
+        minX = Math.min(minX, pos.x);
+        minY = Math.min(minY, pos.y);
+        maxX = Math.max(maxX, pos.x + TILE_W);
+        maxY = Math.max(maxY, pos.y + TILE_H);
+      }
+    } else {
+      const posEntries = Object.entries(displayPositions);
+      if (posEntries.length === 0) return;
+      for (const [, pos] of posEntries) {
+        minX = Math.min(minX, pos.x);
+        minY = Math.min(minY, pos.y);
+        maxX = Math.max(maxX, pos.x + TILE_W);
+        maxY = Math.max(maxY, pos.y + TILE_H);
+      }
     }
+    if (minX === Infinity) return;
 
     const bboxW = maxX - minX;
     const bboxH = maxY - minY;
@@ -298,7 +311,7 @@ export function SpatialCanvas() {
     }
     setScaleState(s);
     setPeekingAll(false);
-  }, [activeCategory, displayPositions, isMobile, startAnimation]);
+  }, [activeCategory, displayPositions, isMobile, startAnimation, peekingAll, DEMO_PRODUCTS]);
 
   // Instant version of fitToVisibleProducts — snaps transform without animation
   const snapToFitVisible = useCallback(() => {
