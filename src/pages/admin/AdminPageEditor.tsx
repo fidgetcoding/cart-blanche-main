@@ -317,7 +317,7 @@ export default function AdminPageEditor() {
       {/* Category ribbon */}
       <div className="px-6 pb-4 flex-shrink-0">
         <label className="text-[10px] font-display tracking-widest text-muted-foreground mb-2 block">
-          CATEGORY TABS — drag to reorder
+          NAVIGATION TAGS — drag to reorder
         </label>
         <div
           ref={catRibbonRef}
