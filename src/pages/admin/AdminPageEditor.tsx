@@ -151,8 +151,8 @@ export default function AdminPageEditor() {
     function resize() {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const sx = (rect.width - 200) / CANVAS_W;
-      const sy = (rect.height - 160) / canvasH;
+      const sx = (rect.width - 180) / CANVAS_W;
+      const sy = (rect.height - 180) / canvasH;
       setScale(Math.min(sx, sy, 1));
     }
     resize();
@@ -430,7 +430,7 @@ export default function AdminPageEditor() {
       </div>
 
       {/* Grid canvas */}
-      <div className="flex-1 overflow-auto px-6 pb-6" ref={containerRef}>
+      <div className="flex-1 overflow-auto px-6 py-6" ref={containerRef}>
         <div className="flex items-center justify-between mb-3">
           <label className="text-[10px] font-display tracking-widest text-muted-foreground">
             PRODUCT GRID — drag tiles to reorder
