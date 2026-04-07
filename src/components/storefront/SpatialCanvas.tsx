@@ -786,7 +786,7 @@ export function SpatialCanvas() {
   const compactHeader = isMobile;
 
   return (
-    <div ref={rootRef} className={`relative w-full h-full overflow-hidden dynamic-bg select-none outline-none ${themeSettings.mode === 'light' ? 'light' : ''}`} tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
+    <div ref={rootRef} className={`relative w-full h-full overflow-hidden dynamic-bg select-none outline-none ${themeSettings.mode === 'light' ? 'light' : ''}`} style={{ overscrollBehavior: 'none' }} tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-4 md:px-6 py-3 md:py-5">
         {/* Left: Brand */}
@@ -857,7 +857,7 @@ export function SpatialCanvas() {
       </div>
 
       {/* Spatial Canvas */}
-      <div ref={containerRef} data-canvas-area className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
+      <div ref={containerRef} data-canvas-area className="w-full h-full cursor-grab active:cursor-grabbing touch-none" style={{ overscrollBehavior: 'none' }}
         onMouseDown={handleMouseDown} onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
         <div
