@@ -961,18 +961,9 @@ export function SpatialCanvas() {
             <p className="block md:hidden">HOVER OVER ITEMS & PINCH TO ZOOM · DRAG TO PAN · TAP TO VIEW</p>
             <p className="hidden md:block">HOVER OVER ITEMS & SCROLL / PINCH TO ZOOM · DRAG TO PAN · CLICK TO VIEW</p>
           </div>
-          {/* Pagination indicator — centered */}
-          <div className={`absolute left-1/2 -translate-x-1/2 bottom-3 md:bottom-5 tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
+          {/* Pagination indicator — right side, in line with hint text */}
+          <div className={`tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
             PAGE {currentPage + 1} / {totalPages}
-          </div>
-          {/* Social icons */}
-          <div className="flex items-center gap-2 md:gap-3">
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className={`p-1.5 md:p-2 transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/50 hover:text-foreground'}`}>
-              <Instagram className="w-3.5 md:w-4 h-3.5 md:h-4" />
-            </a>
-            <a href="https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1&pp=ygUJcmljayByb2xsoAcB" target="_blank" rel="noopener noreferrer" className={`p-1.5 md:p-2 transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/50 hover:text-foreground'}`}>
-              <Twitter className="w-3.5 md:w-4 h-3.5 md:h-4" />
-            </a>
           </div>
         </div>
       </div>
