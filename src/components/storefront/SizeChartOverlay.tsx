@@ -10,9 +10,11 @@ interface SizeChartOverlayProps {
   onClose: () => void;
   /** Use 'maison' for SL template light styling; defaults to dark/neutral. */
   variant?: 'maison' | 'default';
+  /** When true (Maison detail view), center within the right 45% panel. Otherwise center in viewport. */
+  centerInDetailPanel?: boolean;
 }
 
-export function SizeChartOverlay({ open, category, onClose, variant = 'default' }: SizeChartOverlayProps) {
+export function SizeChartOverlay({ open, category, onClose, variant = 'default', centerInDetailPanel = false }: SizeChartOverlayProps) {
   const [chart, setChart] = useState<SizeChart | null>(null);
 
   useEffect(() => {
