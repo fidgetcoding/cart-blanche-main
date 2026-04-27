@@ -117,6 +117,7 @@ export function SizeChartOverlay({ open, category, onClose, variant = 'default' 
               )}
             </div>
           </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>,
