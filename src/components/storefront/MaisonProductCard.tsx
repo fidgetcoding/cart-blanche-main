@@ -216,33 +216,35 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
           touchAction: 'pan-y',
         }}
       >
-        {/* Image carousel strip */}
-        <div
-          className="h-full will-change-transform"
-          style={{
-            display: 'flex',
-            width: `${images.length * 100}%`,
-            transform: `translateX(-${(currentImage * 100) / images.length}%)`,
-            transition: 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
-          }}
-        >
-          {images.map((img, i) => (
-            <div
-              key={i}
-              className="h-full flex-shrink-0 flex items-center justify-center"
-              style={{ width: `${100 / images.length}%`, padding: '8%' }}
-            >
-              <img
-                src={typeof img === 'string' ? img : img.medium}
-                alt={product.title}
-                className="max-w-full max-h-full object-contain"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-            </div>
-          ))}
-        </div>
+        {/* Image carousel strip — wrapped in motion.div so we can bounce at edges */}
+        <motion.div className="h-full" animate={bounceControls}>
+          <div
+            className="h-full will-change-transform"
+            style={{
+              display: 'flex',
+              width: `${images.length * 100}%`,
+              transform: `translateX(-${(currentImage * 100) / images.length}%)`,
+              transition: 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
+            }}
+          >
+            {images.map((img, i) => (
+              <div
+                key={i}
+                className="h-full flex-shrink-0 flex items-center justify-center"
+                style={{ width: `${100 / images.length}%`, padding: '8%' }}
+              >
+                <img
+                  src={typeof img === 'string' ? img : img.medium}
+                  alt={product.title}
+                  className="max-w-full max-h-full object-contain"
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                />
+              </div>
+            ))}
+          </div>
+        </motion.div>
 
         {/* Hover overlay — view by 6 only: frosted overlay revealing product info */}
         {isCompact && isHovered && (
