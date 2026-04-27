@@ -43,23 +43,27 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
   const nextImage = useCallback(() => {
     if (cooldown.current) return;
-    cooldown.current = true;
-    setTimeout(() => { cooldown.current = false; }, 120);
     setCurrentImage(prev => {
-      const atEnd = prev >= images.length - 1;
-      if (atEnd) triggerBounce('right');
-      return (prev + 1) % images.length;
+      if (prev >= images.length - 1) {
+        triggerBounce('right');
+        return prev;
+      }
+      cooldown.current = true;
+      setTimeout(() => { cooldown.current = false; }, 120);
+      return prev + 1;
     });
   }, [images.length, triggerBounce]);
 
   const prevImage = useCallback(() => {
     if (cooldown.current) return;
-    cooldown.current = true;
-    setTimeout(() => { cooldown.current = false; }, 120);
     setCurrentImage(prev => {
-      const atStart = prev <= 0;
-      if (atStart) triggerBounce('left');
-      return (prev - 1 + images.length) % images.length;
+      if (prev <= 0) {
+        triggerBounce('left');
+        return prev;
+      }
+      cooldown.current = true;
+      setTimeout(() => { cooldown.current = false; }, 120);
+      return prev - 1;
     });
   }, [images.length, triggerBounce]);
 
@@ -82,13 +86,19 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
       if (e.deltaX > 0) {
         setCurrentImage(prev => {
-          if (prev >= images.length - 1) triggerBounce('right');
-          return (prev + 1) % images.length;
+          if (prev >= images.length - 1) {
+            triggerBounce('right');
+            return prev;
+          }
+          return prev + 1;
         });
       } else {
         setCurrentImage(prev => {
-          if (prev <= 0) triggerBounce('left');
-          return (prev - 1 + images.length) % images.length;
+          if (prev <= 0) {
+            triggerBounce('left');
+            return prev;
+          }
+          return prev - 1;
         });
       }
 
