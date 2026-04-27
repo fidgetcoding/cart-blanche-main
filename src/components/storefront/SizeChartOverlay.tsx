@@ -52,15 +52,15 @@ export function SizeChartOverlay({ open, category, onClose, variant = 'default',
           {/* Full-viewport backdrop */}
           <div className={`absolute inset-0 backdrop-blur-md ${isMaison ? 'bg-foreground/40' : 'bg-background/80'}`} />
 
-          {/* Modal centered within the right 45% panel for Maison, full viewport otherwise */}
-          <div className={`absolute inset-y-0 flex items-center justify-center p-6 ${isMaison ? 'right-0 w-[45%]' : 'inset-x-0'}`}>
+          {/* Modal centered: in right 45% panel for Maison detail view, otherwise full viewport */}
+          <div className={`absolute inset-y-0 flex items-center justify-center p-6 ${centerInDetailPanel ? 'right-0 w-[45%]' : 'inset-x-0'}`}>
             <motion.div
               initial={{ y: 12, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 8, opacity: 0 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               onClick={e => e.stopPropagation()}
-              className={`relative w-full ${isMaison ? 'max-w-md' : 'max-w-2xl'} rounded-xl border border-foreground/15 bg-background shadow-2xl`}
+              className={`relative w-full ${centerInDetailPanel ? 'max-w-md' : 'max-w-2xl'} rounded-xl border border-foreground/15 bg-background shadow-2xl`}
           >
             <button
               onClick={onClose}
