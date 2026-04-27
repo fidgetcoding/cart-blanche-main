@@ -571,6 +571,12 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           </span>
         </div>
       </div>
+
+      <SizeChartOverlay
+        open={sizeChartOpen}
+        category={product.product_category || product.category}
+        onClose={() => setSizeChartOpen(false)}
+      />
     </motion.div>
   );
 });
