@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, LayoutDashboard, Instagram, Twitter, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { ProductTile } from '@/components/storefront/ProductTile';
