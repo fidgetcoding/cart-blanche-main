@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { DemoProduct } from '@/data/demo-data';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCart } from '@/contexts/CartContext';
+import { SizeChartOverlay } from './SizeChartOverlay';
 
 interface MaisonProductCardProps {
   product: DemoProduct;
@@ -18,6 +19,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const [isHovered, setIsHovered] = useState(false);
   const [showSizes, setShowSizes] = useState(false);
   const [showCompactSizes, setShowCompactSizes] = useState(false);
+  const [showSizeChart, setShowSizeChart] = useState(false);
   const { addItem } = useCart();
   
   const cooldown = useRef(false);
@@ -320,6 +322,21 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                     >
                       BUILD A SET
                     </button>
+
+                    {/* Divider */}
+                    <div className="w-8 h-px bg-border my-2" />
+
+                    {/* Size Chart */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowSizeChart(true);
+                      }}
+                      className="text-[8px] tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      SIZE CHART
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -475,12 +492,34 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                   >
                     BUILD A SET
                   </button>
+
+                  {/* Vertical divider */}
+                  <div className="w-px h-3.5 bg-border mx-3 flex-shrink-0" />
+
+                  {/* Size Chart */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSizeChart(true);
+                    }}
+                    className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+                    style={{ fontFamily: 'var(--font-body)' }}
+                  >
+                    SIZE CHART
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
       )}
+
+      {/* Size Chart Overlay */}
+      <SizeChartOverlay
+        open={showSizeChart}
+        category={product.category}
+        onClose={() => setShowSizeChart(false)}
+      />
     </div>
   );
 }
