@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Heart, X, ShoppingBag, Layers } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Heart, X, ShoppingBag, Layers, Ruler } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, useMemo, forwardRef } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { SizeChartOverlay } from './SizeChartOverlay';
 
 // Cross-product size memory: when a shopper locks a size on a top, pre-select
 // that same size on the next top they view (same for bottoms).
