@@ -82,19 +82,13 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
       if (e.deltaX > 0) {
         setCurrentImage(prev => {
-          if (prev >= images.length - 1) {
-            triggerBounce('right');
-            return prev;
-          }
-          return prev + 1;
+          if (prev >= images.length - 1) triggerBounce('right');
+          return (prev + 1) % images.length;
         });
       } else {
         setCurrentImage(prev => {
-          if (prev <= 0) {
-            triggerBounce('left');
-            return prev;
-          }
-          return prev - 1;
+          if (prev <= 0) triggerBounce('left');
+          return (prev - 1 + images.length) % images.length;
         });
       }
 
