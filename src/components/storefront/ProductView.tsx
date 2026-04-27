@@ -401,7 +401,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             className="flex flex-col items-center w-full max-w-lg [@media(max-height:760px)]:max-w-[min(42rem,calc(100vw-7rem))] max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain px-6 [@media(max-height:760px)]:px-5 pointer-events-auto my-auto"
             onClick={(e) => e.stopPropagation()}
             onWheelCapture={(e) => {
-              const insideImage = imageAreaRef.current?.contains(e.target as Node) ?? false;
+              const insideImage = (e.target as Element)?.closest?.('[data-image-zone]') != null;
               const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
               // Horizontal swipes inside the image card fall through to the body
               // wheel handler so photo cycling can run.
@@ -424,7 +424,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             </button>
 
             {/* Product image area */}
-            <div ref={imageAreaRef} className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
+            <div data-image-zone="true" className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
               {product.images && product.images.length > 0 ? (
                 <img
                   key={`${product.id}-${activeImage}`}
