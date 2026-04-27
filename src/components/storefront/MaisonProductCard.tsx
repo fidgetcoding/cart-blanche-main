@@ -70,7 +70,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
       blocked = true;
       if (blockTimer) clearTimeout(blockTimer);
-      blockTimer = setTimeout(() => { blocked = false; }, 200);
+      blockTimer = setTimeout(() => { blocked = false; }, 800);
     };
 
     let touchStartClientX = 0;
