@@ -125,9 +125,16 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   );
   const posInFiltered = visibleIndices.indexOf(productIndex) + 1;
 
-  // Reset variant selection when product changes & preload alternate images
+  // Reset variant selection when product changes & preload alternate images.
+  // If the shopper has already locked a size for this garment group (top vs bottom),
+  // pre-select the matching variant on the next product in that group.
   useEffect(() => {
-    setSelectedVariant(null);
+    const group = getSizeGroup(product?.product_category);
+    const remembered = group ? rememberedSizeByGroup.get(group) : undefined;
+    const match = remembered
+      ? product?.variants.find(v => v.title === remembered && v.inventory_count > 0)
+      : undefined;
+    setSelectedVariant(match ? match.id : null);
     setExpandDetails(false);
     setActiveImage(0);
     // Preload worn/alternate images in background
