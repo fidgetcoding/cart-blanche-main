@@ -42,7 +42,7 @@ export function SizeChartOverlay({ open, category, onClose, variant = 'default' 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+          className={`fixed inset-0 z-[100] flex items-center justify-center p-6 ${variant === 'maison' ? 'light' : ''}`}
           onClick={onClose}
         >
           <div className="absolute inset-0 bg-background/80 backdrop-blur-md" />
@@ -53,9 +53,7 @@ export function SizeChartOverlay({ open, category, onClose, variant = 'default' 
             exit={{ y: 8, opacity: 0 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             onClick={e => e.stopPropagation()}
-            className={`relative w-full max-w-2xl rounded-xl border border-foreground/15 bg-background shadow-2xl ${
-              variant === 'maison' ? 'light' : ''
-            }`}
+            className="relative w-full max-w-2xl rounded-xl border border-foreground/15 bg-background shadow-2xl"
           >
             <button
               onClick={onClose}
