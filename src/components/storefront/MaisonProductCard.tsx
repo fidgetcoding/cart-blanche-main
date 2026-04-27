@@ -405,7 +405,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
             ${product.price}
           </p>
           <div
-            className="relative mt-2 h-6 flex items-center justify-center"
+            className="relative mt-2 h-6 flex items-center justify-center w-full overflow-hidden"
             onMouseEnter={() => setShowSizes(true)}
             onMouseLeave={() => setShowSizes(false)}
           >
