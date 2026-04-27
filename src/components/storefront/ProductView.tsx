@@ -332,16 +332,18 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           </button>
         </div>
 
-        {/* Navigation arrows */}
+        {/* Navigation arrows — positioned just outside the centered product image */}
         <button
           onMouseEnter={() => navigate('left')}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
+          className="absolute top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
+          style={{ right: 'calc(50% + min(16rem, 26vh) + 0.5rem)' }}
         >
           <ChevronLeft className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
         <button
           onMouseEnter={() => navigate('right')}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
+          className="absolute top-1/2 -translate-y-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
+          style={{ left: 'calc(50% + min(16rem, 26vh) + 0.5rem)' }}
         >
           <ChevronRight className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
