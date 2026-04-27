@@ -404,11 +404,15 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             onWheelCapture={(e) => {
               const insideImage = imageAreaRef.current?.contains(e.target as Node) ?? false;
               const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
-              // Let horizontal swipes inside the image card fall through to the
-              // body wheel handler so photo cycling can run. Suppress everything
-              // else so modal scroll works and accidental product nav over the
-              // title/price area is blocked.
+              // Horizontal swipes inside the image card fall through to the body
+              // wheel handler so photo cycling can run.
               if (insideImage && isHorizontal) return;
+              // Vertical swipes anywhere fall through so the body wheel handler
+              // can navigate to the next/previous product (up/down).
+              if (!isHorizontal) return;
+              // Remaining case: horizontal swipe over the title/price/button area
+              // — suppress so we don't accidentally jump products while the
+              // shopper is interacting with content right next to the image.
               e.stopPropagation();
             }}
           >
