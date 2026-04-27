@@ -115,6 +115,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(true);
