@@ -106,7 +106,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       el.removeEventListener('touchend', onTouchEnd);
       if (blockTimer) clearTimeout(blockTimer);
     };
-  }, [hasMultiple, images.length, nextImage, prevImage, triggerBounce]);
+  }, [hasMultiple, images.length, nextImage, prevImage]);
 
   // Focus card on hover for keyboard support
   useEffect(() => {
