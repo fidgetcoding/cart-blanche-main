@@ -401,7 +401,16 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             transition={{ duration: 0.15 }}
             className="flex flex-col items-center w-full max-w-lg [@media(max-height:760px)]:max-w-[min(42rem,calc(100vw-7rem))] max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain px-6 [@media(max-height:760px)]:px-5 pointer-events-auto my-auto"
             onClick={(e) => e.stopPropagation()}
-            onWheelCapture={(e) => e.stopPropagation()}
+            onWheelCapture={(e) => {
+              const insideImage = imageAreaRef.current?.contains(e.target as Node) ?? false;
+              const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+              // Let horizontal swipes inside the image card fall through to the
+              // body wheel handler so photo cycling can run. Suppress everything
+              // else so modal scroll works and accidental product nav over the
+              // title/price area is blocked.
+              if (insideImage && isHorizontal) return;
+              e.stopPropagation();
+            }}
           >
             {/* Close button — above image, left-aligned */}
             <button
