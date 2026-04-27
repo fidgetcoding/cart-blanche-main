@@ -498,6 +498,15 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                               </button>
                               );
                             })}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setSizeChartOpen(true); }}
+                              title="Size chart"
+                              className="px-3 py-2 text-[11px] font-display tracking-wider rounded-md border border-foreground/30 text-foreground/70 hover:text-foreground hover:border-foreground/60 transition-all flex items-center gap-1.5 [@media(max-height:760px)]:px-2.5 [@media(max-height:760px)]:py-1.5"
+                            >
+                              <Ruler className="w-3.5 h-3.5" />
+                              SIZE CHART
+                            </button>
                           </div>
                         )}
 
