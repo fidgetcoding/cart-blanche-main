@@ -492,12 +492,35 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                   >
                     BUILD A SET
                   </button>
+
+                  {/* Vertical divider */}
+                  <div className="w-px h-3.5 bg-border mx-3 flex-shrink-0" />
+
+                  {/* Size Chart */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSizeChart(true);
+                    }}
+                    className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+                    style={{ fontFamily: 'var(--font-body)' }}
+                  >
+                    SIZE CHART
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
       )}
+
+      {/* Size Chart Overlay */}
+      <SizeChartOverlay
+        open={showSizeChart}
+        category={product.category}
+        onClose={() => setShowSizeChart(false)}
+        variant="maison"
+      />
     </div>
   );
 }
