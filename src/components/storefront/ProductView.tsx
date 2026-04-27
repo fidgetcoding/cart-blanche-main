@@ -115,7 +115,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
-  const imageAreaRef = useRef<HTMLDivElement>(null);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
@@ -192,7 +191,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     if (absX < 15 && absY < 15) return;
 
     const insideImage =
-      imageAreaRef.current?.contains(e.target as Node) ?? false;
+      (e.target as Element)?.closest?.('[data-image-zone]') != null;
     const isHorizontal = absX > absY;
     const imageCount = product?.images?.length ?? 0;
 
