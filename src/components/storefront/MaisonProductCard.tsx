@@ -19,6 +19,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const [isHovered, setIsHovered] = useState(false);
   const [showSizes, setShowSizes] = useState(false);
   const [showCompactSizes, setShowCompactSizes] = useState(false);
+  const [showSizeChart, setShowSizeChart] = useState(false);
   const { addItem } = useCart();
   
   const cooldown = useRef(false);
