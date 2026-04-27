@@ -150,7 +150,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
     <div
       ref={cardRef}
       tabIndex={-1}
-      className="relative cursor-pointer group animate-fade-in"
+      className="relative cursor-pointer group animate-fade-in min-w-0 self-start"
       style={{
         animationDelay: `${index * 30}ms`,
         outline: 'none',
