@@ -123,6 +123,7 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
 /* ── Main product detail ── */
 export function MaisonProductDetail({ product, products, allProducts, onClose, onNavigate, onBuildSet }: MaisonProductDetailProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
