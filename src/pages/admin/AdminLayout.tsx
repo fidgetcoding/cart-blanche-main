@@ -12,6 +12,7 @@ import {
   Store,
   Layers,
   FlaskConical,
+  Ruler,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
