@@ -150,7 +150,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
     <div
       ref={cardRef}
       tabIndex={-1}
-      className={`relative cursor-pointer group animate-fade-in ${!isCompact ? 'min-w-0 self-start' : ''}`}
+      className="relative cursor-pointer group animate-fade-in"
       style={{
         animationDelay: `${index * 30}ms`,
         outline: 'none',
@@ -405,7 +405,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
             ${product.price}
           </p>
           <div
-            className="relative mt-2 h-6 flex items-center justify-center w-full overflow-hidden"
+            className="relative mt-2 h-6 flex items-center justify-center"
             onMouseEnter={() => setShowSizes(true)}
             onMouseLeave={() => setShowSizes(false)}
           >
