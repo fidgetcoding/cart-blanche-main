@@ -536,6 +536,13 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           themeSettings={themeSettings}
         />
       </div>
+
+      <SizeChartOverlay
+        open={sizeChartOpen}
+        category={product.product_category || product.category}
+        onClose={() => setSizeChartOpen(false)}
+        variant="maison"
+      />
     </motion.div>
   );
 }
