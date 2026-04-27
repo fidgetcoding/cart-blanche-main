@@ -461,13 +461,23 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           {/* Size selector */}
           {product.variants.length > 1 && (
             <div className="mt-8">
-              <p
-                className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-3"
-                style={{ fontFamily: 'var(--font-body)' }}
-              >
-                SELECT SIZE
-              </p>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex items-center justify-between mb-3">
+                <p
+                  className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
+                  SELECT SIZE
+                </p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSizeChartOpen(true); }}
+                  className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase text-foreground/70 hover:text-foreground transition-colors"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
+                  <Ruler className="w-3 h-3" />
+                  SIZE CHART
+                </button>
+              </div>
+              <div className="flex gap-2 flex-wrap justify-center">
                 {product.variants.map(v => (
                   <button
                     key={v.id}
@@ -484,6 +494,13 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
                     {v.title}
                   </button>
                 ))}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSizeChartOpen(true); }}
+                  className="px-4 py-2 text-[10px] tracking-[0.15em] uppercase border border-border text-foreground/70 hover:border-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                >
+                  <Ruler className="w-3 h-3" />
+                  CHART
+                </button>
               </div>
             </div>
           )}
