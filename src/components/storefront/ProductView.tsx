@@ -115,6 +115,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const imageAreaRef = useRef<HTMLDivElement>(null);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
@@ -180,12 +181,40 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   }, [productIndex, onNavigate, activeCategory]);
 
   // Scroll wheel navigation (strict one-per-swipe)
+  // Zone rule: horizontal swipes INSIDE the product image card cycle that
+  // product's photos. Everywhere else, and vertical anywhere, navigates
+  // between products.
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     if (scrollCooldown.current) return;
     const absX = Math.abs(e.deltaX);
     const absY = Math.abs(e.deltaY);
     if (absX < 15 && absY < 15) return;
+
+    const insideImage =
+      imageAreaRef.current?.contains(e.target as Node) ?? false;
+    const isHorizontal = absX > absY;
+    const imageCount = product?.images?.length ?? 0;
+
+    // Horizontal swipe inside image card → cycle photos (wrap around)
+    if (insideImage && isHorizontal && imageCount > 1) {
+      scrollCooldown.current = true;
+      setTimeout(() => { scrollCooldown.current = false; }, 800);
+      setActiveImage(prev =>
+        e.deltaX > 0
+          ? (prev + 1) % imageCount
+          : (prev - 1 + imageCount) % imageCount
+      );
+      return;
+    }
+
+    // Horizontal swipe inside image card with only one photo → consume gesture
+    // so it doesn't fall through to product navigation.
+    if (insideImage && isHorizontal && imageCount <= 1) {
+      return;
+    }
+
+    // All other cases: existing product-navigation behavior.
     scrollCooldown.current = true;
     setTimeout(() => { scrollCooldown.current = false; }, 800);
     if (absX > absY) {
@@ -193,7 +222,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     } else {
       navigate(e.deltaY > 0 ? 'down' : 'up');
     }
-  }, [navigate]);
+  }, [navigate, product]);
 
   useEffect(() => {
     const el = document.body;
@@ -383,7 +412,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             </button>
 
             {/* Product image area */}
-            <div className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
+            <div ref={imageAreaRef} className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
               {product.images && product.images.length > 0 ? (
                 <img
                   key={`${product.id}-${activeImage}`}
