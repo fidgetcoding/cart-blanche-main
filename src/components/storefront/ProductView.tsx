@@ -6,6 +6,17 @@ import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
+// Cross-product size memory: when a shopper locks a size on a top, pre-select
+// that same size on the next top they view (same for bottoms).
+type SizeGroup = 'top' | 'bottom';
+const rememberedSizeByGroup = new Map<SizeGroup, string>();
+
+function getSizeGroup(category: string | undefined): SizeGroup | null {
+  if (category === 'shirt' || category === 'jacket') return 'top';
+  if (category === 'pants' || category === 'shorts') return 'bottom';
+  return null;
+}
+
 
 interface ProductViewProps {
   productIndex: number;
