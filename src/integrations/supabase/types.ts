@@ -586,6 +586,50 @@ export type Database = {
           },
         ]
       }
+      size_charts: {
+        Row: {
+          category: string
+          created_at: string
+          headers: Json
+          id: string
+          merchant_id: string
+          name: string
+          rows: Json
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          headers?: Json
+          id?: string
+          merchant_id: string
+          name?: string
+          rows?: Json
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          headers?: Json
+          id?: string
+          merchant_id?: string
+          name?: string
+          rows?: Json
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_charts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_config: {
         Row: {
           ale_enabled: boolean | null
