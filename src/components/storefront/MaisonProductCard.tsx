@@ -322,6 +322,21 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                     >
                       BUILD A SET
                     </button>
+
+                    {/* Divider */}
+                    <div className="w-8 h-px bg-border my-2" />
+
+                    {/* Size Chart */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowSizeChart(true);
+                      }}
+                      className="text-[8px] tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      SIZE CHART
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
