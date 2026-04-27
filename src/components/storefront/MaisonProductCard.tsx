@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimationControls } from 'framer-motion';
 import type { DemoProduct } from '@/data/demo-data';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCart } from '@/contexts/CartContext';
@@ -28,22 +28,44 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { themeSettings } = useTheme();
 
+  // Elastic bounce when the shopper swipes past the first or last image.
+  const bounceControls = useAnimationControls();
+  const triggerBounce = useCallback((dir: 'left' | 'right') => {
+    const offset = dir === 'right' ? -14 : 14;
+    bounceControls.start({
+      x: [0, offset, 0],
+      transition: { duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] },
+    });
+  }, [bounceControls]);
+
   const images = product.images.length > 0 ? product.images : [];
   const hasMultiple = images.length > 1;
 
   const nextImage = useCallback(() => {
     if (cooldown.current) return;
-    cooldown.current = true;
-    setCurrentImage(prev => (prev + 1) % images.length);
-    setTimeout(() => { cooldown.current = false; }, 120);
-  }, [images.length]);
+    setCurrentImage(prev => {
+      if (prev >= images.length - 1) {
+        triggerBounce('right');
+        return prev;
+      }
+      cooldown.current = true;
+      setTimeout(() => { cooldown.current = false; }, 120);
+      return prev + 1;
+    });
+  }, [images.length, triggerBounce]);
 
   const prevImage = useCallback(() => {
     if (cooldown.current) return;
-    cooldown.current = true;
-    setCurrentImage(prev => (prev - 1 + images.length) % images.length);
-    setTimeout(() => { cooldown.current = false; }, 120);
-  }, [images.length]);
+    setCurrentImage(prev => {
+      if (prev <= 0) {
+        triggerBounce('left');
+        return prev;
+      }
+      cooldown.current = true;
+      setTimeout(() => { cooldown.current = false; }, 120);
+      return prev - 1;
+    });
+  }, [images.length, triggerBounce]);
 
   // Wheel handler — dead simple: one swipe = one transition, then ignore everything for 800ms
   useEffect(() => {
@@ -63,9 +85,21 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       if (Math.abs(e.deltaX) < 15) return;
 
       if (e.deltaX > 0) {
-        setCurrentImage(prev => (prev + 1) % images.length);
+        setCurrentImage(prev => {
+          if (prev >= images.length - 1) {
+            triggerBounce('right');
+            return prev;
+          }
+          return prev + 1;
+        });
       } else {
-        setCurrentImage(prev => (prev - 1 + images.length) % images.length);
+        setCurrentImage(prev => {
+          if (prev <= 0) {
+            triggerBounce('left');
+            return prev;
+          }
+          return prev - 1;
+        });
       }
 
       blocked = true;
@@ -106,7 +140,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       el.removeEventListener('touchend', onTouchEnd);
       if (blockTimer) clearTimeout(blockTimer);
     };
-  }, [hasMultiple, images.length, nextImage, prevImage]);
+  }, [hasMultiple, images.length, nextImage, prevImage, triggerBounce]);
 
   // Focus card on hover for keyboard support
   useEffect(() => {
@@ -182,33 +216,35 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
           touchAction: 'pan-y',
         }}
       >
-        {/* Image carousel strip */}
-        <div
-          className="h-full will-change-transform"
-          style={{
-            display: 'flex',
-            width: `${images.length * 100}%`,
-            transform: `translateX(-${(currentImage * 100) / images.length}%)`,
-            transition: 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
-          }}
-        >
-          {images.map((img, i) => (
-            <div
-              key={i}
-              className="h-full flex-shrink-0 flex items-center justify-center"
-              style={{ width: `${100 / images.length}%`, padding: '8%' }}
-            >
-              <img
-                src={typeof img === 'string' ? img : img.medium}
-                alt={product.title}
-                className="max-w-full max-h-full object-contain"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-            </div>
-          ))}
-        </div>
+        {/* Image carousel strip — wrapped in motion.div so we can bounce at edges */}
+        <motion.div className="h-full" animate={bounceControls}>
+          <div
+            className="h-full will-change-transform"
+            style={{
+              display: 'flex',
+              width: `${images.length * 100}%`,
+              transform: `translateX(-${(currentImage * 100) / images.length}%)`,
+              transition: 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
+            }}
+          >
+            {images.map((img, i) => (
+              <div
+                key={i}
+                className="h-full flex-shrink-0 flex items-center justify-center"
+                style={{ width: `${100 / images.length}%`, padding: '8%' }}
+              >
+                <img
+                  src={typeof img === 'string' ? img : img.medium}
+                  alt={product.title}
+                  className="max-w-full max-h-full object-contain"
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                />
+              </div>
+            ))}
+          </div>
+        </motion.div>
 
         {/* Hover overlay — view by 6 only: frosted overlay revealing product info */}
         {isCompact && isHovered && (
