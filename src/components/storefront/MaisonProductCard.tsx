@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { DemoProduct } from '@/data/demo-data';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCart } from '@/contexts/CartContext';
+import { SizeChartOverlay } from './SizeChartOverlay';
 
 interface MaisonProductCardProps {
   product: DemoProduct;
