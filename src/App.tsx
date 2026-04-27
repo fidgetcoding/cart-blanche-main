@@ -42,6 +42,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: "discounts", element: <AdminDiscounts /> },
+      { path: "size-charts", element: <AdminSizeCharts /> },
       { path: "grid", element: <AdminPageEditor /> },
       { path: "orders", element: <AdminOrders /> },
       { path: "inventory", element: <AdminInventory /> },
