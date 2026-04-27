@@ -542,6 +542,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
         category={product.product_category || product.category}
         onClose={() => setSizeChartOpen(false)}
         variant="maison"
+        centerInDetailPanel
       />
     </motion.div>
   );

@@ -519,6 +519,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
         open={showSizeChart}
         category={product.category}
         onClose={() => setShowSizeChart(false)}
+        variant="maison"
       />
     </div>
   );
