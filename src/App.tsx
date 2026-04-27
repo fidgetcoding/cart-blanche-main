@@ -18,6 +18,7 @@ import AdminInventory from './pages/admin/AdminInventory';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminPageEditor from './pages/admin/AdminPageEditor';
 import AdminStylingGuide from './pages/admin/AdminStylingGuide';
+import AdminSizeCharts from './pages/admin/AdminSizeCharts';
 import LabIndex from './pages/admin/lab/LabIndex';
 
 // Only lazy-load completely separate sections (different entry points)
@@ -41,6 +42,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: "discounts", element: <AdminDiscounts /> },
+      { path: "size-charts", element: <AdminSizeCharts /> },
       { path: "grid", element: <AdminPageEditor /> },
       { path: "orders", element: <AdminOrders /> },
       { path: "inventory", element: <AdminInventory /> },

@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, X, Ruler } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { SizeChartOverlay } from './SizeChartOverlay';
 
 interface MaisonProductDetailProps {
   product: DemoProduct | null;
@@ -122,6 +123,7 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
 /* ── Main product detail ── */
 export function MaisonProductDetail({ product, products, allProducts, onClose, onNavigate, onBuildSet }: MaisonProductDetailProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
@@ -465,7 +467,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
               >
                 SELECT SIZE
               </p>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap justify-center">
                 {product.variants.map(v => (
                   <button
                     key={v.id}
@@ -482,6 +484,13 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
                     {v.title}
                   </button>
                 ))}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSizeChartOpen(true); }}
+                  className="px-4 py-2 text-[10px] tracking-[0.15em] uppercase border border-border text-foreground/70 hover:border-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                >
+                  <Ruler className="w-3 h-3" />
+                  CHART
+                </button>
               </div>
             </div>
           )}
@@ -527,6 +536,13 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           themeSettings={themeSettings}
         />
       </div>
+
+      <SizeChartOverlay
+        open={sizeChartOpen}
+        category={product.product_category || product.category}
+        onClose={() => setSizeChartOpen(false)}
+        variant="maison"
+      />
     </motion.div>
   );
 }

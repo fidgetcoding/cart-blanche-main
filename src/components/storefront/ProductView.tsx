@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Heart, X, ShoppingBag, Layers } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Heart, X, ShoppingBag, Layers, Ruler } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, useMemo, forwardRef } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { SizeChartOverlay } from './SizeChartOverlay';
 
 // Cross-product size memory: when a shopper locks a size on a top, pre-select
 // that same size on the next top they view (same for bottoms).
@@ -114,6 +115,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(true);
@@ -496,6 +498,15 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                               </button>
                               );
                             })}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setSizeChartOpen(true); }}
+                              title="Size chart"
+                              className="px-3 py-2 text-[11px] font-display tracking-wider rounded-md border border-foreground/30 text-foreground/70 hover:text-foreground hover:border-foreground/60 transition-all flex items-center gap-1.5 [@media(max-height:760px)]:px-2.5 [@media(max-height:760px)]:py-1.5"
+                            >
+                              <Ruler className="w-3.5 h-3.5" />
+                              SIZE CHART
+                            </button>
                           </div>
                         )}
 
@@ -560,6 +571,12 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           </span>
         </div>
       </div>
+
+      <SizeChartOverlay
+        open={sizeChartOpen}
+        category={product.product_category || product.category}
+        onClose={() => setSizeChartOpen(false)}
+      />
     </motion.div>
   );
 });
