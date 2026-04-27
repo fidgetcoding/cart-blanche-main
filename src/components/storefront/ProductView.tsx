@@ -6,6 +6,17 @@ import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
+// Cross-product size memory: when a shopper locks a size on a top, pre-select
+// that same size on the next top they view (same for bottoms).
+type SizeGroup = 'top' | 'bottom';
+const rememberedSizeByGroup = new Map<SizeGroup, string>();
+
+function getSizeGroup(category: string | undefined): SizeGroup | null {
+  if (category === 'shirt' || category === 'jacket') return 'top';
+  if (category === 'pants' || category === 'shorts') return 'bottom';
+  return null;
+}
+
 
 interface ProductViewProps {
   productIndex: number;
@@ -125,9 +136,16 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   );
   const posInFiltered = visibleIndices.indexOf(productIndex) + 1;
 
-  // Reset variant selection when product changes & preload alternate images
+  // Reset variant selection when product changes & preload alternate images.
+  // If the shopper has already locked a size for this garment group (top vs bottom),
+  // pre-select the matching variant on the next product in that group.
   useEffect(() => {
-    setSelectedVariant(null);
+    const group = getSizeGroup(product?.product_category);
+    const remembered = group ? rememberedSizeByGroup.get(group) : undefined;
+    const match = remembered
+      ? product?.variants.find(v => v.title === remembered && v.inventory_count > 0)
+      : undefined;
+    setSelectedVariant(match ? match.id : null);
     setExpandDetails(false);
     setActiveImage(0);
     // Preload worn/alternate images in background
@@ -450,10 +468,19 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         {/* Variants */}
                         {product.variants.length > 1 && (
                           <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-1.5">
-                            {product.variants.map(v => (
+                            {product.variants.map(v => {
+                              const lockSize = () => {
+                                if (v.inventory_count === 0) return;
+                                setSelectedVariant(v.id);
+                                const group = getSizeGroup(product.product_category);
+                                if (group) rememberedSizeByGroup.set(group, v.title);
+                              };
+                              return (
                               <button
                                 key={v.id}
-                                onClick={() => setSelectedVariant(v.id)}
+                                onMouseEnter={lockSize}
+                                onFocus={lockSize}
+                                onClick={lockSize}
                                 className={`px-4 py-2 text-sm font-display rounded-md border transition-all [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:py-1.5 ${
                                   selectedVariant === v.id
                                     ? 'border-foreground bg-foreground text-background'
@@ -465,7 +492,8 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                               >
                                 {v.title}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
 
