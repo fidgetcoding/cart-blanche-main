@@ -63,21 +63,9 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       if (Math.abs(e.deltaX) < 15) return;
 
       if (e.deltaX > 0) {
-        setCurrentImage(prev => {
-          if (prev >= images.length - 1) {
-            triggerBounce('right');
-            return prev;
-          }
-          return prev + 1;
-        });
+        setCurrentImage(prev => (prev + 1) % images.length);
       } else {
-        setCurrentImage(prev => {
-          if (prev <= 0) {
-            triggerBounce('left');
-            return prev;
-          }
-          return prev - 1;
-        });
+        setCurrentImage(prev => (prev - 1 + images.length) % images.length);
       }
 
       blocked = true;
