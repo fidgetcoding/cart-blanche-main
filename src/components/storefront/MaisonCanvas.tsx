@@ -68,7 +68,10 @@ export function MaisonCanvas() {
     typeCloseTimer.current = setTimeout(() => setTypeDropdownOpen(false), 5000);
   }, []);
 
-  useEffect(() => () => { if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current); }, []);
+  useEffect(() => () => {
+    if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
+    if (genderCloseTimer.current) clearTimeout(genderCloseTimer.current);
+  }, []);
 
   const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const categories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
