@@ -840,13 +840,13 @@ export function SpatialCanvas() {
                   key={cat}
                   onMouseEnter={() => { if (cat !== activeCategory) { setActiveCategory(cat); } }}
                   onClick={() => { if (cat === activeCategory) { fitToVisibleProducts(); } else { setActiveCategory(cat); } }}
-                  className={`tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap ${
+                  className={`tracking-[0.15em] uppercase transition-all duration-300 rounded-md px-4 py-1.5 whitespace-nowrap flex-shrink-0 ${
                     activeCategory === cat
                       ? 'bg-foreground/[0.12] text-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_1px_3px_rgba(0,0,0,0.2)]'
                       : 'text-muted-foreground hover:text-foreground/80 hover:bg-foreground/[0.05]'
                   }`}
                 >
-                  {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
+                  {cat === 'ALL' ? 'ALL' : cat.replace(/-/g, '\u00A0').replace(/ /g, '\u00A0')}
                 </button>
               ))}
             </div>
