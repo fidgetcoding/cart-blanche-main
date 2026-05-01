@@ -416,7 +416,7 @@ export default function AdminInventory() {
         price: newPrice,
         description: editForm.description,
         category: editForm.category,
-        images: editingProduct.images,
+        images: editingProduct.images.map(url => ({ thumb: url, medium: url, full: url })),
         tags: editingProduct.tags,
         status: editingProduct.status,
         variants: editingProduct.variants,
