@@ -91,6 +91,30 @@ function ThemeControls() {
             />
           </div>
 
+          {/* Add-to-Cart Trigger Style */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">EXPAND TRIGGER</label>
+            <div className="flex gap-1">
+              {([
+                { value: 'icon' as const, label: '+' },
+                { value: 'text' as const, label: 'ADD TO CART' },
+                { value: 'icon_text' as const, label: 'ADD TO CART +' },
+              ]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => updateTheme({ yzExpandTriggerStyle: opt.value })}
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-display tracking-wider transition-colors ${
+                    themeSettings.yzExpandTriggerStyle === opt.value
+                      ? 'bg-foreground/15 text-foreground border border-foreground/30'
+                      : 'bg-muted/50 text-muted-foreground border border-border/50 hover:border-foreground/30'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Mode */}
           <div className="space-y-1">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">BACKGROUND MODE</label>

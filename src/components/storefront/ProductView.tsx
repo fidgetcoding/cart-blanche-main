@@ -516,13 +516,29 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               )}
             </div>
 
-            {/* Expand button — sits where the price used to be */}
+            {/* Expand button — collapsed-state label is configurable via
+                themeSettings.yzExpandTriggerStyle. Expanded state always shows X. */}
             <button
               onClick={() => setExpandDetails(!expandDetails)}
               onMouseEnter={() => setExpandDetails(expandDetails ? false : true)}
-              className="mt-1 p-2 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)]"
+              className={`mt-1 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)] flex items-center justify-center gap-1.5 ${
+                expandDetails || themeSettings.yzExpandTriggerStyle === 'icon'
+                  ? 'p-2'
+                  : 'px-4 py-2 font-display font-semibold text-sm tracking-wider'
+              }`}
             >
-              {expandDetails ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+              {expandDetails ? (
+                <X className="w-5 h-5" />
+              ) : themeSettings.yzExpandTriggerStyle === 'text' ? (
+                <span>ADD TO CART</span>
+              ) : themeSettings.yzExpandTriggerStyle === 'icon_text' ? (
+                <>
+                  <span>ADD TO CART</span>
+                  <Plus className="w-4 h-4" />
+                </>
+              ) : (
+                <Plus className="w-5 h-5" />
+              )}
             </button>
 
             {/* Expandable details */}

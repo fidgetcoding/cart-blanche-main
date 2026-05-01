@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef } f
 
 export type TileBgMode = 'default' | 'transparent';
 
+export type YzExpandTriggerStyle = 'icon' | 'text' | 'icon_text';
+
 export interface ThemeSettings {
   mode: 'dark' | 'light';
   storeName: string;
@@ -18,6 +20,7 @@ export interface ThemeSettings {
   bodyFontColor: string;
   numeralFontColor: string;
   storeNameColor: string;
+  yzExpandTriggerStyle: YzExpandTriggerStyle;
 }
 
 const DEFAULT_SETTINGS: ThemeSettings = {
@@ -36,6 +39,7 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   bodyFontColor: '',
   numeralFontColor: '',
   storeNameColor: '',
+  yzExpandTriggerStyle: 'icon',
 };
 
 const DEFAULT_STORAGE_KEY = 'cb-theme-settings';

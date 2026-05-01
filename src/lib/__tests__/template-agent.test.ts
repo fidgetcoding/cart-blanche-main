@@ -19,6 +19,7 @@ const defaults: ThemeSettings = {
   bodyFontColor: '',
   numeralFontColor: '',
   storeNameColor: '',
+  yzExpandTriggerStyle: 'icon',
 };
 
 let current: ThemeSettings;
