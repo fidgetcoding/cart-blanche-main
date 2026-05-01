@@ -99,6 +99,7 @@ export function useGridLayout() {
               })),
               category: p.category || 'uncategorized',
               product_type: '' as const,
+              gender: 'unisex',
               status: 'active' as const,
               grid_position: { x: 0, y: 0 },
               description: p.description || '',

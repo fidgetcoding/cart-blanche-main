@@ -1,0 +1,62 @@
+interface GenderSymbolProps {
+  gender: string;
+  size?: number;
+  className?: string;
+  strokeWidth?: number;
+}
+
+/**
+ * Inline SVG gender symbols for the storefront filter.
+ *
+ * Using inline SVGs (rather than Lucide or Unicode) for three reasons:
+ *   1. Lucide v0.462 doesn't have Mars/Venus icons (added in v0.475).
+ *   2. Unicode glyphs render inconsistently across OSes.
+ *   3. Inline SVG gives us full control over stroke + sizing.
+ *
+ * The SVGs use currentColor so they inherit text color from the parent.
+ */
+export function GenderSymbol({ gender, size = 14, className = '', strokeWidth = 1.5 }: GenderSymbolProps) {
+  const g = gender.toLowerCase();
+  const common = {
+    width: size,
+    height: size,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    className,
+    'aria-hidden': true,
+  };
+
+  if (g === 'men' || g === 'male' || g === 'mars') {
+    return (
+      <svg {...common}>
+        <circle cx="10" cy="14" r="5" />
+        <path d="M14 10l5-5" />
+        <path d="M19 10V5h-5" />
+      </svg>
+    );
+  }
+
+  if (g === 'women' || g === 'female' || g === 'venus') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="9" r="5" />
+        <path d="M12 14v8" />
+        <path d="M9 19h6" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <circle cx="10" cy="14" r="5" />
+      <path d="M14 10l5-5" />
+      <path d="M19 10V5h-5" />
+      <path d="M10 19v3" />
+      <path d="M8 21h4" />
+    </svg>
+  );
+}

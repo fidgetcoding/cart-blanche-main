@@ -12,6 +12,7 @@ import { useGridLayout } from '@/hooks/use-grid-layout';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/contexts/ThemeContext';
+import { GenderSymbol } from '@/components/storefront/GenderSymbol';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -43,11 +44,31 @@ export function SpatialCanvas() {
 
   const [activeCategory, setActiveCategory] = useState('ALL');
   const activeCategoryRef = useRef('ALL');
+  const [activeGender, setActiveGender] = useState('ALL');
 
   const filteredProducts = useMemo(() => {
-    if (activeCategory === 'ALL') return DEMO_PRODUCTS;
-    return DEMO_PRODUCTS.filter(p => p.category.toUpperCase() === activeCategory);
+    return DEMO_PRODUCTS.filter(p => {
+      const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
+      const g = (p.gender || 'unisex').toLowerCase();
+      const matchesGender =
+        activeGender === 'ALL' ||
+        (activeGender === 'MEN' && (g === 'men' || g === 'unisex')) ||
+        (activeGender === 'WOMEN' && (g === 'women' || g === 'unisex')) ||
+        (activeGender === 'UNISEX' && g === 'unisex') ||
+        g === activeGender.toLowerCase();
+      return matchesCat && matchesGender;
+    });
+  }, [DEMO_PRODUCTS, activeCategory, activeGender]);
+
+  // Genders present in products matching current category — auto-hides selector when only one in view
+  const availableGenders = useMemo(() => {
+    const pool = activeCategory === 'ALL'
+      ? DEMO_PRODUCTS
+      : DEMO_PRODUCTS.filter(p => p.category.toUpperCase() === activeCategory);
+    return new Set(pool.map(p => (p.gender || 'unisex').toLowerCase()));
   }, [DEMO_PRODUCTS, activeCategory]);
+
+  const showGenderSelector = availableGenders.size > 1;
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const pageProducts = useMemo(() => {
@@ -824,7 +845,37 @@ export function SpatialCanvas() {
               ))}
             </div>
           </nav>
-        ) : (
+        ) : null}
+
+        {/* Gender selector — desktop only, auto-hides when only one gender in view */}
+        {!compactHeader && showGenderSelector && (
+          <div className="absolute right-[180px] top-1/2 -translate-y-1/2 flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1 py-0.5">
+            {['ALL', 'MEN', 'WOMEN', 'UNISEX'].map(g => {
+              const isActive = activeGender === g;
+              return (
+                <button
+                  key={g}
+                  onClick={() => setActiveGender(g)}
+                  className={`p-1.5 rounded-md transition-all duration-200 ${
+                    isActive
+                      ? 'text-foreground opacity-100 bg-foreground/[0.12]'
+                      : 'text-muted-foreground opacity-60 hover:opacity-100'
+                  }`}
+                  title={g === 'ALL' ? 'All genders' : g.charAt(0) + g.slice(1).toLowerCase()}
+                  aria-pressed={isActive}
+                >
+                  {g === 'ALL' ? (
+                    <span className="text-[10px] tracking-[0.15em] uppercase px-1" style={{ fontFamily: 'var(--font-body)' }}>ALL</span>
+                  ) : (
+                    <GenderSymbol gender={g.toLowerCase()} size={14} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {compactHeader && (
           /* Mobile/tablet: scrollable category pills */
           <div className="flex-1 mx-3 overflow-x-auto scrollbar-hide">
             <div className="flex items-center gap-1.5 w-max">
