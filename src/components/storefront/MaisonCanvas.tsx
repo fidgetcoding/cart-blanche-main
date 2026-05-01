@@ -274,6 +274,84 @@ export function MaisonCanvas() {
           </AnimatePresence>
         </div>
 
+        {/* Gender hover-dropdown — same pattern as Product Type */}
+        {showGenderSelector && (
+          <div
+            className="flex items-center gap-0 overflow-hidden ml-6"
+            onMouseLeave={() => {
+              if (genderCloseTimer.current) clearTimeout(genderCloseTimer.current);
+              genderCloseTimer.current = setTimeout(() => setGenderDropdownOpen(false), 5000);
+            }}
+          >
+            <button
+              className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+              onMouseEnter={() => {
+                if (genderCloseTimer.current) { clearTimeout(genderCloseTimer.current); genderCloseTimer.current = null; }
+                setGenderDropdownOpen(prev => !prev);
+              }}
+            >
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={activeGender}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="flex items-center gap-1.5"
+                >
+                  {activeGender === 'ALL' ? 'GENDER' : activeGender}
+                  {activeGender !== 'ALL' && <GenderSymbol gender={activeGender.toLowerCase()} size={12} />}
+                </motion.span>
+              </AnimatePresence>
+              <AnimatePresence mode="wait">
+                {!genderDropdownOpen && (
+                  <motion.span
+                    key="g-chevron"
+                    initial={{ opacity: 0, x: -4 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 4 }}
+                    transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="inline-flex"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+            <AnimatePresence>
+              {genderDropdownOpen && (
+                <motion.div
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 'auto', opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="flex items-center overflow-hidden ml-2"
+                  onMouseEnter={() => {
+                    if (genderCloseTimer.current) { clearTimeout(genderCloseTimer.current); genderCloseTimer.current = null; }
+                  }}
+                >
+                  <div className="w-px h-4 bg-border/60 mr-3 flex-shrink-0" />
+                  <div className="flex items-center gap-4 flex-nowrap">
+                    {['ALL', 'MEN', 'WOMEN', 'UNISEX'].map(g => (
+                      <button
+                        key={g}
+                        onMouseEnter={() => setActiveGender(g)}
+                        onClick={() => { setActiveGender(g); setGenderDropdownOpen(false); }}
+                        className={`flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase whitespace-nowrap transition-all duration-200 ${
+                          activeGender === g ? 'text-foreground opacity-100' : 'text-muted-foreground opacity-50 hover:opacity-80 hover:text-foreground'
+                        }`}
+                      >
+                        {g}
+                        {g !== 'ALL' && <GenderSymbol gender={g.toLowerCase()} size={12} />}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
         {/* View toggle — hidden when detail is open */}
         {!selectedProduct && (
           <div className="flex items-center gap-3 flex-shrink-0">
