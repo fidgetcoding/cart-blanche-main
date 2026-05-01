@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
+import { GenderSymbol } from './GenderSymbol';
 
 // Cross-product size memory: when a shopper locks a size on a top, pre-select
 // that same size on the next top they view (same for bottoms).
@@ -27,6 +28,9 @@ interface ProductViewProps {
   onNavigate: (newIndex: number) => void;
   activeCategory: string;
   onCategoryChange: (cat: string) => void;
+  activeGenders?: string[];
+  onToggleGender?: (g: string) => void;
+  availableGenders?: Set<string>;
 }
 
 function getWrappingNeighbor(
@@ -106,7 +110,7 @@ function getWrappingNeighbor(
   }
 }
 
-export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange }, _ref) {
+export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders }, _ref) {
   const DEMO_PRODUCTS = products;
   const CATEGORIES = categories;
   const { themeSettings } = useTheme();
@@ -326,25 +330,51 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       {/* Content layer — pointer-events-none container, auto on interactive children */}
       <div className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto pt-20 pb-8 pointer-events-none">
 
-        {/* Category tabs — top left */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-0.5 bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={(e) => {
-                e.stopPropagation();
-                onCategoryChange(cat);
-                onClose();
-              }}
-              className={`text-[10px] font-display tracking-[0.12em] uppercase rounded-md px-2.5 py-1 transition-colors ${
-                activeCategory === cat
-                  ? 'bg-foreground/[0.15] text-foreground font-medium'
-                  : 'text-foreground/40 hover:text-foreground/70'
-              }`}
-            >
-              {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
-            </button>
-          ))}
+        {/* Category tabs + gender symbols — centered as one group, mirroring SpatialCanvas header */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-3">
+          <div className="flex items-center gap-0.5 bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCategoryChange(cat);
+                  onClose();
+                }}
+                className={`text-[10px] font-display tracking-[0.12em] uppercase rounded-md px-2.5 py-1 transition-colors ${
+                  activeCategory === cat
+                    ? 'bg-foreground/[0.15] text-foreground font-medium'
+                    : 'text-foreground/40 hover:text-foreground/70'
+                }`}
+              >
+                {cat === 'ALL' ? 'ALL' : cat.replace('-', ' ')}
+              </button>
+            ))}
+          </div>
+
+          {/* Gender symbols — only when more than one gender exists in current view */}
+          {onToggleGender && availableGenders && availableGenders.size > 1 && (
+            <div className="flex items-center gap-2">
+              {['MEN', 'WOMEN', 'UNISEX'].map(g => {
+                const isActive = activeGenders.includes(g);
+                return (
+                  <button
+                    key={g}
+                    onClick={(e) => { e.stopPropagation(); onToggleGender(g); }}
+                    className={`p-1 transition-all duration-200 ${
+                      isActive
+                        ? 'text-foreground opacity-100'
+                        : 'text-muted-foreground opacity-40 hover:opacity-80'
+                    }`}
+                    title={g.charAt(0) + g.slice(1).toLowerCase()}
+                    aria-pressed={isActive}
+                  >
+                    <GenderSymbol gender={g.toLowerCase()} size={20} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Top-right: cart button */}
