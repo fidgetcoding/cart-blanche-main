@@ -497,11 +497,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               )}
             </div>
 
-            {/* Title + Price */}
+            {/* Title + Price (inline) */}
             <div className={`w-full ${expandDetails ? '[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-4' : ''}`}>
               <div className={`flex flex-col items-center ${expandDetails ? '[@media(max-height:760px)]:items-start [@media(max-height:760px)]:text-left [@media(max-height:760px)]:pl-2' : ''}`}>
-                <h2 className={`font-display text-lg font-bold text-center tracking-wide text-foreground ${expandDetails ? '[@media(max-height:760px)]:text-left' : ''}`}>{product.title}</h2>
-                <div className={`flex items-baseline gap-2 mt-1 ${expandDetails ? '[@media(max-height:760px)]:justify-start' : ''}`}>
+                <div className={`flex items-baseline justify-center gap-3 ${expandDetails ? '[@media(max-height:760px)]:justify-start' : ''}`}>
+                  <h2 className={`font-display text-lg font-bold tracking-wide text-foreground ${expandDetails ? '[@media(max-height:760px)]:text-left' : ''}`}>{product.title}</h2>
                   <span className="font-display text-base text-foreground">${product.price}</span>
                   {product.compare_at_price && (
                     <span className="text-sm text-foreground/50 line-through">${product.compare_at_price}</span>
@@ -516,11 +516,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               )}
             </div>
 
-            {/* Expand button */}
+            {/* Expand button — sits where the price used to be */}
             <button
               onClick={() => setExpandDetails(!expandDetails)}
               onMouseEnter={() => setExpandDetails(true)}
-              className="mt-3 [@media(max-height:760px)]:mt-2 p-2 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)]"
+              className="mt-1 p-2 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)]"
             >
               {expandDetails ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
             </button>
