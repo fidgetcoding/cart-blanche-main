@@ -14,9 +14,10 @@ export interface GridLayout {
   hiddenTags: string[];
   hiddenProductTypes: string[];
   hiddenProductIds: string[];
+  hiddenGenders: string[];
 }
 
-const EMPTY_LAYOUT: GridLayout = { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [], hiddenProductIds: [] };
+const EMPTY_LAYOUT: GridLayout = { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [], hiddenProductIds: [], hiddenGenders: [] };
 
 // Broadcast layout changes across hook instances
 const LAYOUT_CHANGE_EVENT = 'grid-layout-changed';
@@ -48,7 +49,7 @@ export function useGridLayout() {
 
         let query = supabase
           .from('grid_layouts')
-          .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids')
+          .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids, hidden_genders')
           .eq('layout_type', 'default');
 
         if (user) {
@@ -64,6 +65,7 @@ export function useGridLayout() {
             hiddenTags: (layoutData.hidden_tags as string[]) || [],
             hiddenProductTypes: (layoutData.hidden_product_types as string[]) || [],
             hiddenProductIds: (layoutData.hidden_product_ids as string[]) || [],
+            hiddenGenders: ((layoutData as any).hidden_genders as string[]) || [],
           });
         }
 
@@ -99,7 +101,7 @@ export function useGridLayout() {
               })),
               category: p.category || 'uncategorized',
               product_type: '' as const,
-              gender: 'unisex',
+              gender: (p as any).gender || 'unisex',
               status: 'active' as const,
               grid_position: { x: 0, y: 0 },
               description: p.description || '',
@@ -142,6 +144,7 @@ export function useGridLayout() {
         hidden_tags: current.hiddenTags,
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
+        hidden_genders: current.hiddenGenders,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
@@ -169,6 +172,7 @@ export function useGridLayout() {
         hidden_tags: hiddenTags,
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
+        hidden_genders: current.hiddenGenders,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
@@ -196,6 +200,7 @@ export function useGridLayout() {
         hidden_tags: current.hiddenTags,
         hidden_product_types: hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
+        hidden_genders: current.hiddenGenders,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
@@ -223,11 +228,40 @@ export function useGridLayout() {
         hidden_tags: current.hiddenTags,
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: hiddenProductIds,
+        hidden_genders: current.hiddenGenders,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenProductIds };
+      setLayout(updated);
+      broadcastLayoutChange(updated);
+    }
+    return !error;
+  }, [layout]);
+
+  // Save hidden genders
+  const saveHiddenGenders = useCallback(async (hiddenGenders: string[]) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const current = layout || EMPTY_LAYOUT;
+    const { error } = await supabase
+      .from('grid_layouts')
+      .upsert({
+        merchant_id: user.id,
+        layout_type: 'default',
+        product_order: current.productOrder,
+        category_order: current.categoryOrder,
+        hidden_tags: current.hiddenTags,
+        hidden_product_types: current.hiddenProductTypes,
+        hidden_product_ids: current.hiddenProductIds,
+        hidden_genders: hiddenGenders,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'merchant_id,layout_type' });
+
+    if (!error) {
+      const updated: GridLayout = { ...current, hiddenGenders };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
@@ -339,5 +373,5 @@ export function useGridLayout() {
     return !error;
   }, []);
 
-  return { layout, loading, saveLayout, saveHiddenTags, saveHiddenProductTypes, saveHiddenProductIds, resetLayout, getOrderedProducts, getOrderedCategories, getAllProductsUnfiltered };
+  return { layout, loading, saveLayout, saveHiddenTags, saveHiddenProductTypes, saveHiddenProductIds, saveHiddenGenders, resetLayout, getOrderedProducts, getOrderedCategories, getAllProductsUnfiltered };
 }
