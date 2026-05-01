@@ -1012,8 +1012,8 @@ export function SpatialCanvas() {
         <div className="flex items-end justify-between px-4 md:px-6 py-3 md:py-5 relative">
           {/* Hints */}
           <div className={`tracking-wider space-y-0.5 cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : themeSettings.mode === 'light' ? 'text-muted-foreground/60 hover:text-foreground/90' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
-            <p className="block md:hidden">HOVER OVER ITEMS & PINCH TO ZOOM · DRAG TO PAN · SWIPE TO TURN PAGE · TAP TO VIEW</p>
-            <p className="hidden md:block">HOVER OVER ITEMS & SCROLL / PINCH TO ZOOM · DRAG TO PAN · SWIPE TO TURN PAGE · CLICK TO VIEW</p>
+            <p className="block md:hidden">HOVER OVER ITEMS & PINCH TO ZOOM · DRAG TO PAN · SWIPE FOR NEXT PAGE · TAP TO VIEW</p>
+            <p className="hidden md:block">HOVER OVER ITEMS & SCROLL / PINCH TO ZOOM · DRAG TO PAN · SWIPE FOR NEXT PAGE · CLICK TO VIEW</p>
           </div>
           {/* Pagination indicator — right side, in line with hint text */}
           <div className={`tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
