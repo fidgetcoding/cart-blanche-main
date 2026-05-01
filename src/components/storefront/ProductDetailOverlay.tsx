@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { getImageUrl } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
+import { splitSentences } from '@/lib/format-description';
 
 interface ProductDetailOverlayProps {
   product: DemoProduct | null;

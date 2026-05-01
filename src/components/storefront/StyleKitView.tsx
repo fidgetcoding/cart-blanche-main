@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { getSuggestedProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { DemoProduct } from '@/data/demo-data';
+import { splitSentences } from '@/lib/format-description';
 
 function CarouselCard({
   product,
