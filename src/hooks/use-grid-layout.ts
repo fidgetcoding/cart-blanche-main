@@ -1,12 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
-import type { DemoProduct } from '@/data/demo-data';
+import type { DemoProduct, ProductImage } from '@/data/demo-data';
 
 const TILE_W = 220;
 const TILE_H = 300;
 const TILE_GAP = 6;
 const COLS = 5;
+
+/**
+ * Per-product overrides on demo products. Keyed by demo product id.
+ * Each value is a partial DemoProduct: only the fields the merchant
+ * has edited away from the canonical demo. Merged at runtime.
+ */
+export interface DemoProductOverride {
+  variants?: { id: string; title: string; inventory_count: number; price?: number; options?: Record<string, string> }[];
+  gender?: string;
+  weight_oz?: number;
+  shipping_type?: 'domestic' | 'international';
+  hs_code?: string;
+  status?: 'active' | 'draft' | 'archived';
+  title?: string;
+  price?: number;
+  compare_at_price?: number | null;
+  description?: string;
+  category?: string;
+  images?: ProductImage[];
+  tags?: string[];
+  product_type?: string;
+}
+
+export type DemoProductOverrides = Record<string, DemoProductOverride>;
 
 export interface GridLayout {
   productOrder: string[];
@@ -15,9 +39,10 @@ export interface GridLayout {
   hiddenProductTypes: string[];
   hiddenProductIds: string[];
   hiddenGenders: string[];
+  demoProductOverrides: DemoProductOverrides;
 }
 
-const EMPTY_LAYOUT: GridLayout = { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [], hiddenProductIds: [], hiddenGenders: [] };
+const EMPTY_LAYOUT: GridLayout = { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [], hiddenProductIds: [], hiddenGenders: [], demoProductOverrides: {} };
 
 // Broadcast layout changes across hook instances
 const LAYOUT_CHANGE_EVENT = 'grid-layout-changed';
@@ -49,7 +74,7 @@ export function useGridLayout() {
 
         let query = supabase
           .from('grid_layouts')
-          .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids, hidden_genders')
+          .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids, hidden_genders, demo_product_overrides')
           .eq('layout_type', 'default');
 
         if (user) {
@@ -66,6 +91,7 @@ export function useGridLayout() {
             hiddenProductTypes: (layoutData.hidden_product_types as string[]) || [],
             hiddenProductIds: (layoutData.hidden_product_ids as string[]) || [],
             hiddenGenders: ((layoutData as any).hidden_genders as string[]) || [],
+            demoProductOverrides: ((layoutData as any).demo_product_overrides as DemoProductOverrides) || {},
           });
         }
 
@@ -123,10 +149,32 @@ export function useGridLayout() {
     fetchData();
   }, []);
 
-  // Merge demo + DB products
+  // Merge demo + DB products. Apply per-merchant demo overrides on top
+  // of canonical demo data.
   const allProducts = useCallback((): DemoProduct[] => {
-    return [...DEMO_PRODUCTS, ...dbProducts];
-  }, [dbProducts]);
+    const overrides = layout?.demoProductOverrides || {};
+    const mergedDemos = DEMO_PRODUCTS.map(p => {
+      const ov = overrides[p.id];
+      if (!ov) return p;
+      // Variant merge: merge per-variant inventory_count + title + price
+      // by id, falling back to canonical values for variants not in the
+      // override array.
+      const mergedVariants = ov.variants
+        ? p.variants.map(v => {
+            const ovV = ov.variants!.find(x => x.id === v.id);
+            return ovV ? { ...v, ...ovV } : v;
+          })
+        : p.variants;
+      return {
+        ...p,
+        ...ov,
+        variants: mergedVariants,
+        // Cast back to DemoProduct's variant type since override variants
+        // type is structurally compatible.
+      } as DemoProduct;
+    });
+    return [...mergedDemos, ...dbProducts];
+  }, [dbProducts, layout]);
 
   // Save layout to Supabase (requires auth)
   const saveLayout = useCallback(async (productOrder: string[], categoryOrder: string[]) => {
@@ -145,8 +193,9 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: current.hiddenGenders,
+        demo_product_overrides: current.demoProductOverrides,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
+      } as any, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, productOrder, categoryOrder };
@@ -173,8 +222,9 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: current.hiddenGenders,
+        demo_product_overrides: current.demoProductOverrides,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
+      } as any, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenTags };
@@ -201,8 +251,9 @@ export function useGridLayout() {
         hidden_product_types: hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: current.hiddenGenders,
+        demo_product_overrides: current.demoProductOverrides,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
+      } as any, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenProductTypes };
@@ -229,8 +280,9 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: hiddenProductIds,
         hidden_genders: current.hiddenGenders,
+        demo_product_overrides: current.demoProductOverrides,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
+      } as any, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenProductIds };
@@ -257,11 +309,55 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: hiddenGenders,
+        demo_product_overrides: current.demoProductOverrides,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
+      } as any, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenGenders };
+      setLayout(updated);
+      broadcastLayoutChange(updated);
+    }
+    return !error;
+  }, [layout]);
+
+  /**
+   * Save (merge) an override for a single demo product. Pass `null` as
+   * the override to delete the override entirely (revert to canonical).
+   */
+  const saveDemoProductOverride = useCallback(async (
+    productId: string,
+    override: DemoProductOverride | null
+  ) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const current = layout || EMPTY_LAYOUT;
+    const nextOverrides: DemoProductOverrides = { ...current.demoProductOverrides };
+    if (override === null) {
+      delete nextOverrides[productId];
+    } else {
+      // Shallow merge with any existing override for this product.
+      nextOverrides[productId] = { ...(nextOverrides[productId] || {}), ...override };
+    }
+
+    const { error } = await supabase
+      .from('grid_layouts')
+      .upsert({
+        merchant_id: user.id,
+        layout_type: 'default',
+        product_order: current.productOrder,
+        category_order: current.categoryOrder,
+        hidden_tags: current.hiddenTags,
+        hidden_product_types: current.hiddenProductTypes,
+        hidden_product_ids: current.hiddenProductIds,
+        hidden_genders: current.hiddenGenders,
+        demo_product_overrides: nextOverrides,
+        updated_at: new Date().toISOString(),
+      } as any, { onConflict: 'merchant_id,layout_type' });
+
+    if (!error) {
+      const updated: GridLayout = { ...current, demoProductOverrides: nextOverrides };
       setLayout(updated);
       broadcastLayoutChange(updated);
     }
@@ -373,5 +469,5 @@ export function useGridLayout() {
     return !error;
   }, []);
 
-  return { layout, loading, saveLayout, saveHiddenTags, saveHiddenProductTypes, saveHiddenProductIds, saveHiddenGenders, resetLayout, getOrderedProducts, getOrderedCategories, getAllProductsUnfiltered };
+  return { layout, loading, saveLayout, saveHiddenTags, saveHiddenProductTypes, saveHiddenProductIds, saveHiddenGenders, saveDemoProductOverride, resetLayout, getOrderedProducts, getOrderedCategories, getAllProductsUnfiltered };
 }
