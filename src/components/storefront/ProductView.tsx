@@ -640,6 +640,18 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         </button>
                       </div>
                     </div>
+
+                    {/* Close (X) — moved below the action buttons */}
+                    <div className="flex justify-center pt-1">
+                      <button
+                        onClick={() => setExpandDetails(false)}
+                        onMouseEnter={() => setExpandDetails(false)}
+                        className="p-2 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)] flex items-center justify-center"
+                        aria-label="Close details"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )}
