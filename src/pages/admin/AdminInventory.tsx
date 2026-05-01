@@ -16,6 +16,7 @@ interface ProductRow {
   compare_at_price?: number;
   category: string;
   product_type: ProductType;
+  gender: string;
   images: string[];
   description: string;
   tags: string[];
@@ -41,6 +42,7 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     compare_at_price: p.compare_at_price,
     category: p.category,
     product_type: p.product_type || '',
+    gender: p.gender || 'unisex',
     images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
     description: p.description,
     tags: [p.category],
@@ -97,6 +99,7 @@ export default function AdminInventory() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [activeTypeFilter, setActiveTypeFilter] = useState<string>('all');
+  const [activeGenderFilter, setActiveGenderFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
@@ -119,6 +122,7 @@ export default function AdminInventory() {
   const [addTags, setAddTags] = useState<string[]>([]);
   const [addTagInput, setAddTagInput] = useState('');
   const [addProductType, setAddProductType] = useState<ProductType>('');
+  const [addGender, setAddGender] = useState<string>('unisex');
   const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
   const [addImages, setAddImages] = useState<string[]>([]);
@@ -149,6 +153,15 @@ export default function AdminInventory() {
       setHiddenTags(gridLayout.hiddenTags);
     }
   }, [gridLayout]);
+
+  // Gender management — local state for Phase 2B. Will be persisted to
+  // grid_layouts.hidden_genders in Phase 2C.
+  const DEFAULT_GENDERS = ['men', 'women', 'unisex'];
+  const [hiddenGenders, setHiddenGenders] = useState<string[]>([]);
+  const [genderEditMode, setGenderEditMode] = useState(false);
+  const toggleGenderVisibility = (g: string) => {
+    setHiddenGenders(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
+  };
 
   const toggleTagVisibility = async (tag: string) => {
     const newHidden = hiddenTags.includes(tag)
@@ -264,6 +277,7 @@ export default function AdminInventory() {
             compare_at_price: p.compare_at_price ?? undefined,
             category: p.category || '',
             product_type: '' as ProductType,
+            gender: 'unisex',
             images: p.images || [],
             description: p.description || '',
             tags: p.tags || [p.category || ''].filter(Boolean),
@@ -330,6 +344,14 @@ export default function AdminInventory() {
     return Array.from(cats).sort();
   }, [products]);
 
+  // Genders derived from products + defaults — defaults always present so
+  // merchants see them even if no product uses them yet.
+  const allGenders = useMemo(() => {
+    const set = new Set<string>(DEFAULT_GENDERS);
+    products.forEach(p => { if (p.gender) set.add(p.gender.toLowerCase()); });
+    return Array.from(set).sort();
+  }, [products]);
+
   const filtered = useMemo(() => {
     return products.filter(p => {
       // Hide archived products from main inventory
@@ -340,13 +362,16 @@ export default function AdminInventory() {
       if (activeTypeFilter !== 'all') {
         if (p.product_type !== activeTypeFilter) return false;
       }
+      if (activeGenderFilter !== 'all') {
+        if ((p.gender || 'unisex').toLowerCase() !== activeGenderFilter) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
         if (!p.title.toLowerCase().includes(q) && !p.category.toLowerCase().includes(q)) return false;
       }
       return true;
     });
-  }, [products, activeFilter, activeTypeFilter, search]);
+  }, [products, activeFilter, activeTypeFilter, activeGenderFilter, search]);
 
   const archivedProducts = useMemo(() => {
     return products.filter(p => p.status === 'archived');
@@ -515,6 +540,11 @@ export default function AdminInventory() {
     if (session) {
       for (const p of products) {
         if (!p.isDemo) {
+          // NOTE: gender field intentionally not persisted in Phase 2B —
+          // DB column pending in Phase 2C.
+          if (p.gender && p.gender !== 'unisex') {
+            console.warn(`[Phase 2B] gender '${p.gender}' on product ${p.id} not persisted — DB column pending in Phase 2C`);
+          }
           await supabase.from('products').update({
             title: p.title,
             price: p.price,
@@ -679,6 +709,7 @@ export default function AdminInventory() {
     setAddTags([]);
     setAddTagInput('');
     setAddProductType('');
+    setAddGender('unisex');
     setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
     setAddImages([]);
     setAddVideo(null);
@@ -830,6 +861,70 @@ export default function AdminInventory() {
               {cat.toUpperCase()}
             </button>
           ))}
+        </div>
+        {/* Gender filter strip — same pattern as types, with edit-mode
+            for hide-toggle + delete-everywhere */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <button
+            onClick={() => setActiveGenderFilter('all')}
+            className={`px-3 py-1 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+              activeGenderFilter === 'all' ? 'bg-foreground/5 text-foreground/70 border-foreground/15' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+            }`}>
+            ALL GENDERS
+          </button>
+          {allGenders.map(g => (
+            <div key={g} className="flex items-center gap-1">
+              <button
+                onClick={() => setActiveGenderFilter(g === activeGenderFilter ? 'all' : g)}
+                className={`px-3 py-1 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                  activeGenderFilter === g ? 'bg-foreground/5 text-foreground/70 border-foreground/15' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                } ${hiddenGenders.includes(g) ? 'line-through decoration-1' : ''}`}>
+                {g.toUpperCase()}
+              </button>
+              {genderEditMode && (
+                <>
+                  <button
+                    onClick={() => toggleGenderVisibility(g)}
+                    className={`w-5 h-5 inline-flex items-center justify-center rounded border transition-colors ${
+                      hiddenGenders.includes(g)
+                        ? 'border-warning/40 bg-warning/15 text-warning hover:bg-warning/30'
+                        : 'border-success/40 bg-success/15 text-success hover:bg-success/30'
+                    }`}
+                    title={hiddenGenders.includes(g) ? `Show "${g}" on storefront` : `Hide "${g}" from storefront`}
+                  >
+                    {hiddenGenders.includes(g) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!confirm(`Remove gender "${g}" from all products? Products with this gender will reset to 'unisex'.`)) return;
+                      setProducts(prev => prev.map(p => p.gender?.toLowerCase() === g ? { ...p, gender: 'unisex' } : p));
+                      if (activeGenderFilter === g) setActiveGenderFilter('all');
+                      if (hiddenGenders.includes(g)) {
+                        setHiddenGenders(prev => prev.filter(x => x !== g));
+                      }
+                      // NOTE: Phase 2C will persist to DB. For now this only updates
+                      // local state — non-demo products will revert on refresh until
+                      // gender column is added.
+                      console.warn('[Phase 2B] gender deletion not persisted — DB column pending in Phase 2C');
+                    }}
+                    className="w-5 h-5 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    title={`Delete gender "${g}"`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={() => setGenderEditMode(prev => !prev)}
+            className={`ml-1 px-2.5 py-1 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+              genderEditMode ? 'bg-success/15 text-success border-success/30' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+            }`}
+            title={genderEditMode ? 'Done editing genders' : 'Edit genders'}
+          >
+            {genderEditMode ? <Check className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
+          </button>
         </div>
       </div>
 
@@ -1024,6 +1119,11 @@ export default function AdminInventory() {
                       {p.product_type && (
                         <span className="text-[10px] font-display px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground/70">
                           {p.product_type.toUpperCase()}
+                        </span>
+                      )}
+                      {p.gender && (
+                        <span className="text-[10px] font-display px-1.5 py-0.5 rounded border border-border/30 text-muted-foreground/50">
+                          {p.gender.toUpperCase()}
                         </span>
                       )}
                       {p.tags.map(tag => (
@@ -1621,6 +1721,26 @@ export default function AdminInventory() {
                 </div>
               </div>
 
+              {/* Gender */}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">GENDER</label>
+                <div className="flex flex-wrap gap-2">
+                  {allGenders.filter(g => !hiddenGenders.includes(g)).map(g => (
+                    <button
+                      key={g}
+                      onClick={() => setAddGender(g)}
+                      className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                        addGender === g
+                          ? 'bg-foreground/10 text-foreground border-foreground/20'
+                          : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                      }`}
+                    >
+                      {g.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">TAGS</label>
                 {/* Existing tags as toggleable chips */}
@@ -1850,6 +1970,30 @@ export default function AdminInventory() {
                       }`}
                     >
                       {cat.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gender */}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">GENDER</label>
+                <div className="flex flex-wrap gap-2">
+                  {allGenders.filter(g => !hiddenGenders.includes(g)).map(g => (
+                    <button
+                      key={g}
+                      onClick={() => {
+                        setEditingProduct({ ...editingProduct, gender: g });
+                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, gender: g } : p));
+                        setHasUnsavedChanges(true);
+                      }}
+                      className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                        editingProduct.gender === g
+                          ? 'bg-foreground/10 text-foreground border-foreground/20'
+                          : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                      }`}
+                    >
+                      {g.toUpperCase()}
                     </button>
                   ))}
                 </div>
