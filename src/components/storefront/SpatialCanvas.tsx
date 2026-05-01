@@ -1008,15 +1008,15 @@ export function SpatialCanvas() {
       )}
 
       {/* Unified bottom footer */}
-      <div className={`absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-500 ${footerGlass ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+      <div className={`group absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-500 ${footerGlass ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <div className="flex items-end justify-between px-4 md:px-6 py-3 md:py-5 relative">
           {/* Hints */}
-          <div className={`tracking-wider space-y-0.5 cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : themeSettings.mode === 'light' ? 'text-muted-foreground/60 hover:text-foreground/90' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
+          <div className={`tracking-wider space-y-0.5 cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : themeSettings.mode === 'light' ? 'text-muted-foreground/60 group-hover:text-foreground/90' : 'text-muted-foreground/30 group-hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
             <p className="block md:hidden">HOVER OVER ITEMS & PINCH TO ZOOM · DRAG TO PAN · SWIPE FOR NEXT PAGE · TAP TO VIEW</p>
             <p className="hidden md:block">HOVER OVER ITEMS & SCROLL / PINCH TO ZOOM · DRAG TO PAN · SWIPE FOR NEXT PAGE · CLICK TO VIEW</p>
           </div>
           {/* Pagination indicator — right side, in line with hint text */}
-          <div className={`tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30 hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
+          <div className={`tracking-widest cursor-default transition-colors duration-700 ${footerIntroVisible ? 'text-foreground/80' : 'text-muted-foreground/30 group-hover:text-foreground/80'}`} style={{ fontSize: '10px', fontFamily: 'var(--font-display)' }}>
             PAGE {currentPage + 1} / {totalPages}
           </div>
         </div>
