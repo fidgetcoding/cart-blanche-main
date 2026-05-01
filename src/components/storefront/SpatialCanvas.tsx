@@ -845,7 +845,37 @@ export function SpatialCanvas() {
               ))}
             </div>
           </nav>
-        ) : (
+        ) : null}
+
+        {/* Gender selector — desktop only, auto-hides when only one gender in view */}
+        {!compactHeader && showGenderSelector && (
+          <div className="absolute right-[180px] top-1/2 -translate-y-1/2 flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1 py-0.5">
+            {['ALL', 'MEN', 'WOMEN', 'UNISEX'].map(g => {
+              const isActive = activeGender === g;
+              return (
+                <button
+                  key={g}
+                  onClick={() => setActiveGender(g)}
+                  className={`p-1.5 rounded-md transition-all duration-200 ${
+                    isActive
+                      ? 'text-foreground opacity-100 bg-foreground/[0.12]'
+                      : 'text-muted-foreground opacity-60 hover:opacity-100'
+                  }`}
+                  title={g === 'ALL' ? 'All genders' : g.charAt(0) + g.slice(1).toLowerCase()}
+                  aria-pressed={isActive}
+                >
+                  {g === 'ALL' ? (
+                    <span className="text-[10px] tracking-[0.15em] uppercase px-1" style={{ fontFamily: 'var(--font-body)' }}>ALL</span>
+                  ) : (
+                    <GenderSymbol gender={g.toLowerCase()} size={14} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {compactHeader && (
           /* Mobile/tablet: scrollable category pills */
           <div className="flex-1 mx-3 overflow-x-auto scrollbar-hide">
             <div className="flex items-center gap-1.5 w-max">
