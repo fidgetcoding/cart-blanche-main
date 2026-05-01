@@ -113,9 +113,28 @@ export function MaisonCanvas() {
     return allProducts.filter(p => {
       const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
       const matchesType = activeType === 'ALL' || p.product_type?.toUpperCase() === activeType;
+      const g = (p.gender || 'unisex').toLowerCase();
+      const matchesGender =
+        activeGender === 'ALL' ||
+        (activeGender === 'MEN' && (g === 'men' || g === 'unisex')) ||
+        (activeGender === 'WOMEN' && (g === 'women' || g === 'unisex')) ||
+        (activeGender === 'UNISEX' && g === 'unisex') ||
+        g === activeGender.toLowerCase();
+      return matchesCat && matchesType && matchesGender;
+    });
+  }, [allProducts, activeCategory, activeType, activeGender]);
+
+  // Genders present in products matching current category + type filters.
+  const availableGenders = useMemo(() => {
+    const pool = allProducts.filter(p => {
+      const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
+      const matchesType = activeType === 'ALL' || p.product_type?.toUpperCase() === activeType;
       return matchesCat && matchesType;
     });
+    return new Set(pool.map(p => (p.gender || 'unisex').toLowerCase()));
   }, [allProducts, activeCategory, activeType]);
+
+  const showGenderSelector = availableGenders.size > 1;
 
   if (loading) {
     return (
