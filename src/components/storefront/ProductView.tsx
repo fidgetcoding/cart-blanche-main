@@ -508,9 +508,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                   {product.compare_at_price && (
                     <span className="text-sm text-foreground/50 line-through">${product.compare_at_price}</span>
                   )}
-                  {(variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0)) && (
+                  {(variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0)) ? (
                     <span className="text-destructive tracking-wider text-sm">(OUT OF STOCK)</span>
-                  )}
+                  ) : variant && variant.inventory_count > 0 && variant.inventory_count <= 5 ? (
+                    <span className="text-warning tracking-wider text-sm">(LOW STOCK)</span>
+                  ) : null}
                 </div>
               </div>
 
