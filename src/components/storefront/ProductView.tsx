@@ -502,7 +502,12 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               <div className={`flex flex-col items-center ${expandDetails ? '[@media(max-height:760px)]:items-start [@media(max-height:760px)]:text-left [@media(max-height:760px)]:pl-2' : ''}`}>
                 <div className={`flex items-baseline justify-center gap-3 ${expandDetails ? '[@media(max-height:760px)]:justify-start' : ''}`}>
                   <h2 className={`font-display text-lg font-bold tracking-wide text-foreground ${expandDetails ? '[@media(max-height:760px)]:text-left' : ''}`}>{product.title}</h2>
-                  <span className="font-display text-base text-foreground">${product.price}</span>
+                  <span className="font-display text-base text-foreground">
+                    ${product.price}
+                    {(variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0)) && (
+                      <span className="ml-1.5 text-destructive tracking-wider">(OUT OF STOCK)</span>
+                    )}
+                  </span>
                   {product.compare_at_price && (
                     <span className="text-sm text-foreground/50 line-through">${product.compare_at_price}</span>
                   )}
