@@ -44,21 +44,27 @@ export function SpatialCanvas() {
 
   const [activeCategory, setActiveCategory] = useState('ALL');
   const activeCategoryRef = useRef('ALL');
-  const [activeGender, setActiveGender] = useState('ALL');
+  const [activeGenders, setActiveGenders] = useState<string[]>([]);
+  const toggleGender = (g: string) => {
+    setActiveGenders(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
+  };
 
   const filteredProducts = useMemo(() => {
     return DEMO_PRODUCTS.filter(p => {
       const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
       const g = (p.gender || 'unisex').toLowerCase();
       const matchesGender =
-        activeGender === 'ALL' ||
-        (activeGender === 'MEN' && (g === 'men' || g === 'unisex')) ||
-        (activeGender === 'WOMEN' && (g === 'women' || g === 'unisex')) ||
-        (activeGender === 'UNISEX' && g === 'unisex') ||
-        g === activeGender.toLowerCase();
+        activeGenders.length === 0 ||
+        activeGenders.some(sel => {
+          const s = sel.toLowerCase();
+          if (s === 'men') return g === 'men' || g === 'unisex';
+          if (s === 'women') return g === 'women' || g === 'unisex';
+          if (s === 'unisex') return g === 'unisex';
+          return g === s;
+        });
       return matchesCat && matchesGender;
     });
-  }, [DEMO_PRODUCTS, activeCategory, activeGender]);
+  }, [DEMO_PRODUCTS, activeCategory, activeGenders]);
 
   // Genders present in products matching current category — auto-hides selector when only one in view
   const availableGenders = useMemo(() => {
@@ -847,28 +853,26 @@ export function SpatialCanvas() {
           </nav>
         ) : null}
 
-        {/* Gender selector — desktop only, auto-hides when only one gender in view */}
+        {/* Gender selector — desktop only, no pill container, just symbols.
+            Multi-select toggle: empty selection = ALL implicit. Auto-hides when
+            only one gender is in current view. */}
         {!compactHeader && showGenderSelector && (
-          <div className="absolute right-[180px] top-1/2 -translate-y-1/2 flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1 py-0.5">
-            {['ALL', 'MEN', 'WOMEN', 'UNISEX'].map(g => {
-              const isActive = activeGender === g;
+          <div className="absolute right-[180px] top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {['MEN', 'WOMEN', 'UNISEX'].map(g => {
+              const isActive = activeGenders.includes(g);
               return (
                 <button
                   key={g}
-                  onClick={() => setActiveGender(g)}
-                  className={`p-1.5 rounded-md transition-all duration-200 ${
+                  onClick={() => toggleGender(g)}
+                  className={`p-1 transition-all duration-200 ${
                     isActive
-                      ? 'text-foreground opacity-100 bg-foreground/[0.12]'
-                      : 'text-muted-foreground opacity-60 hover:opacity-100'
+                      ? 'text-foreground opacity-100'
+                      : 'text-muted-foreground opacity-40 hover:opacity-80'
                   }`}
-                  title={g === 'ALL' ? 'All genders' : g.charAt(0) + g.slice(1).toLowerCase()}
+                  title={g.charAt(0) + g.slice(1).toLowerCase()}
                   aria-pressed={isActive}
                 >
-                  {g === 'ALL' ? (
-                    <span className="text-[10px] tracking-[0.15em] uppercase px-1" style={{ fontFamily: 'var(--font-body)' }}>ALL</span>
-                  ) : (
-                    <GenderSymbol gender={g.toLowerCase()} size={14} />
-                  )}
+                  <GenderSymbol gender={g.toLowerCase()} size={22} />
                 </button>
               );
             })}
