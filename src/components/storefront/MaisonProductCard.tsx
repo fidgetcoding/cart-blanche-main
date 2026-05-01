@@ -264,7 +264,13 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                       color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))',
                     }}
                   >
-                    {product.variants.every(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
+                    {product.variants.every(v => v.inventory_count === 0)
+                      ? 'JOIN THE WAITLIST'
+                      : themeSettings.slExpandTriggerStyle === 'icon'
+                        ? '+'
+                        : themeSettings.slExpandTriggerStyle === 'icon_text'
+                          ? 'ADD TO CART +'
+                          : 'ADD TO CART'}
                   </motion.p>
                 ) : (
                   <motion.div
@@ -437,7 +443,13 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                     }
                   }}
                 >
-                  {product.variants.every(v => v.inventory_count === 0) ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
+                  {product.variants.every(v => v.inventory_count === 0)
+                    ? 'JOIN THE WAITLIST'
+                    : themeSettings.slExpandTriggerStyle === 'icon'
+                      ? '+'
+                      : themeSettings.slExpandTriggerStyle === 'icon_text'
+                        ? 'ADD TO CART +'
+                        : 'ADD TO CART'}
                 </motion.p>
               ) : (
               <motion.div

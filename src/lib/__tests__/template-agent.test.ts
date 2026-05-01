@@ -20,6 +20,7 @@ const defaults: ThemeSettings = {
   numeralFontColor: '',
   storeNameColor: '',
   yzExpandTriggerStyle: 'icon',
+  slExpandTriggerStyle: 'text',
 };
 
 let current: ThemeSettings;
