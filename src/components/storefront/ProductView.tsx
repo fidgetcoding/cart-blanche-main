@@ -604,17 +604,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                           </div>
                         )}
 
-                        {/* Stock */}
-                        {variant && (
-                          <p className={`text-xs text-center [@media(max-height:760px)]:text-left ${
-                            variant.inventory_count === 0 ? 'text-destructive' :
-                            variant.inventory_count <= 5 ? 'text-warning' : 'text-success'
-                          }`}>
-                            {variant.inventory_count === 0 ? 'Out of Stock' :
-                             variant.inventory_count <= 5 ? `Low Stock — ${variant.inventory_count} left` :
-                              'In Stock'}
-                          </p>
-                        )}
                       </div>
 
                       {/* Actions */}
