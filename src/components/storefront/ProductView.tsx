@@ -531,7 +531,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               <button
                 onClick={() => setExpandDetails(true)}
                 onMouseEnter={() => setExpandDetails(true)}
-                className={`mt-1 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)] flex items-center justify-center gap-1.5 ${
+                className={`mt-1 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 flex items-center justify-center gap-1.5 ${
                   themeSettings.yzExpandTriggerStyle === 'icon'
                     ? 'p-2'
                     : 'px-4 py-2 font-display font-semibold text-sm tracking-wider'
