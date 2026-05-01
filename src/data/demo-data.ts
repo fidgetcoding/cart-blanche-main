@@ -39,6 +39,7 @@ export interface DemoProduct {
   images: ProductImage[];
   category: string;
   product_type: ProductType;
+  gender: string;
   status: 'active';
   grid_position: { x: number; y: number };
   variants: DemoVariant[];
