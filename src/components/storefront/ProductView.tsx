@@ -521,30 +521,30 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
               )}
             </div>
 
-            {/* Expand button — collapsed-state label is configurable via
-                themeSettings.yzExpandTriggerStyle. Expanded state always shows X. */}
-            <button
-              onClick={() => setExpandDetails(!expandDetails)}
-              onMouseEnter={() => setExpandDetails(expandDetails ? false : true)}
-              className={`mt-1 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)] flex items-center justify-center gap-1.5 ${
-                expandDetails || themeSettings.yzExpandTriggerStyle === 'icon'
-                  ? 'p-2'
-                  : 'px-4 py-2 font-display font-semibold text-sm tracking-wider'
-              }`}
-            >
-              {expandDetails ? (
-                <X className="w-5 h-5" />
-              ) : themeSettings.yzExpandTriggerStyle === 'text' ? (
-                <span>ADD TO CART</span>
-              ) : themeSettings.yzExpandTriggerStyle === 'icon_text' ? (
-                <>
+            {/* Expand button — only renders in collapsed state. When expanded,
+                an X button renders below the action buttons (see after AnimatePresence). */}
+            {!expandDetails && (
+              <button
+                onClick={() => setExpandDetails(true)}
+                onMouseEnter={() => setExpandDetails(true)}
+                className={`mt-1 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)] flex items-center justify-center gap-1.5 ${
+                  themeSettings.yzExpandTriggerStyle === 'icon'
+                    ? 'p-2'
+                    : 'px-4 py-2 font-display font-semibold text-sm tracking-wider'
+                }`}
+              >
+                {themeSettings.yzExpandTriggerStyle === 'text' ? (
                   <span>ADD TO CART</span>
-                  <Plus className="w-4 h-4" />
-                </>
-              ) : (
-                <Plus className="w-5 h-5" />
-              )}
-            </button>
+                ) : themeSettings.yzExpandTriggerStyle === 'icon_text' ? (
+                  <>
+                    <span>ADD TO CART</span>
+                    <Plus className="w-4 h-4" />
+                  </>
+                ) : (
+                  <Plus className="w-5 h-5" />
+                )}
+              </button>
+            )}
 
             {/* Expandable details */}
             <AnimatePresence>
@@ -639,6 +639,18 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                           <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
                         </button>
                       </div>
+                    </div>
+
+                    {/* Close (X) — moved below the action buttons */}
+                    <div className="flex justify-center pt-1">
+                      <button
+                        onClick={() => setExpandDetails(false)}
+                        onMouseEnter={() => setExpandDetails(false)}
+                        className="p-2 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)] flex items-center justify-center"
+                        aria-label="Close details"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
                 </motion.div>
