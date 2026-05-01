@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { getImageUrl } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
+import { splitSentences } from '@/lib/format-description';
 
 interface ProductDetailOverlayProps {
   product: DemoProduct | null;
@@ -95,7 +96,9 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
             </div>
 
             <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
-              {product.description}
+              {splitSentences(product.description).map((s, i) => (
+                <span key={i} className="block">{s}</span>
+              ))}
             </p>
 
             {/* Variants */}

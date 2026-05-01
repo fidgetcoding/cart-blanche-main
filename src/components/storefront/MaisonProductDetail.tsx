@@ -5,6 +5,7 @@ import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
+import { splitSentences } from '@/lib/format-description';
 
 interface MaisonProductDetailProps {
   product: DemoProduct | null;
@@ -523,7 +524,9 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             className="mt-8 text-[11px] leading-[1.8] tracking-wide text-muted-foreground uppercase"
             style={{ fontFamily: 'var(--font-body)' }}
           >
-            {product.description}
+            {splitSentences(product.description).map((s, i) => (
+              <span key={i} className="block">{s}</span>
+            ))}
           </p>
 
         </div>

@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { getSuggestedProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { DemoProduct } from '@/data/demo-data';
+import { splitSentences } from '@/lib/format-description';
 
 function CarouselCard({
   product,
@@ -341,7 +342,9 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
       </div>
 
       <p className="text-xs text-foreground/70 leading-relaxed">
-        {anchorProduct.description}
+        {splitSentences(anchorProduct.description).map((s, i) => (
+          <span key={i} className="block">{s}</span>
+        ))}
       </p>
 
       {sizes.length > 1 && (
