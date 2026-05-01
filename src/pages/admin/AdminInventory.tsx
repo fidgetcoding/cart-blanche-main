@@ -1390,6 +1390,32 @@ export default function AdminInventory() {
                           </div>
                         </div>
 
+                        {/* Gender */}
+                        <div>
+                          <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">GENDER</p>
+                          <div className="flex flex-wrap gap-2">
+                            {allGenders.filter(g => !hiddenGenders.includes(g)).map(g => (
+                              <button
+                                key={g}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setProducts(prev => prev.map(pr =>
+                                    pr.id === p.id ? { ...pr, gender: g } : pr
+                                  ));
+                                  setHasUnsavedChanges(true);
+                                }}
+                                className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
+                                  (p.gender || 'unisex').toLowerCase() === g
+                                    ? 'bg-foreground/10 text-foreground border-foreground/20'
+                                    : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                                }`}
+                              >
+                                {g.toUpperCase()}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         {/* Thumbnails quick-edit */}
                         <div>
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">IMAGES ({p.images?.length || 0})</p>
