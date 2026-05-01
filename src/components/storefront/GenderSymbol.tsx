@@ -50,13 +50,21 @@ export function GenderSymbol({ gender, size = 14, className = '', strokeWidth = 
     );
   }
 
+  // Unisex: interlocking Mars + Venus circles.
+  // Two overlapping circles — top-right circle has the Mars arrow extending up-right,
+  // bottom-left circle has the Venus cross extending down. Reads instantly as "both combined."
   return (
-    <svg {...common}>
-      <circle cx="10" cy="14" r="5" />
-      <path d="M14 10l5-5" />
-      <path d="M19 10V5h-5" />
-      <path d="M10 19v3" />
-      <path d="M8 21h4" />
+    <svg {...common} viewBox="0 0 24 24">
+      {/* Bottom-left circle (Venus) */}
+      <circle cx="9" cy="13" r="4.5" />
+      {/* Top-right circle (Mars) */}
+      <circle cx="15" cy="11" r="4.5" />
+      {/* Mars arrow — up and right from top-right circle */}
+      <path d="M17.5 7.5l3-3" />
+      <path d="M20.5 7.5v-3h-3" />
+      {/* Venus cross — down from bottom-left circle */}
+      <path d="M9 17.5v3.5" />
+      <path d="M7 19.5h4" />
     </svg>
   );
 }
