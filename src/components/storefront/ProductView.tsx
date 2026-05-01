@@ -8,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { GenderSymbol } from './GenderSymbol';
 import { splitSentences } from '@/lib/format-description';
+import { WaitlistModal } from './WaitlistModal';
 
 // Cross-product size memory: when a shopper locks a size on a top, pre-select
 // that same size on the next top they view (same for bottoms).
@@ -301,6 +302,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const variant = product.variants.find(v => v.id === selectedVariant);
   const canAdd = product.variants.length <= 1 || selectedVariant !== null;
   const isOutOfStock = variant ? variant.inventory_count === 0 : false;
+  const isWholeProductOutOfStock = product.variants.every(v => v.inventory_count === 0);
 
   const handleAddToCart = () => {
     if (!canAdd || isOutOfStock) return;
