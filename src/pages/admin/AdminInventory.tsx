@@ -1403,14 +1403,6 @@ export default function AdminInventory() {
                                 onCheckedChange={() => toggleProductVisibility(p.id, p.status)}
                               />
                             </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
-                                className="px-4 py-2 text-xs font-display tracking-wider border border-border rounded-lg hover:bg-secondary transition-colors"
-                              >
-                                EDIT
-                              </button>
-                            </div>
                           </div>
                         </div>
 
