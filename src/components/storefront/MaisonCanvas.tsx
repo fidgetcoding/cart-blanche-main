@@ -23,6 +23,9 @@ export function MaisonCanvas() {
   const [viewMode, setViewMode] = useState<3 | 6>(3);
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [activeType, setActiveType] = useState('ALL');
+  const [activeGender, setActiveGender] = useState('ALL');
+  const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
+  const genderCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<DemoProduct | null>(null);
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
   const [buildSetProduct, setBuildSetProduct] = useState<DemoProduct | null>(null);
