@@ -95,7 +95,9 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
             </div>
 
             <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
-              {product.description}
+              {splitSentences(product.description).map((s, i) => (
+                <span key={i} className="block">{s}</span>
+              ))}
             </p>
 
             {/* Variants */}

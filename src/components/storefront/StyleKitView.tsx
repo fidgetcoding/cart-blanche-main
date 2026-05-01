@@ -341,7 +341,9 @@ function ProductDetails({ anchorProduct, sizes, selectedSize, setSelectedSize, s
       </div>
 
       <p className="text-xs text-foreground/70 leading-relaxed">
-        {anchorProduct.description}
+        {splitSentences(anchorProduct.description).map((s, i) => (
+          <span key={i} className="block">{s}</span>
+        ))}
       </p>
 
       {sizes.length > 1 && (

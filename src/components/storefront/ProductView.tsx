@@ -515,7 +515,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
               {expandDetails && (
                 <p className="hidden [@media(max-height:760px)]:block pt-1 text-sm text-foreground/70 text-left leading-relaxed">
-                  {product.description}
+                  {splitSentences(product.description).map((s, i) => (
+                    <span key={i} className="block">{s}</span>
+                  ))}
                 </p>
               )}
             </div>
@@ -557,7 +559,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                 >
                   <div className="pt-4 pb-2 space-y-4 [@media(max-height:760px)]:pt-3 [@media(max-height:760px)]:space-y-3">
                     <p className="text-sm text-foreground/70 text-center leading-relaxed [@media(max-height:760px)]:hidden">
-                      {product.description}
+                      {splitSentences(product.description).map((s, i) => (
+                        <span key={i} className="block">{s}</span>
+                      ))}
                     </p>
 
                     <div className="[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-x-4 [@media(max-height:760px)]:gap-y-2">
