@@ -1054,6 +1054,9 @@ export function SpatialCanvas() {
                 setTimeout(() => fitToVisibleProducts(), 50);
               });
             }}
+            activeGenders={activeGenders}
+            onToggleGender={toggleGender}
+            availableGenders={availableGenders}
           />
         )}
       </AnimatePresence>
