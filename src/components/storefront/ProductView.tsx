@@ -519,7 +519,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             {/* Expand button — sits where the price used to be */}
             <button
               onClick={() => setExpandDetails(!expandDetails)}
-              onMouseEnter={() => setExpandDetails(true)}
+              onMouseEnter={() => setExpandDetails(expandDetails ? false : true)}
               className="mt-1 p-2 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 shadow-[0_0_20px_hsl(var(--foreground)/0.12)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.22)]"
             >
               {expandDetails ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
