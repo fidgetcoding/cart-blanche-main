@@ -459,6 +459,23 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             )}
           </div>
 
+          {/* Stock indicator — own line, matches CATEGORY label treatment. */}
+          {(variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0)) ? (
+            <p
+              className="mt-3 text-[10px] tracking-[0.2em] uppercase text-destructive"
+              style={{ fontFamily: 'var(--font-body)' }}
+            >
+              Out of Stock
+            </p>
+          ) : variant && variant.inventory_count > 0 && variant.inventory_count <= 5 ? (
+            <p
+              className="mt-3 text-[10px] tracking-[0.2em] uppercase text-warning"
+              style={{ fontFamily: 'var(--font-body)' }}
+            >
+              Low Stock
+            </p>
+          ) : null}
+
           {/* Size selector */}
           {product.variants.length > 1 && (
             <div className="mt-8">
