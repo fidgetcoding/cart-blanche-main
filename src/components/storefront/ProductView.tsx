@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
+import { GenderSymbol } from './GenderSymbol';
 
 // Cross-product size memory: when a shopper locks a size on a top, pre-select
 // that same size on the next top they view (same for bottoms).
