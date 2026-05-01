@@ -715,6 +715,50 @@ export type Database = {
           },
         ]
       }
+      waitlist_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          merchant_id: string
+          name: string
+          notified_at: string | null
+          product_id: string
+          size_preference: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          merchant_id: string
+          name?: string
+          notified_at?: string | null
+          product_id: string
+          size_preference?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          merchant_id?: string
+          name?: string
+          notified_at?: string | null
+          product_id?: string
+          size_preference?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_signups_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       merchant_storefronts: {
