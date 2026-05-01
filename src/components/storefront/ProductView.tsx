@@ -416,9 +416,10 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         </button>
         <button
           onMouseEnter={() => navigate('down')}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 w-11 h-11 flex items-center justify-center rounded-full bg-foreground/5 hover:bg-foreground/10 ring-1 ring-foreground/20 hover:ring-foreground/40 shadow-[0_0_20px_hsl(var(--foreground)/0.25),0_0_40px_hsl(var(--foreground)/0.15)] hover:shadow-[0_0_28px_hsl(var(--foreground)/0.45),0_0_56px_hsl(var(--foreground)/0.25)] transition-all group pointer-events-auto"
+          aria-label="More details"
         >
-          <ChevronDown className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
+          <Plus className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
         </button>
 
         {/* Product content */}
