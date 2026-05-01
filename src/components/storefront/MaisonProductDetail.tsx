@@ -539,7 +539,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
 
       <SizeChartOverlay
         open={sizeChartOpen}
-        category={product.product_category || product.category}
+        category={product.product_type || product.category}
         onClose={() => setSizeChartOpen(false)}
         variant="maison"
         centerInDetailPanel

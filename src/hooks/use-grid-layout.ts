@@ -98,7 +98,7 @@ export function useGridLayout() {
                 thumb: url, medium: url, full: url,
               })),
               category: p.category || 'uncategorized',
-              product_category: '' as const,
+              product_type: '' as const,
               status: 'active' as const,
               grid_position: { x: 0, y: 0 },
               description: p.description || '',

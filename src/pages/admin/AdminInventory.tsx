@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
-import { type DemoProduct, PRODUCT_CATEGORIES, type ProductCategory, getImageUrl } from '@/data/demo-data';
+import { type DemoProduct, PRODUCT_TYPES, type ProductType, getImageUrl } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProductRow {
@@ -15,7 +15,7 @@ interface ProductRow {
   price: number;
   compare_at_price?: number;
   category: string;
-  product_category: ProductCategory;
+  product_type: ProductType;
   images: string[];
   description: string;
   tags: string[];
@@ -40,7 +40,7 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     price: p.price,
     compare_at_price: p.compare_at_price,
     category: p.category,
-    product_category: p.product_category || '',
+    product_type: p.product_type || '',
     images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
     description: p.description,
     tags: [p.category],
@@ -96,7 +96,7 @@ export default function AdminInventory() {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
+  const [activeTypeFilter, setActiveTypeFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
@@ -118,7 +118,7 @@ export default function AdminInventory() {
   const [addForm, setAddForm] = useState({ title: '', price: '', comparePrice: '', description: '' });
   const [addTags, setAddTags] = useState<string[]>([]);
   const [addTagInput, setAddTagInput] = useState('');
-  const [addProductCategory, setAddProductCategory] = useState<ProductCategory>('');
+  const [addProductType, setAddProductType] = useState<ProductType>('');
   const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
   const [addImages, setAddImages] = useState<string[]>([]);
@@ -263,7 +263,7 @@ export default function AdminInventory() {
             price: p.price,
             compare_at_price: p.compare_at_price ?? undefined,
             category: p.category || '',
-            product_category: '' as ProductCategory,
+            product_type: '' as ProductType,
             images: p.images || [],
             description: p.description || '',
             tags: p.tags || [p.category || ''].filter(Boolean),
@@ -324,9 +324,9 @@ export default function AdminInventory() {
     return Array.from(tags).sort();
   }, [products, gridLayout]);
 
-  const allProductCategories = useMemo(() => {
+  const allProductTypes = useMemo(() => {
     const cats = new Set<string>();
-    products.forEach(p => { if (p.product_category) cats.add(p.product_category); });
+    products.forEach(p => { if (p.product_type) cats.add(p.product_type); });
     return Array.from(cats).sort();
   }, [products]);
 
@@ -337,8 +337,8 @@ export default function AdminInventory() {
       if (activeFilter !== 'all') {
         if (p.category !== activeFilter && !p.tags?.includes(activeFilter)) return false;
       }
-      if (activeCategoryFilter !== 'all') {
-        if (p.product_category !== activeCategoryFilter) return false;
+      if (activeTypeFilter !== 'all') {
+        if (p.product_type !== activeTypeFilter) return false;
       }
       if (search) {
         const q = search.toLowerCase();
@@ -346,7 +346,7 @@ export default function AdminInventory() {
       }
       return true;
     });
-  }, [products, activeFilter, activeCategoryFilter, search]);
+  }, [products, activeFilter, activeTypeFilter, search]);
 
   const archivedProducts = useMemo(() => {
     return products.filter(p => p.status === 'archived');
@@ -678,7 +678,7 @@ export default function AdminInventory() {
     setAddForm({ title: '', price: '', comparePrice: '', description: '' });
     setAddTags([]);
     setAddTagInput('');
-    setAddProductCategory('');
+    setAddProductType('');
     setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
     setAddImages([]);
     setAddVideo(null);
@@ -814,18 +814,18 @@ export default function AdminInventory() {
         {/* Secondary category strip */}
         <div className="flex flex-wrap gap-2 items-center">
           <button
-            onClick={() => setActiveCategoryFilter('all')}
+            onClick={() => setActiveTypeFilter('all')}
             className={`px-3 py-1 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-              activeCategoryFilter === 'all' ? 'bg-foreground/5 text-foreground/70 border-foreground/15' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+              activeTypeFilter === 'all' ? 'bg-foreground/5 text-foreground/70 border-foreground/15' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
             }`}>
             ALL TYPES
           </button>
-          {(allProductCategories.length > 0 ? allProductCategories : PRODUCT_CATEGORIES).map(cat => (
+          {(allProductTypes.length > 0 ? allProductTypes : PRODUCT_TYPES).map(cat => (
             <button
               key={cat}
-              onClick={() => setActiveCategoryFilter(cat === activeCategoryFilter ? 'all' : cat)}
+              onClick={() => setActiveTypeFilter(cat === activeTypeFilter ? 'all' : cat)}
               className={`px-3 py-1 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                activeCategoryFilter === cat ? 'bg-foreground/5 text-foreground/70 border-foreground/15' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                activeTypeFilter === cat ? 'bg-foreground/5 text-foreground/70 border-foreground/15' : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
               }`}>
               {cat.toUpperCase()}
             </button>
@@ -1021,9 +1021,9 @@ export default function AdminInventory() {
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-sm font-medium truncate">{p.title}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      {p.product_category && (
+                      {p.product_type && (
                         <span className="text-[10px] font-display px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground/70">
-                          {p.product_category.toUpperCase()}
+                          {p.product_type.toUpperCase()}
                         </span>
                       )}
                       {p.tags.map(tag => (
@@ -1269,17 +1269,17 @@ export default function AdminInventory() {
                         <div>
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">CATEGORY</p>
                           <div className="flex flex-wrap gap-2">
-                            {PRODUCT_CATEGORIES.map(cat => (
+                            {PRODUCT_TYPES.map(cat => (
                               <button
                                 key={cat}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setProducts(prev => prev.map(pr =>
-                                    pr.id === p.id ? { ...pr, product_category: (pr.product_category === cat ? '' : cat) as ProductCategory } : pr
+                                    pr.id === p.id ? { ...pr, product_type: (pr.product_type === cat ? '' : cat) as ProductType } : pr
                                   ));
                                 }}
                                 className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                                  p.product_category === cat
+                                  p.product_type === cat
                                     ? 'bg-foreground/10 text-foreground border-foreground/20'
                                     : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
                                 }`}
@@ -1605,12 +1605,12 @@ export default function AdminInventory() {
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">CATEGORY</label>
                 <div className="flex flex-wrap gap-2">
-                  {PRODUCT_CATEGORIES.map(cat => (
+                  {PRODUCT_TYPES.map(cat => (
                     <button
                       key={cat}
-                      onClick={() => setAddProductCategory(addProductCategory === cat ? '' : cat)}
+                      onClick={() => setAddProductType(addProductType === cat ? '' : cat)}
                       className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                        addProductCategory === cat
+                        addProductType === cat
                           ? 'bg-foreground/10 text-foreground border-foreground/20'
                           : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
                       }`}
@@ -1835,16 +1835,16 @@ export default function AdminInventory() {
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">CATEGORY</label>
                 <div className="flex flex-wrap gap-2">
-                  {PRODUCT_CATEGORIES.map(cat => (
+                  {PRODUCT_TYPES.map(cat => (
                     <button
                       key={cat}
                       onClick={() => {
-                        const newCat = editingProduct.product_category === cat ? '' as ProductCategory : cat;
-                        setEditingProduct({ ...editingProduct, product_category: newCat });
-                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, product_category: newCat } : p));
+                        const newCat = editingProduct.product_type === cat ? '' as ProductType : cat;
+                        setEditingProduct({ ...editingProduct, product_type: newCat });
+                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, product_type: newCat } : p));
                       }}
                       className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                        editingProduct.product_category === cat
+                        editingProduct.product_type === cat
                           ? 'bg-foreground/10 text-foreground border-foreground/20'
                           : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
                       }`}

@@ -80,10 +80,10 @@ function ThemeControls() {
   const [newType, setNewType] = useState('');
   const [showAddInput, setShowAddInput] = useState(false);
 
-  // Derive all unique product_category subcategories from products
+  // Derive all unique product_type subcategories from products
   const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const allSubcategories = useMemo(() => {
-    const types = new Set(allProducts.map(p => (p.product_category || '').toUpperCase()).filter(Boolean));
+    const types = new Set(allProducts.map(p => (p.product_type || '').toUpperCase()).filter(Boolean));
     return Array.from(types).sort();
   }, [allProducts]);
   const hiddenTypes = useMemo(() => new Set((layout?.hiddenProductTypes || []).map(t => t.toUpperCase())), [layout]);
