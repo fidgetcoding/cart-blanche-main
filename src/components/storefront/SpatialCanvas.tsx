@@ -12,6 +12,7 @@ import { useGridLayout } from '@/hooks/use-grid-layout';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/contexts/ThemeContext';
+import { GenderSymbol } from '@/components/storefront/GenderSymbol';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -43,11 +44,31 @@ export function SpatialCanvas() {
 
   const [activeCategory, setActiveCategory] = useState('ALL');
   const activeCategoryRef = useRef('ALL');
+  const [activeGender, setActiveGender] = useState('ALL');
 
   const filteredProducts = useMemo(() => {
-    if (activeCategory === 'ALL') return DEMO_PRODUCTS;
-    return DEMO_PRODUCTS.filter(p => p.category.toUpperCase() === activeCategory);
+    return DEMO_PRODUCTS.filter(p => {
+      const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
+      const g = (p.gender || 'unisex').toLowerCase();
+      const matchesGender =
+        activeGender === 'ALL' ||
+        (activeGender === 'MEN' && (g === 'men' || g === 'unisex')) ||
+        (activeGender === 'WOMEN' && (g === 'women' || g === 'unisex')) ||
+        (activeGender === 'UNISEX' && g === 'unisex') ||
+        g === activeGender.toLowerCase();
+      return matchesCat && matchesGender;
+    });
+  }, [DEMO_PRODUCTS, activeCategory, activeGender]);
+
+  // Genders present in products matching current category — auto-hides selector when only one in view
+  const availableGenders = useMemo(() => {
+    const pool = activeCategory === 'ALL'
+      ? DEMO_PRODUCTS
+      : DEMO_PRODUCTS.filter(p => p.category.toUpperCase() === activeCategory);
+    return new Set(pool.map(p => (p.gender || 'unisex').toLowerCase()));
   }, [DEMO_PRODUCTS, activeCategory]);
+
+  const showGenderSelector = availableGenders.size > 1;
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const pageProducts = useMemo(() => {
