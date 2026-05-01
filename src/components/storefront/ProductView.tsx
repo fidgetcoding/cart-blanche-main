@@ -579,7 +579,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                                 onMouseEnter={lockSize}
                                 onFocus={lockSize}
                                 onClick={lockSize}
-                                className={`px-4 py-2 text-sm font-display rounded-md border transition-all [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:py-1.5 ${
+                                className={`h-9 px-4 text-sm font-display rounded-md border transition-all flex items-center justify-center [@media(max-height:760px)]:px-3 ${
                                   selectedVariant === v.id
                                     ? 'border-foreground bg-foreground text-background'
                                     : v.inventory_count === 0
@@ -596,7 +596,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                               type="button"
                               onClick={(e) => { e.stopPropagation(); setSizeChartOpen(true); }}
                               title="Size chart"
-                              className="px-3 py-2 text-[11px] font-display tracking-wider rounded-md border border-foreground/30 text-foreground/70 hover:text-foreground hover:border-foreground/60 transition-all flex items-center gap-1.5 [@media(max-height:760px)]:px-2.5 [@media(max-height:760px)]:py-1.5"
+                              className="h-9 px-3 text-[11px] font-display tracking-wider rounded-md border border-foreground/30 text-foreground/70 hover:text-foreground hover:border-foreground/60 transition-all flex items-center gap-1.5 [@media(max-height:760px)]:px-2.5"
                             >
                               <Ruler className="w-3.5 h-3.5" />
                               SIZE CHART
@@ -611,32 +611,32 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         <button
                           onClick={handleAddToCart}
                           disabled={!canAdd || isOutOfStock}
-                          className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all [@media(max-height:760px)]:px-3.5 [@media(max-height:760px)]:py-2.5 [@media(max-height:760px)]:text-[11px] [@media(max-height:760px)]:shrink-0 ${
+                          className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:py-0 [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:text-[11px] [@media(max-height:760px)]:min-w-0 ${
                             !canAdd || isOutOfStock
                               ? 'bg-foreground/10 text-foreground/50 cursor-not-allowed'
                               : 'bg-foreground text-background hover:opacity-90'
                           }`}
                         >
-                          <ShoppingBag className="w-4 h-4" />
-                          {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
+                          <ShoppingBag className="w-4 h-4 shrink-0" />
+                          <span className="[@media(max-height:760px)]:truncate">{isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}</span>
                         </button>
                         <button
                           onClick={() => {
                             const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
                             openStyleKit(product, 'counterparts', variantTitle);
                           }}
-                          className="px-4 py-3 border border-foreground/30 text-foreground font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center justify-center gap-2 hover:bg-foreground/5 transition-colors [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:py-2.5 [@media(max-height:760px)]:text-[10.5px] [@media(max-height:760px)]:whitespace-nowrap [@media(max-height:760px)]:shrink-0"
+                          className="px-4 py-3 border border-foreground/30 text-foreground font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center justify-center gap-2 hover:bg-foreground/5 transition-colors [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:py-0 [@media(max-height:760px)]:px-2.5 [@media(max-height:760px)]:text-[10.5px] [@media(max-height:760px)]:whitespace-nowrap [@media(max-height:760px)]:min-w-0"
                         >
-                          <Layers className="w-4 h-4" />
+                          <Layers className="w-4 h-4 shrink-0" />
                           BUILD A SET
                         </button>
                         <button
                           onClick={() => setIsSaved(!isSaved)}
-                          className={`p-3 border rounded-lg transition-colors text-foreground [@media(max-height:760px)]:p-2.5 [@media(max-height:760px)]:shrink-0 ${
+                          className={`p-3 border rounded-lg transition-colors text-foreground flex items-center justify-center [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:w-9 [@media(max-height:760px)]:p-0 [@media(max-height:760px)]:shrink-0 ${
                             isSaved ? 'border-foreground/60' : 'border-foreground/30 hover:border-foreground/60'
                           }`}
                         >
-                          <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                          <Heart className={`w-5 h-5 [@media(max-height:760px)]:w-4 [@media(max-height:760px)]:h-4 ${isSaved ? 'fill-current' : ''}`} />
                         </button>
                       </div>
                     </div>
