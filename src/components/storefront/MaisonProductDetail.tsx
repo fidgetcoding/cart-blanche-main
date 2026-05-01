@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { splitSentences } from '@/lib/format-description';
+import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
 
 interface MaisonProductDetailProps {
   product: DemoProduct | null;
@@ -125,6 +126,11 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
 export function MaisonProductDetail({ product, products, allProducts, onClose, onNavigate, onBuildSet }: MaisonProductDetailProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
+  const [waitlistFormOpen, setWaitlistFormOpen] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistName, setWaitlistName] = useState('');
+  const [waitlistSize, setWaitlistSize] = useState('');
+  const { submit: submitWaitlist, submitting: submittingWaitlist } = useWaitlistSignup();
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
