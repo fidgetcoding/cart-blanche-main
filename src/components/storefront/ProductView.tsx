@@ -28,6 +28,9 @@ interface ProductViewProps {
   onNavigate: (newIndex: number) => void;
   activeCategory: string;
   onCategoryChange: (cat: string) => void;
+  activeGenders?: string[];
+  onToggleGender?: (g: string) => void;
+  availableGenders?: Set<string>;
 }
 
 function getWrappingNeighbor(
