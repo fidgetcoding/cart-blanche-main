@@ -8,6 +8,8 @@ import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
 import { type DemoProduct, PRODUCT_TYPES, type ProductType, getImageUrl } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useProductWaitlist } from '@/hooks/use-product-waitlist';
+import { WaitlistTable } from '@/components/admin/WaitlistTable';
 
 interface ProductRow {
   id: string;
@@ -95,6 +97,8 @@ function getTagTextColor(tag: string) {
 
 export default function AdminInventory() {
   const { layout: gridLayout, saveHiddenTags, saveHiddenProductIds, saveHiddenGenders, saveDemoProductOverride, saveLayout, getAllProductsUnfiltered } = useGridLayout();
+  const { forProduct: getWaitlistForProduct, countFor: countWaitlistFor, markFulfilled: markWaitlistFulfilled, deleteSignup: deleteWaitlistSignup } = useProductWaitlist();
+  const editProductWaitlistRef = useRef<HTMLDivElement>(null);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -1724,6 +1728,30 @@ export default function AdminInventory() {
                             )}
                           </div>
                         </div>
+
+                        {/* Waitlist summary — small block linking to full management in the Edit Product modal */}
+                        <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                          <div>
+                            <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">WAITLIST</p>
+                            <p className="text-sm font-display text-foreground">
+                              {countWaitlistFor(p.id)} {countWaitlistFor(p.id) === 1 ? 'signup' : 'signups'}
+                            </p>
+                          </div>
+                          {countWaitlistFor(p.id) > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditPanel(p);
+                                setTimeout(() => {
+                                  editProductWaitlistRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }, 100);
+                              }}
+                              className="text-[10px] font-display tracking-widest text-foreground/70 hover:text-foreground border border-border/50 hover:border-foreground/40 px-3 py-1.5 rounded transition-colors"
+                            >
+                              VIEW ALL →
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -2357,6 +2385,21 @@ export default function AdminInventory() {
                     <p className="text-xs text-muted-foreground text-center py-3">No sizes yet — add one above</p>
                   )}
                 </div>
+              </div>
+
+              {/* Waitlist — full management table */}
+              <div ref={editProductWaitlistRef} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-display tracking-widest text-muted-foreground">WAITLIST</p>
+                  <p className="text-[10px] text-muted-foreground/60">
+                    {getWaitlistForProduct(editingProduct.id).length} {getWaitlistForProduct(editingProduct.id).length === 1 ? 'signup' : 'signups'}
+                  </p>
+                </div>
+                <WaitlistTable
+                  signups={getWaitlistForProduct(editingProduct.id)}
+                  onMarkFulfilled={markWaitlistFulfilled}
+                  onDelete={deleteWaitlistSignup}
+                />
               </div>
 
               {/* Storefront visibility */}
