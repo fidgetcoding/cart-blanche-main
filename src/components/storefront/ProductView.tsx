@@ -665,6 +665,14 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           </motion.div>
         </AnimatePresence>
 
+        {/* Navigation hints — bottom left */}
+        <div className="group absolute bottom-14 left-6 pointer-events-auto cursor-default">
+          <p className="text-[10px] tracking-wider text-muted-foreground/30 group-hover:text-foreground/80 transition-colors duration-700" style={{ fontFamily: 'var(--font-body)' }}>
+            <span className="hidden md:inline">SWIPE OR ARROW KEYS TO BROWSE PRODUCTS · SWIPE IMAGE TO CYCLE PHOTOS · CLICK + TO ADD TO CART</span>
+            <span className="md:hidden">SWIPE TO BROWSE · SWIPE IMAGE FOR PHOTOS · TAP + TO ADD TO CART</span>
+          </p>
+        </div>
+
         {/* Position indicator — bottom right */}
         <div className="absolute bottom-14 right-6 pointer-events-auto">
           <span className="text-[10px] font-display tracking-widest text-foreground/40">
