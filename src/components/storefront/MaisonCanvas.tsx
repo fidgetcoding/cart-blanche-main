@@ -295,6 +295,10 @@ export function MaisonCanvas() {
                     </div>
                   </>
                 )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* View toggle — hidden when detail is open */}
         {!selectedProduct && (
