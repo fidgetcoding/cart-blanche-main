@@ -72,7 +72,7 @@ export function MaisonCanvas() {
   const productTypes = useMemo(() => {
     const hiddenSet = new Set((layout?.hiddenProductTypes || []).map(t => t.toUpperCase()));
     // Derive from actual products, not static constant — matches settings pills
-    const fromProducts = new Set(allProducts.map(p => (p.product_category || '').toUpperCase()).filter(Boolean));
+    const fromProducts = new Set(allProducts.map(p => (p.product_type || '').toUpperCase()).filter(Boolean));
     return ['ALL', ...Array.from(fromProducts).sort().filter(c => !hiddenSet.has(c))];
   }, [layout, allProducts]);
 
@@ -81,7 +81,7 @@ export function MaisonCanvas() {
     setActiveCategory(cat);
     const filtered = allProducts.filter(p => {
       const matchesCat = cat === 'ALL' || p.category.toUpperCase() === cat;
-      const matchesType = activeType === 'ALL' || p.product_category?.toUpperCase() === activeType;
+      const matchesType = activeType === 'ALL' || p.product_type?.toUpperCase() === activeType;
       return matchesCat && matchesType;
     });
     if (filtered.length === 0 && activeType !== 'ALL') {
@@ -94,7 +94,7 @@ export function MaisonCanvas() {
     setActiveType(type);
     const filtered = allProducts.filter(p => {
       const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
-      const matchesType = type === 'ALL' || p.product_category?.toUpperCase() === type;
+      const matchesType = type === 'ALL' || p.product_type?.toUpperCase() === type;
       return matchesCat && matchesType;
     });
     if (filtered.length === 0 && activeCategory !== 'ALL') {
@@ -105,7 +105,7 @@ export function MaisonCanvas() {
   const filteredProducts = useMemo(() => {
     return allProducts.filter(p => {
       const matchesCat = activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory;
-      const matchesType = activeType === 'ALL' || p.product_category?.toUpperCase() === activeType;
+      const matchesType = activeType === 'ALL' || p.product_type?.toUpperCase() === activeType;
       return matchesCat && matchesType;
     });
   }, [allProducts, activeCategory, activeType]);

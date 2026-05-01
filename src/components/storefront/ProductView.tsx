@@ -142,7 +142,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   // If the shopper has already locked a size for this garment group (top vs bottom),
   // pre-select the matching variant on the next product in that group.
   useEffect(() => {
-    const group = getSizeGroup(product?.product_category);
+    const group = getSizeGroup(product?.product_type);
     const remembered = group ? rememberedSizeByGroup.get(group) : undefined;
     const match = remembered
       ? product?.variants.find(v => v.title === remembered && v.inventory_count > 0)
@@ -517,7 +517,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                               const lockSize = () => {
                                 if (v.inventory_count === 0) return;
                                 setSelectedVariant(v.id);
-                                const group = getSizeGroup(product.product_category);
+                                const group = getSizeGroup(product.product_type);
                                 if (group) rememberedSizeByGroup.set(group, v.title);
                               };
                               return (
@@ -615,7 +615,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
       <SizeChartOverlay
         open={sizeChartOpen}
-        category={product.product_category || product.category}
+        category={product.product_type || product.category}
         onClose={() => setSizeChartOpen(false)}
       />
     </motion.div>

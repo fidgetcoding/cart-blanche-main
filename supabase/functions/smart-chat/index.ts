@@ -467,7 +467,7 @@ async function executeTool(
       return {
         action: "generate_copy",
         product_title: product.title,
-        product_category: product.category,
+        product_type: product.category,
         product_price: product.price,
         current_description: product.description,
         requested_type: args.type,

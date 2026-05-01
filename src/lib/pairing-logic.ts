@@ -17,11 +17,11 @@ const ZONE_MAP: Record<string, BodyZone> = {
 };
 
 export function getBodyZone(product: DemoProduct): BodyZone {
-  // Use product_category first (typed field), fall back to category string
-  const pc = product.product_category?.toLowerCase();
+  // Use product_type first (typed field), fall back to category string
+  const pc = product.product_type?.toLowerCase();
   if (pc && ZONE_MAP[pc]) return ZONE_MAP[pc];
 
-  // Heuristic fallback based on category string (for DB products without product_category)
+  // Heuristic fallback based on category string (for DB products without product_type)
   const cat = product.category?.toLowerCase() || '';
   if (/pant|trouser|jogger|short|cargo/i.test(cat) || /pant|trouser|jogger|short|cargo/i.test(product.title)) return 'bottom';
   if (/jacket|coat|hoodie|sweater|shirt|tee|polo|tank|crewneck|blazer|vest|sleeve|puffer|trench|bomber|windbreaker|moto|overcoat/i.test(cat)
@@ -105,8 +105,8 @@ export function getSuggestedProducts({
     if (b.price >= priceLow && b.price <= priceHigh) scoreB += 3;
 
     if (mode === 'extras') {
-      if (a.product_category === anchor.product_category) scoreA += 2;
-      if (b.product_category === anchor.product_category) scoreB += 2;
+      if (a.product_type === anchor.product_type) scoreA += 2;
+      if (b.product_type === anchor.product_type) scoreB += 2;
     }
 
     return scoreB - scoreA;
