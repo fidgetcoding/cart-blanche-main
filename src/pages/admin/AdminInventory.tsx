@@ -1536,9 +1536,14 @@ export default function AdminInventory() {
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">TAGS</p>
                           <div className="flex items-center gap-2 flex-wrap">
                             {p.tags.map(tag => (
-                              <span key={tag} className={`text-[10px] font-display px-2 py-1 rounded border inline-flex items-center gap-1.5 ${getTagColor(tag)}`}>
+                              <span key={tag} className={`text-[10px] font-display px-2 py-1 rounded border inline-flex items-center gap-1.5 ${getTagColor(tag)} ${p.isDemo ? 'opacity-60' : ''}`}>
                                 {tag.toUpperCase().replace('-', ' ')}
-                                <button onClick={(e) => { e.stopPropagation(); removeTagFromProduct(p.id, tag); }} className="hover:opacity-70">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; removeTagFromProduct(p.id, tag); }}
+                                  disabled={p.isDemo}
+                                  title={p.isDemo ? 'Demo product — tag edits do not persist' : undefined}
+                                  className={p.isDemo ? 'cursor-not-allowed opacity-50' : 'hover:opacity-70'}
+                                >
                                   <X className="w-2.5 h-2.5" />
                                 </button>
                               </span>
@@ -1562,8 +1567,10 @@ export default function AdminInventory() {
                               </div>
                             ) : (
                               <button
-                                onClick={(e) => { e.stopPropagation(); setAddingTagForId(p.id); setNewTag(''); }}
-                                className="text-[10px] font-display px-2 py-1 rounded border border-dashed border-border text-muted-foreground hover:bg-secondary transition-colors inline-flex items-center gap-1"
+                                onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; setAddingTagForId(p.id); setNewTag(''); }}
+                                disabled={p.isDemo}
+                                title={p.isDemo ? 'Demo product — tag edits do not persist' : undefined}
+                                className={`text-[10px] font-display px-2 py-1 rounded border border-dashed border-border text-muted-foreground transition-colors inline-flex items-center gap-1 ${p.isDemo ? 'opacity-40 cursor-not-allowed' : 'hover:bg-secondary'}`}
                               >
                                 <Plus className="w-2.5 h-2.5" /> ADD TAG
                               </button>
@@ -1628,9 +1635,11 @@ export default function AdminInventory() {
                                   type="number"
                                   value={inlineValues[p.id]?.weight ?? String(p.weight_oz)}
                                   onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: e.target.value } }))}
-                                  className="w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                                  disabled={p.isDemo}
+                                  className={`w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring ${p.isDemo ? 'opacity-40 cursor-not-allowed' : ''}`}
                                   autoFocus
                                   onKeyDown={e => {
+                                    if (p.isDemo) return;
                                     if (e.key === 'Enter') {
                                       const val = parseFloat(inlineValues[p.id]?.weight);
                                       if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
@@ -1640,6 +1649,7 @@ export default function AdminInventory() {
                                   }}
                                 />
                                 <button onClick={() => {
+                                  if (p.isDemo) return;
                                   const val = parseFloat(inlineValues[p.id]?.weight);
                                   if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
                                   setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
@@ -1647,8 +1657,10 @@ export default function AdminInventory() {
                               </div>
                             ) : (
                               <button
-                                onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: String(p.weight_oz) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: true } })); }}
-                                className="text-sm font-display text-foreground hover:underline"
+                                onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: String(p.weight_oz) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: true } })); }}
+                                disabled={p.isDemo}
+                                title={p.isDemo ? 'Demo product — weight edits do not persist' : undefined}
+                                className={`text-sm font-display text-foreground ${p.isDemo ? 'opacity-40 cursor-not-allowed' : 'hover:underline'}`}
                               >{p.weight_oz > 0 ? `${p.weight_oz} oz` : <span className="text-muted-foreground italic">Set weight</span>}</button>
                             )}
                           </div>
@@ -1656,16 +1668,22 @@ export default function AdminInventory() {
                             <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">SHIPPING</p>
                             <div className="flex items-center gap-1 bg-secondary/30 rounded-lg p-0.5 w-fit" onClick={e => e.stopPropagation()}>
                               <button
-                                onClick={() => setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'domestic' } : pr))}
+                                onClick={() => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'domestic' } : pr)); }}
+                                disabled={p.isDemo}
+                                title={p.isDemo ? 'Demo product — shipping edits do not persist' : undefined}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md transition-colors ${
+                                  p.isDemo ? 'opacity-40 cursor-not-allowed text-muted-foreground/40' :
                                   p.shipping_type === 'domestic' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
                                 }`}
                               >
                                 <Home className="w-3 h-3" /> DOMESTIC
                               </button>
                               <button
-                                onClick={() => setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'international' } : pr))}
+                                onClick={() => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'international' } : pr)); }}
+                                disabled={p.isDemo}
+                                title={p.isDemo ? 'Demo product — shipping edits do not persist' : undefined}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md transition-colors ${
+                                  p.isDemo ? 'opacity-40 cursor-not-allowed text-muted-foreground/40' :
                                   p.shipping_type === 'international' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
                                 }`}
                               >
@@ -1673,11 +1691,11 @@ export default function AdminInventory() {
                               </button>
                             </div>
                             {p.shipping_type === 'international' && (
-                              <div className="mt-2" onClick={e => e.stopPropagation()}>
+                              <div className={`mt-2 ${p.isDemo ? 'opacity-40 pointer-events-none' : ''}`} onClick={e => e.stopPropagation()} title={p.isDemo ? 'Demo product — HS code edits do not persist' : undefined}>
                                 <p className="text-[10px] text-muted-foreground font-display tracking-widest mb-1">HS CODE</p>
                                 <HsCodePicker
                                   value={p.hs_code}
-                                  onChange={(code) => setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: code } : pr))}
+                                  onChange={(code) => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: code } : pr)); }}
                                   compact
                                 />
                               </div>
@@ -2010,6 +2028,12 @@ export default function AdminInventory() {
             >
               <h2 className="font-display text-lg font-bold">Edit Product</h2>
 
+              {editingProduct.isDemo && (
+                <div className="px-4 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-500 text-[11px] font-display tracking-wide">
+                  DEMO PRODUCT — Edits made here will NOT persist. To test product changes, use a real product (add one via the Add Product flow).
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground">TITLE</label>
                 <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
@@ -2336,7 +2360,9 @@ export default function AdminInventory() {
 
               <div className="flex gap-3 pt-2">
                 <button onClick={saveProductEdit}
-                  className="flex-1 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity">
+                  disabled={editingProduct.isDemo}
+                  title={editingProduct.isDemo ? 'Demo product — changes will not persist' : undefined}
+                  className={`flex-1 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity ${editingProduct.isDemo ? 'opacity-40 cursor-not-allowed' : ''}`}>
                   SAVE
                 </button>
                 <button onClick={() => setEditingProduct(null)}
