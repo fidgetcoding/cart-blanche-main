@@ -1633,32 +1633,41 @@ export default function AdminInventory() {
                                   type="number"
                                   value={inlineValues[p.id]?.weight ?? String(p.weight_oz)}
                                   onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: e.target.value } }))}
-                                  disabled={p.isDemo}
-                                  className={`w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring ${p.isDemo ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                  className="w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                                   autoFocus
                                   onKeyDown={e => {
-                                    if (p.isDemo) return;
                                     if (e.key === 'Enter') {
                                       const val = parseFloat(inlineValues[p.id]?.weight);
-                                      if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                      if (!isNaN(val) && val >= 0) {
+                                        setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                        if (p.isDemo) {
+                                          saveDemoProductOverride(p.id, { weight_oz: val });
+                                        } else {
+                                          setHasUnsavedChanges(true);
+                                        }
+                                      }
                                       setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
                                     }
                                     if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
                                   }}
                                 />
                                 <button onClick={() => {
-                                  if (p.isDemo) return;
                                   const val = parseFloat(inlineValues[p.id]?.weight);
-                                  if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                  if (!isNaN(val) && val >= 0) {
+                                    setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                    if (p.isDemo) {
+                                      saveDemoProductOverride(p.id, { weight_oz: val });
+                                    } else {
+                                      setHasUnsavedChanges(true);
+                                    }
+                                  }
                                   setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
                                 }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
                               </div>
                             ) : (
                               <button
-                                onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: String(p.weight_oz) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: true } })); }}
-                                disabled={p.isDemo}
-                                title={p.isDemo ? 'Demo product — weight edits do not persist' : undefined}
-                                className={`text-sm font-display text-foreground ${p.isDemo ? 'opacity-40 cursor-not-allowed' : 'hover:underline'}`}
+                                onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: String(p.weight_oz) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: true } })); }}
+                                className="text-sm font-display text-foreground hover:underline"
                               >{p.weight_oz > 0 ? `${p.weight_oz} oz` : <span className="text-muted-foreground italic">Set weight</span>}</button>
                             )}
                           </div>
@@ -1666,22 +1675,30 @@ export default function AdminInventory() {
                             <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">SHIPPING</p>
                             <div className="flex items-center gap-1 bg-secondary/30 rounded-lg p-0.5 w-fit" onClick={e => e.stopPropagation()}>
                               <button
-                                onClick={() => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'domestic' } : pr)); }}
-                                disabled={p.isDemo}
-                                title={p.isDemo ? 'Demo product — shipping edits do not persist' : undefined}
+                                onClick={() => {
+                                  setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'domestic' } : pr));
+                                  if (p.isDemo) {
+                                    saveDemoProductOverride(p.id, { shipping_type: 'domestic' });
+                                  } else {
+                                    setHasUnsavedChanges(true);
+                                  }
+                                }}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md transition-colors ${
-                                  p.isDemo ? 'opacity-40 cursor-not-allowed text-muted-foreground/40' :
                                   p.shipping_type === 'domestic' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
                                 }`}
                               >
                                 <Home className="w-3 h-3" /> DOMESTIC
                               </button>
                               <button
-                                onClick={() => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'international' } : pr)); }}
-                                disabled={p.isDemo}
-                                title={p.isDemo ? 'Demo product — shipping edits do not persist' : undefined}
+                                onClick={() => {
+                                  setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'international' } : pr));
+                                  if (p.isDemo) {
+                                    saveDemoProductOverride(p.id, { shipping_type: 'international' });
+                                  } else {
+                                    setHasUnsavedChanges(true);
+                                  }
+                                }}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md transition-colors ${
-                                  p.isDemo ? 'opacity-40 cursor-not-allowed text-muted-foreground/40' :
                                   p.shipping_type === 'international' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
                                 }`}
                               >
@@ -1689,11 +1706,18 @@ export default function AdminInventory() {
                               </button>
                             </div>
                             {p.shipping_type === 'international' && (
-                              <div className={`mt-2 ${p.isDemo ? 'opacity-40 pointer-events-none' : ''}`} onClick={e => e.stopPropagation()} title={p.isDemo ? 'Demo product — HS code edits do not persist' : undefined}>
+                              <div className="mt-2" onClick={e => e.stopPropagation()}>
                                 <p className="text-[10px] text-muted-foreground font-display tracking-widest mb-1">HS CODE</p>
                                 <HsCodePicker
                                   value={p.hs_code}
-                                  onChange={(code) => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: code } : pr)); }}
+                                  onChange={(code) => {
+                                    setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: code } : pr));
+                                    if (p.isDemo) {
+                                      saveDemoProductOverride(p.id, { hs_code: code });
+                                    } else {
+                                      setHasUnsavedChanges(true);
+                                    }
+                                  }}
                                   compact
                                 />
                               </div>
