@@ -561,6 +561,18 @@ export default function AdminInventory() {
             gender: p.gender || 'unisex',
             status: p.status,
           } as any).eq('id', p.id));
+          // Persist variant changes (title + inventory_count). Skip variants
+          // whose id starts with 'new-' here — those are inserts and
+          // currently only the Edit Product modal flow creates them. The
+          // bulk-save path is for in-place edits to existing variant rows.
+          for (const v of p.variants) {
+            if (!v.id.startsWith('new-')) {
+              await supabase.from('product_variants').update({
+                title: v.title,
+                inventory_count: v.inventory_count,
+              }).eq('id', v.id);
+            }
+          }
         }
       }
     }
@@ -631,6 +643,7 @@ export default function AdminInventory() {
       return { ...p, variants, totalStock: variants.reduce((s, v) => s + v.inventory_count, 0) };
     }));
     setEditingVariantId(null);
+    setHasUnsavedChanges(true);
   }
 
   function addTagToProduct(productId: string, tag: string) {
