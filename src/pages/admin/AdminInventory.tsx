@@ -154,6 +154,11 @@ export default function AdminInventory() {
     }
   }, [gridLayout]);
 
+  // Gender management — persisted to grid_layouts.hidden_genders (Phase 2C).
+  const DEFAULT_GENDERS = ['men', 'women', 'unisex'];
+  const [hiddenGenders, setHiddenGenders] = useState<string[]>([]);
+  const [genderEditMode, setGenderEditMode] = useState(false);
+
   // Sync hiddenGenders from gridLayout once loaded (Phase 2C)
   useEffect(() => {
     if (gridLayout?.hiddenGenders) {
@@ -161,10 +166,6 @@ export default function AdminInventory() {
     }
   }, [gridLayout]);
 
-  // Gender management — persisted to grid_layouts.hidden_genders (Phase 2C).
-  const DEFAULT_GENDERS = ['men', 'women', 'unisex'];
-  const [hiddenGenders, setHiddenGenders] = useState<string[]>([]);
-  const [genderEditMode, setGenderEditMode] = useState(false);
   const toggleGenderVisibility = async (g: string) => {
     const newHidden = hiddenGenders.includes(g)
       ? hiddenGenders.filter(x => x !== g)
