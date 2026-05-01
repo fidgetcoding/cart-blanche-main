@@ -402,6 +402,12 @@ export default function AdminInventory() {
 
   async function saveProductEdit() {
     if (!editingProduct) return;
+    // Defense-in-depth: SAVE button is disabled for demos, but guard the
+    // handler too in case it fires via keyboard or other path.
+    if (editingProduct.isDemo) {
+      setEditingProduct(null);
+      return;
+    }
     
     // Update local state
     setProducts(prev => prev.map(p =>
@@ -637,6 +643,12 @@ export default function AdminInventory() {
   function saveVariantStock(productId: string, variantId: string) {
     const count = parseInt(editVariantValue);
     if (isNaN(count) || count < 0) return;
+    // Defense-in-depth: even if UI somehow fires this on a demo product, refuse.
+    const targetProduct = products.find(p => p.id === productId);
+    if (targetProduct?.isDemo) {
+      setEditingVariantId(null);
+      return;
+    }
     setProducts(prev => prev.map(p => {
       if (p.id !== productId) return p;
       const variants = p.variants.map(v => v.id === variantId ? { ...v, inventory_count: count } : v);
@@ -648,6 +660,8 @@ export default function AdminInventory() {
 
   function addTagToProduct(productId: string, tag: string) {
     if (!tag.trim()) return;
+    const target = products.find(p => p.id === productId);
+    if (target?.isDemo) return;
     setProducts(prev => prev.map(p =>
       p.id === productId && !p.tags.includes(tag.trim().toLowerCase())
         ? { ...p, tags: [...p.tags, tag.trim().toLowerCase()] }
@@ -658,6 +672,8 @@ export default function AdminInventory() {
   }
 
   function removeTagFromProduct(productId: string, tag: string) {
+    const target = products.find(p => p.id === productId);
+    if (target?.isDemo) return;
     setProducts(prev => prev.map(p =>
       p.id === productId ? { ...p, tags: p.tags.filter(t => t !== tag) } : p
     ));
@@ -1144,6 +1160,11 @@ export default function AdminInventory() {
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-sm font-medium truncate">{p.title}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {p.isDemo && (
+                        <span className="text-[10px] font-display px-1.5 py-0.5 rounded border border-amber-500/40 bg-amber-500/10 text-amber-500" title="Demo product — per-product edits do not persist. Add a real product to test changes.">
+                          DEMO
+                        </span>
+                      )}
                       {p.product_type && (
                         <span className="text-[10px] font-display px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground/70">
                           {p.product_type.toUpperCase()}
@@ -1427,15 +1448,20 @@ export default function AdminInventory() {
                                 key={g}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  if (p.isDemo) return;
                                   setProducts(prev => prev.map(pr =>
                                     pr.id === p.id ? { ...pr, gender: g } : pr
                                   ));
                                   setHasUnsavedChanges(true);
                                 }}
+                                disabled={p.isDemo}
+                                title={p.isDemo ? 'Demo product — gender edits do not persist' : undefined}
                                 className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                                  (p.gender || 'unisex').toLowerCase() === g
-                                    ? 'bg-foreground/10 text-foreground border-foreground/20'
-                                    : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                                  p.isDemo
+                                    ? 'opacity-40 cursor-not-allowed bg-transparent text-muted-foreground/40 border-border/30'
+                                    : (p.gender || 'unisex').toLowerCase() === g
+                                      ? 'bg-foreground/10 text-foreground border-foreground/20'
+                                      : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
                                 }`}
                               >
                                 {g.toUpperCase()}
@@ -1578,8 +1604,10 @@ export default function AdminInventory() {
                                     </div>
                                   ) : (
                                     <button
-                                      onClick={(e) => { e.stopPropagation(); setEditingVariantId(v.id); setEditVariantValue(String(v.inventory_count)); }}
-                                      className={`text-sm font-display hover:underline ${vIsOut ? 'text-destructive' : vIsLow ? 'text-warning' : 'text-foreground/70'}`}
+                                      onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; setEditingVariantId(v.id); setEditVariantValue(String(v.inventory_count)); }}
+                                      disabled={p.isDemo}
+                                      title={p.isDemo ? 'Demo product — inventory edits do not persist' : 'Edit inventory'}
+                                      className={`text-sm font-display ${p.isDemo ? 'cursor-not-allowed opacity-50' : 'hover:underline'} ${vIsOut ? 'text-destructive' : vIsLow ? 'text-warning' : 'text-foreground/70'}`}
                                     >
                                       {v.inventory_count}
                                     </button>
