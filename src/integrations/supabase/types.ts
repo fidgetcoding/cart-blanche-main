@@ -244,6 +244,7 @@ export type Database = {
       grid_layouts: {
         Row: {
           category_order: string[]
+          demo_product_overrides: Json
           hidden_genders: string[]
           hidden_product_ids: string[]
           hidden_product_types: string[]
@@ -256,6 +257,7 @@ export type Database = {
         }
         Insert: {
           category_order?: string[]
+          demo_product_overrides?: Json
           hidden_genders?: string[]
           hidden_product_ids?: string[]
           hidden_product_types?: string[]
@@ -268,6 +270,7 @@ export type Database = {
         }
         Update: {
           category_order?: string[]
+          demo_product_overrides?: Json
           hidden_genders?: string[]
           hidden_product_ids?: string[]
           hidden_product_types?: string[]
