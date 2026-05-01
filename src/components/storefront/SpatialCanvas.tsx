@@ -831,9 +831,9 @@ export function SpatialCanvas() {
           </span>
         </div>
 
-        {/* Center: Category nav — full on desktop, hamburger on mobile */}
+        {/* Center: Category nav + gender symbols as one centered group */}
         {!compactHeader ? (
-          <nav className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
+          <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
             <div className="flex items-center gap-1 bg-foreground/[0.06] backdrop-blur-xl border border-foreground/[0.08] rounded-lg px-1.5 py-1 shadow-[0_4px_30px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
               {CATEGORIES.map(cat => (
                 <button style={{ fontSize: 'var(--font-size-body, 10px)', fontFamily: 'var(--font-body)', color: themeSettings.bodyFontColor || undefined }}
@@ -850,34 +850,32 @@ export function SpatialCanvas() {
                 </button>
               ))}
             </div>
+
+            {/* Gender symbols — hug the pill, multi-select toggle. Auto-hides when only one in view. */}
+            {showGenderSelector && (
+              <div className="flex items-center gap-2">
+                {['MEN', 'WOMEN', 'UNISEX'].map(g => {
+                  const isActive = activeGenders.includes(g);
+                  return (
+                    <button
+                      key={g}
+                      onClick={() => toggleGender(g)}
+                      className={`p-1 transition-all duration-200 ${
+                        isActive
+                          ? 'text-foreground opacity-100'
+                          : 'text-muted-foreground opacity-40 hover:opacity-80'
+                      }`}
+                      title={g.charAt(0) + g.slice(1).toLowerCase()}
+                      aria-pressed={isActive}
+                    >
+                      <GenderSymbol gender={g.toLowerCase()} size={22} />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </nav>
         ) : null}
-
-        {/* Gender selector — desktop only, no pill container, just symbols.
-            Multi-select toggle: empty selection = ALL implicit. Auto-hides when
-            only one gender is in current view. */}
-        {!compactHeader && showGenderSelector && (
-          <div className="absolute right-[180px] top-1/2 -translate-y-1/2 flex items-center gap-2">
-            {['MEN', 'WOMEN', 'UNISEX'].map(g => {
-              const isActive = activeGenders.includes(g);
-              return (
-                <button
-                  key={g}
-                  onClick={() => toggleGender(g)}
-                  className={`p-1 transition-all duration-200 ${
-                    isActive
-                      ? 'text-foreground opacity-100'
-                      : 'text-muted-foreground opacity-40 hover:opacity-80'
-                  }`}
-                  title={g.charAt(0) + g.slice(1).toLowerCase()}
-                  aria-pressed={isActive}
-                >
-                  <GenderSymbol gender={g.toLowerCase()} size={22} />
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {compactHeader && (
           /* Mobile/tablet: scrollable category pills */
