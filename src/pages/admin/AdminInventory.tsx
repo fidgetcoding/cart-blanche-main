@@ -94,7 +94,7 @@ function getTagTextColor(tag: string) {
 }
 
 export default function AdminInventory() {
-  const { layout: gridLayout, saveHiddenTags, saveHiddenProductIds, saveLayout, getAllProductsUnfiltered } = useGridLayout();
+  const { layout: gridLayout, saveHiddenTags, saveHiddenProductIds, saveHiddenGenders, saveLayout, getAllProductsUnfiltered } = useGridLayout();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -154,13 +154,24 @@ export default function AdminInventory() {
     }
   }, [gridLayout]);
 
-  // Gender management — local state for Phase 2B. Will be persisted to
-  // grid_layouts.hidden_genders in Phase 2C.
+  // Gender management — persisted to grid_layouts.hidden_genders (Phase 2C).
   const DEFAULT_GENDERS = ['men', 'women', 'unisex'];
   const [hiddenGenders, setHiddenGenders] = useState<string[]>([]);
   const [genderEditMode, setGenderEditMode] = useState(false);
-  const toggleGenderVisibility = (g: string) => {
-    setHiddenGenders(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
+
+  // Sync hiddenGenders from gridLayout once loaded (Phase 2C)
+  useEffect(() => {
+    if (gridLayout?.hiddenGenders) {
+      setHiddenGenders(gridLayout.hiddenGenders);
+    }
+  }, [gridLayout]);
+
+  const toggleGenderVisibility = async (g: string) => {
+    const newHidden = hiddenGenders.includes(g)
+      ? hiddenGenders.filter(x => x !== g)
+      : [...hiddenGenders, g];
+    setHiddenGenders(newHidden);
+    await saveHiddenGenders(newHidden);
   };
 
   const toggleTagVisibility = async (tag: string) => {
@@ -540,20 +551,16 @@ export default function AdminInventory() {
     if (session) {
       for (const p of products) {
         if (!p.isDemo) {
-          // NOTE: gender field intentionally not persisted in Phase 2B —
-          // DB column pending in Phase 2C.
-          if (p.gender && p.gender !== 'unisex') {
-            console.warn(`[Phase 2B] gender '${p.gender}' on product ${p.id} not persisted — DB column pending in Phase 2C`);
-          }
-          await supabase.from('products').update({
+          await (supabase.from('products').update({
             title: p.title,
             price: p.price,
             compare_at_price: p.compare_at_price ?? null,
             description: p.description,
             category: p.category,
             tags: p.tags,
+            gender: p.gender || 'unisex',
             status: p.status,
-          }).eq('id', p.id);
+          } as any).eq('id', p.id));
         }
       }
     }
@@ -678,7 +685,7 @@ export default function AdminInventory() {
     if (!session) { setAddSaving(false); return; }
 
     const images = addImages.length > 0 ? addImages : [];
-    const { data: product, error } = await supabase.from('products').insert({
+    const { data: product, error } = await (supabase.from('products').insert({
       merchant_id: session.user.id,
       title: addForm.title.trim(),
       price: parseFloat(addForm.price) || 0,
@@ -687,8 +694,9 @@ export default function AdminInventory() {
       category: addTags.length > 0 ? addTags[0] : '',
       status: addPublishToStorefront ? 'active' : 'draft',
       tags: addTags,
+      gender: addGender || 'unisex',
       images,
-    }).select().single();
+    } as any).select().single());
 
     if (!error && product) {
       const validVariants = addVariants.filter(v => v.title.trim());
@@ -900,12 +908,19 @@ export default function AdminInventory() {
                       setProducts(prev => prev.map(p => p.gender?.toLowerCase() === g ? { ...p, gender: 'unisex' } : p));
                       if (activeGenderFilter === g) setActiveGenderFilter('all');
                       if (hiddenGenders.includes(g)) {
-                        setHiddenGenders(prev => prev.filter(x => x !== g));
+                        const newHidden = hiddenGenders.filter(x => x !== g);
+                        setHiddenGenders(newHidden);
+                        saveHiddenGenders(newHidden);
                       }
-                      // NOTE: Phase 2C will persist to DB. For now this only updates
-                      // local state — non-demo products will revert on refresh until
-                      // gender column is added.
-                      console.warn('[Phase 2B] gender deletion not persisted — DB column pending in Phase 2C');
+                      // Persist gender reset for affected non-demo products
+                      (async () => {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) return;
+                        const affected = products.filter(p => !p.isDemo && p.gender?.toLowerCase() === g);
+                        for (const ap of affected) {
+                          await supabase.from('products').update({ gender: 'unisex' as any }).eq('id', ap.id);
+                        }
+                      })();
                     }}
                     className="w-5 h-5 inline-flex items-center justify-center rounded border border-destructive/40 bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                     title={`Delete gender "${g}"`}

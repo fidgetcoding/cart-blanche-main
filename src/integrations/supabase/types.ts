@@ -244,6 +244,7 @@ export type Database = {
       grid_layouts: {
         Row: {
           category_order: string[]
+          hidden_genders: string[]
           hidden_product_ids: string[]
           hidden_product_types: string[]
           hidden_tags: string[]
@@ -255,6 +256,7 @@ export type Database = {
         }
         Insert: {
           category_order?: string[]
+          hidden_genders?: string[]
           hidden_product_ids?: string[]
           hidden_product_types?: string[]
           hidden_tags?: string[]
@@ -266,6 +268,7 @@ export type Database = {
         }
         Update: {
           category_order?: string[]
+          hidden_genders?: string[]
           hidden_product_ids?: string[]
           hidden_product_types?: string[]
           hidden_tags?: string[]
@@ -527,6 +530,7 @@ export type Database = {
           compare_at_price: number | null
           created_at: string | null
           description: string | null
+          gender: string
           grid_position: Json | null
           id: string
           images: string[] | null
@@ -545,6 +549,7 @@ export type Database = {
           compare_at_price?: number | null
           created_at?: string | null
           description?: string | null
+          gender?: string
           grid_position?: Json | null
           id?: string
           images?: string[] | null
@@ -563,6 +568,7 @@ export type Database = {
           compare_at_price?: number | null
           created_at?: string | null
           description?: string | null
+          gender?: string
           grid_position?: Json | null
           id?: string
           images?: string[] | null
