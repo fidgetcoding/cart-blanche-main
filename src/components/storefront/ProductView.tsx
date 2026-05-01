@@ -8,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { GenderSymbol } from './GenderSymbol';
 import { splitSentences } from '@/lib/format-description';
+import { WaitlistModal } from './WaitlistModal';
 
 // Cross-product size memory: when a shopper locks a size on a top, pre-select
 // that same size on the next top they view (same for bottoms).
@@ -121,6 +122,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [expandDetails, setExpandDetails] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(true);
@@ -301,6 +303,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const variant = product.variants.find(v => v.id === selectedVariant);
   const canAdd = product.variants.length <= 1 || selectedVariant !== null;
   const isOutOfStock = variant ? variant.inventory_count === 0 : false;
+  const isWholeProductOutOfStock = product.variants.every(v => v.inventory_count === 0);
 
   const handleAddToCart = () => {
     if (!canAdd || isOutOfStock) return;
@@ -527,7 +530,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
             {/* Expand button — only renders in collapsed state. When expanded,
                 an X button renders below the action buttons (see after AnimatePresence). */}
-            {!expandDetails && (
+            {!expandDetails && !isWholeProductOutOfStock && (
               <button
                 onClick={() => setExpandDetails(true)}
                 onMouseEnter={() => setExpandDetails(true)}
@@ -547,6 +550,15 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                 ) : (
                   <Plus className="w-5 h-5" />
                 )}
+              </button>
+            )}
+
+            {!expandDetails && isWholeProductOutOfStock && (
+              <button
+                onClick={() => setWaitlistOpen(true)}
+                className="mt-1 px-4 py-2 font-display font-semibold text-sm tracking-wider rounded-full bg-foreground text-background hover:opacity-90 transition-opacity"
+              >
+                JOIN THE WAITLIST
               </button>
             )}
 
@@ -685,6 +697,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         open={sizeChartOpen}
         category={product.product_type || product.category}
         onClose={() => setSizeChartOpen(false)}
+      />
+      <WaitlistModal
+        open={waitlistOpen}
+        onClose={() => setWaitlistOpen(false)}
+        product={product}
       />
     </motion.div>
   );
