@@ -360,7 +360,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                 return (
                   <button
                     key={g}
-                    onMouseEnter={() => onToggleGender(g)}
                     onClick={(e) => { e.stopPropagation(); onToggleGender(g); }}
                     className={`p-1 transition-all duration-200 ${
                       isActive
