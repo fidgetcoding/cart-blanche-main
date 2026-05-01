@@ -94,7 +94,7 @@ function getTagTextColor(tag: string) {
 }
 
 export default function AdminInventory() {
-  const { layout: gridLayout, saveHiddenTags, saveHiddenProductIds, saveHiddenGenders, saveLayout, getAllProductsUnfiltered } = useGridLayout();
+  const { layout: gridLayout, saveHiddenTags, saveHiddenProductIds, saveHiddenGenders, saveDemoProductOverride, saveLayout, getAllProductsUnfiltered } = useGridLayout();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -402,27 +402,31 @@ export default function AdminInventory() {
 
   async function saveProductEdit() {
     if (!editingProduct) return;
-    // Defense-in-depth: SAVE button is disabled for demos, but guard the
-    // handler too in case it fires via keyboard or other path.
-    if (editingProduct.isDemo) {
-      setEditingProduct(null);
-      return;
-    }
-    
-    // Update local state
+
+    const newPrice = parseFloat(editForm.price) || editingProduct.price;
     setProducts(prev => prev.map(p =>
       p.id === editingProduct.id
-        ? { ...p, title: editForm.title, price: parseFloat(editForm.price) || p.price, description: editForm.description, category: editForm.category, images: editingProduct.images, variants: editingProduct.variants, totalStock: editingProduct.variants.reduce((s, v) => s + v.inventory_count, 0), status: editingProduct.status }
+        ? { ...p, title: editForm.title, price: newPrice, description: editForm.description, category: editForm.category, images: editingProduct.images, variants: editingProduct.variants, totalStock: editingProduct.variants.reduce((s, v) => s + v.inventory_count, 0), status: editingProduct.status }
         : p
     ));
 
-    // Persist to DB for non-demo products
-    if (!editingProduct.isDemo) {
+    if (editingProduct.isDemo) {
+      await saveDemoProductOverride(editingProduct.id, {
+        title: editForm.title,
+        price: newPrice,
+        description: editForm.description,
+        category: editForm.category,
+        images: editingProduct.images.map(url => ({ thumb: url, medium: url, full: url })),
+        tags: editingProduct.tags,
+        status: editingProduct.status,
+        variants: editingProduct.variants,
+      });
+    } else {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         await supabase.from('products').update({
           title: editForm.title,
-          price: parseFloat(editForm.price) || editingProduct.price,
+          price: newPrice,
           description: editForm.description,
           category: editForm.category,
           images: editingProduct.images,
@@ -430,7 +434,6 @@ export default function AdminInventory() {
           status: editingProduct.status,
         }).eq('id', editingProduct.id);
 
-        // Update variants
         for (const v of editingProduct.variants) {
           if (v.id.startsWith('new-')) {
             await supabase.from('product_variants').insert({
@@ -643,40 +646,54 @@ export default function AdminInventory() {
   function saveVariantStock(productId: string, variantId: string) {
     const count = parseInt(editVariantValue);
     if (isNaN(count) || count < 0) return;
-    // Defense-in-depth: even if UI somehow fires this on a demo product, refuse.
     const targetProduct = products.find(p => p.id === productId);
-    if (targetProduct?.isDemo) {
-      setEditingVariantId(null);
-      return;
-    }
+    if (!targetProduct) return;
+    const newVariants = targetProduct.variants.map(v =>
+      v.id === variantId ? { ...v, inventory_count: count } : v
+    );
     setProducts(prev => prev.map(p => {
       if (p.id !== productId) return p;
-      const variants = p.variants.map(v => v.id === variantId ? { ...v, inventory_count: count } : v);
-      return { ...p, variants, totalStock: variants.reduce((s, v) => s + v.inventory_count, 0) };
+      return { ...p, variants: newVariants, totalStock: newVariants.reduce((s, v) => s + v.inventory_count, 0) };
     }));
     setEditingVariantId(null);
-    setHasUnsavedChanges(true);
+    if (targetProduct.isDemo) {
+      saveDemoProductOverride(productId, { variants: newVariants });
+    } else {
+      setHasUnsavedChanges(true);
+    }
   }
 
   function addTagToProduct(productId: string, tag: string) {
     if (!tag.trim()) return;
     const target = products.find(p => p.id === productId);
-    if (target?.isDemo) return;
+    if (!target) return;
+    const cleanTag = tag.trim().toLowerCase();
+    if (target.tags.includes(cleanTag)) return;
+    const newTags = [...target.tags, cleanTag];
     setProducts(prev => prev.map(p =>
-      p.id === productId && !p.tags.includes(tag.trim().toLowerCase())
-        ? { ...p, tags: [...p.tags, tag.trim().toLowerCase()] }
-        : p
+      p.id === productId ? { ...p, tags: newTags } : p
     ));
     setNewTag('');
     setAddingTagForId(null);
+    if (target.isDemo) {
+      saveDemoProductOverride(productId, { tags: newTags });
+    } else {
+      setHasUnsavedChanges(true);
+    }
   }
 
   function removeTagFromProduct(productId: string, tag: string) {
     const target = products.find(p => p.id === productId);
-    if (target?.isDemo) return;
+    if (!target) return;
+    const newTags = target.tags.filter(t => t !== tag);
     setProducts(prev => prev.map(p =>
-      p.id === productId ? { ...p, tags: p.tags.filter(t => t !== tag) } : p
+      p.id === productId ? { ...p, tags: newTags } : p
     ));
+    if (target.isDemo) {
+      saveDemoProductOverride(productId, { tags: newTags });
+    } else {
+      setHasUnsavedChanges(true);
+    }
   }
 
   async function handleMediaUpload(file: File, type: 'image' | 'video', target: 'add' | 'edit' = 'add') {
@@ -1160,11 +1177,6 @@ export default function AdminInventory() {
                   <div className="flex-1 min-w-0">
                     <p className="font-display text-sm font-medium truncate">{p.title}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      {p.isDemo && (
-                        <span className="text-[10px] font-display px-1.5 py-0.5 rounded border border-amber-500/40 bg-amber-500/10 text-amber-500" title="Demo product — per-product edits do not persist. Add a real product to test changes.">
-                          DEMO
-                        </span>
-                      )}
                       {p.product_type && (
                         <span className="text-[10px] font-display px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground/70">
                           {p.product_type.toUpperCase()}
@@ -1440,20 +1452,19 @@ export default function AdminInventory() {
                                 key={g}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (p.isDemo) return;
                                   setProducts(prev => prev.map(pr =>
                                     pr.id === p.id ? { ...pr, gender: g } : pr
                                   ));
-                                  setHasUnsavedChanges(true);
+                                  if (p.isDemo) {
+                                    saveDemoProductOverride(p.id, { gender: g });
+                                  } else {
+                                    setHasUnsavedChanges(true);
+                                  }
                                 }}
-                                disabled={p.isDemo}
-                                title={p.isDemo ? 'Demo product — gender edits do not persist' : undefined}
                                 className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
-                                  p.isDemo
-                                    ? 'opacity-40 cursor-not-allowed bg-transparent text-muted-foreground/40 border-border/30'
-                                    : (p.gender || 'unisex').toLowerCase() === g
-                                      ? 'bg-foreground/10 text-foreground border-foreground/20'
-                                      : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
+                                  (p.gender || 'unisex').toLowerCase() === g
+                                    ? 'bg-foreground/10 text-foreground border-foreground/20'
+                                    : 'bg-transparent text-muted-foreground/60 border-border/50 hover:bg-secondary/50'
                                 }`}
                               >
                                 {g.toUpperCase()}
@@ -1528,13 +1539,11 @@ export default function AdminInventory() {
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">TAGS</p>
                           <div className="flex items-center gap-2 flex-wrap">
                             {p.tags.map(tag => (
-                              <span key={tag} className={`text-[10px] font-display px-2 py-1 rounded border inline-flex items-center gap-1.5 ${getTagColor(tag)} ${p.isDemo ? 'opacity-60' : ''}`}>
+                              <span key={tag} className={`text-[10px] font-display px-2 py-1 rounded border inline-flex items-center gap-1.5 ${getTagColor(tag)}`}>
                                 {tag.toUpperCase().replace('-', ' ')}
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; removeTagFromProduct(p.id, tag); }}
-                                  disabled={p.isDemo}
-                                  title={p.isDemo ? 'Demo product — tag edits do not persist' : undefined}
-                                  className={p.isDemo ? 'cursor-not-allowed opacity-50' : 'hover:opacity-70'}
+                                  onClick={(e) => { e.stopPropagation(); removeTagFromProduct(p.id, tag); }}
+                                  className="hover:opacity-70"
                                 >
                                   <X className="w-2.5 h-2.5" />
                                 </button>
@@ -1559,10 +1568,8 @@ export default function AdminInventory() {
                               </div>
                             ) : (
                               <button
-                                onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; setAddingTagForId(p.id); setNewTag(''); }}
-                                disabled={p.isDemo}
-                                title={p.isDemo ? 'Demo product — tag edits do not persist' : undefined}
-                                className={`text-[10px] font-display px-2 py-1 rounded border border-dashed border-border text-muted-foreground transition-colors inline-flex items-center gap-1 ${p.isDemo ? 'opacity-40 cursor-not-allowed' : 'hover:bg-secondary'}`}
+                                onClick={(e) => { e.stopPropagation(); setAddingTagForId(p.id); setNewTag(''); }}
+                                className="text-[10px] font-display px-2 py-1 rounded border border-dashed border-border text-muted-foreground transition-colors inline-flex items-center gap-1 hover:bg-secondary"
                               >
                                 <Plus className="w-2.5 h-2.5" /> ADD TAG
                               </button>
@@ -1603,10 +1610,9 @@ export default function AdminInventory() {
                                     </div>
                                   ) : (
                                     <button
-                                      onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; setEditingVariantId(v.id); setEditVariantValue(String(v.inventory_count)); }}
-                                      disabled={p.isDemo}
-                                      title={p.isDemo ? 'Demo product — inventory edits do not persist' : 'Edit inventory'}
-                                      className={`text-sm font-display ${p.isDemo ? 'cursor-not-allowed opacity-50' : 'hover:underline'} ${vIsOut ? 'text-destructive' : vIsLow ? 'text-warning' : 'text-foreground/70'}`}
+                                      onClick={(e) => { e.stopPropagation(); setEditingVariantId(v.id); setEditVariantValue(String(v.inventory_count)); }}
+                                      title="Edit inventory"
+                                      className={`text-sm font-display hover:underline ${vIsOut ? 'text-destructive' : vIsLow ? 'text-warning' : 'text-foreground/70'}`}
                                     >
                                       {v.inventory_count}
                                     </button>
@@ -1627,32 +1633,41 @@ export default function AdminInventory() {
                                   type="number"
                                   value={inlineValues[p.id]?.weight ?? String(p.weight_oz)}
                                   onChange={e => setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: e.target.value } }))}
-                                  disabled={p.isDemo}
-                                  className={`w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring ${p.isDemo ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                  className="w-24 px-3 py-1.5 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                                   autoFocus
                                   onKeyDown={e => {
-                                    if (p.isDemo) return;
                                     if (e.key === 'Enter') {
                                       const val = parseFloat(inlineValues[p.id]?.weight);
-                                      if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                      if (!isNaN(val) && val >= 0) {
+                                        setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                        if (p.isDemo) {
+                                          saveDemoProductOverride(p.id, { weight_oz: val });
+                                        } else {
+                                          setHasUnsavedChanges(true);
+                                        }
+                                      }
                                       setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
                                     }
                                     if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
                                   }}
                                 />
                                 <button onClick={() => {
-                                  if (p.isDemo) return;
                                   const val = parseFloat(inlineValues[p.id]?.weight);
-                                  if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                  if (!isNaN(val) && val >= 0) {
+                                    setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
+                                    if (p.isDemo) {
+                                      saveDemoProductOverride(p.id, { weight_oz: val });
+                                    } else {
+                                      setHasUnsavedChanges(true);
+                                    }
+                                  }
                                   setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: false } }));
                                 }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
                               </div>
                             ) : (
                               <button
-                                onClick={(e) => { e.stopPropagation(); if (p.isDemo) return; setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: String(p.weight_oz) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: true } })); }}
-                                disabled={p.isDemo}
-                                title={p.isDemo ? 'Demo product — weight edits do not persist' : undefined}
-                                className={`text-sm font-display text-foreground ${p.isDemo ? 'opacity-40 cursor-not-allowed' : 'hover:underline'}`}
+                                onClick={(e) => { e.stopPropagation(); setInlineValues(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: String(p.weight_oz) } })); setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], weight: true } })); }}
+                                className="text-sm font-display text-foreground hover:underline"
                               >{p.weight_oz > 0 ? `${p.weight_oz} oz` : <span className="text-muted-foreground italic">Set weight</span>}</button>
                             )}
                           </div>
@@ -1660,22 +1675,30 @@ export default function AdminInventory() {
                             <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">SHIPPING</p>
                             <div className="flex items-center gap-1 bg-secondary/30 rounded-lg p-0.5 w-fit" onClick={e => e.stopPropagation()}>
                               <button
-                                onClick={() => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'domestic' } : pr)); }}
-                                disabled={p.isDemo}
-                                title={p.isDemo ? 'Demo product — shipping edits do not persist' : undefined}
+                                onClick={() => {
+                                  setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'domestic' } : pr));
+                                  if (p.isDemo) {
+                                    saveDemoProductOverride(p.id, { shipping_type: 'domestic' });
+                                  } else {
+                                    setHasUnsavedChanges(true);
+                                  }
+                                }}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md transition-colors ${
-                                  p.isDemo ? 'opacity-40 cursor-not-allowed text-muted-foreground/40' :
                                   p.shipping_type === 'domestic' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
                                 }`}
                               >
                                 <Home className="w-3 h-3" /> DOMESTIC
                               </button>
                               <button
-                                onClick={() => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'international' } : pr)); }}
-                                disabled={p.isDemo}
-                                title={p.isDemo ? 'Demo product — shipping edits do not persist' : undefined}
+                                onClick={() => {
+                                  setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'international' } : pr));
+                                  if (p.isDemo) {
+                                    saveDemoProductOverride(p.id, { shipping_type: 'international' });
+                                  } else {
+                                    setHasUnsavedChanges(true);
+                                  }
+                                }}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md transition-colors ${
-                                  p.isDemo ? 'opacity-40 cursor-not-allowed text-muted-foreground/40' :
                                   p.shipping_type === 'international' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
                                 }`}
                               >
@@ -1683,11 +1706,18 @@ export default function AdminInventory() {
                               </button>
                             </div>
                             {p.shipping_type === 'international' && (
-                              <div className={`mt-2 ${p.isDemo ? 'opacity-40 pointer-events-none' : ''}`} onClick={e => e.stopPropagation()} title={p.isDemo ? 'Demo product — HS code edits do not persist' : undefined}>
+                              <div className="mt-2" onClick={e => e.stopPropagation()}>
                                 <p className="text-[10px] text-muted-foreground font-display tracking-widest mb-1">HS CODE</p>
                                 <HsCodePicker
                                   value={p.hs_code}
-                                  onChange={(code) => { if (p.isDemo) return; setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: code } : pr)); }}
+                                  onChange={(code) => {
+                                    setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: code } : pr));
+                                    if (p.isDemo) {
+                                      saveDemoProductOverride(p.id, { hs_code: code });
+                                    } else {
+                                      setHasUnsavedChanges(true);
+                                    }
+                                  }}
                                   compact
                                 />
                               </div>
@@ -2020,11 +2050,6 @@ export default function AdminInventory() {
             >
               <h2 className="font-display text-lg font-bold">Edit Product</h2>
 
-              {editingProduct.isDemo && (
-                <div className="px-4 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-500 text-[11px] font-display tracking-wide">
-                  DEMO PRODUCT — Edits made here will NOT persist. To test product changes, use a real product (add one via the Add Product flow).
-                </div>
-              )}
 
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground">TITLE</label>
@@ -2352,9 +2377,7 @@ export default function AdminInventory() {
 
               <div className="flex gap-3 pt-2">
                 <button onClick={saveProductEdit}
-                  disabled={editingProduct.isDemo}
-                  title={editingProduct.isDemo ? 'Demo product — changes will not persist' : undefined}
-                  className={`flex-1 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity ${editingProduct.isDemo ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                  className="flex-1 py-2.5 bg-primary text-primary-foreground font-display text-sm tracking-wider rounded-lg hover:opacity-90 transition-opacity">
                   SAVE
                 </button>
                 <button onClick={() => setEditingProduct(null)}
