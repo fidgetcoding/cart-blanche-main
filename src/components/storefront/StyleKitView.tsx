@@ -659,6 +659,15 @@ export function StyleKitView() {
   const isCounterparts = mode === 'counterparts';
   const splitDirection = isCounterparts ? 'horizontal' : 'vertical';
 
+  // [DEBUG-CHIP] temporary diagnostic logging — remove after verifying
+  console.log('[DEBUG-CHIP] StyleKitView getSuggestedProducts called', {
+    anchorTitle: anchorProduct?.title,
+    anchorGender: anchorProduct?.gender,
+    mode,
+    activeGenders,
+    activeGendersIsArray: Array.isArray(activeGenders),
+    activeGendersLength: activeGenders?.length,
+  });
   const suggestions = getSuggestedProducts({
     anchor: anchorProduct,
     mode,
@@ -667,6 +676,8 @@ export function StyleKitView() {
     presets,
     activeGenders,
   });
+  console.log('[DEBUG-CHIP] StyleKitView suggestions count:', suggestions.length,
+    'first 5:', suggestions.slice(0, 5).map(p => `${p.title} (${p.gender})`));
 
   const handleRemoveProduct = (productId: string) => {
     const removedProduct = lookItems.find(p => p.id === productId);
