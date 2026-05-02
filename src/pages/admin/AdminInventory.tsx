@@ -956,7 +956,7 @@ export default function AdminInventory() {
             }`}>
             ALL TYPES
           </button>
-          {(allProductTypes.length > 0 ? allProductTypes : PRODUCT_TYPES).map(cat => (
+          {allCategoryOptions.map(cat => (
             <button
               key={cat}
               onClick={() => setActiveTypeFilter(cat === activeTypeFilter ? 'all' : cat)}
@@ -966,6 +966,34 @@ export default function AdminInventory() {
               {cat.toUpperCase()}
             </button>
           ))}
+          {addingTypeForId === '__filter__' ? (
+            <input
+              autoFocus
+              value={newTypeInput}
+              onChange={(e) => setNewTypeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const v = addCustomProductType(newTypeInput);
+                  if (v) setActiveTypeFilter(v);
+                  setNewTypeInput('');
+                  setAddingTypeForId(null);
+                } else if (e.key === 'Escape') {
+                  setNewTypeInput('');
+                  setAddingTypeForId(null);
+                }
+              }}
+              onBlur={() => { setNewTypeInput(''); setAddingTypeForId(null); }}
+              placeholder="new category"
+              className="px-3 py-1 text-[10px] font-display tracking-wider rounded-md border border-foreground/30 bg-transparent text-foreground outline-none w-32"
+            />
+          ) : (
+            <button
+              onClick={() => setAddingTypeForId('__filter__')}
+              className="px-3 py-1 text-[10px] font-display tracking-wider rounded-md border border-dashed border-border/60 text-muted-foreground/70 hover:text-foreground hover:border-foreground/40 transition-colors"
+            >
+              + ADD
+            </button>
+          )}
         </div>
         {/* Gender filter strip — same pattern as types, with edit-mode
             for hide-toggle + delete-everywhere */}
