@@ -2016,9 +2016,19 @@ export default function AdminInventory() {
                               ) : (
                                 <>
                                   Use one file for all 3 sizes →
-                                  <p className="text-[9px] text-warning/70 mt-0.5 normal-case tracking-normal">
-                                    ⚠ Storefront will load slower — large files served to small surfaces
-                                  </p>
+                                  {(() => {
+                                    // Show the slow-storefront warning only when relevant:
+                                    // either no images yet, or at least one entry doesn't have 3 unique non-empty URLs.
+                                    const showWarning = p.imagesFull.length === 0 || p.imagesFull.some(img => {
+                                      const urls = [img.thumb, img.medium, img.full].filter(Boolean);
+                                      return new Set(urls).size < 3;
+                                    });
+                                    return showWarning ? (
+                                      <p className="text-[9px] text-warning/70 mt-0.5 normal-case tracking-normal">
+                                        ⚠ Storefront will load slower — large files served to small surfaces
+                                      </p>
+                                    ) : null;
+                                  })()}
                                 </>
                               )}
                             </button>
