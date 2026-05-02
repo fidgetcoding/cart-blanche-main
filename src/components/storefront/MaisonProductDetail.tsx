@@ -579,6 +579,12 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
         variant="maison"
         centerInDetailPanel
       />
+
+      <MaisonWaitlistModal
+        open={waitlistOpen}
+        onClose={() => setWaitlistOpen(false)}
+        product={product}
+      />
     </motion.div>
   );
 }
