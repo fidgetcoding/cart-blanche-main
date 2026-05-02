@@ -485,6 +485,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          colorway_id: string | null
           created_at: string | null
           id: string
           images: string[] | null
@@ -496,6 +497,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          colorway_id?: string | null
           created_at?: string | null
           id?: string
           images?: string[] | null
@@ -507,6 +509,7 @@ export type Database = {
           title: string
         }
         Update: {
+          colorway_id?: string | null
           created_at?: string | null
           id?: string
           images?: string[] | null

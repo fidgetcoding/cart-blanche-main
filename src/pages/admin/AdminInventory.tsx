@@ -31,6 +31,7 @@ interface ProductRow {
     title: string;
     inventory_count: number;
     sku: string | null;
+    colorway_id?: string;
   }[];
   totalStock: number;
   isDemo: boolean;
@@ -188,7 +189,7 @@ export default function AdminInventory() {
   const [addTagInput, setAddTagInput] = useState('');
   const [addProductType, setAddProductType] = useState<ProductType>('');
   const [addGender, setAddGender] = useState<string>('unisex');
-  const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
+  const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number; colorway_id?: string }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
   const [addImages, setAddImages] = useState<string[]>([]);
   const [addColorways, setAddColorways] = useState<Colorway[]>([]);
@@ -548,12 +549,14 @@ export default function AdminInventory() {
               product_id: editingProduct.id,
               title: v.title,
               inventory_count: v.inventory_count,
-            });
+              colorway_id: v.colorway_id ?? null,
+            } as any);
           } else {
             await supabase.from('product_variants').update({
               title: v.title,
               inventory_count: v.inventory_count,
-            }).eq('id', v.id);
+              colorway_id: v.colorway_id ?? null,
+            } as any).eq('id', v.id);
           }
         }
       }
@@ -728,7 +731,8 @@ export default function AdminInventory() {
               await supabase.from('product_variants').update({
                 title: v.title,
                 inventory_count: v.inventory_count,
-              }).eq('id', v.id);
+                colorway_id: v.colorway_id ?? null,
+              } as any).eq('id', v.id);
             }
           }
         }
@@ -1098,7 +1102,8 @@ export default function AdminInventory() {
             product_id: product.id,
             title: v.title.trim(),
             inventory_count: v.inventory_count,
-          }))
+            colorway_id: v.colorway_id ?? null,
+          })) as any
         );
       }
     }
