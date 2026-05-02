@@ -821,6 +821,51 @@ export default function AdminInventory() {
     setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
 
+  // Create a new colorway from the inline form and tag the current image with it.
+  const createColorwayAndTagImage = useCallback((
+    productId: string,
+    imgIdx: number,
+    name: string,
+    hex: string
+  ) => {
+    if (!name.trim()) return;
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const newColorwayId = `${productId}-col-${slug}-${Math.random().toString(36).slice(2, 6)}`;
+    const newColorway: Colorway = { id: newColorwayId, name: name.trim(), hex };
+    const nextColorways = [...(target.colorways || []), newColorway];
+    const nextImages = target.imagesFull.map((img, i) => {
+      if (i !== imgIdx) return img;
+      const { colorway_id: _, ...rest } = img;
+      return { ...rest, colorway_id: newColorwayId };
+    });
+    const flat = nextImages.map(img => img.thumb);
+    setProducts(prev => prev.map(p =>
+      p.id === productId
+        ? { ...p, colorways: nextColorways, images: flat, imagesFull: nextImages }
+        : p
+    ));
+    if (target.isDemo) {
+      saveDemoProductOverride(productId, { colorways: nextColorways, images: nextImages });
+    } else {
+      setHasUnsavedChanges(true);
+    }
+    setInlineColorFormFor(null);
+    setInlineColorName('');
+    setInlineColorHex('#000000');
+    setTagPopoverOpenFor(null);
+  }, [products, saveDemoProductOverride]);
+
+  // Reset inline new-color form whenever the tag popover closes.
+  useEffect(() => {
+    if (tagPopoverOpenFor === null && inlineColorFormFor !== null) {
+      setInlineColorFormFor(null);
+      setInlineColorName('');
+      setInlineColorHex('#000000');
+    }
+  }, [tagPopoverOpenFor, inlineColorFormFor]);
+
   function removeTagFromProduct(productId: string, tag: string) {
     const target = products.find(p => p.id === productId);
     if (!target) return;
