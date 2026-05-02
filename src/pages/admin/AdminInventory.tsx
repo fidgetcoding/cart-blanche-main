@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
-import { type DemoProduct, PRODUCT_TYPES, type ProductType, getImageUrl } from '@/data/demo-data';
+import { type DemoProduct, PRODUCT_TYPES, type ProductType, type Colorway, getImageUrl } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProductWaitlist } from '@/hooks/use-product-waitlist';
 import { WaitlistTable } from '@/components/admin/WaitlistTable';
@@ -19,6 +19,7 @@ interface ProductRow {
   category: string;
   product_type: ProductType;
   gender: string;
+  colorways: Colorway[];
   images: string[];
   description: string;
   tags: string[];
@@ -45,6 +46,7 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     category: p.category,
     product_type: p.product_type || '',
     gender: p.gender || 'unisex',
+    colorways: p.colorways || [],
     images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
     description: p.description,
     tags: [p.category],
@@ -293,6 +295,7 @@ export default function AdminInventory() {
             category: p.category || '',
             product_type: '' as ProductType,
             gender: 'unisex',
+            colorways: ((p as any).colorways as Colorway[]) || [],
             images: p.images || [],
             description: p.description || '',
             tags: p.tags || [p.category || ''].filter(Boolean),

@@ -31,6 +31,15 @@ export type ProductType = 'shirt' | 'pants' | 'jacket' | 'hat' | 'accessory' | '
 
 export const PRODUCT_TYPES: ProductType[] = ['shirt', 'pants', 'jacket', 'shorts', 'hat', 'accessory'];
 
+export interface Colorway {
+  id: string;          // stable id; used for keying + reorder
+  name: string;        // 'Black', 'Heather Grey', 'Camo'
+  hex: string;         // e.g. '#000000' — fills the swatch when
+                        // swatch_image is empty
+  swatch_image?: string; // optional URL — when set, replaces the hex
+                          // fill on the swatch (clipped to circle)
+}
+
 export interface DemoProduct {
   id: string;
   title: string;
@@ -47,6 +56,7 @@ export interface DemoProduct {
   weight_oz?: number;
   shipping_type?: 'domestic' | 'international';
   hs_code?: string;
+  colorways?: Colorway[];
 }
 
 export interface DemoVariant {
@@ -119,14 +129,26 @@ const gridPos = (i: number) => ({
 
 export const DEMO_PRODUCTS: DemoProduct[] = [
   // Row 1: Coats & Jackets
-  { id: 'p1', title: 'Cloud Puffer Jacket', price: 420, compare_at_price: 520, images: [imgSet('p1-cloud-puffer'), imgSet('p1-cloud-puffer-worn')], category: 'outerwear', product_type: 'jacket', gender: 'men', status: 'active', grid_position: gridPos(0), variants: makeVariants('p1'), description: 'Oversized puffer with matte shell. Cloud-weight insulation for sub-zero warmth.', weight_oz: 38, shipping_type: 'domestic' },
+  { id: 'p1', title: 'Cloud Puffer Jacket', price: 420, compare_at_price: 520, images: [imgSet('p1-cloud-puffer'), imgSet('p1-cloud-puffer-worn')], category: 'outerwear', product_type: 'jacket', gender: 'men', status: 'active', grid_position: gridPos(0), variants: makeVariants('p1'), description: 'Oversized puffer with matte shell. Cloud-weight insulation for sub-zero warmth.', weight_oz: 38, shipping_type: 'domestic', colorways: [
+    { id: 'p1-col-burgundy', name: 'Burgundy', hex: '#7B1F2B' },
+    { id: 'p1-col-black', name: 'Black', hex: '#0A0A0A' },
+    { id: 'p1-col-cream', name: 'Cream', hex: '#E8E2D5' },
+    { id: 'p1-col-forest', name: 'Forest', hex: '#1F3A2C' },
+  ] },
   { id: 'p2', title: 'Stealth Trench', price: 380, images: [imgSet('p2-stealth-trench'), imgSet('p2-stealth-trench-worn')], category: 'outerwear', product_type: 'jacket', gender: 'women', status: 'active', grid_position: gridPos(1), variants: makeVariants('p2'), description: 'Minimalist trench coat in water-resistant cotton. Hidden snap closures.', weight_oz: 42, shipping_type: 'domestic' },
   { id: 'p7', title: 'Wool Overcoat', price: 550, images: [imgSet('p7-wool-overcoat'), imgSet('p7-wool-overcoat-worn')], category: 'outerwear', product_type: 'jacket', gender: 'unisex', status: 'active', grid_position: gridPos(2), variants: makeVariants('p7'), description: 'Double-faced Italian wool. Unlined for a clean drape.', weight_oz: 48, shipping_type: 'domestic' },
-  { id: 'p9', title: 'Leather Moto Jacket', price: 680, images: [imgSet('p9-leather-moto'), imgSet('p9-leather-moto-worn')], category: 'outerwear', product_type: 'jacket', gender: 'men', status: 'active', grid_position: gridPos(3), variants: makeVariants('p9'), description: 'Full-grain lambskin with asymmetric zip. Broken in from day one.', weight_oz: 56, shipping_type: 'domestic' },
+  { id: 'p9', title: 'Leather Moto Jacket', price: 680, images: [imgSet('p9-leather-moto'), imgSet('p9-leather-moto-worn')], category: 'outerwear', product_type: 'jacket', gender: 'men', status: 'active', grid_position: gridPos(3), variants: makeVariants('p9'), description: 'Full-grain lambskin with asymmetric zip. Broken in from day one.', weight_oz: 56, shipping_type: 'domestic', colorways: [
+    { id: 'p9-col-black', name: 'Black', hex: '#0A0A0A' },
+    { id: 'p9-col-cognac', name: 'Cognac', hex: '#8B5A3C' },
+    { id: 'p9-col-oxblood', name: 'Oxblood', hex: '#4A1E1E' },
+  ] },
   { id: 'p3', title: 'Bomber Mk IV', price: 290, images: [imgSet('p3-bomber'), imgSet('p3-bomber-worn')], category: 'outerwear', product_type: 'jacket', gender: 'women', status: 'active', grid_position: gridPos(4), variants: makeVariants('p3'), description: 'Technical bomber with ribbed cuffs and exposed zip. Flight-ready.', weight_oz: 28, shipping_type: 'domestic' },
   // Row 2: Light Jackets & Tops
   { id: 'p8', title: 'Windbreaker Shell', price: 195, images: [imgSet('p8-windbreaker'), imgSet('p8-windbreaker-worn')], category: 'outerwear', product_type: 'jacket', gender: 'unisex', status: 'active', grid_position: gridPos(5), variants: makeVariants('p8'), description: 'Packable windbreaker. Reflective tape at seams.', weight_oz: 12, shipping_type: 'domestic' },
-  { id: 'p10', title: 'Track Jacket', price: 210, images: [imgSet('p10-track-jacket'), imgSet('p10-track-jacket-worn')], category: 'streetwear', product_type: 'jacket', gender: 'men', status: 'active', grid_position: gridPos(6), variants: makeVariants('p10'), description: 'Retro-inspired track jacket with contrast piping.', weight_oz: 18, shipping_type: 'domestic' },
+  { id: 'p10', title: 'Track Jacket', price: 210, images: [imgSet('p10-track-jacket'), imgSet('p10-track-jacket-worn')], category: 'streetwear', product_type: 'jacket', gender: 'men', status: 'active', grid_position: gridPos(6), variants: makeVariants('p10'), description: 'Retro-inspired track jacket with contrast piping.', weight_oz: 18, shipping_type: 'domestic', colorways: [
+    { id: 'p10-col-navy', name: 'Navy', hex: '#1A2547' },
+    { id: 'p10-col-cream', name: 'Cream', hex: '#E8E2D5' },
+  ] },
   { id: 'p19', title: 'Deconstructed Blazer', price: 340, images: [imgSet('p19-deconstructed-blazer'), imgSet('p19-deconstructed-blazer-worn')], category: 'new-arrivals', product_type: 'jacket', gender: 'women', status: 'active', grid_position: gridPos(7), variants: makeVariants('p19'), description: 'Unstructured blazer with raw edge details.', weight_oz: 22, shipping_type: 'domestic' },
   { id: 'p4', title: 'Graphic Hoodie', price: 145, images: [imgSet('p4-graphic-hoodie'), imgSet('p4-graphic-hoodie-worn')], category: 'streetwear', product_type: 'shirt', gender: 'unisex', status: 'active', grid_position: gridPos(8), variants: makeVariants('p4'), description: 'Heavy fleece hoodie with screen-printed back graphic.', weight_oz: 24, shipping_type: 'domestic' },
   { id: 'p13', title: 'Core Crewneck', price: 95, images: [imgSet('p13-core-crewneck'), imgSet('p13-core-crewneck-worn')], category: 'essentials', product_type: 'shirt', gender: 'men', status: 'active', grid_position: gridPos(9), variants: makeVariants('p13'), description: 'Mid-weight french terry crewneck. The foundation.', weight_oz: 16, shipping_type: 'domestic' },
