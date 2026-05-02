@@ -606,7 +606,7 @@ function YzTemplateInner() {
 
 export default function YzTemplate() {
   return (
-    <ThemeProvider storageKey="cb-theme-yz" defaults={{ mode: 'dark' }}>
+    <ThemeProvider defaults={{ mode: 'dark' }}>
       <YzTemplateInner />
     </ThemeProvider>
   );
