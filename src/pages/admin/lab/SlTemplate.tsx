@@ -540,7 +540,7 @@ function SlTemplateInner() {
           </div>
         ) : (
           <div className="relative flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 flex flex-col overflow-hidden pointer-events-none select-none opacity-40">
+            <div className="flex-1 flex flex-col overflow-hidden pointer-events-none select-none opacity-80">
               <div className="flex-1 overflow-hidden p-3 space-y-3">
                 {suggestions.length > 0 && (
                   <div className="space-y-4 pt-6">
@@ -568,7 +568,7 @@ function SlTemplateInner() {
                 </div>
               </div>
             </div>
-            <div className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-4 px-6 text-center">
+            <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-4 px-6 text-center">
               <div className="w-14 h-14 rounded-full bg-foreground/5 border border-border flex items-center justify-center">
                 <Lock className="w-6 h-6 text-foreground" />
               </div>
