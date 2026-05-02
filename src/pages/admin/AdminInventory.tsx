@@ -10,6 +10,7 @@ import { type DemoProduct, PRODUCT_TYPES, type ProductType, type Colorway, getIm
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProductWaitlist } from '@/hooks/use-product-waitlist';
 import { WaitlistTable } from '@/components/admin/WaitlistTable';
+import { ColorwayManager } from '@/components/admin/ColorwayManager';
 
 interface ProductRow {
   id: string;
@@ -684,6 +685,19 @@ export default function AdminInventory() {
     setAddingTagForId(null);
     if (target.isDemo) {
       saveDemoProductOverride(productId, { tags: newTags });
+    } else {
+      setHasUnsavedChanges(true);
+    }
+  }
+
+  function setProductColorways(productId: string, next: Colorway[]) {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    setProducts(prev => prev.map(p =>
+      p.id === productId ? { ...p, colorways: next } : p
+    ));
+    if (target.isDemo) {
+      saveDemoProductOverride(productId, { colorways: next });
     } else {
       setHasUnsavedChanges(true);
     }
@@ -1582,6 +1596,15 @@ export default function AdminInventory() {
                               </button>
                             )}
                           </div>
+                        </div>
+
+                        {/* Colorways management */}
+                        <div>
+                          <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">COLORS</p>
+                          <ColorwayManager
+                            colorways={p.colorways || []}
+                            onChange={(next) => setProductColorways(p.id, next)}
+                          />
                         </div>
 
                         {/* Variants / sizes */}
