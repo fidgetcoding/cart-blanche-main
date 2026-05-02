@@ -2300,24 +2300,66 @@ export default function AdminInventory() {
                                 </button>
                               </span>
                             ))}
-                            {addingTagForId === p.id ? (
-                              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                                <input
-                                  value={newTag}
-                                  onChange={e => setNewTag(e.target.value)}
-                                  placeholder="tag name"
-                                  className="w-24 px-2 py-1 bg-secondary border border-border rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-ring"
-                                  onKeyDown={e => { if (e.key === 'Enter') addTagToProduct(p.id, newTag); if (e.key === 'Escape') setAddingTagForId(null); }}
-                                  autoFocus
-                                />
-                                <button onClick={() => addTagToProduct(p.id, newTag)} className="p-0.5 text-success hover:bg-success/20 rounded">
-                                  <Check className="w-3 h-3" />
-                                </button>
-                                <button onClick={() => { setAddingTagForId(null); setNewTag(''); }} className="p-0.5 text-muted-foreground hover:bg-secondary rounded">
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ) : (
+                            {addingTagForId === p.id ? (() => {
+                              const allTags = Array.from(new Set(products.flatMap(pr => pr.tags || []))).sort();
+                              const query = newTag.trim().toLowerCase();
+                              const suggestions = allTags
+                                .filter(t => !p.tags.includes(t))
+                                .filter(t => !query || t.toLowerCase().includes(query));
+                              const queryExists = query && allTags.some(t => t.toLowerCase() === query);
+                              return (
+                                <div className="relative" onClick={e => e.stopPropagation()}>
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      value={newTag}
+                                      onChange={e => setNewTag(e.target.value)}
+                                      placeholder="search or create…"
+                                      className="w-32 px-2 py-1 bg-secondary border border-border rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-ring"
+                                      onKeyDown={e => { if (e.key === 'Enter') addTagToProduct(p.id, newTag); if (e.key === 'Escape') setAddingTagForId(null); }}
+                                      autoFocus
+                                    />
+                                    <button onClick={() => addTagToProduct(p.id, newTag)} disabled={!query} className="p-0.5 text-success hover:bg-success/20 rounded disabled:opacity-30">
+                                      <Check className="w-3 h-3" />
+                                    </button>
+                                    <button onClick={() => { setAddingTagForId(null); setNewTag(''); }} className="p-0.5 text-muted-foreground hover:bg-secondary rounded">
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                  <div className="absolute left-0 top-full mt-1 z-50 w-56 bg-card border border-border rounded-lg shadow-xl p-1.5 max-h-60 overflow-y-auto">
+                                    {suggestions.length > 0 && (
+                                      <>
+                                        <p className="px-2 py-1 text-[9px] font-display tracking-widest text-muted-foreground/70">EXISTING TAGS</p>
+                                        {suggestions.slice(0, 20).map(t => (
+                                          <button
+                                            key={t}
+                                            type="button"
+                                            onClick={() => addTagToProduct(p.id, t)}
+                                            className="w-full text-left px-2 py-1 text-[10px] font-display rounded hover:bg-secondary text-foreground/90"
+                                          >
+                                            {t.toUpperCase().replace('-', ' ')}
+                                          </button>
+                                        ))}
+                                      </>
+                                    )}
+                                    {query && !queryExists && (
+                                      <>
+                                        {suggestions.length > 0 && <div className="border-t border-border/40 my-1" />}
+                                        <button
+                                          type="button"
+                                          onClick={() => addTagToProduct(p.id, newTag)}
+                                          className="w-full text-left px-2 py-1 text-[10px] font-display rounded hover:bg-secondary text-foreground/90 inline-flex items-center gap-1.5"
+                                        >
+                                          <Plus className="w-2.5 h-2.5" /> CREATE "{newTag.trim().toUpperCase()}"
+                                        </button>
+                                      </>
+                                    )}
+                                    {!query && suggestions.length === 0 && (
+                                      <p className="px-2 py-2 text-[10px] text-muted-foreground/70">No existing tags. Type to create one.</p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })() : (
                               <button
                                 onClick={(e) => { e.stopPropagation(); setAddingTagForId(p.id); setNewTag(''); }}
                                 className="text-[10px] font-display px-2 py-1 rounded border border-dashed border-border text-muted-foreground transition-colors inline-flex items-center gap-1 hover:bg-secondary"
