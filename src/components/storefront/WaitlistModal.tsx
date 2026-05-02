@@ -29,6 +29,7 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { submit, submitting } = useWaitlistSignup();
 
   async function handleSubmit(e: React.FormEvent) {
