@@ -139,6 +139,16 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
   );
 
+  // Resolve the selected colorway object. If null (no colorways) or
+  // the id doesn't match any colorway (defensive), this is null.
+  const selectedColorway = product.colorways?.find(c => c.id === selectedColorwayId) || null;
+  // The image array the gallery should display. When the selected
+  // colorway has its own images array (with at least one entry),
+  // use it. Otherwise fall back to top-level product.images.
+  const displayImages = (selectedColorway?.images && selectedColorway.images.length > 0)
+    ? selectedColorway.images
+    : product.images;
+
   // Filtered visible indices for counter
   const visibleIndices = useMemo(() =>
     DEMO_PRODUCTS
