@@ -5,6 +5,7 @@ import type { DemoProduct } from '@/data/demo-data';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCart } from '@/contexts/CartContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
+import { MaisonWaitlistModal } from './MaisonWaitlistModal';
 
 interface MaisonProductCardProps {
   product: DemoProduct;
@@ -20,6 +21,8 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const [showSizes, setShowSizes] = useState(false);
   const [showCompactSizes, setShowCompactSizes] = useState(false);
   const [showSizeChart, setShowSizeChart] = useState(false);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const isOutOfStock = product.variants.every(v => v.inventory_count === 0);
   const { addItem } = useCart();
   
   const cooldown = useRef(false);
@@ -247,7 +250,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
             {/* CTA area — hover to reveal sizes */}
             <div
               className="w-full px-4 pb-4 mt-1.5"
-              onMouseEnter={() => setShowCompactSizes(true)}
+              onMouseEnter={() => { if (!isOutOfStock) setShowCompactSizes(true); }}
               onMouseLeave={() => setShowCompactSizes(false)}
             >
               <AnimatePresence mode="wait">
@@ -263,8 +266,14 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                       fontFamily: 'var(--font-body)',
                       color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))',
                     }}
+                    onClick={(e) => {
+                      if (isOutOfStock) {
+                        e.stopPropagation();
+                        setWaitlistOpen(true);
+                      }
+                    }}
                   >
-                    {product.variants.every(v => v.inventory_count === 0)
+                    {isOutOfStock
                       ? 'JOIN THE WAITLIST'
                       : themeSettings.slExpandTriggerStyle === 'icon'
                         ? '+'
@@ -412,7 +421,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
           </p>
           <div
             className="relative mt-2 h-6 flex items-center justify-center"
-            onMouseEnter={() => setShowSizes(true)}
+            onMouseEnter={() => { if (!isOutOfStock) setShowSizes(true); }}
             onMouseLeave={() => setShowSizes(false)}
           >
             <AnimatePresence mode="wait">
@@ -431,6 +440,10 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (isOutOfStock) {
+                      setWaitlistOpen(true);
+                      return;
+                    }
                     if (product.variants.length === 1 && product.variants[0].inventory_count > 0) {
                       addItem({
                         productId: product.id,
@@ -532,6 +545,13 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
         category={product.category}
         onClose={() => setShowSizeChart(false)}
         variant="maison"
+      />
+
+      {/* Waitlist Modal */}
+      <MaisonWaitlistModal
+        open={waitlistOpen}
+        onClose={() => setWaitlistOpen(false)}
+        product={product}
       />
     </div>
   );
