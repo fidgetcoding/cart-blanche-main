@@ -2018,6 +2018,13 @@ export default function AdminInventory() {
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    // Target the first incomplete entry (any URL missing or duplicates).
+                                    // If none exist, fall through to append a new entry.
+                                    const idx = p.imagesFull.findIndex(img => {
+                                      const urls = [img.thumb, img.medium, img.full].filter(Boolean);
+                                      return new Set(urls).size < 3;
+                                    });
+                                    fillAllSizesTargetRef.current = idx;
                                     editImageInputRef.current?.click();
                                   }}
                                   disabled={imageUploadingSlot === `${p.id}-new`}
