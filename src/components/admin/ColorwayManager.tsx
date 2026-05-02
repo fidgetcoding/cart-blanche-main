@@ -47,7 +47,7 @@ export function ColorwayManager({ colorways, onChange }: Props) {
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-start gap-2 flex-wrap">
         <Reorder.Group
           axis="x"
           values={colorways}
@@ -55,70 +55,102 @@ export function ColorwayManager({ colorways, onChange }: Props) {
           as="div"
           className="contents"
         >
-        {colorways.map((c, idx) => (
-          <Reorder.Item
-            key={c.id}
-            value={c}
-            as="div"
-            className="inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded border border-border/60 bg-background/40 text-[10px] font-display cursor-grab active:cursor-grabbing select-none"
-            whileDrag={{
-              scale: 1.05,
-              zIndex: 50,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-              cursor: 'grabbing',
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <GripVertical className="w-3 h-3 text-muted-foreground/50" />
-            <span
-              className="w-4 h-4 rounded-full border border-border/60 bg-cover bg-center"
-              style={getSwatchStyle(c)}
-            />
-            <span className="tracking-wider">{c.name.toUpperCase()}</span>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); moveUp(idx); }}
-              disabled={idx === 0}
-              className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move up"
-            >
-              <ChevronUp className="w-2.5 h-2.5" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); moveDown(idx); }}
-              disabled={idx === colorways.length - 1}
-              className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move down"
-            >
-              <ChevronDown className="w-2.5 h-2.5" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setEditing({ mode: 'edit', colorway: c }); }}
-              className="p-0.5 text-muted-foreground/60 hover:text-foreground"
-              title="Edit"
-            >
-              <Pencil className="w-2.5 h-2.5" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); remove(idx); }}
-              className="p-0.5 text-muted-foreground/60 hover:text-destructive"
-              title="Remove"
-            >
-              <X className="w-2.5 h-2.5" />
-            </button>
-          </Reorder.Item>
-        ))}
+        {colorways.map((c, idx) => {
+          const isOpen = editing?.mode === 'edit' && editing.colorway.id === c.id;
+          return (
+            <div key={c.id} className="relative">
+              <Reorder.Item
+                value={c}
+                as="div"
+                className={`inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded border bg-background/40 text-[10px] font-display cursor-grab active:cursor-grabbing select-none ${
+                  isOpen ? 'border-primary/60' : 'border-border/60'
+                }`}
+                whileDrag={{
+                  scale: 1.05,
+                  zIndex: 50,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                  cursor: 'grabbing',
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                <GripVertical className="w-3 h-3 text-muted-foreground/50" />
+                <span
+                  className="w-4 h-4 rounded-full border border-border/60 bg-cover bg-center"
+                  style={getSwatchStyle(c)}
+                />
+                <span className="tracking-wider">{c.name.toUpperCase()}</span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); moveUp(idx); }}
+                  disabled={idx === 0}
+                  className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Move up"
+                >
+                  <ChevronUp className="w-2.5 h-2.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); moveDown(idx); }}
+                  disabled={idx === colorways.length - 1}
+                  className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Move down"
+                >
+                  <ChevronDown className="w-2.5 h-2.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(isOpen ? null : { mode: 'edit', colorway: c });
+                  }}
+                  className={`p-0.5 hover:text-foreground ${isOpen ? 'text-foreground' : 'text-muted-foreground/60'}`}
+                  title="Edit"
+                >
+                  <Pencil className="w-2.5 h-2.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); remove(idx); }}
+                  className="p-0.5 text-muted-foreground/60 hover:text-destructive"
+                  title="Remove"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </Reorder.Item>
+              <AnimatePresence>
+                {isOpen && (
+                  <ColorwayEditDropdown
+                    initial={c}
+                    onClose={() => setEditing(null)}
+                    onSave={(payload) => handleSaveModal(payload, c.id)}
+                    onDelete={() => handleDeleteFromModal(c.id)}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
         </Reorder.Group>
-        <button
-          type="button"
-          onClick={() => setEditing({ mode: 'add' })}
-          className="text-[10px] font-display px-2 py-1 rounded border border-dashed border-border text-muted-foreground transition-colors inline-flex items-center gap-1 hover:bg-secondary"
-        >
-          <Plus className="w-2.5 h-2.5" /> ADD COLOR
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setEditing(editing?.mode === 'add' ? null : { mode: 'add' })}
+            className={`text-[10px] font-display px-2 py-1 rounded border border-dashed text-muted-foreground transition-colors inline-flex items-center gap-1 hover:bg-secondary ${
+              editing?.mode === 'add' ? 'border-primary/60 text-foreground' : 'border-border'
+            }`}
+          >
+            <Plus className="w-2.5 h-2.5" /> ADD COLOR
+          </button>
+          <AnimatePresence>
+            {editing?.mode === 'add' && (
+              <ColorwayEditDropdown
+                initial={null}
+                onClose={() => setEditing(null)}
+                onSave={(payload) => handleSaveModal(payload)}
+              />
+            )}
+          </AnimatePresence>
+        </div>
         {colorways.length > 25 && (
           <p className="basis-full mt-2 text-[10px] font-display text-muted-foreground/70 flex items-center gap-1.5">
             <Info className="w-3 h-3 shrink-0" />
@@ -126,22 +158,11 @@ export function ColorwayManager({ colorways, onChange }: Props) {
           </p>
         )}
       </div>
-
-      <AnimatePresence>
-        {editing && (
-          <ColorwayEditModal
-            initial={editing.mode === 'edit' ? editing.colorway : null}
-            onClose={() => setEditing(null)}
-            onSave={(payload) => handleSaveModal(payload, editing.mode === 'edit' ? editing.colorway.id : undefined)}
-            onDelete={editing.mode === 'edit' ? () => handleDeleteFromModal(editing.colorway.id) : undefined}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
 
-// ───── Edit Modal ─────
+// ───── Edit Dropdown ─────
 
 interface ModalProps {
   initial: Colorway | null;
