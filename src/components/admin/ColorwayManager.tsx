@@ -383,9 +383,10 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
           </label>
           <p className="mt-1 text-[10px] text-muted-foreground/70 leading-relaxed">
             Photos shown when this color is selected on the storefront.
-            Each image has three sizes — click any slot to upload a
-            different file for that size only. Empty slots will not
-            render on their target surface.
+            Each image has three sizes — recommended widths shown
+            beneath each slot. Click any slot to upload a different
+            file for that size only. Empty slots will not render on
+            their target surface.
           </p>
           <div className="mt-3 space-y-2">
             {galleryImages.map((img, idx) => (
@@ -407,6 +408,7 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
                       const isUploadingThis = uploadingSlot === slotKey;
                       const url = img[size];
                       const label = size === 'thumb' ? 'GRID + CART' : size === 'medium' ? 'DETAIL VIEW' : 'ZOOM';
+                      const recommendedSize = size === 'thumb' ? '~400 PX' : size === 'medium' ? '~1200 PX' : '~2400 PX';
                       return (
                         <div key={size} className="space-y-1">
                           <button
@@ -415,7 +417,7 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
                             disabled={!!uploadingSlot}
                             className="relative w-full aspect-square rounded border border-border/60 bg-cover bg-center hover:border-border transition-colors disabled:opacity-50 overflow-hidden"
                             style={url ? { backgroundImage: `url(${url})` } : undefined}
-                            title={`Replace ${size} image (${label})`}
+                            title={`Replace ${size} image (${label}, recommended ${recommendedSize} wide)`}
                           >
                             {isUploadingThis && (
                               <div className="absolute inset-0 flex items-center justify-center bg-background/80">
@@ -430,6 +432,9 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
                           </button>
                           <p className="text-[8px] font-display tracking-wider text-muted-foreground/70 text-center leading-tight">
                             {label}
+                          </p>
+                          <p className="text-[7px] font-mono tracking-tight text-muted-foreground/50 text-center leading-tight">
+                            {recommendedSize}
                           </p>
                         </div>
                       );
