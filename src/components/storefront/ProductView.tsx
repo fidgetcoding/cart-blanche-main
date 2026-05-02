@@ -362,6 +362,40 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     });
   };
 
+  const colorwayWheelLockRef = useRef(false);
+  const colorwayTouchStartY = useRef<number | null>(null);
+
+  const handleColorwayWheel = (e: React.WheelEvent) => {
+    if (totalColorwayPages <= 1) return;
+    e.stopPropagation();
+    if (colorwayWheelLockRef.current) return;
+    if (Math.abs(e.deltaY) < 10) return;
+    if (e.deltaY > 0) {
+      setColorwayPage(p => Math.min(p + 1, totalColorwayPages - 1));
+    } else {
+      setColorwayPage(p => Math.max(p - 1, 0));
+    }
+    colorwayWheelLockRef.current = true;
+    setTimeout(() => { colorwayWheelLockRef.current = false; }, 800);
+  };
+
+  const handleColorwayTouchStart = (e: React.TouchEvent) => {
+    colorwayTouchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleColorwayTouchEnd = (e: React.TouchEvent) => {
+    if (totalColorwayPages <= 1) return;
+    if (colorwayTouchStartY.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - colorwayTouchStartY.current;
+    colorwayTouchStartY.current = null;
+    if (Math.abs(deltaY) < 30) return;
+    if (deltaY < 0) {
+      setColorwayPage(p => Math.min(p + 1, totalColorwayPages - 1));
+    } else {
+      setColorwayPage(p => Math.max(p - 1, 0));
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -524,30 +558,55 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                 </div>
               )}
 
-              {product.colorways && product.colorways.length >= 1 && (
-                <div
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 z-20"
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  {product.colorways.map((c) => {
-                    const active = selectedColorwayId === c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
-                        title={c.name}
-                        className={`w-4 h-4 rounded-full border transition-all shrink-0 ${
-                          active
-                            ? 'border-foreground/60 ring-1 ring-foreground/40 ring-offset-1 ring-offset-background/30'
-                            : 'border-foreground/30 hover:border-foreground/60'
-                        }`}
-                        style={getSwatchStyle(c)}
-                      />
-                    );
-                  })}
-                </div>
+              {allColorways.length >= 1 && (
+                <>
+                  {totalColorwayPages > 1 && (
+                    <div
+                      className="absolute right-9 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-20"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      {Array.from({ length: totalColorwayPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setColorwayPage(i); }}
+                          className={`w-1 h-1 rounded-full transition-all ${
+                            i === safeColorwayPage ? 'bg-foreground/95' : 'bg-foreground/30'
+                          }`}
+                          aria-label={`Color page ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <div
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 z-20"
+                    style={{ overscrollBehavior: 'contain' }}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onWheel={handleColorwayWheel}
+                    onTouchStart={handleColorwayTouchStart}
+                    onTouchEnd={handleColorwayTouchEnd}
+                  >
+                    {colorwaysToShow.map((c) => {
+                      const active = selectedColorwayId === c.id;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
+                          title={c.name}
+                          className={`w-4 h-4 rounded-full border transition-all shrink-0 ${
+                            active
+                              ? 'border-foreground/60 ring-1 ring-foreground/40 ring-offset-1 ring-offset-background/30'
+                              : 'border-foreground/30 hover:border-foreground/60'
+                          }`}
+                          style={getSwatchStyle(c)}
+                        />
+                      );
+                    })}
+                  </div>
+                </>
               )}
 
               {displayImages && displayImages.length > 1 && (
