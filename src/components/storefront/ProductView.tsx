@@ -556,7 +556,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             {!expandDetails && isWholeProductOutOfStock && (
               <button
                 onClick={() => setWaitlistOpen(true)}
-                className="mt-1 px-4 py-2 font-display font-semibold text-sm tracking-wider rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 flex items-center justify-center"
+                className="mt-1 px-4 py-2 font-display font-semibold text-sm tracking-wider text-foreground/80 hover:text-foreground transition-colors"
               >
                 JOIN THE WAITLIST
               </button>
