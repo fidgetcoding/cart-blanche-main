@@ -54,7 +54,7 @@ function CarouselCard({
             {product.images!.map((_, i) => (
               <button
                 key={i}
-                onClick={e => { e.stopPropagation(); setImgIdx(i); }}
+                onClick={() => setImgIdx(i)}
                 onMouseEnter={() => setImgIdx(i)}
                 className="flex-1 relative group/dot pointer-events-auto"
               >
