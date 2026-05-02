@@ -536,7 +536,7 @@ function YzTemplateInner() {
                 </div>
               </div>
             </div>
-            <div className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-4 px-6 text-center">
+            <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-4 px-6 text-center">
               <div className="w-14 h-14 rounded-full bg-foreground/5 border border-border flex items-center justify-center">
                 <Lock className="w-6 h-6 text-foreground" />
               </div>
