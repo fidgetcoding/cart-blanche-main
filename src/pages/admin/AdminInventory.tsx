@@ -1952,7 +1952,7 @@ export default function AdminInventory() {
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">CATEGORY</label>
                 <div className="flex flex-wrap gap-2">
-                  {PRODUCT_TYPES.map(cat => (
+                  {allCategoryOptions.map(cat => (
                     <button
                       key={cat}
                       onClick={() => setAddProductType(addProductType === cat ? '' : cat)}
