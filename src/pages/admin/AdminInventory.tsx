@@ -1961,9 +1961,15 @@ export default function AdminInventory() {
                                                 document.getElementById(inputId)?.click();
                                               }}
                                               disabled={!!imageUploadingSlot}
-                                              className="relative w-full aspect-square rounded border border-border/60 bg-cover bg-center hover:border-border transition-colors disabled:opacity-50 overflow-hidden"
+                                              className={`relative w-full aspect-square rounded border bg-cover bg-center transition-colors disabled:opacity-50 overflow-hidden ${
+                                                url
+                                                  ? 'border-border/60 hover:border-border'
+                                                  : 'border-warning/50 hover:border-warning bg-warning/5'
+                                              }`}
                                               style={url ? { backgroundImage: `url(${url})` } : undefined}
-                                              title={`Replace ${size} (${label}, recommended ${recommendedSize} wide)`}
+                                              title={url
+                                                ? `Replace ${size} (${label}, recommended ${recommendedSize} wide)`
+                                                : `MISSING — click to upload ${label} (${recommendedSize} wide). This surface won't show this image until filled.`}
                                             >
                                               {isUploadingThis && (
                                                 <div className="absolute inset-0 flex items-center justify-center bg-background/80">
@@ -1971,8 +1977,9 @@ export default function AdminInventory() {
                                                 </div>
                                               )}
                                               {!url && !isUploadingThis && (
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                  <ImageIcon className="w-3 h-3 text-muted-foreground/40" />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                                                  <Plus className="w-3 h-3 text-warning/70" />
+                                                  <span className="text-[7px] font-display tracking-wider text-warning/70">MISSING</span>
                                                 </div>
                                               )}
                                             </button>
