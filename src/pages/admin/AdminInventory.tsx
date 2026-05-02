@@ -883,6 +883,14 @@ export default function AdminInventory() {
     }
   }, [tagPopoverOpenFor, inlineColorFormFor]);
 
+  // Close + ADD IMAGE popover on outside click. The popover's own onClick stops propagation.
+  useEffect(() => {
+    if (addImagePopoverFor === null) return;
+    const handler = () => setAddImagePopoverFor(null);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [addImagePopoverFor]);
+
   function removeTagFromProduct(productId: string, tag: string) {
     const target = products.find(p => p.id === productId);
     if (!target) return;
