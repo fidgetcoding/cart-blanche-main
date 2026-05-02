@@ -2379,38 +2379,32 @@ export default function AdminInventory() {
                               );
                             };
                             if (showMatrix) {
-                              const colCount = uniqueSizes.length;
-                              const gridCols = `7rem repeat(${colCount}, minmax(0, 1fr))`;
                               return (
                                 <>
                                   <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">
                                     SIZES × COLORS ({p.variants.length})
                                   </p>
-                                  <div className="space-y-1.5">
-                                    {/* Header row: empty corner + size labels */}
-                                    <div className="grid gap-2 items-center" style={{ gridTemplateColumns: gridCols }}>
-                                      <div></div>
-                                      {uniqueSizes.map(size => (
-                                        <div key={size} className="text-[10px] font-display tracking-widest text-muted-foreground text-center">
-                                          {size}
-                                        </div>
-                                      ))}
-                                    </div>
-                                    {/* Body: one row per colorway */}
+                                  <div className="space-y-3">
                                     {p.colorways!.map(cw => (
-                                      <div key={cw.id} className="grid gap-2 items-center" style={{ gridTemplateColumns: gridCols }}>
-                                        <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                                      <div key={cw.id} className="rounded-lg border border-border/40 bg-background/20 p-2.5">
+                                        {/* Colorway label header */}
+                                        <div className="flex items-center gap-2 mb-2 pl-0.5">
                                           <span
-                                            className="w-3 h-3 rounded-full border border-border shrink-0"
+                                            className="w-4 h-4 rounded-full border border-border shrink-0"
                                             style={getSwatchStyle(cw)}
                                           />
-                                          <span className="text-xs font-display truncate">{cw.name}</span>
+                                          <span className="text-[11px] font-display tracking-widest text-foreground uppercase">
+                                            {cw.name}
+                                          </span>
                                         </div>
-                                        {uniqueSizes.map(size => {
-                                          const v = p.variants.find(x => x.title === size && x.colorway_id === cw.id);
-                                          if (!v) return <div key={size}></div>;
-                                          return renderCell(v);
-                                        })}
+                                        {/* Size cells for this colorway */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                                          {uniqueSizes.map(size => {
+                                            const v = p.variants.find(x => x.title === size && x.colorway_id === cw.id);
+                                            if (!v) return <div key={size}></div>;
+                                            return renderCell(v);
+                                          })}
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
