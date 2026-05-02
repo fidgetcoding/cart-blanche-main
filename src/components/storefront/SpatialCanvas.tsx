@@ -971,7 +971,7 @@ export function SpatialCanvas() {
                 }}
                 onQuickStyleKit={(e) => {
                   e.stopPropagation();
-                  openStyleKit(product);
+                  openStyleKit(product, 'counterparts', null, activeGenders);
                 }}
                 positionOverride={posOverride} />
             );

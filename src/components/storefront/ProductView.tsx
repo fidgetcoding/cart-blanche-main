@@ -803,7 +803,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         <button
                           onClick={() => {
                             const variantTitle = product.variants.find(v => v.id === selectedVariant)?.title ?? null;
-                            openStyleKit(product, 'counterparts', variantTitle);
+                            openStyleKit(product, 'counterparts', variantTitle, activeGenders);
                           }}
                           className="px-4 py-3 border border-foreground/30 text-foreground font-display font-semibold text-[11px] tracking-wider rounded-lg flex items-center justify-center gap-2 hover:bg-foreground/5 transition-colors [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:py-0 [@media(max-height:760px)]:px-2.5 [@media(max-height:760px)]:text-[10.5px] [@media(max-height:760px)]:whitespace-nowrap [@media(max-height:760px)]:min-w-0"
                         >

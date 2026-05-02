@@ -2,9 +2,6 @@ import type { DemoProduct } from '@/data/demo-data';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 
 // ─── Body-zone classification ────────────────────────────────────
-// "tops" = anything worn on the upper body (shirts, jackets, hoodies, etc.)
-// "bottoms" = anything worn on the lower body (pants, shorts, joggers, etc.)
-// "accessory" = hats, scarves, bags — neutral, can pair with anything
 type BodyZone = 'top' | 'bottom' | 'accessory';
 
 const ZONE_MAP: Record<string, BodyZone> = {
@@ -17,23 +14,7 @@ const ZONE_MAP: Record<string, BodyZone> = {
 };
 
 // ─── Style-register classification ────────────────────────────────
-// Garments are sorted into broad style registers to detect
-// wear-context mismatches (e.g., formal blazer + athletic mesh
-// shorts). Detection is heuristic — operates on title +
-// product_type + category, no new fields required.
-//
-// Register definitions:
-//   heavy_outerwear — seasonal coats/jackets that don't pair
-//                     with shorts (puffer, trench, overcoat, moto)
-//   formal          — tailored garments (blazer, suit, dress
-//                     shirt, chinos, trousers)
-//   athletic        — strictly gymwear (mesh, track-prefix,
-//                     athletic). NOTE: joggers, sweat shorts,
-//                     and sweat pants are NOT athletic — they
-//                     read smart-casual just as easily and
-//                     should pair with formal anchors freely.
-//   casual          — everything else (default)
-type StyleRegister = 'formal' | 'athletic' | 'heavy_outerwear' | 'casual';
+type StyleRegister = 'formal' | 'athletic' | 'heavy_outerwear' | 'outerwear' | 'casual';
 
 export function getStyleRegister(product: DemoProduct): StyleRegister {
   const title = product.title.toLowerCase();
@@ -41,72 +22,100 @@ export function getStyleRegister(product: DemoProduct): StyleRegister {
   const ptype = (product.product_type || '').toLowerCase();
   const haystack = `${title} ${cat} ${ptype}`;
 
+  // Heavy outerwear first — long-form coats and serious jackets.
   if (/puffer|trench|overcoat|wool coat|down coat|parka|moto/.test(haystack)) {
     return 'heavy_outerwear';
   }
+  // Athletic next — must come before generic outerwear so a
+  // "track jacket" (jacket product_type, athletic register) is
+  // tagged athletic rather than outerwear, preserving its
+  // ability to pair with mesh shorts.
+  if (/\bmesh\b|athletic|gym wear|gym short|track jacket|track pant/.test(haystack)) {
+    return 'athletic';
+  }
+  // Formal — tailored garments.
   if (/blazer|suit|dress shirt|oxford shirt|tuxedo|chinos|trouser/.test(haystack)) {
     return 'formal';
   }
-  if (/\bmesh\b|athletic|gym wear|gym short|track jacket|track pant/.test(haystack)) {
-    return 'athletic';
+  // Generic outerwear — any other jacket-typed top that didn't
+  // hit the heavy / athletic / formal branches above. Catches
+  // bombers, windbreakers, varsity jackets — garments that
+  // shouldn't pair with shorts but aren't heavy enough to be
+  // "winter coats".
+  if (ptype === 'jacket') {
+    return 'outerwear';
   }
   return 'casual';
 }
 
 // ─── Gender-compatibility helper ──────────────────────────────────
-// Default rule: a candidate matches an anchor when gender axes
-// overlap. 'unisex' on either side is a wildcard. Anchor of
-// 'unisex' matches anything; unisex candidate matches any anchor.
-// Cross-gender pairings are not blocked at the algorithm level —
-// merchants enable them via Style Guide presets, which bypass
-// this filter entirely.
-export function isGenderCompatible(anchor: DemoProduct, candidate: DemoProduct): boolean {
-  const a = (anchor.gender || 'unisex').toLowerCase();
+export function isGenderCompatible(
+  anchor: DemoProduct,
+  candidate: DemoProduct,
+  activeGenders?: string[]
+): boolean {
   const c = (candidate.gender || 'unisex').toLowerCase();
+  // If the user has explicit gender chips selected on the grid,
+  // those chips constrain the candidate pool directly — only
+  // products in those chip buckets (or unisex) are visible.
+  if (activeGenders && activeGenders.length > 0) {
+    const chips = new Set(activeGenders.map(g => g.toLowerCase()));
+    return chips.has(c) || c === 'unisex';
+  }
+  // Default rule: anchor's gender + unisex overlap.
+  const a = (anchor.gender || 'unisex').toLowerCase();
   if (a === 'unisex' || c === 'unisex') return true;
   return a === c;
 }
 
 // ─── Register-incompatibility detection ───────────────────────────
-// Returns true if the two products represent a style-register
-// mismatch the algorithm should not auto-suggest. Currently:
-//   formal × athletic — yes, block
-//   heavy_outerwear × shorts — yes, block (seasonal)
-// Manual Style Guide presets bypass this check entirely.
 export function isRegisterIncompatible(anchor: DemoProduct, candidate: DemoProduct): boolean {
   const aReg = getStyleRegister(anchor);
   const cReg = getStyleRegister(candidate);
   const aZone = getBodyZone(anchor);
   const cZone = getBodyZone(candidate);
 
+  const isShorts = (p: DemoProduct) =>
+    /\bshorts?\b/.test(p.title.toLowerCase()) || (p.product_type || '').toLowerCase() === 'shorts';
+  const isAthleticShorts = (p: DemoProduct) =>
+    isShorts(p) && getStyleRegister(p) === 'athletic';
+
+  // Rule 1 — Heavy outerwear × any shorts. Seasonal mismatch.
+  if (aReg === 'heavy_outerwear' && cZone === 'bottom' && isShorts(candidate)) return true;
+  if (cReg === 'heavy_outerwear' && aZone === 'bottom' && isShorts(anchor)) return true;
+
+  // Rule 2 — Generic outerwear (bomber, windbreaker) × any shorts.
+  if (aReg === 'outerwear' && cZone === 'bottom' && isShorts(candidate)) return true;
+  if (cReg === 'outerwear' && aZone === 'bottom' && isShorts(anchor)) return true;
+
+  // Rule 3 — Formal tops × any shorts.
+  if (aReg === 'formal' && cZone === 'bottom' && isShorts(candidate)) return true;
+  if (cReg === 'formal' && aZone === 'bottom' && isShorts(anchor)) return true;
+
+  // Rule 4 — Formal × athletic (any zone).
   if ((aReg === 'formal' && cReg === 'athletic') || (cReg === 'formal' && aReg === 'athletic')) {
     return true;
   }
 
-  const isShorts = (p: DemoProduct) =>
-    /\bshorts?\b/.test(p.title.toLowerCase()) || (p.product_type || '').toLowerCase() === 'shorts';
-
-  if (aReg === 'heavy_outerwear' && cZone === 'bottom' && isShorts(candidate)) return true;
-  if (cReg === 'heavy_outerwear' && aZone === 'bottom' && isShorts(anchor)) return true;
+  // Rule 5 — Athletic shorts (mesh) × non-athletic top.
+  if (isAthleticShorts(candidate) && aZone === 'top' && aReg !== 'athletic') return true;
+  if (isAthleticShorts(anchor) && cZone === 'top' && cReg !== 'athletic') return true;
 
   return false;
 }
 
 export function getBodyZone(product: DemoProduct): BodyZone {
-  // Use product_type first (typed field), fall back to category string
   const pc = product.product_type?.toLowerCase();
   if (pc && ZONE_MAP[pc]) return ZONE_MAP[pc];
 
-  // Heuristic fallback based on category string (for DB products without product_type)
   const cat = product.category?.toLowerCase() || '';
   if (/pant|trouser|jogger|short|cargo/i.test(cat) || /pant|trouser|jogger|short|cargo/i.test(product.title)) return 'bottom';
   if (/jacket|coat|hoodie|sweater|shirt|tee|polo|tank|crewneck|blazer|vest|sleeve|puffer|trench|bomber|windbreaker|moto|overcoat/i.test(cat)
     || /jacket|coat|hoodie|sweater|shirt|tee|polo|tank|crewneck|blazer|vest|sleeve|puffer|trench|bomber|windbreaker|moto|overcoat/i.test(product.title)) return 'top';
   if (/hat|cap|beanie|scarf|bag|belt/i.test(cat) || /hat|cap|beanie|scarf|bag|belt/i.test(product.title)) return 'accessory';
-  return 'top'; // default to top if unknown
+  return 'top';
 }
 
-// Smart orientation for layout: tops anchor at the top, bottoms at the bottom
 export function getSmartOrientation(category: string): 'top' | 'bottom' {
   const lower = category.toLowerCase();
   if (ZONE_MAP[lower] === 'bottom') return 'bottom';
@@ -127,6 +136,7 @@ interface PairingOptions {
   cartProductIds?: string[];
   lookProductIds?: string[];
   presets?: ProductPreset[];
+  activeGenders?: string[];
 }
 
 export function getSuggestedProducts({
@@ -135,11 +145,11 @@ export function getSuggestedProducts({
   cartProductIds = [],
   lookProductIds = [],
   presets = [],
+  activeGenders = [],
 }: PairingOptions): DemoProduct[] {
   const excludeIds = new Set([anchor.id, ...cartProductIds, ...lookProductIds]);
   const anchorZone = getBodyZone(anchor);
 
-  // Check for a matching preset
   const preset = presets.find(p => p.anchorProductId === anchor.id);
   const presetIds = mode === 'counterparts'
     ? (preset?.pairs || [])
@@ -152,36 +162,24 @@ export function getSuggestedProducts({
 
   let candidates = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id));
 
-  // Gender filter — default match rule. Style Guide presets are
-  // resolved separately above (presetProducts) and merged in
-  // unconditionally at the end, so explicit cross-gender pairings
-  // from the Style Guide always pass through.
-  candidates = candidates.filter(p => isGenderCompatible(anchor, p));
-
-  // Style-register incompatibility filter — block obvious
-  // mismatches (formal × athletic, heavy outerwear × shorts).
-  // Style Guide presets are resolved separately and bypass this.
+  candidates = candidates.filter(p => isGenderCompatible(anchor, p, activeGenders));
   candidates = candidates.filter(p => !isRegisterIncompatible(anchor, p));
 
   if (mode === 'counterparts') {
-    // Accessories are always counterparts (pairs), not extras
     if (anchorZone === 'top') {
       candidates = candidates.filter(p => { const z = getBodyZone(p); return z === 'bottom' || z === 'accessory'; });
     } else if (anchorZone === 'bottom') {
       candidates = candidates.filter(p => { const z = getBodyZone(p); return z === 'top' || z === 'accessory'; });
     } else {
-      // Accessory anchor: pair with tops and bottoms
       candidates = candidates.filter(p => { const z = getBodyZone(p); return z === 'top' || z === 'bottom'; });
     }
   } else {
-    // Extras = same zone, but accessories are excluded (they belong in pairs)
     const sameZone = candidates.filter(p => { const z = getBodyZone(p); return z === anchorZone && z !== 'accessory'; });
     if (sameZone.length > 0) {
       candidates = sameZone;
     }
   }
 
-  // Score and sort by price similarity
   candidates.sort((a, b) => {
     let scoreA = 0;
     let scoreB = 0;
@@ -199,13 +197,11 @@ export function getSuggestedProducts({
     return scoreB - scoreA;
   });
 
-  // Merge: preset products first, then auto (deduped)
   const presetProductIds = new Set(presetProducts.map(p => p.id));
   const autoCandidates = candidates.filter(p => !presetProductIds.has(p.id));
 
   const result = [...presetProducts, ...autoCandidates];
 
-  // Fallback: if no suggestions, return all products of the target zone (excluding only anchor and cart items)
   if (result.length === 0) {
     const fallbackExclude = new Set([anchor.id, ...cartProductIds]);
     let fallback = DEMO_PRODUCTS.filter(p => !fallbackExclude.has(p.id));
@@ -220,12 +216,8 @@ export function getSuggestedProducts({
       fallback = fallback.filter(p => getBodyZone(p) === anchorZone);
     }
 
-    // Apply gender + register filters to fallback. If filtering
-    // empties the list (very thin catalog edge case), return the
-    // unfiltered zone-correct version — better to show SOMETHING
-    // than an empty drawer.
     const filtered = fallback
-      .filter(p => isGenderCompatible(anchor, p))
+      .filter(p => isGenderCompatible(anchor, p, activeGenders))
       .filter(p => !isRegisterIncompatible(anchor, p));
     return filtered.length > 0 ? filtered : fallback;
   }
