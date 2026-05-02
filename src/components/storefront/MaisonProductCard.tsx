@@ -202,22 +202,32 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
             transition: 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
           }}
         >
-          {images.map((img, i) => (
-            <div
-              key={i}
-              className="h-full flex-shrink-0 flex items-center justify-center"
-              style={{ width: `${100 / images.length}%`, padding: '8%' }}
-            >
-              <img
-                src={getCardImageSrc(img)}
-                alt={product.title}
-                className="w-full h-full object-contain"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-            </div>
-          ))}
+          {images.map((img, i) => {
+            const resolvedSrc = getCardImageSrc(img);
+            return (
+              <div
+                key={i}
+                className="h-full flex-shrink-0 flex flex-col items-center justify-center relative"
+                style={{ width: `${100 / images.length}%`, padding: '8%' }}
+              >
+                <img
+                  src={resolvedSrc}
+                  alt={product.title}
+                  className="object-contain"
+                  style={{ width: '100%', height: '100%' }}
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                />
+                {/* DEBUG: visible URL label, REMOVE LATER */}
+                <div
+                  className="absolute top-1 left-1 right-1 text-[8px] font-mono text-red-500 bg-white/90 px-1 truncate z-10 pointer-events-none"
+                >
+                  {resolvedSrc}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Hover overlay — view by 6 only: frosted overlay revealing product info */}
