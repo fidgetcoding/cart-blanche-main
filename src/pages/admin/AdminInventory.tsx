@@ -76,7 +76,7 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     // very first image. If multiple are marked featured (legacy data), keep
     // only the first one.
     let featuredAssigned = false;
-    const sortedImages = sortedImagesRaw.map((img, i) => {
+    const sortedImages: ProductImage[] = sortedImagesRaw.map((img, i) => {
       if (img.featured && !featuredAssigned) {
         featuredAssigned = true;
         return img;
