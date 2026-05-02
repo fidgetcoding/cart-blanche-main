@@ -40,35 +40,60 @@ interface ProductRow {
   status: 'active' | 'draft' | 'archived';
 }
 
-function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
-  return orderedProducts.map(p => ({
-    id: p.id,
-    title: p.title,
-    price: p.price,
-    compare_at_price: p.compare_at_price,
-    category: p.category,
-    product_type: p.product_type || '',
-    gender: p.gender || 'unisex',
-    colorways: p.colorways || [],
-    images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
-    imagesFull: p.images.map(img => typeof img === 'string'
-      ? { thumb: img, medium: img, full: img }
-      : img),
-    description: p.description,
-    tags: [p.category],
-    variants: p.variants.map(v => ({
-      id: v.id,
-      title: v.title,
-      inventory_count: v.inventory_count,
-      sku: null,
-    })),
-    totalStock: p.variants.reduce((sum, v) => sum + v.inventory_count, 0),
-    isDemo: true,
-    weight_oz: p.weight_oz ?? 0,
-    shipping_type: p.shipping_type ?? 'domestic',
-    hs_code: p.hs_code ?? '',
-    status: (p.status as 'active' | 'draft' | 'archived') ?? 'active',
+function sortImagesByColorwayOrder(
+  images: ProductImage[],
+  colorways: Colorway[]
+): ProductImage[] {
+  if (images.length === 0) return images;
+  const colorwayIdOrder = new Map<string, number>();
+  colorways.forEach((c, i) => colorwayIdOrder.set(c.id, i));
+  const indexed = images.map((img, idx) => ({
+    img,
+    idx,
+    groupKey: img.colorway_id && colorwayIdOrder.has(img.colorway_id)
+      ? colorwayIdOrder.get(img.colorway_id)!
+      : Number.MAX_SAFE_INTEGER,
   }));
+  indexed.sort((a, b) => {
+    if (a.groupKey !== b.groupKey) return a.groupKey - b.groupKey;
+    return a.idx - b.idx;
+  });
+  return indexed.map(x => x.img);
+}
+
+function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
+  return orderedProducts.map(p => {
+    const fullImages: ProductImage[] = p.images.map(img => typeof img === 'string'
+      ? { thumb: img, medium: img, full: img }
+      : img);
+    const sortedImages = sortImagesByColorwayOrder(fullImages, p.colorways || []);
+    return {
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      compare_at_price: p.compare_at_price,
+      category: p.category,
+      product_type: p.product_type || '',
+      gender: p.gender || 'unisex',
+      colorways: p.colorways || [],
+      images: sortedImages.map(img => img.thumb),
+      imagesFull: sortedImages,
+      description: p.description,
+      tags: [p.category],
+      variants: p.variants.map(v => ({
+        id: v.id,
+        title: v.title,
+        inventory_count: v.inventory_count,
+        sku: null,
+      })),
+      totalStock: p.variants.reduce((sum, v) => sum + v.inventory_count, 0),
+      isDemo: true,
+      weight_oz: p.weight_oz ?? 0,
+      shipping_type: p.shipping_type ?? 'domestic',
+      hs_code: p.hs_code ?? '',
+      status: (p.status as 'active' | 'draft' | 'archived') ?? 'active',
+    };
+  });
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -164,6 +189,8 @@ export default function AdminInventory() {
   const [imageUploadingSlot, setImageUploadingSlot] = useState<string | null>(null);
   // Tag popover state — which image is showing its tag dropdown. Format: `${productId}-${imgIdx}` or null when none open.
   const [tagPopoverOpenFor, setTagPopoverOpenFor] = useState<string | null>(null);
+  // Image row drag state for reorder.
+  const [imageRowDragSrc, setImageRowDragSrc] = useState<{ productId: string; imgIdx: number } | null>(null);
   // Inline new-colorway form — when set, the tag popover for that key shows the create-new-color form instead of the existing-colorway list.
   const [inlineColorFormFor, setInlineColorFormFor] = useState<string | null>(null);
   const [inlineColorName, setInlineColorName] = useState('');
@@ -737,11 +764,15 @@ export default function AdminInventory() {
   function setProductColorways(productId: string, next: Colorway[]) {
     const target = products.find(p => p.id === productId);
     if (!target) return;
+    const sortedImages = sortImagesByColorwayOrder(target.imagesFull, next);
+    const flat = sortedImages.map(img => img.thumb);
     setProducts(prev => prev.map(p =>
-      p.id === productId ? { ...p, colorways: next } : p
+      p.id === productId
+        ? { ...p, colorways: next, imagesFull: sortedImages, images: flat }
+        : p
     ));
     if (target.isDemo) {
-      saveDemoProductOverride(productId, { colorways: next });
+      saveDemoProductOverride(productId, { colorways: next, images: sortedImages });
     } else {
       setHasUnsavedChanges(true);
     }
@@ -792,11 +823,22 @@ export default function AdminInventory() {
   ) => {
     const target = products.find(p => p.id === productId);
     if (!target) return;
-    const next = target.imagesFull.map((img, i) => {
+    const tagged = target.imagesFull.map((img, i) => {
       if (i !== imgIdx) return img;
       const { colorway_id: _omit, ...rest } = img;
       return colorwayId ? { ...rest, colorway_id: colorwayId } : rest;
     });
+    const sorted = sortImagesByColorwayOrder(tagged, target.colorways || []);
+    setProductImagesFull(productId, sorted);
+  }, [products, setProductImagesFull]);
+
+  const reorderImage = useCallback((productId: string, srcIdx: number, targetIdx: number) => {
+    if (srcIdx === targetIdx) return;
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const next = [...target.imagesFull];
+    const [moved] = next.splice(srcIdx, 1);
+    next.splice(targetIdx, 0, moved);
     setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
 
@@ -1781,7 +1823,27 @@ export default function AdminInventory() {
                               return (
                                 <div
                                   key={`${p.id}-img-${imgIdx}`}
-                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40"
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.stopPropagation();
+                                    setImageRowDragSrc({ productId: p.id, imgIdx });
+                                  }}
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (imageRowDragSrc && imageRowDragSrc.productId === p.id) {
+                                      reorderImage(p.id, imageRowDragSrc.imgIdx, imgIdx);
+                                    }
+                                    setImageRowDragSrc(null);
+                                  }}
+                                  onDragEnd={() => setImageRowDragSrc(null)}
+                                  className={`relative border border-border/40 rounded-lg p-2 bg-background/40 cursor-grab active:cursor-grabbing transition-opacity ${
+                                    imageRowDragSrc?.productId === p.id && imageRowDragSrc?.imgIdx === imgIdx ? 'opacity-40' : ''
+                                  }`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="flex items-start gap-2">

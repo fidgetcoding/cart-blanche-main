@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Pencil, GripVertical, ChevronUp, ChevronDown, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
+import { Plus, X, Pencil, GripVertical, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
 import type { Colorway } from '@/data/demo-data';
 import { supabase } from '@/integrations/supabase/client';
 import { getSwatchStyle } from '@/lib/swatch-style';
@@ -18,18 +18,6 @@ export function ColorwayManager({ colorways, onChange }: Props) {
   const [editing, setEditing] = useState<{ mode: 'add' } | { mode: 'edit'; colorway: Colorway } | null>(null);
   const [dragSrcIdx, setDragSrcIdx] = useState<number | null>(null);
 
-  function moveUp(idx: number) {
-    if (idx <= 0) return;
-    const next = [...colorways];
-    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-    onChange(next);
-  }
-  function moveDown(idx: number) {
-    if (idx >= colorways.length - 1) return;
-    const next = [...colorways];
-    [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
-    onChange(next);
-  }
   function remove(idx: number) {
     onChange(colorways.filter((_, i) => i !== idx));
   }
@@ -73,32 +61,14 @@ export function ColorwayManager({ colorways, onChange }: Props) {
             onDragStart={() => handleDragStart(idx)}
             onDragOver={handleDragOver}
             onDrop={() => handleDrop(idx)}
-            className={`inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded border border-border/60 bg-background/40 text-[10px] font-display ${dragSrcIdx === idx ? 'opacity-50' : ''}`}
+            className={`inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded border border-border/60 bg-background/40 text-[10px] font-display cursor-grab active:cursor-grabbing ${dragSrcIdx === idx ? 'opacity-50' : ''}`}
           >
-            <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab" />
+            <GripVertical className="w-3 h-3 text-muted-foreground/50" />
             <span
               className="w-4 h-4 rounded-full border border-border/60 bg-cover bg-center"
               style={getSwatchStyle(c)}
             />
             <span className="tracking-wider">{c.name.toUpperCase()}</span>
-            <button
-              type="button"
-              onClick={() => moveUp(idx)}
-              disabled={idx === 0}
-              className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move up"
-            >
-              <ChevronUp className="w-2.5 h-2.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => moveDown(idx)}
-              disabled={idx === colorways.length - 1}
-              className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move down"
-            >
-              <ChevronDown className="w-2.5 h-2.5" />
-            </button>
             <button
               type="button"
               onClick={() => setEditing({ mode: 'edit', colorway: c })}
