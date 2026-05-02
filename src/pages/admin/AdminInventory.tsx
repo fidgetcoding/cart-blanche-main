@@ -157,6 +157,8 @@ export default function AdminInventory() {
   // Mark dirty when any unsaved state exists
   useEffect(() => { if (hasUnsavedChanges || editingProduct || showAddProduct || pendingDeletes.size > 0) markDirty(); else markClean(); }, [hasUnsavedChanges, editingProduct, showAddProduct, pendingDeletes, markDirty, markClean]);
   const editImageInputRef = useRef<HTMLInputElement>(null);
+  // When the "Use one file for all 3 sizes" link is clicked, this holds the imagesFull index of the entry to fill. -1 means append a new entry.
+  const fillAllSizesTargetRef = useRef<number | null>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   // Per-slot upload tracking for the inline IMAGES section. Format: `${productId}-${imgIdx}-${size}` for slot replacements, or `${productId}-new` for the + ADD button.
   const [imageUploadingSlot, setImageUploadingSlot] = useState<string | null>(null);
