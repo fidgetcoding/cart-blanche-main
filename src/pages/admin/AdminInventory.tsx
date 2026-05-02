@@ -798,9 +798,9 @@ export default function AdminInventory() {
     setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
 
-  // Upload one file and append a new image entry. Fills all 3 sizes with the same URL
-  // (used by the "use one file for all 3" link).
-  const addImage = useCallback(async (productId: string, file: File) => {
+  // Upload one file and fill all 3 sizes on a target entry.
+  // If targetIdx is provided, fills that existing entry; otherwise appends a new one.
+  const addImage = useCallback(async (productId: string, file: File, targetIdx?: number) => {
     try {
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -809,8 +809,10 @@ export default function AdminInventory() {
       const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
       const target = products.find(p => p.id === productId);
       if (!target) return;
-      const newEntry: ProductImage = { thumb: publicUrl, medium: publicUrl, full: publicUrl };
-      const next = [...target.imagesFull, newEntry];
+      const filledEntry: ProductImage = { thumb: publicUrl, medium: publicUrl, full: publicUrl };
+      const next = typeof targetIdx === 'number' && targetIdx >= 0 && targetIdx < target.imagesFull.length
+        ? target.imagesFull.map((img, i) => i === targetIdx ? { ...img, thumb: publicUrl, medium: publicUrl, full: publicUrl } : img)
+        : [...target.imagesFull, filledEntry];
       setProductImagesFull(productId, next);
     } catch (e) {
       console.error('Image add failed:', e);
