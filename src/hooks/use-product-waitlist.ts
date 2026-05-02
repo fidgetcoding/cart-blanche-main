@@ -8,6 +8,7 @@ export interface WaitlistSignup {
   email: string;
   name: string;
   size_preference: string;
+  colorway_preference?: string;
   status: 'pending' | 'fulfilled' | 'cancelled';
   notified_at: string | null;
   created_at: string;
