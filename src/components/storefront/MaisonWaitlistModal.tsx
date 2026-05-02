@@ -196,34 +196,35 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
               )}
 
               {/* Color */}
-              <div>
-                <label
-                  className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-3"
-                  style={{ fontFamily: 'var(--font-body)' }}
-                >
-                  Color Preference
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {WAITLIST_COLOR_OPTIONS.map(c => {
-                    const active = color === c;
-                    return (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setColor(active ? '' : c)}
-                        className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
-                          active
-                            ? 'bg-foreground text-background border-foreground'
-                            : 'border-border text-foreground hover:border-foreground'
-                        }`}
-                        style={{ fontFamily: 'var(--font-body)' }}
-                      >
-                        {c}
-                      </button>
-                    );
-                  })}
+              {product.colorways && product.colorways.length >= 1 && (
+                <div>
+                  <label
+                    className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-3"
+                    style={{ fontFamily: 'var(--font-body)' }}
+                  >
+                    Color Preference
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {product.colorways.map((c) => {
+                      const active = color === c.name;
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => setColor(active ? '' : c.name)}
+                          title={c.name}
+                          className={`w-[18px] h-[18px] rounded-full border transition-all shrink-0 ${
+                            active
+                              ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background'
+                              : 'border-foreground/30 hover:border-foreground/60'
+                          }`}
+                          style={getSwatchStyle(c)}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Submit */}
               <button
