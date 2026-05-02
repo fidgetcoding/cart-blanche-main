@@ -5,6 +5,7 @@ import type { DemoProduct } from '@/data/demo-data';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCart } from '@/contexts/CartContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
+import { MaisonWaitlistModal } from './MaisonWaitlistModal';
 
 interface MaisonProductCardProps {
   product: DemoProduct;
@@ -20,6 +21,8 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const [showSizes, setShowSizes] = useState(false);
   const [showCompactSizes, setShowCompactSizes] = useState(false);
   const [showSizeChart, setShowSizeChart] = useState(false);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const isOutOfStock = product.variants.every(v => v.inventory_count === 0);
   const { addItem } = useCart();
   
   const cooldown = useRef(false);
