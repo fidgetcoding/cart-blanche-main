@@ -66,7 +66,8 @@ export function SpatialCanvas() {
     });
   }, [DEMO_PRODUCTS, activeCategory, activeGenders]);
 
-  // Genders present in products matching current category — auto-hides selector when only one in view
+  // Genders present in products matching current category. Used to
+  // auto-disable chips for genders with no available products.
   const availableGenders = useMemo(() => {
     const pool = activeCategory === 'ALL'
       ? DEMO_PRODUCTS
@@ -74,7 +75,17 @@ export function SpatialCanvas() {
     return new Set(pool.map(p => (p.gender || 'unisex').toLowerCase()));
   }, [DEMO_PRODUCTS, activeCategory]);
 
-  const showGenderSelector = availableGenders.size > 1;
+  // A gender chip is "available" if clicking it would yield at least
+  // one product. Mirrors the matching logic in filteredProducts:
+  // MEN matches both 'men' and 'unisex'; WOMEN matches both 'women'
+  // and 'unisex'; UNISEX matches only 'unisex'.
+  const isGenderAvailable = (g: string): boolean => {
+    const upper = g.toUpperCase();
+    if (upper === 'MEN') return availableGenders.has('men') || availableGenders.has('unisex');
+    if (upper === 'WOMEN') return availableGenders.has('women') || availableGenders.has('unisex');
+    if (upper === 'UNISEX') return availableGenders.has('unisex');
+    return false;
+  };
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const pageProducts = useMemo(() => {
