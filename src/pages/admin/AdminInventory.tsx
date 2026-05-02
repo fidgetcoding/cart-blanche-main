@@ -668,19 +668,46 @@ export default function AdminInventory() {
 
   async function saveAllChanges() {
     if (!hasUnsavedChanges) return;
-    // Flush pending demo overrides first.
-    for (const [productId, patch] of Object.entries(pendingDemoOverrides)) {
-      await saveDemoProductOverride(productId, patch);
-    }
-    setPendingDemoOverrides({});
-    // Persist product order
+
+    // === Compute the complete desired state of grid_layouts locally ===
     const productOrder = products.map(p => p.id);
     const categoryOrder = gridLayout?.categoryOrder || [];
-    await saveLayout(productOrder, categoryOrder);
-    // Persist visibility states for demo products
     const hiddenIds = products.filter(p => p.isDemo && p.status === 'draft').map(p => p.id);
-    await saveHiddenProductIds(hiddenIds);
-    // Persist non-demo product changes
+
+    // Merge pending demo overrides into current overrides (per-product shallow merge).
+    const currentOverrides = gridLayout?.demoProductOverrides || {};
+    const finalOverrides: Record<string, Record<string, unknown>> = {};
+    for (const [pid, ov] of Object.entries(currentOverrides)) {
+      finalOverrides[pid] = { ...(ov as Record<string, unknown>) };
+    }
+    for (const [productId, patch] of Object.entries(pendingDemoOverrides)) {
+      finalOverrides[productId] = { ...(finalOverrides[productId] || {}), ...(patch as Record<string, unknown>) };
+    }
+
+    // === Single atomic upsert to grid_layouts ===
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error: layoutError } = await supabase
+        .from('grid_layouts')
+        .upsert({
+          merchant_id: user.id,
+          layout_type: 'default',
+          product_order: productOrder,
+          category_order: categoryOrder,
+          hidden_tags: gridLayout?.hiddenTags || [],
+          hidden_product_types: gridLayout?.hiddenProductTypes || [],
+          hidden_product_ids: hiddenIds,
+          hidden_genders: gridLayout?.hiddenGenders || [],
+          demo_product_overrides: finalOverrides,
+          updated_at: new Date().toISOString(),
+        } as any, { onConflict: 'merchant_id,layout_type' });
+      if (layoutError) {
+        console.error('grid_layouts atomic save failed:', layoutError);
+        return;
+      }
+    }
+
+    // === Persist non-demo product changes (separate table, no race with grid_layouts) ===
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       for (const p of products) {
@@ -696,10 +723,6 @@ export default function AdminInventory() {
             status: p.status,
             colorways: p.colorways || [],
           } as any).eq('id', p.id));
-          // Persist variant changes (title + inventory_count). Skip variants
-          // whose id starts with 'new-' here — those are inserts and
-          // currently only the Edit Product modal flow creates them. The
-          // bulk-save path is for in-place edits to existing variant rows.
           for (const v of p.variants) {
             if (!v.id.startsWith('new-')) {
               await supabase.from('product_variants').update({
@@ -711,6 +734,8 @@ export default function AdminInventory() {
         }
       }
     }
+
+    setPendingDemoOverrides({});
     setHasUnsavedChanges(false);
   }
 
