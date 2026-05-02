@@ -2389,13 +2389,15 @@ export default function AdminInventory() {
                                   <div className="space-y-3">
                                     {p.colorways!.map(cw => (
                                       <div key={cw.id} className="rounded-lg border border-border/40 bg-background/20 p-2.5">
-                                        {/* Colorway swatch only */}
-                                        <div className="flex items-center mb-2 pl-0.5">
+                                        {/* Colorway swatch + name */}
+                                        <div className="flex items-center gap-2 mb-2 pl-0.5">
                                           <span
                                             className="w-4 h-4 rounded-full border border-border shrink-0"
                                             style={getSwatchStyle(cw)}
-                                            title={cw.name}
                                           />
+                                          <span className="text-[11px] font-display tracking-widest text-foreground uppercase">
+                                            {cw.name}
+                                          </span>
                                         </div>
                                         {/* Size cells for this colorway */}
                                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
