@@ -6,10 +6,12 @@ import { SmartCartProvider } from '@/contexts/SmartCartContext';
 import { StyleKitProvider } from '@/contexts/StyleKitContext';
 import { SpatialCanvas } from '@/components/storefront/SpatialCanvas';
 import { StyleKitView } from '@/components/storefront/StyleKitView';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Index = () => {
   const [isReady, setIsReady] = useState(false);
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -32,7 +34,7 @@ const Index = () => {
   if (!isReady) return null;
 
   return (
-    <div className="h-screen w-full">
+    <div className={`${theme} h-screen w-full bg-background text-foreground`}>
       <CartProvider>
         <SmartCartProvider>
           <StyleKitProvider>

@@ -128,14 +128,18 @@ export function ThemeProvider({ children, storageKey, defaults }: { children: Re
     root.setProperty('--color-body', settings.bodyFontColor || 'inherit');
     root.setProperty('--color-numeral', settings.numeralFontColor || 'inherit');
     root.setProperty('--color-store-name', settings.storeNameColor || 'inherit');
-    if (settings.mode === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else {
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
-    }
+    // Theme mode is applied via container className on storefront
+    // and Lab preview only — not on documentElement. Admin chrome
+    // stays dark regardless of storefront theme.
   }, [settings]);
+
+  // Document root always renders in dark mode — Smart Portal /
+  // admin chrome are dark by design. Storefront and Lab preview
+  // override this via container-scoped classes.
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  }, []);
 
   return (
     <ThemeContext.Provider
