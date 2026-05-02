@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
-import type { DemoProduct, ProductImage } from '@/data/demo-data';
+import type { DemoProduct, ProductImage, Colorway } from '@/data/demo-data';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -27,6 +27,7 @@ export interface DemoProductOverride {
   category?: string;
   images?: ProductImage[];
   tags?: string[];
+  colorways?: Colorway[];
   product_type?: string;
 }
 
