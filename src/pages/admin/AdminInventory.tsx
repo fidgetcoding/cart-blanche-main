@@ -1473,7 +1473,7 @@ export default function AdminInventory() {
                         <div>
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">CATEGORY</p>
                           <div className="flex flex-wrap gap-2">
-                            {PRODUCT_TYPES.map(cat => (
+                            {allCategoryOptions.map(cat => (
                               <button
                                 key={cat}
                                 onClick={(e) => {
@@ -1481,6 +1481,11 @@ export default function AdminInventory() {
                                   setProducts(prev => prev.map(pr =>
                                     pr.id === p.id ? { ...pr, product_type: (pr.product_type === cat ? '' : cat) as ProductType } : pr
                                   ));
+                                  if (p.isDemo) {
+                                    saveDemoProductOverride(p.id, { product_type: (p.product_type === cat ? '' : cat) as ProductType });
+                                  } else {
+                                    setHasUnsavedChanges(true);
+                                  }
                                 }}
                                 className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
                                   p.product_type === cat
@@ -1491,6 +1496,42 @@ export default function AdminInventory() {
                                 {cat.toUpperCase()}
                               </button>
                             ))}
+                            {addingTypeForId === p.id ? (
+                              <input
+                                autoFocus
+                                value={newTypeInput}
+                                onChange={(e) => setNewTypeInput(e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => {
+                                  e.stopPropagation();
+                                  if (e.key === 'Enter') {
+                                    const v = addCustomProductType(newTypeInput);
+                                    if (v) {
+                                      setProducts(prev => prev.map(pr =>
+                                        pr.id === p.id ? { ...pr, product_type: v as ProductType } : pr
+                                      ));
+                                      if (p.isDemo) saveDemoProductOverride(p.id, { product_type: v as ProductType });
+                                      else setHasUnsavedChanges(true);
+                                    }
+                                    setNewTypeInput('');
+                                    setAddingTypeForId(null);
+                                  } else if (e.key === 'Escape') {
+                                    setNewTypeInput('');
+                                    setAddingTypeForId(null);
+                                  }
+                                }}
+                                onBlur={() => { setNewTypeInput(''); setAddingTypeForId(null); }}
+                                placeholder="new category"
+                                className="px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border border-foreground/30 bg-transparent text-foreground outline-none w-32"
+                              />
+                            ) : (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setAddingTypeForId(p.id); }}
+                                className="px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border border-dashed border-border/60 text-muted-foreground/70 hover:text-foreground hover:border-foreground/40 transition-colors"
+                              >
+                                + ADD
+                              </button>
+                            )}
                           </div>
                         </div>
 
