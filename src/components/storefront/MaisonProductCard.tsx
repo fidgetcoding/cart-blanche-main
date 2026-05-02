@@ -546,6 +546,13 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
         onClose={() => setShowSizeChart(false)}
         variant="maison"
       />
+
+      {/* Waitlist Modal */}
+      <MaisonWaitlistModal
+        open={waitlistOpen}
+        onClose={() => setWaitlistOpen(false)}
+        product={product}
+      />
     </div>
   );
 }
