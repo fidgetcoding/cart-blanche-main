@@ -138,6 +138,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [selectedColorwayId, setSelectedColorwayId] = useState<string | null>(
     product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
   );
+  const [colorwayPage, setColorwayPage] = useState(0);
 
   // Resolve the selected colorway object. If null (no colorways) or
   // the id doesn't match any colorway (defensive), this is null.
@@ -147,6 +148,15 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   // colorway is only visible when that colorway is selected.
   const displayImages = product.images.filter(img =>
     !img.colorway_id || img.colorway_id === selectedColorwayId
+  );
+
+  const VISIBLE_COLORWAYS = 10;
+  const allColorways = product.colorways || [];
+  const totalColorwayPages = Math.max(1, Math.ceil(allColorways.length / VISIBLE_COLORWAYS));
+  const safeColorwayPage = Math.min(colorwayPage, Math.max(0, totalColorwayPages - 1));
+  const colorwaysToShow = allColorways.slice(
+    safeColorwayPage * VISIBLE_COLORWAYS,
+    (safeColorwayPage + 1) * VISIBLE_COLORWAYS
   );
 
   // Filtered visible indices for counter
@@ -171,6 +181,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     setSelectedVariant(match ? match.id : null);
     setExpandDetails(false);
     setActiveImage(0);
+    setColorwayPage(0);
     // Preload worn/alternate images for the SELECTED colorway in
     // background. Only the currently-displayed images need preloading;
     // images for other colorways will load when their swatch is selected.
@@ -187,6 +198,16 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   // colorway has fewer images than current index, clamp to last.
   useEffect(() => {
     setActiveImage(prev => Math.min(prev, Math.max(0, displayImages.length - 1)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedColorwayId]);
+
+  // Auto-page: ensure the selected colorway is always on the visible page.
+  useEffect(() => {
+    if (!selectedColorwayId) return;
+    const idx = allColorways.findIndex(c => c.id === selectedColorwayId);
+    if (idx < 0) return;
+    const targetPage = Math.floor(idx / VISIBLE_COLORWAYS);
+    if (targetPage !== colorwayPage) setColorwayPage(targetPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedColorwayId]);
 
@@ -339,6 +360,40 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       variantTitle: v.title,
       price: v.price ?? product.price,
     });
+  };
+
+  const colorwayWheelLockRef = useRef(false);
+  const colorwayTouchStartY = useRef<number | null>(null);
+
+  const handleColorwayWheel = (e: React.WheelEvent) => {
+    if (totalColorwayPages <= 1) return;
+    e.stopPropagation();
+    if (colorwayWheelLockRef.current) return;
+    if (Math.abs(e.deltaY) < 10) return;
+    if (e.deltaY > 0) {
+      setColorwayPage(p => Math.min(p + 1, totalColorwayPages - 1));
+    } else {
+      setColorwayPage(p => Math.max(p - 1, 0));
+    }
+    colorwayWheelLockRef.current = true;
+    setTimeout(() => { colorwayWheelLockRef.current = false; }, 800);
+  };
+
+  const handleColorwayTouchStart = (e: React.TouchEvent) => {
+    colorwayTouchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleColorwayTouchEnd = (e: React.TouchEvent) => {
+    if (totalColorwayPages <= 1) return;
+    if (colorwayTouchStartY.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - colorwayTouchStartY.current;
+    colorwayTouchStartY.current = null;
+    if (Math.abs(deltaY) < 30) return;
+    if (deltaY < 0) {
+      setColorwayPage(p => Math.min(p + 1, totalColorwayPages - 1));
+    } else {
+      setColorwayPage(p => Math.max(p - 1, 0));
+    }
   };
 
   return (
@@ -503,30 +558,55 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                 </div>
               )}
 
-              {product.colorways && product.colorways.length >= 1 && (
-                <div
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 z-20"
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  {product.colorways.map((c) => {
-                    const active = selectedColorwayId === c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
-                        title={c.name}
-                        className={`w-4 h-4 rounded-full border transition-all shrink-0 ${
-                          active
-                            ? 'border-foreground/60 ring-1 ring-foreground/40 ring-offset-1 ring-offset-background/30'
-                            : 'border-foreground/30 hover:border-foreground/60'
-                        }`}
-                        style={getSwatchStyle(c)}
-                      />
-                    );
-                  })}
-                </div>
+              {allColorways.length >= 1 && (
+                <>
+                  {totalColorwayPages > 1 && (
+                    <div
+                      className="absolute right-9 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-20"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      {Array.from({ length: totalColorwayPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setColorwayPage(i); }}
+                          className={`w-1 h-1 rounded-full transition-all ${
+                            i === safeColorwayPage ? 'bg-foreground/95' : 'bg-foreground/30'
+                          }`}
+                          aria-label={`Color page ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <div
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 z-20"
+                    style={{ overscrollBehavior: 'contain' }}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onWheel={handleColorwayWheel}
+                    onTouchStart={handleColorwayTouchStart}
+                    onTouchEnd={handleColorwayTouchEnd}
+                  >
+                    {colorwaysToShow.map((c) => {
+                      const active = selectedColorwayId === c.id;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
+                          title={c.name}
+                          className={`w-4 h-4 rounded-full border transition-all shrink-0 ${
+                            active
+                              ? 'border-foreground/60 ring-1 ring-foreground/40 ring-offset-1 ring-offset-background/30'
+                              : 'border-foreground/30 hover:border-foreground/60'
+                          }`}
+                          style={getSwatchStyle(c)}
+                        />
+                      );
+                    })}
+                  </div>
+                </>
               )}
 
               {displayImages && displayImages.length > 1 && (
