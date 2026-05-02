@@ -2212,11 +2212,11 @@ export default function AdminInventory() {
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">CATEGORY</label>
                 <div className="flex flex-wrap gap-2">
-                  {PRODUCT_TYPES.map(cat => (
+                  {allCategoryOptions.map(cat => (
                     <button
                       key={cat}
                       onClick={() => {
-                        const newCat = editingProduct.product_type === cat ? '' as ProductType : cat;
+                        const newCat = (editingProduct.product_type === cat ? '' : cat) as ProductType;
                         setEditingProduct({ ...editingProduct, product_type: newCat });
                         setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, product_type: newCat } : p));
                       }}
