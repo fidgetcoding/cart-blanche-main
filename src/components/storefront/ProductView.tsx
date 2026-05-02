@@ -120,9 +120,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
-  const [selectedColorwayId, setSelectedColorwayId] = useState<string | null>(
-    product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
-  );
   const [activeImage, setActiveImage] = useState(0);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
@@ -137,6 +134,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   }, []);
 
   const product = DEMO_PRODUCTS[productIndex];
+  const [selectedColorwayId, setSelectedColorwayId] = useState<string | null>(
+    product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
+  );
 
   // Filtered visible indices for counter
   const visibleIndices = useMemo(() =>
