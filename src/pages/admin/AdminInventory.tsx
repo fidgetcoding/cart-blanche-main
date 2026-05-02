@@ -70,7 +70,22 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     const fullImages: ProductImage[] = p.images.map(img => typeof img === 'string'
       ? { thumb: img, medium: img, full: img }
       : img);
-    const sortedImages = sortImagesByColorwayOrder(fullImages, p.colorways || []);
+    const sortedImagesRaw = sortImagesByColorwayOrder(fullImages, p.colorways || []);
+    // Backfill `featured` so the implicit grid pick (first image of each
+    // colorway group) is visibly starred. If a group already has an
+    // explicit featured image, leave it alone.
+    const seenGroups = new Set<string>();
+    const groupHasFeatured = new Set<string>();
+    sortedImagesRaw.forEach(img => {
+      if (img.featured) groupHasFeatured.add(img.colorway_id || '__untagged__');
+    });
+    const sortedImages = sortedImagesRaw.map(img => {
+      const key = img.colorway_id || '__untagged__';
+      if (groupHasFeatured.has(key)) return img;
+      if (seenGroups.has(key)) return img;
+      seenGroups.add(key);
+      return { ...img, featured: true };
+    });
     return {
       id: p.id,
       title: p.title,
