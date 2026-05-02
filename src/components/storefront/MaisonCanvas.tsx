@@ -137,7 +137,16 @@ export function MaisonCanvas() {
     return new Set(pool.map(p => (p.gender || 'unisex').toLowerCase()));
   }, [allProducts, activeCategory, activeType]);
 
-  const showGenderSelector = availableGenders.size > 1;
+  // A gender chip is "available" if clicking it would yield at least
+  // one product. MEN matches 'men' or 'unisex'; WOMEN matches 'women'
+  // or 'unisex'; UNISEX matches only 'unisex'.
+  const isGenderAvailable = (g: string): boolean => {
+    const upper = g.toUpperCase();
+    if (upper === 'MEN') return availableGenders.has('men') || availableGenders.has('unisex');
+    if (upper === 'WOMEN') return availableGenders.has('women') || availableGenders.has('unisex');
+    if (upper === 'UNISEX') return availableGenders.has('unisex');
+    return false;
+  };
 
   if (loading) {
     return (
@@ -272,29 +281,35 @@ export function MaisonCanvas() {
                     </button>
                   ))}
                 </div>
-                {showGenderSelector && (
-                  <>
-                    <div className="w-px h-4 bg-border/60 mx-3 flex-shrink-0" />
-                    <div className="flex items-center gap-4 flex-nowrap">
-                      {['MEN', 'WOMEN', 'UNISEX'].map(g => {
-                        const isActive = activeGenders.includes(g);
-                        return (
-                          <button
-                            key={g}
-                            onMouseEnter={() => toggleGender(g)}
-                            onClick={() => toggleGender(g)}
-                            className={`text-[11px] tracking-[0.15em] uppercase whitespace-nowrap transition-all duration-200 ${
-                              isActive ? 'text-foreground opacity-100' : 'text-muted-foreground opacity-50 hover:opacity-80 hover:text-foreground'
-                            }`}
-                            aria-pressed={isActive}
-                          >
-                            {g}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+                <>
+                  <div className="w-px h-4 bg-border/60 mx-3 flex-shrink-0" />
+                  <div className="flex items-center gap-4 flex-nowrap">
+                    {['MEN', 'WOMEN', 'UNISEX'].map(g => {
+                      const isActive = activeGenders.includes(g);
+                      const isAvailable = isGenderAvailable(g);
+                      return (
+                        <button
+                          key={g}
+                          onMouseEnter={() => isAvailable && toggleGender(g)}
+                          onClick={() => isAvailable && toggleGender(g)}
+                          disabled={!isAvailable}
+                          className={`text-[11px] tracking-[0.15em] uppercase whitespace-nowrap transition-all duration-200 ${
+                            !isAvailable
+                              ? 'text-muted-foreground opacity-20 cursor-not-allowed'
+                              : isActive
+                                ? 'text-foreground opacity-100'
+                                : 'text-muted-foreground opacity-50 hover:opacity-80 hover:text-foreground'
+                          }`}
+                          title={!isAvailable ? `No ${g.toLowerCase()} items in this category` : undefined}
+                          aria-pressed={isActive}
+                          aria-disabled={!isAvailable}
+                        >
+                          {g}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
               </motion.div>
             )}
           </AnimatePresence>
