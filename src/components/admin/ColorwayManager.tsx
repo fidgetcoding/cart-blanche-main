@@ -158,6 +158,15 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  type ProductImageShape = { thumb: string; medium: string; full: string };
+  const [galleryImages, setGalleryImages] = useState<ProductImageShape[]>(
+    initial?.images || []
+  );
+  const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+  const [galleryDragIdx, setGalleryDragIdx] = useState<number | null>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingUploadRef = useRef<{ kind: 'new' } | { kind: 'replace'; idx: number; size: 'thumb' | 'medium' | 'full' } | null>(null);
+
   async function handleUpload(file: File) {
     setUploading(true);
     try {
@@ -174,6 +183,83 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
     }
   }
 
+  async function uploadToStorage(file: File): Promise<string> {
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `colorway-gallery/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from('product-media').upload(path, file);
+    if (error) throw error;
+    const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
+    return publicUrl;
+  }
+
+  async function handleAddImage(file: File) {
+    setUploadingSlot('new');
+    try {
+      const url = await uploadToStorage(file);
+      setGalleryImages(prev => [...prev, { thumb: url, medium: url, full: url }]);
+    } catch (e) {
+      console.error('Gallery image upload failed:', e);
+    } finally {
+      setUploadingSlot(null);
+    }
+  }
+
+  async function handleReplaceSize(idx: number, size: 'thumb' | 'medium' | 'full', file: File) {
+    setUploadingSlot(`${idx}-${size}`);
+    try {
+      const url = await uploadToStorage(file);
+      setGalleryImages(prev => prev.map((img, i) => i === idx ? { ...img, [size]: url } : img));
+    } catch (e) {
+      console.error('Size replace upload failed:', e);
+    } finally {
+      setUploadingSlot(null);
+    }
+  }
+
+  function removeImage(idx: number) {
+    setGalleryImages(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function handleGalleryDragStart(idx: number) {
+    setGalleryDragIdx(idx);
+  }
+  function handleGalleryDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+  function handleGalleryDrop(targetIdx: number) {
+    if (galleryDragIdx === null || galleryDragIdx === targetIdx) {
+      setGalleryDragIdx(null);
+      return;
+    }
+    const next = [...galleryImages];
+    const [moved] = next.splice(galleryDragIdx, 1);
+    next.splice(targetIdx, 0, moved);
+    setGalleryImages(next);
+    setGalleryDragIdx(null);
+  }
+
+  function triggerAdd() {
+    pendingUploadRef.current = { kind: 'new' };
+    galleryFileInputRef.current?.click();
+  }
+  function triggerReplace(idx: number, size: 'thumb' | 'medium' | 'full') {
+    pendingUploadRef.current = { kind: 'replace', idx, size };
+    galleryFileInputRef.current?.click();
+  }
+  function handleGalleryFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const target = pendingUploadRef.current;
+    pendingUploadRef.current = null;
+    if (!target) return;
+    if (target.kind === 'new') {
+      handleAddImage(file);
+    } else {
+      handleReplaceSize(target.idx, target.size, file);
+    }
+  }
+
   function handleSubmit() {
     if (!name.trim() && !isMultiColor) return;
     onSave({
@@ -181,6 +267,7 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
       hex: useCustomImage ? '#000000' : hex,
       swatch_image: useCustomImage && swatchImage ? swatchImage : undefined,
       component_hexes: initial?.component_hexes,
+      images: galleryImages.length > 0 ? galleryImages : undefined,
     });
   }
 
