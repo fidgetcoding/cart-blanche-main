@@ -181,5 +181,11 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
         </motion.div>
       )}
     </AnimatePresence>
+    <SizeChartOverlay
+      open={sizeChartOpen}
+      category={product.product_type || product.category}
+      onClose={() => setSizeChartOpen(false)}
+    />
+    </>
   );
 }
