@@ -135,6 +135,35 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       prevImage();
     }
   }, [hasMultiple, nextImage, prevImage]);
+function ImageCellWithDebug({ src, alt, widthPct }: { src: string; alt: string; widthPct: number }) {
+  const [naturalDims, setNaturalDims] = useState<string>('loading...');
+  return (
+    <div
+      className="h-full flex-shrink-0 flex flex-col items-center justify-center relative"
+      style={{ width: `${widthPct}%`, padding: '8%' }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        className="object-contain"
+        style={{ width: '100%', height: '100%' }}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        onLoad={(e) => {
+          const t = e.currentTarget;
+          setNaturalDims(`${t.naturalWidth}x${t.naturalHeight}`);
+        }}
+      />
+      <div className="absolute top-1 left-1 right-1 text-[8px] font-mono text-red-500 bg-white/90 px-1 truncate z-10 pointer-events-none">
+        {src}
+      </div>
+      <div className="absolute bottom-1 left-1 right-1 text-[10px] font-mono font-bold text-blue-600 bg-yellow-200 px-1 truncate z-10 pointer-events-none text-center">
+        {naturalDims}
+      </div>
+    </div>
+  );
+}
 
 
   const isCompact = viewMode === 6;
