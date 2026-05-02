@@ -56,6 +56,10 @@ function sortImagesByColorwayOrder(
   }));
   indexed.sort((a, b) => {
     if (a.groupKey !== b.groupKey) return a.groupKey - b.groupKey;
+    // Within a group, featured image floats to top.
+    const aFeat = a.img.featured ? 0 : 1;
+    const bFeat = b.img.featured ? 0 : 1;
+    if (aFeat !== bFeat) return aFeat - bFeat;
     return a.idx - b.idx;
   });
   return indexed.map(x => x.img);
