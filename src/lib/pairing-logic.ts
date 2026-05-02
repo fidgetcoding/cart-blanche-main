@@ -162,7 +162,9 @@ export function getSuggestedProducts({
   const presetProducts = presetIds
     .filter(id => !excludeIds.has(id))
     .map(id => DEMO_PRODUCTS.find(p => p.id === id))
-    .filter(Boolean) as DemoProduct[];
+    .filter((p): p is DemoProduct => Boolean(p))
+    .filter(p => isGenderCompatible(anchor, p, activeGenders))
+    .filter(p => !isRegisterIncompatible(anchor, p));
 
   let candidates = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id));
 
@@ -223,7 +225,7 @@ export function getSuggestedProducts({
     const filtered = fallback
       .filter(p => isGenderCompatible(anchor, p, activeGenders))
       .filter(p => !isRegisterIncompatible(anchor, p));
-    return filtered.length > 0 ? filtered : fallback;
+    return filtered;
   }
 
   return result;
