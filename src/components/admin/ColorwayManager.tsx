@@ -208,21 +208,15 @@ function ColorwayEditDropdown({ initial, onClose, onSave, onDelete }: ModalProps
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
-      onClick={onClose}
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -4 }}
+      transition={{ duration: 0.15 }}
+      onClick={(e) => e.stopPropagation()}
+      className="absolute left-0 top-full mt-1.5 z-50 w-72 bg-card border border-border rounded-lg p-3 space-y-3 shadow-xl"
     >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-card border border-border rounded-xl p-5 space-y-4 shadow-2xl"
-      >
-        <h3 className="text-sm font-display tracking-widest text-foreground">
-          {initial ? 'EDIT COLOR' : 'ADD COLOR'}
+      <h3 className="text-[10px] font-display tracking-widest text-muted-foreground">
+        {initial ? 'EDIT COLOR' : 'ADD COLOR'}
         </h3>
 
         <div className="flex items-center gap-3 p-3 rounded-lg bg-background/40 border border-border/40">
