@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Ruler } from 'lucide-react';
 import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
-import { WAITLIST_COLOR_OPTIONS } from './WaitlistModal';
+import { getSwatchStyle } from '@/lib/swatch-style';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import type { DemoProduct } from '@/data/demo-data';
 
