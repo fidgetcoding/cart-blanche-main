@@ -1807,18 +1807,35 @@ export default function AdminInventory() {
                           />
 
                           <div className="space-y-2">
+                            <Reorder.Group
+                              axis="y"
+                              values={p.imagesFull || []}
+                              onReorder={(newOrder) => setProductImagesFull(p.id, newOrder)}
+                              className="space-y-2"
+                            >
                             {p.imagesFull?.map((img, imgIdx) => {
                               const tagged = img.colorway_id
                                 ? p.colorways?.find(c => c.id === img.colorway_id)
                                 : null;
                               const popoverKey = `${p.id}-${imgIdx}`;
                               return (
-                                <div
+                                <Reorder.Item
                                   key={`${p.id}-img-${imgIdx}-${img.thumb}-${img.medium}-${img.full}`}
-                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40"
+                                  value={img}
+                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40 cursor-grab active:cursor-grabbing select-none"
+                                  whileDrag={{
+                                    scale: 1.02,
+                                    zIndex: 50,
+                                    boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+                                    cursor: 'grabbing',
+                                  }}
+                                  transition={{ duration: 0.2 }}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="flex items-start gap-2">
+                                    <div className="pt-1" title="Drag row to reorder">
+                                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/50" />
+                                    </div>
 
                                     {/* Color tag swatch indicator */}
                                     <div className="relative pt-1">
@@ -2032,9 +2049,10 @@ export default function AdminInventory() {
                                       <X className="w-3.5 h-3.5 text-muted-foreground" />
                                     </button>
                                   </div>
-                                </div>
+                                </Reorder.Item>
                               );
                             })}
+                            </Reorder.Group>
 
                             {/* Use one file for all 3 sizes — fast path link.
                                 Only shown when relevant: no images yet, or at least one entry doesn't have 3 unique URLs. */}
