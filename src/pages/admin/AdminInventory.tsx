@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square, Star } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
@@ -1863,15 +1863,14 @@ export default function AdminInventory() {
                                   key={`${p.id}-img-${imgIdx}-${img.thumb}-${img.medium}-${img.full}`}
                                   className={`relative border rounded-lg p-2 transition-colors ${
                                     img.featured
-                                      ? 'border-primary/70 bg-primary/5 ring-1 ring-primary/40'
+                                      ? 'border-primary/70 bg-primary/10 ring-1 ring-primary/40'
                                       : 'border-border/40 bg-background/40'
                                   }`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {img.featured && (
-                                    <div className="absolute -top-2 left-3 px-2 py-0.5 rounded-sm bg-primary text-primary-foreground text-[8px] font-display tracking-[0.15em] leading-none flex items-center gap-1 shadow-sm">
-                                      <Star className="w-2.5 h-2.5 fill-current" />
-                                      FEATURED ON STORE GRID
+                                    <div className="mb-2 inline-flex items-center rounded-md border border-primary/30 bg-primary/15 px-2 py-1 text-[9px] font-display tracking-[0.15em] text-primary">
+                                      SHOWING ON STORE GRID
                                     </div>
                                   )}
                                   <div className="flex items-start gap-2">
@@ -2082,10 +2081,14 @@ export default function AdminInventory() {
                                         e.stopPropagation();
                                         toggleFeatured(p.id, imgIdx);
                                       }}
-                                      className={`p-1 rounded hover:bg-secondary transition-colors ${img.featured ? 'text-primary' : 'text-muted-foreground/50 hover:text-foreground'}`}
-                                      title={img.featured ? 'Featured on grid (click to unfeature)' : 'Set as featured grid image for this color'}
+                                      className={`rounded-md border px-2 py-1 text-[9px] font-display tracking-[0.14em] transition-colors ${
+                                        img.featured
+                                          ? 'border-primary/40 bg-primary/15 text-primary'
+                                          : 'border-border/60 text-muted-foreground hover:border-foreground/30 hover:text-foreground hover:bg-secondary'
+                                      }`}
+                                      title={img.featured ? 'This image is currently showing on the store grid' : 'Use this image on the store grid'}
                                     >
-                                      <Star className={`w-3.5 h-3.5 ${img.featured ? 'fill-current' : ''}`} />
+                                      {img.featured ? 'ON GRID' : 'SHOW ON GRID'}
                                     </button>
                                     <button
                                       type="button"
