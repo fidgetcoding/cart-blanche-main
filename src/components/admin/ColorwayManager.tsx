@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, Pencil, GripVertical, ChevronUp, ChevronDown, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
 import type { Colorway } from '@/data/demo-data';
 import { supabase } from '@/integrations/supabase/client';
+import { getSwatchStyle } from '@/lib/swatch-style';
 
 interface Props {
   colorways: Colorway[];
@@ -77,9 +78,7 @@ export function ColorwayManager({ colorways, onChange }: Props) {
             <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab" />
             <span
               className="w-4 h-4 rounded-full border border-border/60 bg-cover bg-center"
-              style={c.swatch_image
-                ? { backgroundImage: `url(${c.swatch_image})` }
-                : { backgroundColor: c.hex }}
+              style={getSwatchStyle(c)}
             />
             <span className="tracking-wider">{c.name.toUpperCase()}</span>
             <button
@@ -155,6 +154,7 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
   const [hex, setHex] = useState(initial?.hex || '#000000');
   const [swatchImage, setSwatchImage] = useState(initial?.swatch_image || '');
   const [useCustomImage, setUseCustomImage] = useState(!!initial?.swatch_image);
+  const isMultiColor = !!(initial?.component_hexes && initial.component_hexes.length >= 2);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -175,11 +175,12 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
   }
 
   function handleSubmit() {
-    if (!name.trim()) return;
+    if (!name.trim() && !isMultiColor) return;
     onSave({
-      name: name.trim(),
+      name: isMultiColor ? 'Multi-Color' : name.trim(),
       hex: useCustomImage ? '#000000' : hex,
       swatch_image: useCustomImage && swatchImage ? swatchImage : undefined,
+      component_hexes: initial?.component_hexes,
     });
   }
 
@@ -205,14 +206,16 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
         <div className="flex items-center gap-3 p-3 rounded-lg bg-background/40 border border-border/40">
           <span
             className="w-12 h-12 rounded-full border border-border/60 bg-cover bg-center flex-shrink-0"
-            style={useCustomImage && swatchImage
-              ? { backgroundImage: `url(${swatchImage})` }
-              : { backgroundColor: hex }}
+            style={getSwatchStyle({
+              hex,
+              swatch_image: useCustomImage && swatchImage ? swatchImage : undefined,
+              component_hexes: initial?.component_hexes,
+            })}
           />
           <div className="min-w-0">
             <p className="text-[9px] font-display tracking-widest text-muted-foreground">PREVIEW</p>
             <p className="text-sm font-display tracking-wider text-foreground truncate">
-              {name.trim() || <span className="text-muted-foreground/50 italic">no name</span>}
+              {(isMultiColor ? 'Multi-Color' : name.trim()) || <span className="text-muted-foreground/50 italic">no name</span>}
             </p>
           </div>
         </div>
@@ -220,11 +223,17 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
         <div>
           <label className="text-[9px] font-display tracking-widest text-muted-foreground">NAME</label>
           <input
-            value={name}
+            value={isMultiColor ? 'Multi-Color' : name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Black"
-            className="w-full mt-1 px-3 py-2 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            disabled={isMultiColor}
+            className="w-full mt-1 px-3 py-2 bg-background/40 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
           />
+          {isMultiColor && (
+            <p className="mt-1.5 text-[10px] text-muted-foreground/80">
+              Multi-color colorways are always named "Multi-Color".
+            </p>
+          )}
         </div>
 
         <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
