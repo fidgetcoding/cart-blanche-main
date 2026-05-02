@@ -1807,35 +1807,18 @@ export default function AdminInventory() {
                           />
 
                           <div className="space-y-2">
-                            <Reorder.Group
-                              axis="y"
-                              values={p.imagesFull || []}
-                              onReorder={(newOrder) => setProductImagesFull(p.id, newOrder)}
-                              className="space-y-2"
-                            >
                             {p.imagesFull?.map((img, imgIdx) => {
                               const tagged = img.colorway_id
                                 ? p.colorways?.find(c => c.id === img.colorway_id)
                                 : null;
                               const popoverKey = `${p.id}-${imgIdx}`;
                               return (
-                                <Reorder.Item
+                                <div
                                   key={`${p.id}-img-${imgIdx}-${img.thumb}-${img.medium}-${img.full}`}
-                                  value={img}
-                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40 cursor-grab active:cursor-grabbing select-none"
-                                  whileDrag={{
-                                    scale: 1.02,
-                                    zIndex: 50,
-                                    boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
-                                    cursor: 'grabbing',
-                                  }}
-                                  transition={{ duration: 0.2 }}
+                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="flex items-start gap-2">
-                                    <div className="pt-1" title="Drag row to reorder">
-                                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/50" />
-                                    </div>
 
                                     {/* Color tag swatch indicator */}
                                     <div className="relative pt-1">
