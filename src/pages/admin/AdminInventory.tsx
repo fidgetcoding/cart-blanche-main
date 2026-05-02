@@ -71,21 +71,25 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
       ? { thumb: img, medium: img, full: img }
       : img);
     const sortedImagesRaw = sortImagesByColorwayOrder(fullImages, p.colorways || []);
-    // Backfill `featured` so the implicit grid pick (first image of each
-    // colorway group) is visibly starred. If a group already has an
-    // explicit featured image, leave it alone.
-    const seenGroups = new Set<string>();
-    const groupHasFeatured = new Set<string>();
-    sortedImagesRaw.forEach(img => {
-      if (img.featured) groupHasFeatured.add(img.colorway_id || '__untagged__');
+    // Only ONE image across the whole product can be featured (the one shown
+    // on the store grid). If no image is explicitly featured, backfill the
+    // very first image. If multiple are marked featured (legacy data), keep
+    // only the first one.
+    let featuredAssigned = false;
+    const sortedImages = sortedImagesRaw.map((img, i) => {
+      if (img.featured && !featuredAssigned) {
+        featuredAssigned = true;
+        return img;
+      }
+      if (img.featured) {
+        const { featured: _drop, ...rest } = img;
+        return rest;
+      }
+      return img;
     });
-    const sortedImages = sortedImagesRaw.map(img => {
-      const key = img.colorway_id || '__untagged__';
-      if (groupHasFeatured.has(key)) return img;
-      if (seenGroups.has(key)) return img;
-      seenGroups.add(key);
-      return { ...img, featured: true };
-    });
+    if (!featuredAssigned && sortedImages.length > 0) {
+      sortedImages[0] = { ...sortedImages[0], featured: true };
+    }
     return {
       id: p.id,
       title: p.title,
