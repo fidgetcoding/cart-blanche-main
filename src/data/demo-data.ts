@@ -90,13 +90,24 @@ export interface DemoHotzone {
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
 
-function makeVariants(prefix: string): DemoVariant[] {
-  return SIZES.map((s, i) => ({
-    id: `${prefix}-${s.toLowerCase()}`,
-    title: s,
-    options: { size: s },
-    inventory_count: Math.floor(Math.random() * 20) + 1,
-  }));
+function makeVariants(prefix: string, colorwayIds?: string[]): DemoVariant[] {
+  if (!colorwayIds || colorwayIds.length === 0) {
+    return SIZES.map(s => ({
+      id: `${prefix}-${s.toLowerCase()}`,
+      title: s,
+      options: { size: s },
+      inventory_count: Math.floor(Math.random() * 20) + 1,
+    }));
+  }
+  return colorwayIds.flatMap(cwId =>
+    SIZES.map(s => ({
+      id: `${prefix}-${cwId}-${s.toLowerCase()}`,
+      title: s,
+      options: { size: s },
+      inventory_count: Math.floor(Math.random() * 20) + 1,
+      colorway_id: cwId,
+    }))
+  );
 }
 
 export const DEMO_HOTZONES: DemoHotzone[] = [
