@@ -813,7 +813,18 @@ export default function AdminInventory() {
       const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
       const target = products.find(p => p.id === productId);
       if (!target) return;
-      const next = [...target.imagesFull, { thumb: publicUrl, medium: publicUrl, full: publicUrl }];
+      const sizeChoice = pendingAddSizeRef.current || 'all';
+      pendingAddSizeRef.current = null;
+      // Build the new entry. 'all' fills all 3 sizes with the same URL (fast path).
+      // 'thumb' / 'medium' / 'full' fills only that size; others remain empty strings.
+      const newEntry: ProductImage = sizeChoice === 'all'
+        ? { thumb: publicUrl, medium: publicUrl, full: publicUrl }
+        : {
+            thumb: sizeChoice === 'thumb' ? publicUrl : '',
+            medium: sizeChoice === 'medium' ? publicUrl : '',
+            full: sizeChoice === 'full' ? publicUrl : '',
+          };
+      const next = [...target.imagesFull, newEntry];
       setProductImagesFull(productId, next);
     } catch (e) {
       console.error('Image add failed:', e);
