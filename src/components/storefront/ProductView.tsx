@@ -134,6 +134,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   }, []);
 
   const product = DEMO_PRODUCTS[productIndex];
+  const [selectedColorwayId, setSelectedColorwayId] = useState<string | null>(
+    product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
+  );
 
   // Filtered visible indices for counter
   const visibleIndices = useMemo(() =>
@@ -578,6 +581,31 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         <span key={i} className="block">{s}</span>
                       ))}
                     </p>
+
+                    {/* Colorway swatches — render only when 2+ colorways exist */}
+                    {product.colorways && product.colorways.length > 1 && (
+                      <div className="flex items-center justify-center gap-2 [@media(max-height:760px)]:justify-start">
+                        {product.colorways.map((c) => {
+                          const active = selectedColorwayId === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
+                              title={c.name}
+                              className={`w-5 h-5 rounded-full border transition-all shrink-0 ${
+                                active
+                                  ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background'
+                                  : 'border-foreground/30 hover:border-foreground/60'
+                              }`}
+                              style={c.swatch_image
+                                ? { backgroundImage: `url(${c.swatch_image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                                : { backgroundColor: c.hex }}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
 
                     <div className="[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-x-4 [@media(max-height:760px)]:gap-y-2">
                       <div className="space-y-4 [@media(max-height:760px)]:min-w-[10.5rem] [@media(max-height:760px)]:space-y-2.5 mb-2 [@media(max-height:760px)]:mb-0">

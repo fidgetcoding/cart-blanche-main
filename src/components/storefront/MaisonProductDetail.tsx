@@ -125,6 +125,9 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
 /* ── Main product detail ── */
 export function MaisonProductDetail({ product, products, allProducts, onClose, onNavigate, onBuildSet }: MaisonProductDetailProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+  const [selectedColorwayId, setSelectedColorwayId] = useState<string | null>(
+    product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
+  );
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
@@ -480,6 +483,31 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
               Low Stock
             </p>
           ) : null}
+
+          {/* Colorway swatches — render only when 2+ colorways exist */}
+          {product.colorways && product.colorways.length > 1 && (
+            <div className="mt-6 flex items-center justify-center gap-2">
+              {product.colorways.map((c) => {
+                const active = selectedColorwayId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
+                    title={c.name}
+                    className={`w-[18px] h-[18px] rounded-full border transition-all shrink-0 ${
+                      active
+                        ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background'
+                        : 'border-foreground/30 hover:border-foreground/60'
+                    }`}
+                    style={c.swatch_image
+                      ? { backgroundImage: `url(${c.swatch_image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                      : { backgroundColor: c.hex }}
+                  />
+                );
+              })}
+            </div>
+          )}
 
           {/* Size selector */}
           {product.variants.length > 1 && (
