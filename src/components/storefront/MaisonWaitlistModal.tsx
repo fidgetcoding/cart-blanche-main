@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Ruler } from 'lucide-react';
 import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
 import { WAITLIST_COLOR_OPTIONS } from './WaitlistModal';
+import { SizeChartOverlay } from './SizeChartOverlay';
 import type { DemoProduct } from '@/data/demo-data';
 
 interface MaisonWaitlistModalProps {
@@ -21,6 +22,7 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { submit, submitting } = useWaitlistSignup();
 
   // Esc to close
@@ -53,6 +55,7 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
   }
 
   return (
+    <>
     <AnimatePresence>
       {open && (
         <motion.div
@@ -179,6 +182,15 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      onClick={() => setSizeChartOpen(true)}
+                      className="px-4 py-2 text-[10px] tracking-[0.15em] uppercase border border-border text-foreground/70 hover:border-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      <Ruler className="w-3 h-3" />
+                      Chart
+                    </button>
                   </div>
                 </div>
               )}
@@ -227,5 +239,12 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
         </motion.div>
       )}
     </AnimatePresence>
+    <SizeChartOverlay
+      open={sizeChartOpen}
+      category={product.product_type || product.category}
+      onClose={() => setSizeChartOpen(false)}
+      variant="maison"
+    />
+    </>
   );
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Ruler } from 'lucide-react';
 import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
+import { SizeChartOverlay } from './SizeChartOverlay';
 import type { DemoProduct } from '@/data/demo-data';
 
 interface WaitlistModalProps {
@@ -28,6 +29,7 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { submit, submitting } = useWaitlistSignup();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -50,6 +52,7 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
   }
 
   return (
+    <>
     <AnimatePresence>
       {open && (
         <motion.div
@@ -132,6 +135,14 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      onClick={() => setSizeChartOpen(true)}
+                      className="px-3 py-1.5 rounded-md text-xs font-medium border border-foreground/20 text-foreground/70 hover:text-foreground hover:border-foreground/40 transition-colors flex items-center gap-1.5"
+                    >
+                      <Ruler className="w-3 h-3" />
+                      SIZE CHART
+                    </button>
                   </div>
                 </div>
               )}
@@ -171,5 +182,11 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
         </motion.div>
       )}
     </AnimatePresence>
+    <SizeChartOverlay
+      open={sizeChartOpen}
+      category={product.product_type || product.category}
+      onClose={() => setSizeChartOpen(false)}
+    />
+    </>
   );
 }
