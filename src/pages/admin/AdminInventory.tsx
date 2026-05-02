@@ -176,6 +176,11 @@ export default function AdminInventory() {
   const lowStockThreshold = 5;
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // Pending demo product overrides. Inline edits to demo products
+  // accumulate here until SAVE is clicked. Each entry is a Partial
+  // patch keyed by productId; on save we merge and flush via
+  // saveDemoProductOverride.
+  const [pendingDemoOverrides, setPendingDemoOverrides] = useState<Record<string, Record<string, unknown>>>({});
   const [showArchives, setShowArchives] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'archive'; product: ProductRow } | null>(null);
   const [addForm, setAddForm] = useState({ title: '', price: '', comparePrice: '', description: '' });
