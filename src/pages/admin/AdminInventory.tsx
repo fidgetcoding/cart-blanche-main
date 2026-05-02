@@ -880,6 +880,20 @@ export default function AdminInventory() {
     setProductImagesFull(productId, sorted);
   }, [products, setProductImagesFull]);
 
+  // Reorder images within a product. Does NOT re-sort by colorway, so the
+  // merchant's manual order is preserved exactly. The featured flag travels
+  // with its image, so reordering can change which image is the grid hero
+  // only if the user explicitly toggles SHOW ON GRID afterwards.
+  const moveImage = useCallback((productId: string, fromIdx: number, toIdx: number) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    if (toIdx < 0 || toIdx >= target.imagesFull.length || fromIdx === toIdx) return;
+    const next = [...target.imagesFull];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setProductImagesFull(productId, next);
+  }, [products, setProductImagesFull]);
+
 
 
   // Upload one file and fill all 3 sizes on a target entry.
