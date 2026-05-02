@@ -9,6 +9,7 @@ import { SizeChartOverlay } from './SizeChartOverlay';
 import { GenderSymbol } from './GenderSymbol';
 import { splitSentences } from '@/lib/format-description';
 import { WaitlistModal } from './WaitlistModal';
+import { getSwatchStyle } from '@/lib/swatch-style';
 
 // Cross-product size memory: when a shopper locks a size on a top, pre-select
 // that same size on the next top they view (same for bottoms).
@@ -582,8 +583,8 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       ))}
                     </p>
 
-                    {/* Colorway swatches — render only when 2+ colorways exist */}
-                    {product.colorways && product.colorways.length > 1 && (
+                    {/* Colorway swatches — render whenever any colorway exists */}
+                    {product.colorways && product.colorways.length >= 1 && (
                       <div className="flex items-center justify-center gap-2 [@media(max-height:760px)]:justify-start">
                         {product.colorways.map((c) => {
                           const active = selectedColorwayId === c.id;
@@ -598,9 +599,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                                   ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background'
                                   : 'border-foreground/30 hover:border-foreground/60'
                               }`}
-                              style={c.swatch_image
-                                ? { backgroundImage: `url(${c.swatch_image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                                : { backgroundColor: c.hex }}
+                              style={getSwatchStyle(c)}
                             />
                           );
                         })}

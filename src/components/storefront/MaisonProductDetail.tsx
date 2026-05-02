@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { splitSentences } from '@/lib/format-description';
 import { MaisonWaitlistModal } from './MaisonWaitlistModal';
+import { getSwatchStyle } from '@/lib/swatch-style';
 
 interface MaisonProductDetailProps {
   product: DemoProduct | null;
@@ -484,8 +485,8 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             </p>
           ) : null}
 
-          {/* Colorway swatches — render only when 2+ colorways exist */}
-          {product.colorways && product.colorways.length > 1 && (
+          {/* Colorway swatches — render whenever any colorway exists */}
+          {product.colorways && product.colorways.length >= 1 && (
             <div className="mt-6 flex items-center justify-center gap-2">
               {product.colorways.map((c) => {
                 const active = selectedColorwayId === c.id;
@@ -500,9 +501,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
                         ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background'
                         : 'border-foreground/30 hover:border-foreground/60'
                     }`}
-                    style={c.swatch_image
-                      ? { backgroundImage: `url(${c.swatch_image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                      : { backgroundColor: c.hex }}
+                    style={getSwatchStyle(c)}
                   />
                 );
               })}
