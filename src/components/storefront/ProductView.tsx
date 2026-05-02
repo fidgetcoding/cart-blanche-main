@@ -182,6 +182,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     setExpandDetails(false);
     setActiveImage(0);
     setColorwayPage(0);
+    setSelectedColorwayId(
+      product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
+    );
     // Preload worn/alternate images for the SELECTED colorway in
     // background. Only the currently-displayed images need preloading;
     // images for other colorways will load when their swatch is selected.
