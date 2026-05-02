@@ -183,7 +183,7 @@ export function MaisonCanvas() {
                 fontWeight: activeCategory === cat ? 600 : 400,
               }}
             >
-              {cat}
+              {cat.replace(/-/g, ' ')}
             </button>
           ))}
         </nav>
