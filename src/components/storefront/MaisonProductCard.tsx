@@ -250,7 +250,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
             {/* CTA area — hover to reveal sizes */}
             <div
               className="w-full px-4 pb-4 mt-1.5"
-              onMouseEnter={() => setShowCompactSizes(true)}
+              onMouseEnter={() => { if (!isOutOfStock) setShowCompactSizes(true); }}
               onMouseLeave={() => setShowCompactSizes(false)}
             >
               <AnimatePresence mode="wait">
@@ -266,8 +266,14 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                       fontFamily: 'var(--font-body)',
                       color: themeSettings.bodyFontColor || 'hsl(var(--muted-foreground))',
                     }}
+                    onClick={(e) => {
+                      if (isOutOfStock) {
+                        e.stopPropagation();
+                        setWaitlistOpen(true);
+                      }
+                    }}
                   >
-                    {product.variants.every(v => v.inventory_count === 0)
+                    {isOutOfStock
                       ? 'JOIN THE WAITLIST'
                       : themeSettings.slExpandTriggerStyle === 'icon'
                         ? '+'
