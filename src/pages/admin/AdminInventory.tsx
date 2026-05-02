@@ -676,9 +676,12 @@ export default function AdminInventory() {
 
     // Merge pending demo overrides into current overrides (per-product shallow merge).
     const currentOverrides = gridLayout?.demoProductOverrides || {};
-    const finalOverrides: Record<string, Record<string, unknown>> = { ...currentOverrides };
+    const finalOverrides: Record<string, Record<string, unknown>> = {};
+    for (const [pid, ov] of Object.entries(currentOverrides)) {
+      finalOverrides[pid] = { ...(ov as Record<string, unknown>) };
+    }
     for (const [productId, patch] of Object.entries(pendingDemoOverrides)) {
-      finalOverrides[productId] = { ...(finalOverrides[productId] || {}), ...patch };
+      finalOverrides[productId] = { ...(finalOverrides[productId] || {}), ...(patch as Record<string, unknown>) };
     }
 
     // === Single atomic upsert to grid_layouts ===
