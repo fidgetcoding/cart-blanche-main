@@ -91,12 +91,16 @@ export default function AdminLayout() {
             >
               {({ isActive }) => (
                 <>
-                  <item.icon className="w-3.5 h-3.5" />
-                  {isActive ? (
-                    <span>{item.label}</span>
-                  ) : (
-                    <span className="hidden group-hover:inline">{item.label}</span>
-                  )}
+                  <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span
+                    className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out ${
+                      isActive
+                        ? 'max-w-[160px] opacity-100'
+                        : 'max-w-0 opacity-0 group-hover:max-w-[160px] group-hover:opacity-100'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </>
               )}
             </NavLink>
