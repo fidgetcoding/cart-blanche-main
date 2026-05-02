@@ -823,11 +823,22 @@ export default function AdminInventory() {
   ) => {
     const target = products.find(p => p.id === productId);
     if (!target) return;
-    const next = target.imagesFull.map((img, i) => {
+    const tagged = target.imagesFull.map((img, i) => {
       if (i !== imgIdx) return img;
       const { colorway_id: _omit, ...rest } = img;
       return colorwayId ? { ...rest, colorway_id: colorwayId } : rest;
     });
+    const sorted = sortImagesByColorwayOrder(tagged, target.colorways || []);
+    setProductImagesFull(productId, sorted);
+  }, [products, setProductImagesFull]);
+
+  const reorderImage = useCallback((productId: string, srcIdx: number, targetIdx: number) => {
+    if (srcIdx === targetIdx) return;
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const next = [...target.imagesFull];
+    const [moved] = next.splice(srcIdx, 1);
+    next.splice(targetIdx, 0, moved);
     setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
 
