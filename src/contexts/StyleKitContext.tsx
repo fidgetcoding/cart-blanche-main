@@ -9,10 +9,11 @@ interface StyleKitState {
   mode: StyleKitMode;
   lookItems: DemoProduct[];
   initialAnchorSize: string | null;
+  activeGenders: string[];
 }
 
 interface StyleKitContextType extends StyleKitState {
-  openStyleKit: (product: DemoProduct, mode?: StyleKitMode, initialSize?: string | null) => void;
+  openStyleKit: (product: DemoProduct, mode?: StyleKitMode, initialSize?: string | null, activeGenders?: string[]) => void;
   closeStyleKit: () => void;
   setMode: (mode: StyleKitMode) => void;
   addToLook: (product: DemoProduct) => void;
@@ -30,20 +31,22 @@ export function StyleKitProvider({ children }: { children: React.ReactNode }) {
     mode: 'counterparts',
     lookItems: [],
     initialAnchorSize: null,
+    activeGenders: [],
   });
 
-  const openStyleKit = useCallback((product: DemoProduct, mode: StyleKitMode = 'counterparts', initialSize?: string | null) => {
+  const openStyleKit = useCallback((product: DemoProduct, mode: StyleKitMode = 'counterparts', initialSize?: string | null, activeGenders: string[] = []) => {
     setState({
       isOpen: true,
       anchorProduct: product,
       mode,
       lookItems: [product],
       initialAnchorSize: initialSize ?? null,
+      activeGenders,
     });
   }, []);
 
   const closeStyleKit = useCallback(() => {
-    setState(prev => ({ ...prev, isOpen: false, anchorProduct: null, lookItems: [], initialAnchorSize: null }));
+    setState(prev => ({ ...prev, isOpen: false, anchorProduct: null, lookItems: [], initialAnchorSize: null, activeGenders: [] }));
   }, []);
 
   const setMode = useCallback((mode: StyleKitMode) => {

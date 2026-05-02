@@ -583,7 +583,7 @@ function AnchorPanel({
 }
 
 export function StyleKitView() {
-  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, replaceInLook, lookItems, initialAnchorSize } = useStyleKit();
+  const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, replaceInLook, lookItems, initialAnchorSize, activeGenders } = useStyleKit();
   const { items: cartItems, addItem } = useCart();
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);
   const [presets, setPresets] = useState<ProductPreset[]>([]);
@@ -661,6 +661,7 @@ export function StyleKitView() {
     cartProductIds: cartItems.map((i) => i.productId),
     lookProductIds: lookItems.map((p) => p.id),
     presets,
+    activeGenders,
   });
 
   const handleRemoveProduct = (productId: string) => {
