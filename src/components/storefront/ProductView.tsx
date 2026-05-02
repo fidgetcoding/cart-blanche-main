@@ -519,7 +519,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         title={c.name}
                         className={`w-4 h-4 rounded-full border transition-all shrink-0 ${
                           active
-                            ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background/40'
+                            ? 'border-foreground/60 ring-1 ring-foreground/40 ring-offset-1 ring-offset-background/30'
                             : 'border-foreground/30 hover:border-foreground/60'
                         }`}
                         style={getSwatchStyle(c)}
