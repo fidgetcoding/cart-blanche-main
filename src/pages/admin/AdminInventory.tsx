@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square, Star } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
@@ -56,6 +56,10 @@ function sortImagesByColorwayOrder(
   }));
   indexed.sort((a, b) => {
     if (a.groupKey !== b.groupKey) return a.groupKey - b.groupKey;
+    // Within a group, featured image floats to top.
+    const aFeat = a.img.featured ? 0 : 1;
+    const bFeat = b.img.featured ? 0 : 1;
+    if (aFeat !== bFeat) return aFeat - bFeat;
     return a.idx - b.idx;
   });
   return indexed.map(x => x.img);
@@ -829,6 +833,33 @@ export default function AdminInventory() {
       return colorwayId ? { ...rest, colorway_id: colorwayId } : rest;
     });
     const sorted = sortImagesByColorwayOrder(tagged, target.colorways || []);
+    setProductImagesFull(productId, sorted);
+  }, [products, setProductImagesFull]);
+
+  // Mark a single image as featured for its colorway group (or the untagged group).
+  // Clears featured on any other image in the same group. Re-sorts so the featured
+  // image floats to the top of its group — making it images[0] of the first colorway,
+  // which the storefront grid view consumes.
+  const toggleFeatured = useCallback((productId: string, imgIdx: number) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const targetImg = target.imagesFull[imgIdx];
+    if (!targetImg) return;
+    const groupId = targetImg.colorway_id; // undefined for untagged group
+    const wasFeatured = !!targetImg.featured;
+    const next = target.imagesFull.map((img, i) => {
+      const sameGroup = (img.colorway_id || undefined) === (groupId || undefined);
+      if (i === imgIdx) {
+        return { ...img, featured: !wasFeatured };
+      }
+      // Clear featured on others in the same group when we're marking a new featured.
+      if (sameGroup && !wasFeatured && img.featured) {
+        const { featured: _drop, ...rest } = img;
+        return rest;
+      }
+      return img;
+    });
+    const sorted = sortImagesByColorwayOrder(next, target.colorways || []);
     setProductImagesFull(productId, sorted);
   }, [products, setProductImagesFull]);
 
@@ -2020,6 +2051,17 @@ export default function AdminInventory() {
                                       })}
                                     </div>
 
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleFeatured(p.id, imgIdx);
+                                      }}
+                                      className={`p-1 rounded hover:bg-secondary transition-colors ${img.featured ? 'text-primary' : 'text-muted-foreground/50 hover:text-foreground'}`}
+                                      title={img.featured ? 'Featured on grid (click to unfeature)' : 'Set as featured grid image for this color'}
+                                    >
+                                      <Star className={`w-3.5 h-3.5 ${img.featured ? 'fill-current' : ''}`} />
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={(e) => {
