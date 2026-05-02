@@ -136,7 +136,15 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const { addItem } = useCart();
   const { themeSettings } = useTheme();
 
-  const images = product ? (product.images.length > 0 ? product.images : []) : [];
+  // Resolve the selected colorway object.
+  const selectedColorway = product?.colorways?.find(c => c.id === selectedColorwayId) || null;
+  // Gallery image source: selected colorway's images when present and
+  // non-empty, otherwise fall back to top-level product.images.
+  const images = product
+    ? ((selectedColorway?.images && selectedColorway.images.length > 0)
+        ? selectedColorway.images
+        : (product.images.length > 0 ? product.images : []))
+    : [];
 
   // Reset on product change
   useEffect(() => {
@@ -144,6 +152,11 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     setSelectedVariant(null);
     setCurrentVisibleImage(0);
   }, [product?.id]);
+
+  // Reset gallery to first image when colorway changes.
+  useEffect(() => {
+    setCurrentVisibleImage(0);
+  }, [selectedColorwayId]);
 
   // Keyboard: Escape to close
   useEffect(() => {
