@@ -139,6 +139,16 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
   );
 
+  // Resolve the selected colorway object. If null (no colorways) or
+  // the id doesn't match any colorway (defensive), this is null.
+  const selectedColorway = product.colorways?.find(c => c.id === selectedColorwayId) || null;
+  // The image array the gallery should display. When the selected
+  // colorway has its own images array (with at least one entry),
+  // use it. Otherwise fall back to top-level product.images.
+  const displayImages = (selectedColorway?.images && selectedColorway.images.length > 0)
+    ? selectedColorway.images
+    : product.images;
+
   // Filtered visible indices for counter
   const visibleIndices = useMemo(() =>
     DEMO_PRODUCTS
@@ -170,6 +180,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       });
     }
   }, [productIndex]);
+
+  // Reset gallery to first image when colorway changes.
+  useEffect(() => {
+    setActiveImage(0);
+  }, [selectedColorwayId]);
 
   // Phase 6: Preload neighbor images for seamless navigation
   useEffect(() => {
@@ -464,10 +479,10 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
             {/* Product image area */}
             <div data-image-zone="true" className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
-              {product.images && product.images.length > 0 ? (
+              {displayImages && displayImages.length > 0 ? (
                 <img
-                  key={`${product.id}-${activeImage}`}
-                  src={product.images[Math.min(activeImage, product.images.length - 1)].medium}
+                  key={`${product.id}-${selectedColorwayId || 'default'}-${activeImage}`}
+                  src={displayImages[Math.min(activeImage, displayImages.length - 1)].medium}
                   alt={product.title}
                   className="w-full h-full object-cover"
                   draggable={false}
@@ -484,9 +499,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                 </div>
               )}
 
-              {product.images && product.images.length > 1 && (
+              {displayImages && displayImages.length > 1 && (
                 <div className="absolute bottom-0 left-0 right-0 flex h-12 z-10" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-                  {product.images.map((_, i) => (
+                  {displayImages.map((_, i) => (
                     <button
                       key={i}
                       onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
