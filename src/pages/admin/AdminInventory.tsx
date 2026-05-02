@@ -2353,7 +2353,7 @@ export default function AdminInventory() {
                                     vIsOut ? 'border-destructive/30 bg-destructive/5' : vIsLow ? 'border-warning/30 bg-warning/5' : 'border-border bg-secondary/30'
                                   }`}
                                 >
-                                  {!showMatrix && <p className="text-xs font-display font-medium mb-1">{v.title}</p>}
+                                  <p className="text-xs font-display font-medium mb-1">{v.title}</p>
                                   {editingVariantId === v.id ? (
                                     <div className="flex items-center gap-1 justify-center" onClick={e => e.stopPropagation()}>
                                       <input
@@ -2389,15 +2389,13 @@ export default function AdminInventory() {
                                   <div className="space-y-3">
                                     {p.colorways!.map(cw => (
                                       <div key={cw.id} className="rounded-lg border border-border/40 bg-background/20 p-2.5">
-                                        {/* Colorway label header */}
-                                        <div className="flex items-center gap-2 mb-2 pl-0.5">
+                                        {/* Colorway swatch only */}
+                                        <div className="flex items-center mb-2 pl-0.5">
                                           <span
                                             className="w-4 h-4 rounded-full border border-border shrink-0"
                                             style={getSwatchStyle(cw)}
+                                            title={cw.name}
                                           />
-                                          <span className="text-[11px] font-display tracking-widest text-foreground uppercase">
-                                            {cw.name}
-                                          </span>
                                         </div>
                                         {/* Size cells for this colorway */}
                                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
