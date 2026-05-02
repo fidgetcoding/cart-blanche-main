@@ -32,12 +32,22 @@ export type ProductType = 'shirt' | 'pants' | 'jacket' | 'hat' | 'accessory' | '
 export const PRODUCT_TYPES: ProductType[] = ['shirt', 'pants', 'jacket', 'shorts', 'hat', 'accessory'];
 
 export interface Colorway {
-  id: string;          // stable id; used for keying + reorder
-  name: string;        // 'Black', 'Heather Grey', 'Camo'
-  hex: string;         // e.g. '#000000' — fills the swatch when
-                        // swatch_image is empty
-  swatch_image?: string; // optional URL — when set, replaces the hex
-                          // fill on the swatch (clipped to circle)
+  id: string;             // stable id; used for keying + reorder
+  name: string;           // 'Black', 'Heather Grey', 'Multi-Color'
+  hex: string;            // dominant / fallback color — fills the
+                           // swatch when no swatch_image and no
+                           // component_hexes (or as fallback in
+                           // contexts that can't render gradients)
+  swatch_image?: string;  // optional URL — when set, replaces the
+                           // hex/gradient fill on the swatch
+  component_hexes?: string[]; // when set with 2+ entries, the
+                               // colorway renders as a soft linear
+                               // gradient composed of these hexes.
+                               // Name MUST be 'Multi-Color' in this
+                               // case (admin enforces this in the
+                               // ColorwayManager modal — see Y.0b).
+                               // 0 or 1 entries: ignored, fallback
+                               // to plain hex render.
 }
 
 export interface DemoProduct {
