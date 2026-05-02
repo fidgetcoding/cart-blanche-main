@@ -501,7 +501,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
               {product.colorways && product.colorways.length >= 1 && (
                 <div
-                  className="absolute bottom-14 right-3 flex items-center gap-1.5 z-20 px-2 py-1.5 rounded-full backdrop-blur-md bg-background/40 border border-foreground/10"
+                  className="absolute bottom-12 right-3 flex items-center gap-1.5 z-20"
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
