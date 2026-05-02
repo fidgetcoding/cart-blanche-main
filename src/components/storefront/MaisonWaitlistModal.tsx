@@ -55,6 +55,7 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
   }
 
   return (
+    <>
     <AnimatePresence>
       {open && (
         <motion.div
@@ -238,5 +239,12 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
         </motion.div>
       )}
     </AnimatePresence>
+    <SizeChartOverlay
+      open={sizeChartOpen}
+      category={product.product_type || product.category}
+      onClose={() => setSizeChartOpen(false)}
+      variant="maison"
+    />
+    </>
   );
 }
