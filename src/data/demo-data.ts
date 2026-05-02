@@ -77,6 +77,7 @@ export interface DemoVariant {
   options: Record<string, string>;
   inventory_count: number;
   price?: number;
+  colorway_id?: string;
 }
 
 export interface DemoHotzone {

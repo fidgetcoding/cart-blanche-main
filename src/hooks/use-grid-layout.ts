@@ -176,6 +176,7 @@ export function useGridLayout() {
                 options: v.options as Record<string, string> || {},
                 inventory_count: v.inventory_count ?? 0,
                 price: v.price ?? undefined,
+                colorway_id: (v as any).colorway_id ?? undefined,
               })),
             };
           }));

@@ -548,12 +548,14 @@ export default function AdminInventory() {
               product_id: editingProduct.id,
               title: v.title,
               inventory_count: v.inventory_count,
-            });
+              colorway_id: v.colorway_id ?? null,
+            } as any);
           } else {
             await supabase.from('product_variants').update({
               title: v.title,
               inventory_count: v.inventory_count,
-            }).eq('id', v.id);
+              colorway_id: v.colorway_id ?? null,
+            } as any).eq('id', v.id);
           }
         }
       }
@@ -728,7 +730,8 @@ export default function AdminInventory() {
               await supabase.from('product_variants').update({
                 title: v.title,
                 inventory_count: v.inventory_count,
-              }).eq('id', v.id);
+                colorway_id: v.colorway_id ?? null,
+              } as any).eq('id', v.id);
             }
           }
         }
@@ -1098,7 +1101,8 @@ export default function AdminInventory() {
             product_id: product.id,
             title: v.title.trim(),
             inventory_count: v.inventory_count,
-          }))
+            colorway_id: v.colorway_id ?? null,
+          })) as any
         );
       }
     }
