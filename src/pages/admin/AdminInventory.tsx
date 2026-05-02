@@ -783,7 +783,7 @@ export default function AdminInventory() {
     }));
     setEditingVariantId(null);
     if (targetProduct.isDemo) {
-      saveDemoProductOverride(productId, { variants: newVariants });
+      queueDemoOverride(productId, { variants: newVariants });
     } else {
       setHasUnsavedChanges(true);
     }
@@ -802,7 +802,7 @@ export default function AdminInventory() {
     setNewTag('');
     setAddingTagForId(null);
     if (target.isDemo) {
-      saveDemoProductOverride(productId, { tags: newTags });
+      queueDemoOverride(productId, { tags: newTags });
     } else {
       setHasUnsavedChanges(true);
     }
@@ -819,7 +819,7 @@ export default function AdminInventory() {
         : p
     ));
     if (target.isDemo) {
-      saveDemoProductOverride(productId, { colorways: next, images: sortedImages });
+      queueDemoOverride(productId, { colorways: next, images: sortedImages });
     } else {
       setHasUnsavedChanges(true);
     }
@@ -834,7 +834,7 @@ export default function AdminInventory() {
     }));
     const target = products.find(p => p.id === productId);
     if (target?.isDemo) {
-      saveDemoProductOverride(productId, { images: newImages });
+      queueDemoOverride(productId, { images: newImages });
     } else {
       setHasUnsavedChanges(true);
     }
@@ -982,7 +982,7 @@ export default function AdminInventory() {
         : p
     ));
     if (target.isDemo) {
-      saveDemoProductOverride(productId, { colorways: nextColorways, images: nextImages });
+      queueDemoOverride(productId, { colorways: nextColorways, images: nextImages });
     } else {
       setHasUnsavedChanges(true);
     }
@@ -1010,7 +1010,7 @@ export default function AdminInventory() {
       p.id === productId ? { ...p, tags: newTags } : p
     ));
     if (target.isDemo) {
-      saveDemoProductOverride(productId, { tags: newTags });
+      queueDemoOverride(productId, { tags: newTags });
     } else {
       setHasUnsavedChanges(true);
     }
@@ -1781,7 +1781,7 @@ export default function AdminInventory() {
                                     pr.id === p.id ? { ...pr, product_type: (pr.product_type === cat ? '' : cat) as ProductType } : pr
                                   ));
                                   if (p.isDemo) {
-                                    saveDemoProductOverride(p.id, { product_type: (p.product_type === cat ? '' : cat) as ProductType });
+                                    queueDemoOverride(p.id, { product_type: (p.product_type === cat ? '' : cat) as ProductType });
                                   } else {
                                     setHasUnsavedChanges(true);
                                   }
@@ -1809,7 +1809,7 @@ export default function AdminInventory() {
                                       setProducts(prev => prev.map(pr =>
                                         pr.id === p.id ? { ...pr, product_type: v as ProductType } : pr
                                       ));
-                                      if (p.isDemo) saveDemoProductOverride(p.id, { product_type: v as ProductType });
+                                      if (p.isDemo) queueDemoOverride(p.id, { product_type: v as ProductType });
                                       else setHasUnsavedChanges(true);
                                     }
                                     setNewTypeInput('');
@@ -1847,7 +1847,7 @@ export default function AdminInventory() {
                                     pr.id === p.id ? { ...pr, gender: g } : pr
                                   ));
                                   if (p.isDemo) {
-                                    saveDemoProductOverride(p.id, { gender: g });
+                                    queueDemoOverride(p.id, { gender: g });
                                   } else {
                                     setHasUnsavedChanges(true);
                                   }
@@ -2369,7 +2369,7 @@ export default function AdminInventory() {
                                       if (!isNaN(val) && val >= 0) {
                                         setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
                                         if (p.isDemo) {
-                                          saveDemoProductOverride(p.id, { weight_oz: val });
+                                          queueDemoOverride(p.id, { weight_oz: val });
                                         } else {
                                           setHasUnsavedChanges(true);
                                         }
@@ -2384,7 +2384,7 @@ export default function AdminInventory() {
                                   if (!isNaN(val) && val >= 0) {
                                     setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, weight_oz: val } : pr));
                                     if (p.isDemo) {
-                                      saveDemoProductOverride(p.id, { weight_oz: val });
+                                      queueDemoOverride(p.id, { weight_oz: val });
                                     } else {
                                       setHasUnsavedChanges(true);
                                     }
@@ -2406,7 +2406,7 @@ export default function AdminInventory() {
                                 onClick={() => {
                                   setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'domestic' } : pr));
                                   if (p.isDemo) {
-                                    saveDemoProductOverride(p.id, { shipping_type: 'domestic' });
+                                    queueDemoOverride(p.id, { shipping_type: 'domestic' });
                                   } else {
                                     setHasUnsavedChanges(true);
                                   }
@@ -2421,7 +2421,7 @@ export default function AdminInventory() {
                                 onClick={() => {
                                   setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, shipping_type: 'international' } : pr));
                                   if (p.isDemo) {
-                                    saveDemoProductOverride(p.id, { shipping_type: 'international' });
+                                    queueDemoOverride(p.id, { shipping_type: 'international' });
                                   } else {
                                     setHasUnsavedChanges(true);
                                   }
@@ -2441,7 +2441,7 @@ export default function AdminInventory() {
                                   onChange={(code) => {
                                     setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, hs_code: code } : pr));
                                     if (p.isDemo) {
-                                      saveDemoProductOverride(p.id, { hs_code: code });
+                                      queueDemoOverride(p.id, { hs_code: code });
                                     } else {
                                       setHasUnsavedChanges(true);
                                     }
