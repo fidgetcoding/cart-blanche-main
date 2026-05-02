@@ -166,12 +166,6 @@ export default function AdminInventory() {
   const [inlineColorFormFor, setInlineColorFormFor] = useState<string | null>(null);
   const [inlineColorName, setInlineColorName] = useState('');
   const [inlineColorHex, setInlineColorHex] = useState('#000000');
-  // Which product's + ADD IMAGE popover is open. Format: productId or null.
-  const [addImagePopoverFor, setAddImagePopoverFor] = useState<string | null>(null);
-  // Which size the next upload should fill on a new image entry.
-  // 'all' means use the same URL for all 3 sizes (fast path).
-  // 'thumb' / 'medium' / 'full' means fill only that size.
-  const pendingAddSizeRef = useRef<'thumb' | 'medium' | 'full' | 'all' | null>(null);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
     try {
@@ -804,6 +798,8 @@ export default function AdminInventory() {
     setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
 
+  // Upload one file and append a new image entry. Fills all 3 sizes with the same URL
+  // (used by the "use one file for all 3" link).
   const addImage = useCallback(async (productId: string, file: File) => {
     try {
       const ext = file.name.split('.').pop() || 'jpg';
@@ -813,22 +809,22 @@ export default function AdminInventory() {
       const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
       const target = products.find(p => p.id === productId);
       if (!target) return;
-      const sizeChoice = pendingAddSizeRef.current || 'all';
-      pendingAddSizeRef.current = null;
-      // Build the new entry. 'all' fills all 3 sizes with the same URL (fast path).
-      // 'thumb' / 'medium' / 'full' fills only that size; others remain empty strings.
-      const newEntry: ProductImage = sizeChoice === 'all'
-        ? { thumb: publicUrl, medium: publicUrl, full: publicUrl }
-        : {
-            thumb: sizeChoice === 'thumb' ? publicUrl : '',
-            medium: sizeChoice === 'medium' ? publicUrl : '',
-            full: sizeChoice === 'full' ? publicUrl : '',
-          };
+      const newEntry: ProductImage = { thumb: publicUrl, medium: publicUrl, full: publicUrl };
       const next = [...target.imagesFull, newEntry];
       setProductImagesFull(productId, next);
     } catch (e) {
       console.error('Image add failed:', e);
     }
+  }, [products, setProductImagesFull]);
+
+  // Append an empty image entry. All 3 size URLs are empty strings, shown to the merchant
+  // as MISSING slots ready to be filled by clicking each slot individually.
+  const addEmptyImageEntry = useCallback((productId: string) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const newEntry: ProductImage = { thumb: '', medium: '', full: '' };
+    const next = [...target.imagesFull, newEntry];
+    setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
 
   const removeImageAt = useCallback((productId: string, imgIdx: number) => {
@@ -883,13 +879,6 @@ export default function AdminInventory() {
     }
   }, [tagPopoverOpenFor, inlineColorFormFor]);
 
-  // Close + ADD IMAGE popover on outside click. The popover's own onClick stops propagation.
-  useEffect(() => {
-    if (addImagePopoverFor === null) return;
-    const handler = () => setAddImagePopoverFor(null);
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
-  }, [addImagePopoverFor]);
 
   function removeTagFromProduct(productId: string, tag: string) {
     const target = products.find(p => p.id === productId);
@@ -2010,69 +1999,41 @@ export default function AdminInventory() {
                               );
                             })}
 
-                            <div className="relative">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setAddImagePopoverFor(prev => prev === p.id ? null : p.id);
-                                }}
-                                disabled={imageUploadingSlot === `${p.id}-new`}
-                                className="w-full px-3 py-2.5 border border-dashed border-border/60 rounded-lg text-xs text-muted-foreground hover:bg-secondary hover:border-border transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-                              >
-                                {imageUploadingSlot === `${p.id}-new` ? (
-                                  <><Loader2 className="w-3 h-3 animate-spin" /> UPLOADING</>
-                                ) : (
-                                  <><Plus className="w-3 h-3" /> ADD IMAGE</>
-                                )}
-                              </button>
-                              {addImagePopoverFor === p.id && (
-                                <div
-                                  className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-card border border-border rounded-lg p-1 shadow-2xl"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <p className="px-2 py-1.5 text-[9px] font-display tracking-widest text-muted-foreground/70">
-                                    UPLOAD FOR WHICH SIZE?
+                            {/* Use one file for all 3 sizes — fast path link */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                editImageInputRef.current?.click();
+                              }}
+                              disabled={imageUploadingSlot === `${p.id}-new`}
+                              className="w-full px-3 py-2 text-[10px] font-display tracking-wider text-muted-foreground/70 hover:text-foreground/80 transition-colors text-center disabled:opacity-50"
+                            >
+                              {imageUploadingSlot === `${p.id}-new` ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Loader2 className="w-3 h-3 animate-spin" /> UPLOADING
+                                </span>
+                              ) : (
+                                <>
+                                  Use one file for all 3 sizes →
+                                  <p className="text-[9px] text-warning/70 mt-0.5 normal-case tracking-normal">
+                                    ⚠ Storefront will load slower — large files served to small surfaces
                                   </p>
-                                  {(['thumb', 'medium', 'full'] as const).map(size => {
-                                    const label = size === 'thumb' ? 'GRID + CART' : size === 'medium' ? 'DETAIL VIEW' : 'ZOOM';
-                                    const recommendedSize = size === 'thumb' ? '~400 PX' : size === 'medium' ? '~1200 PX' : '~2400 PX';
-                                    return (
-                                      <button
-                                        key={size}
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          pendingAddSizeRef.current = size;
-                                          setAddImagePopoverFor(null);
-                                          editImageInputRef.current?.click();
-                                        }}
-                                        className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center justify-between gap-3"
-                                      >
-                                        <span>{label}</span>
-                                        <span className="text-[9px] font-mono text-muted-foreground/60">{recommendedSize} wide</span>
-                                      </button>
-                                    );
-                                  })}
-                                  <div className="border-t border-border/40 my-1" />
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      pendingAddSizeRef.current = 'all';
-                                      setAddImagePopoverFor(null);
-                                      editImageInputRef.current?.click();
-                                    }}
-                                    className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary"
-                                  >
-                                    USE ONE FILE FOR ALL 3 SIZES
-                                    <p className="text-[9px] font-display text-warning/80 mt-0.5 normal-case tracking-normal">
-                                      ⚠ Storefront will load slower — large files served to small surfaces
-                                    </p>
-                                  </button>
-                                </div>
+                                </>
                               )}
-                            </div>
+                            </button>
+
+                            {/* + ADD IMAGE — appends an empty row that the merchant fills slot-by-slot */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addEmptyImageEntry(p.id);
+                              }}
+                              className="w-full px-3 py-2.5 border border-dashed border-border/60 rounded-lg text-xs text-muted-foreground hover:bg-secondary hover:border-border transition-colors inline-flex items-center justify-center gap-1.5"
+                            >
+                              <Plus className="w-3 h-3" /> ADD IMAGE
+                            </button>
                           </div>
                         </div>
 
