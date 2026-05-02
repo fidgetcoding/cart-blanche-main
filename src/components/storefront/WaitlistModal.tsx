@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Ruler } from 'lucide-react';
 import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
 import { SizeChartOverlay } from './SizeChartOverlay';
+import { getSwatchStyle } from '@/lib/swatch-style';
 import type { DemoProduct } from '@/data/demo-data';
 
 interface WaitlistModalProps {
