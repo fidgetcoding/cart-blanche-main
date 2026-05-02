@@ -158,6 +158,10 @@ export default function AdminInventory() {
   useEffect(() => { if (hasUnsavedChanges || editingProduct || showAddProduct || pendingDeletes.size > 0) markDirty(); else markClean(); }, [hasUnsavedChanges, editingProduct, showAddProduct, pendingDeletes, markDirty, markClean]);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
+  // Per-slot upload tracking for the inline IMAGES section. Format: `${productId}-${imgIdx}-${size}` for slot replacements, or `${productId}-new` for the + ADD button.
+  const [imageUploadingSlot, setImageUploadingSlot] = useState<string | null>(null);
+  // Tag popover state — which image is showing its tag dropdown. Format: `${productId}-${imgIdx}` or null when none open.
+  const [tagPopoverOpenFor, setTagPopoverOpenFor] = useState<string | null>(null);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
     try {
