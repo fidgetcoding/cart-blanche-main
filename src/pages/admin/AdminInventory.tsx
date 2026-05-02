@@ -51,6 +51,9 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     gender: p.gender || 'unisex',
     colorways: p.colorways || [],
     images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
+    imagesFull: p.images.map(img => typeof img === 'string'
+      ? { thumb: img, medium: img, full: img }
+      : img),
     description: p.description,
     tags: [p.category],
     variants: p.variants.map(v => ({
@@ -325,6 +328,7 @@ export default function AdminInventory() {
             gender: 'unisex',
             colorways: ((p as any).colorways as Colorway[]) || [],
             images: p.images || [],
+            imagesFull: ((p.images as string[]) || []).map(url => ({ thumb: url, medium: url, full: url })),
             description: p.description || '',
             tags: p.tags || [p.category || ''].filter(Boolean),
             variants: pvs.map(v => ({
