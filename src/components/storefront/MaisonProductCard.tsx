@@ -141,9 +141,9 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const getCardImageSrc = useCallback((img: DemoProduct['images'][number]) => {
     if (typeof img === 'string') return img;
     // SL mapping:
-    // - VIEW BY 3 should use the bigger grid image.
-    // - VIEW BY 6 should use what VIEW BY 3 used before.
-    return isCompact ? img.thumb : img.medium;
+    // - VIEW BY 6 (compact): use thumb (smaller, faster).
+    // - VIEW BY 3 (large): use full for crisp rendering.
+    return isCompact ? img.thumb : img.full;
   }, [isCompact]);
 
   // Thumbnail background: respect tileBgMode setting
