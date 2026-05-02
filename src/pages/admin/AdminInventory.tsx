@@ -737,6 +737,82 @@ export default function AdminInventory() {
     }
   }
 
+  // ─── Unified IMAGES library handlers (Phase 5.2) ──────────────
+  const setProductImagesFull = useCallback((productId: string, newImages: ProductImage[]) => {
+    setProducts(prev => prev.map(p => {
+      if (p.id !== productId) return p;
+      const flat = newImages.map(img => img.thumb);
+      return { ...p, images: flat, imagesFull: newImages };
+    }));
+    const target = products.find(p => p.id === productId);
+    if (target?.isDemo) {
+      saveDemoProductOverride(productId, { images: newImages });
+    } else {
+      setHasUnsavedChanges(true);
+    }
+  }, [products, saveDemoProductOverride]);
+
+  const replaceImageSize = useCallback(async (
+    productId: string,
+    imgIdx: number,
+    size: 'thumb' | 'medium' | 'full',
+    file: File
+  ) => {
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('product-media').upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
+      const target = products.find(p => p.id === productId);
+      if (!target) return;
+      const next = target.imagesFull.map((img, i) =>
+        i === imgIdx ? { ...img, [size]: publicUrl } : img
+      );
+      setProductImagesFull(productId, next);
+    } catch (e) {
+      console.error('Image size replace failed:', e);
+    }
+  }, [products, setProductImagesFull]);
+
+  const tagImage = useCallback((
+    productId: string,
+    imgIdx: number,
+    colorwayId: string | undefined
+  ) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const next = target.imagesFull.map((img, i) => {
+      if (i !== imgIdx) return img;
+      const { colorway_id: _omit, ...rest } = img;
+      return colorwayId ? { ...rest, colorway_id: colorwayId } : rest;
+    });
+    setProductImagesFull(productId, next);
+  }, [products, setProductImagesFull]);
+
+  const addImage = useCallback(async (productId: string, file: File) => {
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('product-media').upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
+      const target = products.find(p => p.id === productId);
+      if (!target) return;
+      const next = [...target.imagesFull, { thumb: publicUrl, medium: publicUrl, full: publicUrl }];
+      setProductImagesFull(productId, next);
+    } catch (e) {
+      console.error('Image add failed:', e);
+    }
+  }, [products, setProductImagesFull]);
+
+  const removeImageAt = useCallback((productId: string, imgIdx: number) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const next = target.imagesFull.filter((_, i) => i !== imgIdx);
+    setProductImagesFull(productId, next);
+  }, [products, setProductImagesFull]);
+
   function removeTagFromProduct(productId: string, tag: string) {
     const target = products.find(p => p.id === productId);
     if (!target) return;
