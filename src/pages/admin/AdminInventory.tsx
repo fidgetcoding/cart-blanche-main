@@ -166,6 +166,12 @@ export default function AdminInventory() {
   const [inlineColorFormFor, setInlineColorFormFor] = useState<string | null>(null);
   const [inlineColorName, setInlineColorName] = useState('');
   const [inlineColorHex, setInlineColorHex] = useState('#000000');
+  // Which product's + ADD IMAGE popover is open. Format: productId or null.
+  const [addImagePopoverFor, setAddImagePopoverFor] = useState<string | null>(null);
+  // Which size the next upload should fill on a new image entry.
+  // 'all' means use the same URL for all 3 sizes (fast path).
+  // 'thumb' / 'medium' / 'full' means fill only that size.
+  const pendingAddSizeRef = useRef<'thumb' | 'medium' | 'full' | 'all' | null>(null);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
     try {
