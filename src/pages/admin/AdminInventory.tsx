@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square, Star } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
@@ -2051,6 +2051,17 @@ export default function AdminInventory() {
                                       })}
                                     </div>
 
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleFeatured(p.id, imgIdx);
+                                      }}
+                                      className={`p-1 rounded hover:bg-secondary transition-colors ${img.featured ? 'text-primary' : 'text-muted-foreground/50 hover:text-foreground'}`}
+                                      title={img.featured ? 'Featured on grid (click to unfeature)' : 'Set as featured grid image for this color'}
+                                    >
+                                      <Star className={`w-3.5 h-3.5 ${img.featured ? 'fill-current' : ''}`} />
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={(e) => {
