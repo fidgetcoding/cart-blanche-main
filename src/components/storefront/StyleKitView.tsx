@@ -50,13 +50,13 @@ function CarouselCard({
           </span>
         )}
         {hasMulti && (
-          <div className="absolute bottom-0 left-0 right-0 flex h-8 z-10" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+          <div className="absolute bottom-0 left-0 right-0 flex h-8 z-10 pointer-events-none">
             {product.images!.map((_, i) => (
               <button
                 key={i}
                 onClick={e => { e.stopPropagation(); setImgIdx(i); }}
                 onMouseEnter={() => setImgIdx(i)}
-                className="flex-1 relative group/dot"
+                className="flex-1 relative group/dot pointer-events-auto"
               >
                 <div className={`absolute bottom-1.5 left-0.5 right-0.5 h-0.5 rounded-full transition-all duration-200 ${
                   imgIdx === i ? 'bg-foreground/80' : 'bg-foreground/15 group-hover/dot:bg-foreground/30'
