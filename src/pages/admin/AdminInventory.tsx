@@ -2337,11 +2337,11 @@ export default function AdminInventory() {
 
                         {/* Variants / sizes */}
                         <div>
-                          <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">
-                            SIZES ({p.variants.length})
-                          </p>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                            {p.variants.map(v => {
+                          {(() => {
+                            const hasTaggedVariants = p.variants.some(v => v.colorway_id);
+                            const showMatrix = p.colorways && p.colorways.length >= 2 && hasTaggedVariants;
+                            const uniqueSizes = Array.from(new Set(p.variants.map(v => v.title)));
+                            const renderCell = (v: typeof p.variants[number]) => {
                               const vIsLow = v.inventory_count > 0 && v.inventory_count <= lowStockThreshold;
                               const vIsOut = v.inventory_count === 0;
                               return (
@@ -2351,7 +2351,7 @@ export default function AdminInventory() {
                                     vIsOut ? 'border-destructive/30 bg-destructive/5' : vIsLow ? 'border-warning/30 bg-warning/5' : 'border-border bg-secondary/30'
                                   }`}
                                 >
-                                  <p className="text-xs font-display font-medium mb-1">{v.title}</p>
+                                  {!showMatrix && <p className="text-xs font-display font-medium mb-1">{v.title}</p>}
                                   {editingVariantId === v.id ? (
                                     <div className="flex items-center gap-1 justify-center" onClick={e => e.stopPropagation()}>
                                       <input
@@ -2377,8 +2377,58 @@ export default function AdminInventory() {
                                   )}
                                 </div>
                               );
-                            })}
-                          </div>
+                            };
+                            if (showMatrix) {
+                              const colCount = uniqueSizes.length;
+                              const gridCols = `7rem repeat(${colCount}, minmax(0, 1fr))`;
+                              return (
+                                <>
+                                  <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">
+                                    SIZES × COLORS ({p.variants.length})
+                                  </p>
+                                  <div className="space-y-1.5">
+                                    {/* Header row: empty corner + size labels */}
+                                    <div className="grid gap-2 items-center" style={{ gridTemplateColumns: gridCols }}>
+                                      <div></div>
+                                      {uniqueSizes.map(size => (
+                                        <div key={size} className="text-[10px] font-display tracking-widest text-muted-foreground text-center">
+                                          {size}
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {/* Body: one row per colorway */}
+                                    {p.colorways!.map(cw => (
+                                      <div key={cw.id} className="grid gap-2 items-center" style={{ gridTemplateColumns: gridCols }}>
+                                        <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                                          <span
+                                            className="w-3 h-3 rounded-full border border-border shrink-0"
+                                            style={getSwatchStyle(cw)}
+                                          />
+                                          <span className="text-xs font-display truncate">{cw.name}</span>
+                                        </div>
+                                        {uniqueSizes.map(size => {
+                                          const v = p.variants.find(x => x.title === size && x.colorway_id === cw.id);
+                                          if (!v) return <div key={size}></div>;
+                                          return renderCell(v);
+                                        })}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </>
+                              );
+                            }
+                            // Existing single-row UI for 0-1 colorway products or legacy untagged data
+                            return (
+                              <>
+                                <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">
+                                  SIZES ({p.variants.length})
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                                  {p.variants.map(renderCell)}
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
 
                         {/* Weight & Shipping */}
