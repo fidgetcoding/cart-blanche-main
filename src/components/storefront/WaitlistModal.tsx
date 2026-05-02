@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Ruler } from 'lucide-react';
 import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
+import { SizeChartOverlay } from './SizeChartOverlay';
 import type { DemoProduct } from '@/data/demo-data';
 
 interface WaitlistModalProps {
