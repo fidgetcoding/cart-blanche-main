@@ -870,7 +870,6 @@ export function SpatialCanvas() {
                 return (
                   <button
                     key={g}
-                    onMouseEnter={() => isAvailable && toggleGender(g)}
                     onClick={() => isAvailable && toggleGender(g)}
                     disabled={!isAvailable}
                     className={`p-1 transition-all duration-200 ${
