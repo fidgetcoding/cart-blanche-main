@@ -384,6 +384,8 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       variantTitle: v.title,
       price: v.price ?? product.price,
       image: images[0]?.thumb,
+      colorwayId: selectedColorway?.id,
+      colorwayName: selectedColorway?.name,
     });
     onClose();
   };

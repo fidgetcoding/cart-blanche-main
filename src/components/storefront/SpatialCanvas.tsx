@@ -967,7 +967,7 @@ export function SpatialCanvas() {
                 onQuickAdd={(e) => {
                   e.stopPropagation();
                   const v = product.variants[0];
-                  if (v) addItem({ productId: product.id, variantId: v.id, title: product.title, variantTitle: v.title, price: v.price ?? product.price });
+                  if (v) addItem({ productId: product.id, variantId: v.id, title: product.title, variantTitle: v.title, price: v.price ?? product.price, colorwayId: product.colorways?.[0]?.id, colorwayName: product.colorways?.[0]?.name });
                 }}
                 onQuickStyleKit={(e) => {
                   e.stopPropagation();

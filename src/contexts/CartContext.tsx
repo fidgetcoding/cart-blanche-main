@@ -8,6 +8,8 @@ export interface CartItem {
   price: number;
   quantity: number;
   image?: string;
+  colorwayId?: string;
+  colorwayName?: string;
 }
 
 export interface AppliedDiscount {

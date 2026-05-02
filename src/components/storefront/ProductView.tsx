@@ -390,6 +390,8 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       title: product.title,
       variantTitle: v.title,
       price: v.price ?? product.price,
+      colorwayId: selectedColorway?.id,
+      colorwayName: selectedColorway?.name,
     });
   };
 
