@@ -1868,11 +1868,6 @@ export default function AdminInventory() {
                                   }`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  {img.featured && (
-                                    <div className="mb-2 inline-flex items-center rounded-md border border-primary/30 bg-primary/15 px-2 py-1 text-[9px] font-display tracking-[0.15em] text-primary">
-                                      SHOWING ON STORE GRID
-                                    </div>
-                                  )}
                                   <div className="flex items-start gap-2">
 
                                     {/* Color tag swatch indicator */}
