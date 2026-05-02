@@ -250,6 +250,8 @@ export function MaisonCanvas() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                className="inline-block text-left"
+                style={{ minWidth: '90px' }}
               >
                 {activeType === 'ALL' ? 'CATEGORY' : activeType}
               </motion.span>
