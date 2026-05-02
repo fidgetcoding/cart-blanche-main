@@ -220,7 +220,14 @@ export function getSuggestedProducts({
       fallback = fallback.filter(p => getBodyZone(p) === anchorZone);
     }
 
-    return fallback;
+    // Apply gender + register filters to fallback. If filtering
+    // empties the list (very thin catalog edge case), return the
+    // unfiltered zone-correct version — better to show SOMETHING
+    // than an empty drawer.
+    const filtered = fallback
+      .filter(p => isGenderCompatible(anchor, p))
+      .filter(p => !isRegisterIncompatible(anchor, p));
+    return filtered.length > 0 ? filtered : fallback;
   }
 
   return result;
