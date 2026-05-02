@@ -2010,18 +2010,69 @@ export default function AdminInventory() {
                               );
                             })}
 
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); editImageInputRef.current?.click(); }}
-                              disabled={imageUploadingSlot === `${p.id}-new`}
-                              className="w-full px-3 py-2.5 border border-dashed border-border/60 rounded-lg text-xs text-muted-foreground hover:bg-secondary hover:border-border transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-                            >
-                              {imageUploadingSlot === `${p.id}-new` ? (
-                                <><Loader2 className="w-3 h-3 animate-spin" /> UPLOADING</>
-                              ) : (
-                                <><Plus className="w-3 h-3" /> ADD IMAGE</>
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAddImagePopoverFor(prev => prev === p.id ? null : p.id);
+                                }}
+                                disabled={imageUploadingSlot === `${p.id}-new`}
+                                className="w-full px-3 py-2.5 border border-dashed border-border/60 rounded-lg text-xs text-muted-foreground hover:bg-secondary hover:border-border transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                              >
+                                {imageUploadingSlot === `${p.id}-new` ? (
+                                  <><Loader2 className="w-3 h-3 animate-spin" /> UPLOADING</>
+                                ) : (
+                                  <><Plus className="w-3 h-3" /> ADD IMAGE</>
+                                )}
+                              </button>
+                              {addImagePopoverFor === p.id && (
+                                <div
+                                  className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-card border border-border rounded-lg p-1 shadow-2xl"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <p className="px-2 py-1.5 text-[9px] font-display tracking-widest text-muted-foreground/70">
+                                    UPLOAD FOR WHICH SIZE?
+                                  </p>
+                                  {(['thumb', 'medium', 'full'] as const).map(size => {
+                                    const label = size === 'thumb' ? 'GRID + CART' : size === 'medium' ? 'DETAIL VIEW' : 'ZOOM';
+                                    const recommendedSize = size === 'thumb' ? '~400 PX' : size === 'medium' ? '~1200 PX' : '~2400 PX';
+                                    return (
+                                      <button
+                                        key={size}
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          pendingAddSizeRef.current = size;
+                                          setAddImagePopoverFor(null);
+                                          editImageInputRef.current?.click();
+                                        }}
+                                        className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center justify-between gap-3"
+                                      >
+                                        <span>{label}</span>
+                                        <span className="text-[9px] font-mono text-muted-foreground/60">{recommendedSize} wide</span>
+                                      </button>
+                                    );
+                                  })}
+                                  <div className="border-t border-border/40 my-1" />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      pendingAddSizeRef.current = 'all';
+                                      setAddImagePopoverFor(null);
+                                      editImageInputRef.current?.click();
+                                    }}
+                                    className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary"
+                                  >
+                                    USE ONE FILE FOR ALL 3 SIZES
+                                    <p className="text-[9px] font-display text-warning/80 mt-0.5 normal-case tracking-normal">
+                                      ⚠ Storefront will load slower — large files served to small surfaces
+                                    </p>
+                                  </button>
+                                </div>
                               )}
-                            </button>
+                            </div>
                           </div>
                         </div>
 
