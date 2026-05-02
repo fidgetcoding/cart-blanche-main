@@ -499,9 +499,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                 </div>
               )}
 
-              {product.images && product.images.length > 1 && (
+              {displayImages && displayImages.length > 1 && (
                 <div className="absolute bottom-0 left-0 right-0 flex h-12 z-10" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-                  {product.images.map((_, i) => (
+                  {displayImages.map((_, i) => (
                     <button
                       key={i}
                       onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
