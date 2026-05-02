@@ -479,10 +479,10 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
             {/* Product image area */}
             <div data-image-zone="true" className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
-              {product.images && product.images.length > 0 ? (
+              {displayImages && displayImages.length > 0 ? (
                 <img
-                  key={`${product.id}-${activeImage}`}
-                  src={product.images[Math.min(activeImage, product.images.length - 1)].medium}
+                  key={`${product.id}-${selectedColorwayId || 'default'}-${activeImage}`}
+                  src={displayImages[Math.min(activeImage, displayImages.length - 1)].medium}
                   alt={product.title}
                   className="w-full h-full object-cover"
                   draggable={false}
