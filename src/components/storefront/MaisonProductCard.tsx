@@ -135,37 +135,6 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       prevImage();
     }
   }, [hasMultiple, nextImage, prevImage]);
-function ImageCellWithDebug({ src, alt, widthPct }: { src: string; alt: string; widthPct: number }) {
-  const [naturalDims, setNaturalDims] = useState<string>('loading...');
-  return (
-    <div
-      className="h-full flex-shrink-0 flex flex-col items-center justify-center relative"
-      style={{ width: `${widthPct}%`, padding: '8%' }}
-    >
-      <img
-        src={src}
-        alt={alt}
-        className="object-contain"
-        style={{ width: '100%', height: '100%' }}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-        onLoad={(e) => {
-          const t = e.currentTarget;
-          setNaturalDims(`${t.naturalWidth}x${t.naturalHeight}`);
-        }}
-      />
-      <div className="absolute top-1 left-1 right-1 text-[8px] font-mono text-red-500 bg-white/90 px-1 truncate z-10 pointer-events-none">
-        {src}
-      </div>
-      <div className="absolute bottom-1 left-1 right-1 text-[10px] font-mono font-bold text-blue-600 bg-yellow-200 px-1 truncate z-10 pointer-events-none text-center">
-        {naturalDims}
-      </div>
-    </div>
-  );
-}
-
-
   const isCompact = viewMode === 6;
   const getCardImageSrc = useCallback((img: DemoProduct['images'][number]) => {
     if (typeof img === 'string') return img;
@@ -231,17 +200,23 @@ function ImageCellWithDebug({ src, alt, widthPct }: { src: string; alt: string; 
             transition: 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
           }}
         >
-          {images.map((img, i) => {
-            const resolvedSrc = getCardImageSrc(img);
-            return (
-              <ImageCellWithDebug
-                key={i}
-                src={resolvedSrc}
+          {images.map((img, i) => (
+            <div
+              key={i}
+              className="h-full flex-shrink-0 flex items-center justify-center"
+              style={{ width: `${100 / images.length}%`, padding: `${8 / images.length}%` }}
+            >
+              <img
+                src={getCardImageSrc(img)}
                 alt={product.title}
-                widthPct={100 / images.length}
+                className="object-contain"
+                style={{ width: '100%', height: '100%' }}
+                loading="lazy"
+                decoding="async"
+                draggable={false}
               />
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {/* Hover overlay — view by 6 only: frosted overlay revealing product info */}
