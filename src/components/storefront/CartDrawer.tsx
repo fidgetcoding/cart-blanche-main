@@ -409,6 +409,8 @@ export function CartDrawer() {
         title: product.title,
         variantTitle: v.title,
         price: v.price ?? product.price,
+        colorwayId: product.colorways?.[0]?.id,
+        colorwayName: product.colorways?.[0]?.name,
       });
     }
   };
@@ -569,7 +571,7 @@ export function CartDrawer() {
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="font-display text-xs font-medium truncate">{item.title}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">{item.variantTitle}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{item.colorwayName ? `${item.colorwayName} · ${item.variantTitle}` : item.variantTitle}</p>
                               <div className="flex items-center gap-3 mt-1.5">
                                 <div className="flex items-center gap-1.5">
                                   <button

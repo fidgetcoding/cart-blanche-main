@@ -699,6 +699,8 @@ export function StyleKitView() {
           title: product.title,
           variantTitle: variant.title,
           price: variant.price ?? product.price,
+          colorwayId: product.colorways?.[0]?.id,
+          colorwayName: product.colorways?.[0]?.name,
         });
       }
     });

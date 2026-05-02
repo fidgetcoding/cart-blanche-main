@@ -319,6 +319,8 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                               variantTitle: v.title,
                               price: v.price ?? product.price,
                               image: product.images[0]?.thumb,
+                              colorwayId: product.colorways?.[0]?.id,
+                              colorwayName: product.colorways?.[0]?.name,
                             });
                           }}
                           disabled={v.inventory_count === 0}
@@ -463,6 +465,8 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                         variantTitle: visibleVariants[0].title,
                         price: visibleVariants[0].price ?? product.price,
                         image: product.images[0]?.thumb,
+                        colorwayId: product.colorways?.[0]?.id,
+                        colorwayName: product.colorways?.[0]?.name,
                       });
                     }
                   }}
@@ -499,6 +503,8 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                             variantTitle: v.title,
                             price: v.price ?? product.price,
                             image: product.images[0]?.thumb,
+                            colorwayId: product.colorways?.[0]?.id,
+                            colorwayName: product.colorways?.[0]?.name,
                           });
                         }}
                         disabled={v.inventory_count === 0}
