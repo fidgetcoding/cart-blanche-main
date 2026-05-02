@@ -117,9 +117,9 @@ function CarouselRow({
   const hasDragged = useRef(false);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Don't capture pointer if the user clicked a button (ADD, etc.)
+    // Don't capture pointer if the user clicked an interactive control inside a card.
     const target = e.target as HTMLElement;
-    if (target.closest('button')) return;
+    if (target.closest('button, a, input, select, textarea, label')) return;
     isDragging.current = true;
     hasDragged.current = false;
     dragStartPos.current = isHorizontal ? e.clientX : e.clientY;
@@ -141,8 +141,16 @@ function CarouselRow({
     }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
     isDragging.current = false;
+    if (!hasDragged.current) return;
+
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, select, textarea, label')) return;
+
+    window.setTimeout(() => {
+      hasDragged.current = false;
+    }, 0);
   };
 
   const loopedProducts = products.length > 0
