@@ -40,35 +40,60 @@ interface ProductRow {
   status: 'active' | 'draft' | 'archived';
 }
 
-function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
-  return orderedProducts.map(p => ({
-    id: p.id,
-    title: p.title,
-    price: p.price,
-    compare_at_price: p.compare_at_price,
-    category: p.category,
-    product_type: p.product_type || '',
-    gender: p.gender || 'unisex',
-    colorways: p.colorways || [],
-    images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
-    imagesFull: p.images.map(img => typeof img === 'string'
-      ? { thumb: img, medium: img, full: img }
-      : img),
-    description: p.description,
-    tags: [p.category],
-    variants: p.variants.map(v => ({
-      id: v.id,
-      title: v.title,
-      inventory_count: v.inventory_count,
-      sku: null,
-    })),
-    totalStock: p.variants.reduce((sum, v) => sum + v.inventory_count, 0),
-    isDemo: true,
-    weight_oz: p.weight_oz ?? 0,
-    shipping_type: p.shipping_type ?? 'domestic',
-    hs_code: p.hs_code ?? '',
-    status: (p.status as 'active' | 'draft' | 'archived') ?? 'active',
+function sortImagesByColorwayOrder(
+  images: ProductImage[],
+  colorways: Colorway[]
+): ProductImage[] {
+  if (images.length === 0) return images;
+  const colorwayIdOrder = new Map<string, number>();
+  colorways.forEach((c, i) => colorwayIdOrder.set(c.id, i));
+  const indexed = images.map((img, idx) => ({
+    img,
+    idx,
+    groupKey: img.colorway_id && colorwayIdOrder.has(img.colorway_id)
+      ? colorwayIdOrder.get(img.colorway_id)!
+      : Number.MAX_SAFE_INTEGER,
   }));
+  indexed.sort((a, b) => {
+    if (a.groupKey !== b.groupKey) return a.groupKey - b.groupKey;
+    return a.idx - b.idx;
+  });
+  return indexed.map(x => x.img);
+}
+
+function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
+  return orderedProducts.map(p => {
+    const fullImages: ProductImage[] = p.images.map(img => typeof img === 'string'
+      ? { thumb: img, medium: img, full: img }
+      : img);
+    const sortedImages = sortImagesByColorwayOrder(fullImages, p.colorways || []);
+    return {
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      compare_at_price: p.compare_at_price,
+      category: p.category,
+      product_type: p.product_type || '',
+      gender: p.gender || 'unisex',
+      colorways: p.colorways || [],
+      images: sortedImages.map(img => img.thumb),
+      imagesFull: sortedImages,
+      description: p.description,
+      tags: [p.category],
+      variants: p.variants.map(v => ({
+        id: v.id,
+        title: v.title,
+        inventory_count: v.inventory_count,
+        sku: null,
+      })),
+      totalStock: p.variants.reduce((sum, v) => sum + v.inventory_count, 0),
+      isDemo: true,
+      weight_oz: p.weight_oz ?? 0,
+      shipping_type: p.shipping_type ?? 'domestic',
+      hs_code: p.hs_code ?? '',
+      status: (p.status as 'active' | 'draft' | 'archived') ?? 'active',
+    };
+  });
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
