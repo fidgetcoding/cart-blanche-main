@@ -5,6 +5,7 @@ import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, Chevr
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
+import { getSwatchStyle } from '@/lib/swatch-style';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
 import { type DemoProduct, PRODUCT_TYPES, type ProductType, type Colorway, getImageUrl } from '@/data/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1653,6 +1654,45 @@ export default function AdminInventory() {
                             </button>
                           </div>
                         </div>
+
+                        {/* Color-specific images visibility — surfaces per-colorway image arrays so the merchant can see what's wired without opening each colorway modal. Editing still happens via pencil on the COLORS pill. */}
+                        {p.colorways && p.colorways.some(c => c.images && c.images.length > 0) && (
+                          <div>
+                            <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">
+                              COLOR-SPECIFIC IMAGES
+                            </p>
+                            <p className="text-[10px] italic text-muted-foreground/70 mb-3 leading-relaxed">
+                              Photos shown on the storefront when a specific color is selected. Edit via the pencil icon on the corresponding pill in COLORS below.
+                            </p>
+                            <div className="space-y-2">
+                              {p.colorways
+                                .filter(c => c.images && c.images.length > 0)
+                                .map(c => (
+                                  <div key={c.id} className="flex items-center gap-3 p-2 rounded-lg bg-background/40 border border-border/40">
+                                    <div className="flex items-center gap-1.5 min-w-[110px] shrink-0">
+                                      <span
+                                        className="w-4 h-4 rounded-full border border-border/60 bg-cover bg-center shrink-0"
+                                        style={getSwatchStyle(c)}
+                                      />
+                                      <span className="text-[10px] font-display tracking-wider text-foreground truncate">
+                                        {c.name.toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {c.images!.map((img, idx) => (
+                                        <div
+                                          key={`${c.id}-img-${idx}`}
+                                          title={`Edit via pencil icon on ${c.name} pill in COLORS row`}
+                                          className="w-12 h-12 rounded border border-border/50 bg-cover bg-center cursor-help"
+                                          style={{ backgroundImage: `url(${img.thumb})` }}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Tags management */}
                         <div>
