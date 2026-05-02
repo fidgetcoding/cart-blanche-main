@@ -637,7 +637,7 @@ function SlTemplateInner() {
 
 export default function SlTemplate() {
   return (
-    <ThemeProvider defaults={{ mode: 'light', tileBgMode: 'transparent' }}>
+    <ThemeProvider storageKey="cb-theme-sl" defaults={{ mode: 'light', tileBgMode: 'transparent' }}>
       <SlTemplateInner />
     </ThemeProvider>
   );
