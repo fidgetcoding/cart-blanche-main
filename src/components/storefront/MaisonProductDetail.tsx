@@ -6,7 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { splitSentences } from '@/lib/format-description';
-import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
+import { MaisonWaitlistModal } from './MaisonWaitlistModal';
 
 interface MaisonProductDetailProps {
   product: DemoProduct | null;
@@ -126,11 +126,7 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
 export function MaisonProductDetail({ product, products, allProducts, onClose, onNavigate, onBuildSet }: MaisonProductDetailProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
-  const [waitlistFormOpen, setWaitlistFormOpen] = useState(false);
-  const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [waitlistName, setWaitlistName] = useState('');
-  const [waitlistSize, setWaitlistSize] = useState('');
-  const { submit: submitWaitlist, submitting: submittingWaitlist } = useWaitlistSignup();
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
@@ -338,22 +334,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const isOutOfStock = variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0);
   const isWholeProductOutOfStock = product.variants.every(v => v.inventory_count === 0);
 
-  async function handleWaitlistSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!waitlistEmail.trim() || !waitlistName.trim()) return;
-    const res = await submitWaitlist({
-      productId: product.id,
-      email: waitlistEmail,
-      name: waitlistName,
-      sizePreference: waitlistSize,
-    });
-    if (res.ok) {
-      setWaitlistEmail('');
-      setWaitlistName('');
-      setWaitlistSize('');
-      setWaitlistFormOpen(false);
-    }
-  }
+
 
   const handleAddToCart = () => {
     const v = variant || product.variants[0];
@@ -542,7 +523,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             onClick={(e) => {
               e.stopPropagation();
               if (isWholeProductOutOfStock) {
-                setWaitlistFormOpen(o => !o);
+                setWaitlistOpen(true);
               } else {
                 handleAddToCart();
               }
@@ -558,61 +539,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             {isOutOfStock ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
           </button>
 
-          {/* Inline waitlist form — appears below the JOIN THE WAITLIST button
-              when whole product is sold out and the user clicks it. */}
-          {isWholeProductOutOfStock && waitlistFormOpen && (
-            <form
-              onSubmit={(e) => { e.stopPropagation(); handleWaitlistSubmit(e); }}
-              onClick={(e) => e.stopPropagation()}
-              className="mt-4 space-y-2.5 border-t border-border pt-4"
-            >
-              <p
-                className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground"
-                style={{ fontFamily: 'var(--font-body)' }}
-              >
-                We'll email you when this is back in stock
-              </p>
-              <input
-                type="text"
-                placeholder="Name"
-                required
-                value={waitlistName}
-                onChange={(e) => setWaitlistName(e.target.value)}
-                className="w-full px-3 py-2.5 border border-border text-[11px] tracking-[0.1em] bg-transparent focus:outline-none focus:border-foreground transition-colors"
-                style={{ fontFamily: 'var(--font-body)' }}
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                required
-                value={waitlistEmail}
-                onChange={(e) => setWaitlistEmail(e.target.value)}
-                className="w-full px-3 py-2.5 border border-border text-[11px] tracking-[0.1em] bg-transparent focus:outline-none focus:border-foreground transition-colors"
-                style={{ fontFamily: 'var(--font-body)' }}
-              />
-              {product.variants.length > 1 && (
-                <select
-                  value={waitlistSize}
-                  onChange={(e) => setWaitlistSize(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border text-[11px] tracking-[0.1em] focus:outline-none focus:border-foreground transition-colors bg-transparent"
-                  style={{ fontFamily: 'var(--font-body)' }}
-                >
-                  <option value="">Size — no preference</option>
-                  {product.variants.map((v) => (
-                    <option key={v.id} value={v.title}>{v.title}</option>
-                  ))}
-                </select>
-              )}
-              <button
-                type="submit"
-                disabled={submittingWaitlist}
-                className="w-full py-3 text-[10px] tracking-[0.25em] uppercase bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-60"
-                style={{ fontFamily: 'var(--font-body)' }}
-              >
-                {submittingWaitlist ? 'Adding...' : 'Submit'}
-              </button>
-            </form>
-          )}
+
 
           {/* BUILD A SET — full width, outline */}
           <button
@@ -650,6 +577,12 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
         onClose={() => setSizeChartOpen(false)}
         variant="maison"
         centerInDetailPanel
+      />
+
+      <MaisonWaitlistModal
+        open={waitlistOpen}
+        onClose={() => setWaitlistOpen(false)}
+        product={product}
       />
     </motion.div>
   );

@@ -7,6 +7,14 @@ interface SubmitInput {
   email: string;
   name: string;
   sizePreference?: string;
+  colorPreference?: string;
+}
+
+function buildPreferenceString(size?: string, color?: string): string {
+  const parts: string[] = [];
+  if (size?.trim()) parts.push(`Size: ${size.trim()}`);
+  if (color?.trim()) parts.push(`Color: ${color.trim()}`);
+  return parts.join(' | ');
 }
 
 interface SubmitResult {
@@ -31,7 +39,7 @@ export function useWaitlistSignup() {
         product_id: input.productId,
         email: input.email.trim().toLowerCase(),
         name: input.name.trim(),
-        size_preference: input.sizePreference?.trim() || '',
+        size_preference: buildPreferenceString(input.sizePreference, input.colorPreference),
       });
 
       if (error) {
