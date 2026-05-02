@@ -39,7 +39,7 @@ export function useWaitlistSignup() {
         product_id: input.productId,
         email: input.email.trim().toLowerCase(),
         name: input.name.trim(),
-        size_preference: input.sizePreference?.trim() || '',
+        size_preference: buildPreferenceString(input.sizePreference, input.colorPreference),
       });
 
       if (error) {
