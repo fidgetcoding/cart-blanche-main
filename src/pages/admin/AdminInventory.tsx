@@ -1877,14 +1877,72 @@ export default function AdminInventory() {
                               return (
                                 <div
                                   key={`${p.id}-img-${imgIdx}-${img.thumb}-${img.medium}-${img.full}`}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    setImgDrag({ productId: p.id, idx: imgIdx });
+                                    e.dataTransfer.effectAllowed = 'move';
+                                  }}
+                                  onDragOver={(e) => {
+                                    if (imgDrag?.productId !== p.id) return;
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                    if (imgDragOverIdx !== imgIdx) setImgDragOverIdx(imgIdx);
+                                  }}
+                                  onDragLeave={() => {
+                                    if (imgDragOverIdx === imgIdx) setImgDragOverIdx(null);
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    if (imgDrag && imgDrag.productId === p.id && imgDrag.idx !== imgIdx) {
+                                      moveImage(p.id, imgDrag.idx, imgIdx);
+                                    }
+                                    setImgDrag(null);
+                                    setImgDragOverIdx(null);
+                                  }}
+                                  onDragEnd={() => {
+                                    setImgDrag(null);
+                                    setImgDragOverIdx(null);
+                                  }}
                                   className={`relative border rounded-lg p-2 transition-colors ${
                                     img.featured
                                       ? 'border-primary/70 bg-primary/10 ring-1 ring-primary/40'
                                       : 'border-border/40 bg-background/40'
+                                  } ${
+                                    imgDrag?.productId === p.id && imgDrag.idx === imgIdx ? 'opacity-50' : ''
+                                  } ${
+                                    imgDragOverIdx === imgIdx && imgDrag?.productId === p.id && imgDrag.idx !== imgIdx ? 'ring-2 ring-primary/60' : ''
                                   }`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="flex items-start gap-2">
+
+                                    {/* Drag handle + reorder chevrons */}
+                                    <div className="flex flex-col items-center gap-0.5 pt-1 -ml-1 mr-0.5 select-none">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); moveImage(p.id, imgIdx, imgIdx - 1); }}
+                                        disabled={imgIdx === 0}
+                                        className="p-0.5 rounded hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+                                        title="Move up"
+                                      >
+                                        <ChevronUp className="w-3 h-3" />
+                                      </button>
+                                      <div
+                                        className="p-0.5 cursor-grab active:cursor-grabbing text-muted-foreground/60 hover:text-foreground"
+                                        title="Drag to reorder"
+                                      >
+                                        <GripVertical className="w-3 h-3" />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); moveImage(p.id, imgIdx, imgIdx + 1); }}
+                                        disabled={imgIdx === (p.imagesFull?.length || 0) - 1}
+                                        className="p-0.5 rounded hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+                                        title="Move down"
+                                      >
+                                        <ChevronDown className="w-3 h-3" />
+                                      </button>
+                                    </div>
 
                                     {/* Color tag swatch indicator */}
                                     <div className="relative pt-1">
