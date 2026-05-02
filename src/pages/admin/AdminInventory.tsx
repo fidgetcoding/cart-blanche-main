@@ -1955,7 +1955,7 @@ export default function AdminInventory() {
                   {allCategoryOptions.map(cat => (
                     <button
                       key={cat}
-                      onClick={() => setAddProductType(addProductType === cat ? '' : cat)}
+                      onClick={() => setAddProductType((addProductType === cat ? '' : cat) as ProductType)}
                       className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
                         addProductType === cat
                           ? 'bg-foreground/10 text-foreground border-foreground/20'
