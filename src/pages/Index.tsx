@@ -6,6 +6,7 @@ import { SmartCartProvider } from '@/contexts/SmartCartContext';
 import { StyleKitProvider } from '@/contexts/StyleKitContext';
 import { SpatialCanvas } from '@/components/storefront/SpatialCanvas';
 import { StyleKitView } from '@/components/storefront/StyleKitView';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Index = () => {
   const [isReady, setIsReady] = useState(false);
