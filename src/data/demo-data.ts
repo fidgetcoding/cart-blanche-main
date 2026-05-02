@@ -7,6 +7,7 @@ export interface ProductImage {
   medium: string;    // 800px - product detail
   full: string;      // 1920px - zoom/fullscreen
   colorway_id?: string; // optional tag. When set, this image only shows on the storefront when this colorway is selected. When unset, the image is untagged / color-agnostic and shows for every colorway selection.
+  featured?: boolean;   // when true, this image is the featured/cover for its colorway group (or for the untagged group). The grid view uses the first colorway's featured image. Only one image per group should be marked featured; if multiple, the first one wins.
 }
 
 function imgSet(baseName: string): ProductImage {
