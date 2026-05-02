@@ -317,7 +317,7 @@ export function MaisonCanvas() {
                           aria-pressed={isActive}
                           aria-disabled={!isAvailable}
                         >
-                          {g}
+                          <GenderSymbol gender={g.toLowerCase()} size={16} />
                         </button>
                       );
                     })}
