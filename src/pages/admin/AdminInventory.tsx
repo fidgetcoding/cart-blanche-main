@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, ChevronUp, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
@@ -213,7 +213,9 @@ export default function AdminInventory() {
   // Tag popover state — which image is showing its tag dropdown. Format: `${productId}-${imgIdx}` or null when none open.
   const [tagPopoverOpenFor, setTagPopoverOpenFor] = useState<string | null>(null);
   // Image row drag state for reorder.
-  
+  const [imgDrag, setImgDrag] = useState<{ productId: string; idx: number } | null>(null);
+  const [imgDragOverIdx, setImgDragOverIdx] = useState<number | null>(null);
+
   // Inline new-colorway form — when set, the tag popover for that key shows the create-new-color form instead of the existing-colorway list.
   const [inlineColorFormFor, setInlineColorFormFor] = useState<string | null>(null);
   const [inlineColorName, setInlineColorName] = useState('');
@@ -876,6 +878,20 @@ export default function AdminInventory() {
     });
     const sorted = sortImagesByColorwayOrder(next, target.colorways || []);
     setProductImagesFull(productId, sorted);
+  }, [products, setProductImagesFull]);
+
+  // Reorder images within a product. Does NOT re-sort by colorway, so the
+  // merchant's manual order is preserved exactly. The featured flag travels
+  // with its image, so reordering can change which image is the grid hero
+  // only if the user explicitly toggles SHOW ON GRID afterwards.
+  const moveImage = useCallback((productId: string, fromIdx: number, toIdx: number) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    if (toIdx < 0 || toIdx >= target.imagesFull.length || fromIdx === toIdx) return;
+    const next = [...target.imagesFull];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
 
 
@@ -1861,14 +1877,72 @@ export default function AdminInventory() {
                               return (
                                 <div
                                   key={`${p.id}-img-${imgIdx}-${img.thumb}-${img.medium}-${img.full}`}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    setImgDrag({ productId: p.id, idx: imgIdx });
+                                    e.dataTransfer.effectAllowed = 'move';
+                                  }}
+                                  onDragOver={(e) => {
+                                    if (imgDrag?.productId !== p.id) return;
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                    if (imgDragOverIdx !== imgIdx) setImgDragOverIdx(imgIdx);
+                                  }}
+                                  onDragLeave={() => {
+                                    if (imgDragOverIdx === imgIdx) setImgDragOverIdx(null);
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    if (imgDrag && imgDrag.productId === p.id && imgDrag.idx !== imgIdx) {
+                                      moveImage(p.id, imgDrag.idx, imgIdx);
+                                    }
+                                    setImgDrag(null);
+                                    setImgDragOverIdx(null);
+                                  }}
+                                  onDragEnd={() => {
+                                    setImgDrag(null);
+                                    setImgDragOverIdx(null);
+                                  }}
                                   className={`relative border rounded-lg p-2 transition-colors ${
                                     img.featured
                                       ? 'border-primary/70 bg-primary/10 ring-1 ring-primary/40'
                                       : 'border-border/40 bg-background/40'
+                                  } ${
+                                    imgDrag?.productId === p.id && imgDrag.idx === imgIdx ? 'opacity-50' : ''
+                                  } ${
+                                    imgDragOverIdx === imgIdx && imgDrag?.productId === p.id && imgDrag.idx !== imgIdx ? 'ring-2 ring-primary/60' : ''
                                   }`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="flex items-start gap-2">
+
+                                    {/* Drag handle + reorder chevrons */}
+                                    <div className="flex flex-col items-center gap-0.5 pt-1 -ml-1 mr-0.5 select-none">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); moveImage(p.id, imgIdx, imgIdx - 1); }}
+                                        disabled={imgIdx === 0}
+                                        className="p-0.5 rounded hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+                                        title="Move up"
+                                      >
+                                        <ChevronUp className="w-3 h-3" />
+                                      </button>
+                                      <div
+                                        className="p-0.5 cursor-grab active:cursor-grabbing text-muted-foreground/60 hover:text-foreground"
+                                        title="Drag to reorder"
+                                      >
+                                        <GripVertical className="w-3 h-3" />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); moveImage(p.id, imgIdx, imgIdx + 1); }}
+                                        disabled={imgIdx === (p.imagesFull?.length || 0) - 1}
+                                        className="p-0.5 rounded hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+                                        title="Move down"
+                                      >
+                                        <ChevronDown className="w-3 h-3" />
+                                      </button>
+                                    </div>
 
                                     {/* Color tag swatch indicator */}
                                     <div className="relative pt-1">
