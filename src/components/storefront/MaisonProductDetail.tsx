@@ -158,6 +158,21 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     setCurrentVisibleImage(0);
   }, [selectedColorwayId]);
 
+  useEffect(() => {
+    if (!selectedVariant) return;
+    const current = product?.variants.find(v => v.id === selectedVariant);
+    if (!current) { setSelectedVariant(null); return; }
+    if (current.colorway_id && current.colorway_id !== selectedColorwayId) {
+      const equivalent = product?.variants.find(
+        v => v.title === current.title &&
+             (!v.colorway_id || v.colorway_id === selectedColorwayId) &&
+             v.inventory_count > 0
+      );
+      setSelectedVariant(equivalent ? equivalent.id : null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedColorwayId]);
+
   // Keyboard: Escape to close
   useEffect(() => {
     if (!product) return;
@@ -351,6 +366,12 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const isOutOfStock = variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0);
   const isWholeProductOutOfStock = product.variants.every(v => v.inventory_count === 0);
 
+  const availableVariants = product.variants.filter(
+    v => !v.colorway_id || v.colorway_id === selectedColorwayId
+  );
+  const isCurrentColorwayOutOfStock = availableVariants.length > 0 &&
+    availableVariants.every(v => v.inventory_count === 0);
+
 
 
   const handleAddToCart = () => {
@@ -482,7 +503,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           </div>
 
           {/* Stock indicator — own line, matches CATEGORY label treatment. */}
-          {(variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0)) ? (
+          {(variant ? variant.inventory_count === 0 : isCurrentColorwayOutOfStock) ? (
             <p
               className="mt-3 text-[10px] tracking-[0.2em] uppercase text-destructive"
               style={{ fontFamily: 'var(--font-body)' }}
@@ -522,7 +543,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           )}
 
           {/* Size selector */}
-          {product.variants.length > 1 && (
+          {availableVariants.length > 1 && (
             <div className="mt-8">
               <p
                 className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-3"
@@ -531,7 +552,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
                 SELECT SIZE
               </p>
               <div className="flex gap-2 flex-wrap justify-center">
-                {product.variants.map(v => (
+                {availableVariants.map(v => (
                   <button
                     key={v.id}
                     onClick={(e) => { e.stopPropagation(); setSelectedVariant(v.id === selectedVariant ? null : v.id); }}
