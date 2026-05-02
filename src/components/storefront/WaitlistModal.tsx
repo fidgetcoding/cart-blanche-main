@@ -10,10 +10,24 @@ interface WaitlistModalProps {
   product: DemoProduct;
 }
 
+// Shared neutral preference palette — no per-product color data exists,
+// so we offer common shopper preferences.
+export const WAITLIST_COLOR_OPTIONS = [
+  'Black',
+  'White',
+  'Cream',
+  'Grey',
+  'Navy',
+  'Brown',
+  'Olive',
+  'Burgundy',
+];
+
 export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
+  const [color, setColor] = useState('');
   const { submit, submitting } = useWaitlistSignup();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -24,11 +38,13 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
       email,
       name,
       sizePreference: size,
+      colorPreference: color,
     });
     if (res.ok) {
       setEmail('');
       setName('');
       setSize('');
+      setColor('');
       onClose();
     }
   }
@@ -72,7 +88,7 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
               Enter your details and we'll email you the moment this is back in stock.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <label className="block">
                 <span className="text-[11px] tracking-wider uppercase text-foreground/60">Name</span>
                 <input
@@ -96,20 +112,52 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
               </label>
 
               {product.variants.length > 1 && (
-                <label className="block">
-                  <span className="text-[11px] tracking-wider uppercase text-foreground/60">Size (optional)</span>
-                  <select
-                    value={size}
-                    onChange={(e) => setSize(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 bg-background/40 border border-foreground/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-foreground/30"
-                  >
-                    <option value="">No preference</option>
-                    {product.variants.map((v) => (
-                      <option key={v.id} value={v.title}>{v.title}</option>
-                    ))}
-                  </select>
-                </label>
+                <div>
+                  <span className="text-[11px] tracking-wider uppercase text-foreground/60">Size preference</span>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {product.variants.map((v) => {
+                      const active = size === v.title;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => setSize(active ? '' : v.title)}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                            active
+                              ? 'bg-foreground text-background border-foreground'
+                              : 'bg-background/40 text-foreground border-foreground/20 hover:border-foreground/40'
+                          }`}
+                        >
+                          {v.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
+
+              <div>
+                <span className="text-[11px] tracking-wider uppercase text-foreground/60">Color preference</span>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {WAITLIST_COLOR_OPTIONS.map((c) => {
+                    const active = color === c;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setColor(active ? '' : c)}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                          active
+                            ? 'bg-foreground text-background border-foreground'
+                            : 'bg-background/40 text-foreground border-foreground/20 hover:border-foreground/40'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               <button
                 type="submit"
