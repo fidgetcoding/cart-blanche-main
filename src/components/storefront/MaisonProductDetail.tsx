@@ -335,22 +335,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const isOutOfStock = variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0);
   const isWholeProductOutOfStock = product.variants.every(v => v.inventory_count === 0);
 
-  async function handleWaitlistSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!waitlistEmail.trim() || !waitlistName.trim()) return;
-    const res = await submitWaitlist({
-      productId: product.id,
-      email: waitlistEmail,
-      name: waitlistName,
-      sizePreference: waitlistSize,
-    });
-    if (res.ok) {
-      setWaitlistEmail('');
-      setWaitlistName('');
-      setWaitlistSize('');
-      setWaitlistFormOpen(false);
-    }
-  }
+
 
   const handleAddToCart = () => {
     const v = variant || product.variants[0];
