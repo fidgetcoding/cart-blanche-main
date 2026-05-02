@@ -162,6 +162,10 @@ export default function AdminInventory() {
   const [imageUploadingSlot, setImageUploadingSlot] = useState<string | null>(null);
   // Tag popover state — which image is showing its tag dropdown. Format: `${productId}-${imgIdx}` or null when none open.
   const [tagPopoverOpenFor, setTagPopoverOpenFor] = useState<string | null>(null);
+  // Inline new-colorway form — when set, the tag popover for that key shows the create-new-color form instead of the existing-colorway list.
+  const [inlineColorFormFor, setInlineColorFormFor] = useState<string | null>(null);
+  const [inlineColorName, setInlineColorName] = useState('');
+  const [inlineColorHex, setInlineColorHex] = useState('#000000');
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
     try {
@@ -816,6 +820,51 @@ export default function AdminInventory() {
     const next = target.imagesFull.filter((_, i) => i !== imgIdx);
     setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
+
+  // Create a new colorway from the inline form and tag the current image with it.
+  const createColorwayAndTagImage = useCallback((
+    productId: string,
+    imgIdx: number,
+    name: string,
+    hex: string
+  ) => {
+    if (!name.trim()) return;
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const newColorwayId = `${productId}-col-${slug}-${Math.random().toString(36).slice(2, 6)}`;
+    const newColorway: Colorway = { id: newColorwayId, name: name.trim(), hex };
+    const nextColorways = [...(target.colorways || []), newColorway];
+    const nextImages = target.imagesFull.map((img, i) => {
+      if (i !== imgIdx) return img;
+      const { colorway_id: _, ...rest } = img;
+      return { ...rest, colorway_id: newColorwayId };
+    });
+    const flat = nextImages.map(img => img.thumb);
+    setProducts(prev => prev.map(p =>
+      p.id === productId
+        ? { ...p, colorways: nextColorways, images: flat, imagesFull: nextImages }
+        : p
+    ));
+    if (target.isDemo) {
+      saveDemoProductOverride(productId, { colorways: nextColorways, images: nextImages });
+    } else {
+      setHasUnsavedChanges(true);
+    }
+    setInlineColorFormFor(null);
+    setInlineColorName('');
+    setInlineColorHex('#000000');
+    setTagPopoverOpenFor(null);
+  }, [products, saveDemoProductOverride]);
+
+  // Reset inline new-color form whenever the tag popover closes.
+  useEffect(() => {
+    if (tagPopoverOpenFor === null && inlineColorFormFor !== null) {
+      setInlineColorFormFor(null);
+      setInlineColorName('');
+      setInlineColorHex('#000000');
+    }
+  }, [tagPopoverOpenFor, inlineColorFormFor]);
 
   function removeTagFromProduct(productId: string, tag: string) {
     const target = products.find(p => p.id === productId);
@@ -1738,42 +1787,119 @@ export default function AdminInventory() {
                                       />
                                       {tagPopoverOpenFor === popoverKey && (
                                         <div
-                                          className="absolute left-0 top-6 z-30 min-w-[140px] p-1 rounded-lg border border-border bg-card shadow-xl"
+                                          className="absolute left-0 top-6 z-30 min-w-[180px] p-1 rounded-lg border border-border bg-card shadow-xl"
                                           onClick={(e) => e.stopPropagation()}
                                         >
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              tagImage(p.id, imgIdx, undefined);
-                                              setTagPopoverOpenFor(null);
-                                            }}
-                                            className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center gap-2"
-                                          >
-                                            <span
-                                              className="w-3 h-3 rounded-full border border-border/60 flex-shrink-0"
-                                              style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 2px, transparent 2px, transparent 4px)' }}
-                                            />
-                                            UNTAGGED
-                                          </button>
-                                          {p.colorways?.map(c => (
-                                            <button
-                                              key={c.id}
-                                              type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                tagImage(p.id, imgIdx, c.id);
-                                                setTagPopoverOpenFor(null);
-                                              }}
-                                              className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center gap-2"
-                                            >
-                                              <span
-                                                className="w-3 h-3 rounded-full border border-border/60 flex-shrink-0"
-                                                style={getSwatchStyle(c)}
+                                          {inlineColorFormFor === popoverKey ? (
+                                            <div className="p-2 space-y-2">
+                                              <p className="text-[9px] font-display tracking-widest text-muted-foreground">NEW COLOR</p>
+                                              <input
+                                                type="text"
+                                                value={inlineColorName}
+                                                onChange={(e) => setInlineColorName(e.target.value)}
+                                                placeholder="Color name"
+                                                autoFocus
+                                                className="w-full px-2 py-1.5 bg-background/40 border border-border/50 rounded text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                                                onKeyDown={(e) => {
+                                                  if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    createColorwayAndTagImage(p.id, imgIdx, inlineColorName, inlineColorHex);
+                                                  }
+                                                  if (e.key === 'Escape') {
+                                                    e.preventDefault();
+                                                    setInlineColorFormFor(null);
+                                                    setInlineColorName('');
+                                                    setInlineColorHex('#000000');
+                                                  }
+                                                }}
                                               />
-                                              {c.name.toUpperCase()}
-                                            </button>
-                                          ))}
+                                              <div className="flex items-center gap-1.5">
+                                                <input
+                                                  type="color"
+                                                  value={inlineColorHex}
+                                                  onChange={(e) => setInlineColorHex(e.target.value)}
+                                                  className="w-9 h-7 rounded cursor-pointer border-0 bg-transparent p-0"
+                                                />
+                                                <input
+                                                  type="text"
+                                                  value={inlineColorHex}
+                                                  onChange={(e) => setInlineColorHex(e.target.value)}
+                                                  className="flex-1 px-2 py-1 bg-background/40 border border-border/50 rounded text-[10px] font-mono focus:outline-none focus:ring-1 focus:ring-ring"
+                                                />
+                                              </div>
+                                              <div className="flex items-center gap-1 pt-1">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => createColorwayAndTagImage(p.id, imgIdx, inlineColorName, inlineColorHex)}
+                                                  disabled={!inlineColorName.trim()}
+                                                  className="flex-1 px-2 py-1.5 bg-primary text-primary-foreground rounded text-[10px] font-display tracking-wider hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                                >
+                                                  SAVE
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setInlineColorFormFor(null);
+                                                    setInlineColorName('');
+                                                    setInlineColorHex('#000000');
+                                                  }}
+                                                  className="px-2 py-1.5 border border-border rounded text-[10px] text-muted-foreground hover:bg-secondary transition-colors"
+                                                >
+                                                  Cancel
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <>
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  tagImage(p.id, imgIdx, undefined);
+                                                  setTagPopoverOpenFor(null);
+                                                }}
+                                                className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center gap-2"
+                                              >
+                                                <span
+                                                  className="w-3 h-3 rounded-full border border-border/60 flex-shrink-0"
+                                                  style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 2px, transparent 2px, transparent 4px)' }}
+                                                />
+                                                UNTAGGED
+                                              </button>
+                                              {p.colorways?.map(c => (
+                                                <button
+                                                  key={c.id}
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    tagImage(p.id, imgIdx, c.id);
+                                                    setTagPopoverOpenFor(null);
+                                                  }}
+                                                  className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center gap-2"
+                                                >
+                                                  <span
+                                                    className="w-3 h-3 rounded-full border border-border/60 flex-shrink-0"
+                                                    style={getSwatchStyle(c)}
+                                                  />
+                                                  {c.name.toUpperCase()}
+                                                </button>
+                                              ))}
+                                              <div className="border-t border-border/40 my-1" />
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setInlineColorFormFor(popoverKey);
+                                                  setInlineColorName('');
+                                                  setInlineColorHex('#000000');
+                                                }}
+                                                className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center gap-2 text-muted-foreground"
+                                              >
+                                                <Plus className="w-3 h-3 flex-shrink-0" />
+                                                NEW COLOR
+                                              </button>
+                                            </>
+                                          )}
                                         </div>
                                       )}
                                     </div>
