@@ -6,7 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
-import { type DemoProduct, PRODUCT_TYPES, type ProductType, type Colorway, getImageUrl } from '@/data/demo-data';
+import { type DemoProduct, PRODUCT_TYPES, type ProductType, type Colorway, type ProductImage, getImageUrl } from '@/data/demo-data';
+import { getSwatchStyle } from '@/lib/swatch-style';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProductWaitlist } from '@/hooks/use-product-waitlist';
 import { WaitlistTable } from '@/components/admin/WaitlistTable';
@@ -22,6 +23,7 @@ interface ProductRow {
   gender: string;
   colorways: Colorway[];
   images: string[];
+  imagesFull: ProductImage[]; // full ProductImage objects with thumb/medium/full URLs and optional colorway_id tag. Used by inline 3-slot UI; flat `images` stays for row preview thumbnails and Edit Product modal.
   description: string;
   tags: string[];
   variants: {
