@@ -30,6 +30,7 @@ export function WaitlistTable({ signups, onMarkFulfilled, onDelete, showProductC
             <th className="text-left px-3 py-2 text-[10px] font-display tracking-widest text-muted-foreground">NAME</th>
             <th className="text-left px-3 py-2 text-[10px] font-display tracking-widest text-muted-foreground">EMAIL</th>
             <th className="text-left px-3 py-2 text-[10px] font-display tracking-widest text-muted-foreground">SIZE</th>
+            <th className="text-left px-3 py-2 text-[10px] font-display tracking-widest text-muted-foreground">COLOR</th>
             {showProductColumn && (
               <th className="text-left px-3 py-2 text-[10px] font-display tracking-widest text-muted-foreground">PRODUCT</th>
             )}
@@ -44,6 +45,7 @@ export function WaitlistTable({ signups, onMarkFulfilled, onDelete, showProductC
               <td className="px-3 py-2 text-foreground">{s.name || <span className="text-muted-foreground/60">—</span>}</td>
               <td className="px-3 py-2 text-foreground/80">{s.email}</td>
               <td className="px-3 py-2 text-foreground/80">{s.size_preference || <span className="text-muted-foreground/60">—</span>}</td>
+              <td className="px-3 py-2 text-foreground/80">{s.colorway_preference || <span className="text-muted-foreground/60">—</span>}</td>
               {showProductColumn && (
                 <td className="px-3 py-2 text-foreground/80">{productTitleById?.[s.product_id] || s.product_id}</td>
               )}
