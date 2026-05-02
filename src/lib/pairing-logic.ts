@@ -55,12 +55,16 @@ export function isGenderCompatible(
   activeGenders?: string[]
 ): boolean {
   const c = (candidate.gender || 'unisex').toLowerCase();
-  // If the user has explicit gender chips selected on the grid,
-  // those chips constrain the candidate pool directly — only
-  // products in those chip buckets (or unisex) are visible.
+  // STRICT MODE — when the user has explicit gender chips
+  // selected on the grid, those chips are a HARD LOCK. Only
+  // products tagged with the exact selected gender pass.
+  // Unisex products do NOT pass through unless the user
+  // explicitly selects 'unisex' as a chip (which the current
+  // chip UI doesn't support, so unisex is effectively excluded
+  // when any chip is active — this is the intended behavior).
   if (activeGenders && activeGenders.length > 0) {
     const chips = new Set(activeGenders.map(g => g.toLowerCase()));
-    return chips.has(c) || c === 'unisex';
+    return chips.has(c);
   }
   // Default rule: anchor's gender + unisex overlap.
   const a = (anchor.gender || 'unisex').toLowerCase();
