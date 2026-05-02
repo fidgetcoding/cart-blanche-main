@@ -137,7 +137,16 @@ export function MaisonCanvas() {
     return new Set(pool.map(p => (p.gender || 'unisex').toLowerCase()));
   }, [allProducts, activeCategory, activeType]);
 
-  const showGenderSelector = availableGenders.size > 1;
+  // A gender chip is "available" if clicking it would yield at least
+  // one product. MEN matches 'men' or 'unisex'; WOMEN matches 'women'
+  // or 'unisex'; UNISEX matches only 'unisex'.
+  const isGenderAvailable = (g: string): boolean => {
+    const upper = g.toUpperCase();
+    if (upper === 'MEN') return availableGenders.has('men') || availableGenders.has('unisex');
+    if (upper === 'WOMEN') return availableGenders.has('women') || availableGenders.has('unisex');
+    if (upper === 'UNISEX') return availableGenders.has('unisex');
+    return false;
+  };
 
   if (loading) {
     return (
