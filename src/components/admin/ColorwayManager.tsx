@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Pencil, GripVertical, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { Plus, X, Pencil, GripVertical, ChevronUp, ChevronDown, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
 import type { Colorway } from '@/data/demo-data';
 import { supabase } from '@/integrations/supabase/client';
 import { getSwatchStyle } from '@/lib/swatch-style';
@@ -16,27 +16,21 @@ function makeId() {
 
 export function ColorwayManager({ colorways, onChange }: Props) {
   const [editing, setEditing] = useState<{ mode: 'add' } | { mode: 'edit'; colorway: Colorway } | null>(null);
-  const [dragSrcIdx, setDragSrcIdx] = useState<number | null>(null);
 
   function remove(idx: number) {
     onChange(colorways.filter((_, i) => i !== idx));
   }
-  function handleDragStart(idx: number) {
-    setDragSrcIdx(idx);
-  }
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-  }
-  function handleDrop(targetIdx: number) {
-    if (dragSrcIdx === null || dragSrcIdx === targetIdx) {
-      setDragSrcIdx(null);
-      return;
-    }
+  function moveUp(idx: number) {
+    if (idx <= 0) return;
     const next = [...colorways];
-    const [moved] = next.splice(dragSrcIdx, 1);
-    next.splice(targetIdx, 0, moved);
+    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
     onChange(next);
-    setDragSrcIdx(null);
+  }
+  function moveDown(idx: number) {
+    if (idx >= colorways.length - 1) return;
+    const next = [...colorways];
+    [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+    onChange(next);
   }
   function handleSaveModal(payload: Omit<Colorway, 'id'>, existingId?: string) {
     if (existingId) {
@@ -54,14 +48,26 @@ export function ColorwayManager({ colorways, onChange }: Props) {
   return (
     <div onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center gap-2 flex-wrap">
+        <Reorder.Group
+          axis="x"
+          values={colorways}
+          onReorder={onChange}
+          as="div"
+          className="contents"
+        >
         {colorways.map((c, idx) => (
-          <div
+          <Reorder.Item
             key={c.id}
-            draggable
-            onDragStart={() => handleDragStart(idx)}
-            onDragOver={handleDragOver}
-            onDrop={() => handleDrop(idx)}
-            className={`inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded border border-border/60 bg-background/40 text-[10px] font-display cursor-grab active:cursor-grabbing ${dragSrcIdx === idx ? 'opacity-50' : ''}`}
+            value={c}
+            as="div"
+            className="inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded border border-border/60 bg-background/40 text-[10px] font-display cursor-grab active:cursor-grabbing select-none"
+            whileDrag={{
+              scale: 1.05,
+              zIndex: 50,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              cursor: 'grabbing',
+            }}
+            transition={{ duration: 0.2 }}
           >
             <GripVertical className="w-3 h-3 text-muted-foreground/50" />
             <span
@@ -71,7 +77,25 @@ export function ColorwayManager({ colorways, onChange }: Props) {
             <span className="tracking-wider">{c.name.toUpperCase()}</span>
             <button
               type="button"
-              onClick={() => setEditing({ mode: 'edit', colorway: c })}
+              onClick={(e) => { e.stopPropagation(); moveUp(idx); }}
+              disabled={idx === 0}
+              className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Move up"
+            >
+              <ChevronUp className="w-2.5 h-2.5" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); moveDown(idx); }}
+              disabled={idx === colorways.length - 1}
+              className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Move down"
+            >
+              <ChevronDown className="w-2.5 h-2.5" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setEditing({ mode: 'edit', colorway: c }); }}
               className="p-0.5 text-muted-foreground/60 hover:text-foreground"
               title="Edit"
             >
@@ -79,14 +103,15 @@ export function ColorwayManager({ colorways, onChange }: Props) {
             </button>
             <button
               type="button"
-              onClick={() => remove(idx)}
+              onClick={(e) => { e.stopPropagation(); remove(idx); }}
               className="p-0.5 text-muted-foreground/60 hover:text-destructive"
               title="Remove"
             >
               <X className="w-2.5 h-2.5" />
             </button>
-          </div>
+          </Reorder.Item>
         ))}
+        </Reorder.Group>
         <button
           type="button"
           onClick={() => setEditing({ mode: 'add' })}

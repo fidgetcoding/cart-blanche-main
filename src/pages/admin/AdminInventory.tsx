@@ -8,7 +8,7 @@ import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
 import { type DemoProduct, PRODUCT_TYPES, type ProductType, type Colorway, type ProductImage, getImageUrl } from '@/data/demo-data';
 import { getSwatchStyle } from '@/lib/swatch-style';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useProductWaitlist } from '@/hooks/use-product-waitlist';
 import { WaitlistTable } from '@/components/admin/WaitlistTable';
 import { ColorwayManager } from '@/components/admin/ColorwayManager';
@@ -190,7 +190,7 @@ export default function AdminInventory() {
   // Tag popover state — which image is showing its tag dropdown. Format: `${productId}-${imgIdx}` or null when none open.
   const [tagPopoverOpenFor, setTagPopoverOpenFor] = useState<string | null>(null);
   // Image row drag state for reorder.
-  const [imageRowDragSrc, setImageRowDragSrc] = useState<{ productId: string; imgIdx: number } | null>(null);
+  
   // Inline new-colorway form — when set, the tag popover for that key shows the create-new-color form instead of the existing-colorway list.
   const [inlineColorFormFor, setInlineColorFormFor] = useState<string | null>(null);
   const [inlineColorName, setInlineColorName] = useState('');
@@ -832,15 +832,7 @@ export default function AdminInventory() {
     setProductImagesFull(productId, sorted);
   }, [products, setProductImagesFull]);
 
-  const reorderImage = useCallback((productId: string, srcIdx: number, targetIdx: number) => {
-    if (srcIdx === targetIdx) return;
-    const target = products.find(p => p.id === productId);
-    if (!target) return;
-    const next = [...target.imagesFull];
-    const [moved] = next.splice(srcIdx, 1);
-    next.splice(targetIdx, 0, moved);
-    setProductImagesFull(productId, next);
-  }, [products, setProductImagesFull]);
+
 
   // Upload one file and fill all 3 sizes on a target entry.
   // If targetIdx is provided, fills that existing entry; otherwise appends a new one.
@@ -1815,39 +1807,33 @@ export default function AdminInventory() {
                           />
 
                           <div className="space-y-2">
+                            <Reorder.Group
+                              axis="y"
+                              values={p.imagesFull || []}
+                              onReorder={(newOrder) => setProductImagesFull(p.id, newOrder)}
+                              className="space-y-2"
+                            >
                             {p.imagesFull?.map((img, imgIdx) => {
                               const tagged = img.colorway_id
                                 ? p.colorways?.find(c => c.id === img.colorway_id)
                                 : null;
                               const popoverKey = `${p.id}-${imgIdx}`;
                               return (
-                                <div
-                                  key={`${p.id}-img-${imgIdx}`}
-                                  draggable
-                                  onDragStart={(e) => {
-                                    e.stopPropagation();
-                                    setImageRowDragSrc({ productId: p.id, imgIdx });
+                                <Reorder.Item
+                                  key={`${p.id}-img-${imgIdx}-${img.thumb}-${img.medium}-${img.full}`}
+                                  value={img}
+                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40 cursor-grab active:cursor-grabbing select-none"
+                                  whileDrag={{
+                                    scale: 1.02,
+                                    zIndex: 50,
+                                    boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+                                    cursor: 'grabbing',
                                   }}
-                                  onDragOver={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                  }}
-                                  onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (imageRowDragSrc && imageRowDragSrc.productId === p.id) {
-                                      reorderImage(p.id, imageRowDragSrc.imgIdx, imgIdx);
-                                    }
-                                    setImageRowDragSrc(null);
-                                  }}
-                                  onDragEnd={() => setImageRowDragSrc(null)}
-                                  className={`relative border border-border/40 rounded-lg p-2 bg-background/40 cursor-grab active:cursor-grabbing transition-opacity ${
-                                    imageRowDragSrc?.productId === p.id && imageRowDragSrc?.imgIdx === imgIdx ? 'opacity-40' : ''
-                                  }`}
+                                  transition={{ duration: 0.2 }}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="flex items-start gap-2">
-                                    <div className="pt-1 cursor-grab active:cursor-grabbing" title="Drag to reorder">
+                                    <div className="pt-1" title="Drag row to reorder">
                                       <GripVertical className="w-3.5 h-3.5 text-muted-foreground/50" />
                                     </div>
 
@@ -2063,9 +2049,10 @@ export default function AdminInventory() {
                                       <X className="w-3.5 h-3.5 text-muted-foreground" />
                                     </button>
                                   </div>
-                                </div>
+                                </Reorder.Item>
                               );
                             })}
+                            </Reorder.Group>
 
                             {/* Use one file for all 3 sizes — fast path link.
                                 Only shown when relevant: no images yet, or at least one entry doesn't have 3 unique URLs. */}
