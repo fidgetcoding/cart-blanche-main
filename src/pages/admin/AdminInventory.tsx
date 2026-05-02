@@ -154,6 +154,30 @@ export default function AdminInventory() {
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
+  const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('cb_custom_product_types');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [addingTypeForId, setAddingTypeForId] = useState<string | null>(null);
+  const [newTypeInput, setNewTypeInput] = useState('');
+  const allCategoryOptions = useMemo(() => {
+    const set = new Set<string>([...PRODUCT_TYPES, ...customProductTypes]);
+    products.forEach(p => { if (p.product_type) set.add(p.product_type as string); });
+    return Array.from(set);
+  }, [customProductTypes, products]);
+  const addCustomProductType = (raw: string) => {
+    const v = raw.trim().toLowerCase();
+    if (!v) return '';
+    setCustomProductTypes(prev => {
+      if (prev.includes(v) || (PRODUCT_TYPES as readonly string[]).includes(v)) return prev;
+      const next = [...prev, v];
+      try { localStorage.setItem('cb_custom_product_types', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    return v;
+  };
 
   // Sync hiddenTags from gridLayout once loaded
   useEffect(() => {
