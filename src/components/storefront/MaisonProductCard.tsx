@@ -140,7 +140,10 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const isCompact = viewMode === 6;
   const getCardImageSrc = useCallback((img: DemoProduct['images'][number]) => {
     if (typeof img === 'string') return img;
-    return isCompact ? img.medium : img.thumb;
+    // VIEW BY 3 = larger card → use the big `full` asset.
+    // VIEW BY 6 = compact tile → use the `medium` asset (which is what
+    // VIEW BY 3 used to render).
+    return isCompact ? img.medium : img.full;
   }, [isCompact]);
 
   // Thumbnail background: respect tileBgMode setting
