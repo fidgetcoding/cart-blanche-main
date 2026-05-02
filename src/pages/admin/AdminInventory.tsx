@@ -654,8 +654,25 @@ export default function AdminInventory() {
   }
 
 
+  // Queue an override patch for a demo product. Merges with any
+  // existing pending patch for that product. Marks the page dirty
+  // so SAVE activates. Replaces direct saveDemoProductOverride
+  // calls for inline edits.
+  const queueDemoOverride = useCallback((productId: string, patch: Record<string, unknown>) => {
+    setPendingDemoOverrides(prev => ({
+      ...prev,
+      [productId]: { ...(prev[productId] || {}), ...patch },
+    }));
+    setHasUnsavedChanges(true);
+  }, []);
+
   async function saveAllChanges() {
     if (!hasUnsavedChanges) return;
+    // Flush pending demo overrides first.
+    for (const [productId, patch] of Object.entries(pendingDemoOverrides)) {
+      await saveDemoProductOverride(productId, patch);
+    }
+    setPendingDemoOverrides({});
     // Persist product order
     const productOrder = products.map(p => p.id);
     const categoryOrder = gridLayout?.categoryOrder || [];
