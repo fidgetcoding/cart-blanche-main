@@ -1823,7 +1823,27 @@ export default function AdminInventory() {
                               return (
                                 <div
                                   key={`${p.id}-img-${imgIdx}`}
-                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40"
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.stopPropagation();
+                                    setImageRowDragSrc({ productId: p.id, imgIdx });
+                                  }}
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (imageRowDragSrc && imageRowDragSrc.productId === p.id) {
+                                      reorderImage(p.id, imageRowDragSrc.imgIdx, imgIdx);
+                                    }
+                                    setImageRowDragSrc(null);
+                                  }}
+                                  onDragEnd={() => setImageRowDragSrc(null)}
+                                  className={`relative border border-border/40 rounded-lg p-2 bg-background/40 cursor-grab active:cursor-grabbing transition-opacity ${
+                                    imageRowDragSrc?.productId === p.id && imageRowDragSrc?.imgIdx === imgIdx ? 'opacity-40' : ''
+                                  }`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="flex items-start gap-2">
