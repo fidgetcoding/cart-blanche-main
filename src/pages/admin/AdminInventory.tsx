@@ -31,6 +31,7 @@ interface ProductRow {
     title: string;
     inventory_count: number;
     sku: string | null;
+    colorway_id?: string;
   }[];
   totalStock: number;
   isDemo: boolean;
@@ -188,7 +189,7 @@ export default function AdminInventory() {
   const [addTagInput, setAddTagInput] = useState('');
   const [addProductType, setAddProductType] = useState<ProductType>('');
   const [addGender, setAddGender] = useState<string>('unisex');
-  const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
+  const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number; colorway_id?: string }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
   const [addImages, setAddImages] = useState<string[]>([]);
   const [addColorways, setAddColorways] = useState<Colorway[]>([]);
