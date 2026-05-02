@@ -128,6 +128,13 @@ export function ThemeProvider({ children, storageKey, defaults }: { children: Re
     root.setProperty('--color-body', settings.bodyFontColor || 'inherit');
     root.setProperty('--color-numeral', settings.numeralFontColor || 'inherit');
     root.setProperty('--color-store-name', settings.storeNameColor || 'inherit');
+    if (settings.mode === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
   }, [settings]);
 
   return (
