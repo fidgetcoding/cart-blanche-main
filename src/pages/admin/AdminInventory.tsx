@@ -1999,39 +1999,39 @@ export default function AdminInventory() {
                               );
                             })}
 
-                            {/* Use one file for all 3 sizes — fast path link */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                editImageInputRef.current?.click();
-                              }}
-                              disabled={imageUploadingSlot === `${p.id}-new`}
-                              className="w-full px-3 py-2 text-[10px] font-display tracking-wider text-muted-foreground/70 hover:text-foreground/80 transition-colors text-center disabled:opacity-50"
-                            >
-                              {imageUploadingSlot === `${p.id}-new` ? (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <Loader2 className="w-3 h-3 animate-spin" /> UPLOADING
-                                </span>
-                              ) : (
-                                <>
-                                  Use one file for all 3 sizes →
-                                  {(() => {
-                                    // Show the slow-storefront warning only when relevant:
-                                    // either no images yet, or at least one entry doesn't have 3 unique non-empty URLs.
-                                    const showWarning = p.imagesFull.length === 0 || p.imagesFull.some(img => {
-                                      const urls = [img.thumb, img.medium, img.full].filter(Boolean);
-                                      return new Set(urls).size < 3;
-                                    });
-                                    return showWarning ? (
+                            {/* Use one file for all 3 sizes — fast path link.
+                                Only shown when relevant: no images yet, or at least one entry doesn't have 3 unique URLs. */}
+                            {(() => {
+                              const showFastPath = p.imagesFull.length === 0 || p.imagesFull.some(img => {
+                                const urls = [img.thumb, img.medium, img.full].filter(Boolean);
+                                return new Set(urls).size < 3;
+                              });
+                              if (!showFastPath) return null;
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    editImageInputRef.current?.click();
+                                  }}
+                                  disabled={imageUploadingSlot === `${p.id}-new`}
+                                  className="w-full px-3 py-2 text-[10px] font-display tracking-wider text-muted-foreground/70 hover:text-foreground/80 transition-colors text-center disabled:opacity-50"
+                                >
+                                  {imageUploadingSlot === `${p.id}-new` ? (
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <Loader2 className="w-3 h-3 animate-spin" /> UPLOADING
+                                    </span>
+                                  ) : (
+                                    <>
+                                      Use one file for all 3 sizes →
                                       <p className="text-[9px] text-warning/70 mt-0.5 normal-case tracking-normal">
                                         ⚠ Storefront will load slower — large files served to small surfaces
                                       </p>
-                                    ) : null;
-                                  })()}
-                                </>
-                              )}
-                            </button>
+                                    </>
+                                  )}
+                                </button>
+                              );
+                            })()}
 
                             {/* + ADD IMAGE — appends an empty row that the merchant fills slot-by-slot */}
                             <button
