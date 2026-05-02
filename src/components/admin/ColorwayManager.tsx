@@ -171,7 +171,7 @@ interface ModalProps {
   onDelete?: () => void;
 }
 
-function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
+function ColorwayEditDropdown({ initial, onClose, onSave, onDelete }: ModalProps) {
   const [name, setName] = useState(initial?.name || '');
   const [hex, setHex] = useState(initial?.hex || '#000000');
   const [swatchImage, setSwatchImage] = useState(initial?.swatch_image || '');
