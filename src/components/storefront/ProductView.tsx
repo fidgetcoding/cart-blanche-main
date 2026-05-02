@@ -499,6 +499,34 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                 </div>
               )}
 
+              {product.colorways && product.colorways.length >= 1 && (
+                <div
+                  className="absolute bottom-14 right-3 flex items-center gap-1.5 z-20 px-2 py-1.5 rounded-full backdrop-blur-md bg-background/40 border border-foreground/10"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  {product.colorways.map((c) => {
+                    const active = selectedColorwayId === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onMouseEnter={() => setSelectedColorwayId(c.id)}
+                        onFocus={() => setSelectedColorwayId(c.id)}
+                        onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
+                        title={c.name}
+                        className={`w-4 h-4 rounded-full border transition-all shrink-0 ${
+                          active
+                            ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background/40'
+                            : 'border-foreground/30 hover:border-foreground/60'
+                        }`}
+                        style={getSwatchStyle(c)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
               {displayImages && displayImages.length > 1 && (
                 <div className="absolute bottom-0 left-0 right-0 flex h-12 z-10" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
                   {displayImages.map((_, i) => (
@@ -597,29 +625,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         <span key={i} className="block">{s}</span>
                       ))}
                     </p>
-
-                    {/* Colorway swatches — render whenever any colorway exists */}
-                    {product.colorways && product.colorways.length >= 1 && (
-                      <div className="flex items-center justify-center gap-2 [@media(max-height:760px)]:justify-start">
-                        {product.colorways.map((c) => {
-                          const active = selectedColorwayId === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
-                              title={c.name}
-                              className={`w-5 h-5 rounded-full border transition-all shrink-0 ${
-                                active
-                                  ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background'
-                                  : 'border-foreground/30 hover:border-foreground/60'
-                              }`}
-                              style={getSwatchStyle(c)}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
 
                     <div className="[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-x-4 [@media(max-height:760px)]:gap-y-2">
                       <div className="space-y-4 [@media(max-height:760px)]:min-w-[10.5rem] [@media(max-height:760px)]:space-y-2.5 mb-2 [@media(max-height:760px)]:mb-0">
