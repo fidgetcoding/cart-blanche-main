@@ -333,7 +333,6 @@ function ColorwayEditDropdown({ initial, onClose, onSave, onDelete }: ModalProps
             </button>
           )}
         </div>
-      </motion.div>
     </motion.div>
   );
 }
