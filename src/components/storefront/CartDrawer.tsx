@@ -91,9 +91,21 @@ function OutfitCard({ outfit, onAddAll, onAddToCart }: {
           if (!product) return null;
           return (
             <div key={item.product_id} className="flex items-center gap-2 px-2 py-1.5 rounded bg-secondary/40">
-              <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground text-[7px] font-display flex-shrink-0">
-                IMG
-              </div>
+              {(() => {
+                const firstImg = product.images?.[0];
+                const thumbUrl = typeof firstImg === 'string' ? firstImg : firstImg?.thumb;
+                return thumbUrl ? (
+                  <img
+                    src={thumbUrl}
+                    alt={product.title}
+                    className="w-8 h-8 rounded object-cover bg-muted flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground text-[7px] font-display flex-shrink-0">
+                    IMG
+                  </div>
+                );
+              })()}
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-display font-medium truncate">{product.title}</p>
                 <p className="text-[9px] text-muted-foreground">{item.role} · ${product.price}</p>
@@ -536,9 +548,17 @@ export function CartDrawer() {
                           exit={{ opacity: 0, x: 50 }}
                           className="flex gap-3 p-3 bg-secondary/50 rounded-lg relative"
                         >
-                          <div className="w-14 h-14 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-[9px] font-display">
-                            IMG
-                          </div>
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.title}
+                              className="w-14 h-14 rounded-md object-cover bg-muted flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-[9px] font-display flex-shrink-0">
+                              IMG
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className="font-display text-xs font-medium truncate">{item.title}</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">{item.variantTitle}</p>
