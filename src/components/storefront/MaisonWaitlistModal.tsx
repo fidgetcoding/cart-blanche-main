@@ -181,6 +181,15 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      onClick={() => setSizeChartOpen(true)}
+                      className="px-4 py-2 text-[10px] tracking-[0.15em] uppercase border border-border text-foreground/70 hover:border-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      <Ruler className="w-3 h-3" />
+                      Chart
+                    </button>
                   </div>
                 </div>
               )}
