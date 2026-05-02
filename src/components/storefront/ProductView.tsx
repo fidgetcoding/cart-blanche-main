@@ -221,7 +221,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     const insideImage =
       (e.target as Element)?.closest?.('[data-image-zone]') != null;
     const isHorizontal = absX > absY;
-    const imageCount = product?.images?.length ?? 0;
+    const imageCount = displayImages.length;
 
     // Horizontal swipe inside image card → cycle photos (wrap around)
     if (insideImage && isHorizontal && imageCount > 1) {
