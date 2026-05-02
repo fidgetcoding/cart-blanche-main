@@ -162,6 +162,10 @@ export default function AdminInventory() {
   const [imageUploadingSlot, setImageUploadingSlot] = useState<string | null>(null);
   // Tag popover state — which image is showing its tag dropdown. Format: `${productId}-${imgIdx}` or null when none open.
   const [tagPopoverOpenFor, setTagPopoverOpenFor] = useState<string | null>(null);
+  // Inline new-colorway form — when set, the tag popover for that key shows the create-new-color form instead of the existing-colorway list.
+  const [inlineColorFormFor, setInlineColorFormFor] = useState<string | null>(null);
+  const [inlineColorName, setInlineColorName] = useState('');
+  const [inlineColorHex, setInlineColorHex] = useState('#000000');
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
     try {
