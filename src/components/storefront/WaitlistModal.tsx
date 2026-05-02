@@ -52,6 +52,7 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
   }
 
   return (
+    <>
     <AnimatePresence>
       {open && (
         <motion.div
