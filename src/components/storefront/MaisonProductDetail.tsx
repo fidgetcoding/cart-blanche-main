@@ -138,12 +138,12 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
 
   // Resolve the selected colorway object.
   const selectedColorway = product?.colorways?.find(c => c.id === selectedColorwayId) || null;
-  // Gallery image source: selected colorway's images when present and
-  // non-empty, otherwise fall back to top-level product.images.
+  // Filter product.images by colorway_id. Untagged images always show;
+  // tagged images only show when their colorway is selected.
   const images = product
-    ? ((selectedColorway?.images && selectedColorway.images.length > 0)
-        ? selectedColorway.images
-        : (product.images.length > 0 ? product.images : []))
+    ? product.images.filter(img =>
+        !img.colorway_id || img.colorway_id === selectedColorwayId
+      )
     : [];
 
   // Reset on product change

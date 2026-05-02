@@ -158,15 +158,6 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  type ProductImageShape = { thumb: string; medium: string; full: string };
-  const [galleryImages, setGalleryImages] = useState<ProductImageShape[]>(
-    initial?.images || []
-  );
-  const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
-  const [galleryDragIdx, setGalleryDragIdx] = useState<number | null>(null);
-  const galleryFileInputRef = useRef<HTMLInputElement | null>(null);
-  const pendingUploadRef = useRef<{ kind: 'new' } | { kind: 'replace'; idx: number; size: 'thumb' | 'medium' | 'full' } | null>(null);
-
   async function handleUpload(file: File) {
     setUploading(true);
     try {
@@ -183,83 +174,6 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
     }
   }
 
-  async function uploadToStorage(file: File): Promise<string> {
-    const ext = file.name.split('.').pop() || 'jpg';
-    const path = `colorway-gallery/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await supabase.storage.from('product-media').upload(path, file);
-    if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
-    return publicUrl;
-  }
-
-  async function handleAddImage(file: File) {
-    setUploadingSlot('new');
-    try {
-      const url = await uploadToStorage(file);
-      setGalleryImages(prev => [...prev, { thumb: url, medium: url, full: url }]);
-    } catch (e) {
-      console.error('Gallery image upload failed:', e);
-    } finally {
-      setUploadingSlot(null);
-    }
-  }
-
-  async function handleReplaceSize(idx: number, size: 'thumb' | 'medium' | 'full', file: File) {
-    setUploadingSlot(`${idx}-${size}`);
-    try {
-      const url = await uploadToStorage(file);
-      setGalleryImages(prev => prev.map((img, i) => i === idx ? { ...img, [size]: url } : img));
-    } catch (e) {
-      console.error('Size replace upload failed:', e);
-    } finally {
-      setUploadingSlot(null);
-    }
-  }
-
-  function removeImage(idx: number) {
-    setGalleryImages(prev => prev.filter((_, i) => i !== idx));
-  }
-
-  function handleGalleryDragStart(idx: number) {
-    setGalleryDragIdx(idx);
-  }
-  function handleGalleryDragOver(e: React.DragEvent) {
-    e.preventDefault();
-  }
-  function handleGalleryDrop(targetIdx: number) {
-    if (galleryDragIdx === null || galleryDragIdx === targetIdx) {
-      setGalleryDragIdx(null);
-      return;
-    }
-    const next = [...galleryImages];
-    const [moved] = next.splice(galleryDragIdx, 1);
-    next.splice(targetIdx, 0, moved);
-    setGalleryImages(next);
-    setGalleryDragIdx(null);
-  }
-
-  function triggerAdd() {
-    pendingUploadRef.current = { kind: 'new' };
-    galleryFileInputRef.current?.click();
-  }
-  function triggerReplace(idx: number, size: 'thumb' | 'medium' | 'full') {
-    pendingUploadRef.current = { kind: 'replace', idx, size };
-    galleryFileInputRef.current?.click();
-  }
-  function handleGalleryFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    const target = pendingUploadRef.current;
-    pendingUploadRef.current = null;
-    if (!target) return;
-    if (target.kind === 'new') {
-      handleAddImage(file);
-    } else {
-      handleReplaceSize(target.idx, target.size, file);
-    }
-  }
-
   function handleSubmit() {
     if (!name.trim() && !isMultiColor) return;
     onSave({
@@ -267,7 +181,6 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
       hex: useCustomImage ? '#000000' : hex,
       swatch_image: useCustomImage && swatchImage ? swatchImage : undefined,
       component_hexes: initial?.component_hexes,
-      images: galleryImages.length > 0 ? galleryImages : undefined,
     });
   }
 
@@ -376,100 +289,6 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
             </div>
           </div>
         )}
-
-        <div className="border-t border-border/40 pt-4">
-          <label className="text-[9px] font-display tracking-widest text-muted-foreground">
-            GALLERY IMAGES
-          </label>
-          <p className="mt-1 text-[10px] text-muted-foreground/70 leading-relaxed">
-            Photos shown when this color is selected on the storefront.
-            Each image has three sizes — recommended widths shown
-            beneath each slot. Click any slot to upload a different
-            file for that size only. Empty slots will not render on
-            their target surface.
-          </p>
-          <div className="mt-3 space-y-2">
-            {galleryImages.map((img, idx) => (
-              <div
-                key={`gallery-${idx}-${img.thumb}`}
-                draggable
-                onDragStart={() => handleGalleryDragStart(idx)}
-                onDragOver={handleGalleryDragOver}
-                onDrop={() => handleGalleryDrop(idx)}
-                className={`relative border border-border/40 rounded-lg p-2 bg-background/40 ${galleryDragIdx === idx ? 'opacity-50' : ''}`}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="pt-1 cursor-grab active:cursor-grabbing" title="Drag to reorder">
-                    <GripVertical className="w-3.5 h-3.5 text-muted-foreground/50" />
-                  </div>
-                  <div className="flex-1 grid grid-cols-3 gap-1.5">
-                    {(['thumb', 'medium', 'full'] as const).map((size) => {
-                      const slotKey = `${idx}-${size}`;
-                      const isUploadingThis = uploadingSlot === slotKey;
-                      const url = img[size];
-                      const label = size === 'thumb' ? 'GRID + CART' : size === 'medium' ? 'DETAIL VIEW' : 'ZOOM';
-                      const recommendedSize = size === 'thumb' ? '~400 PX' : size === 'medium' ? '~1200 PX' : '~2400 PX';
-                      return (
-                        <div key={size} className="space-y-1">
-                          <button
-                            type="button"
-                            onClick={() => triggerReplace(idx, size)}
-                            disabled={!!uploadingSlot}
-                            className="relative w-full aspect-square rounded border border-border/60 bg-cover bg-center hover:border-border transition-colors disabled:opacity-50 overflow-hidden"
-                            style={url ? { backgroundImage: `url(${url})` } : undefined}
-                            title={`Replace ${size} image (${label}, recommended ${recommendedSize} wide)`}
-                          >
-                            {isUploadingThis && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-                              </div>
-                            )}
-                            {!url && !isUploadingThis && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <ImageIcon className="w-3 h-3 text-muted-foreground/40" />
-                              </div>
-                            )}
-                          </button>
-                          <p className="text-[8px] font-display tracking-wider text-muted-foreground/70 text-center leading-tight">
-                            {label}
-                          </p>
-                          <p className="text-[7px] font-mono tracking-tight text-muted-foreground/50 text-center leading-tight">
-                            {recommendedSize}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeImage(idx)}
-                    className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
-                    title="Remove image"
-                  >
-                    <X className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={triggerAdd}
-              disabled={!!uploadingSlot}
-              className="w-full px-3 py-2.5 border border-dashed border-border/60 rounded-lg text-xs text-muted-foreground hover:bg-secondary hover:border-border transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-            >
-              {uploadingSlot === 'new'
-                ? <><Loader2 className="w-3 h-3 animate-spin" /> UPLOADING</>
-                : <><Plus className="w-3 h-3" /> ADD IMAGE</>}
-            </button>
-            <input
-              ref={galleryFileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleGalleryFileChange}
-            />
-          </div>
-        </div>
 
         <div className="flex items-center gap-2 pt-2">
           <button
