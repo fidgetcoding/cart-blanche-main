@@ -181,6 +181,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     }
   }, [productIndex]);
 
+  // Reset gallery to first image when colorway changes.
+  useEffect(() => {
+    setActiveImage(0);
+  }, [selectedColorwayId]);
+
   // Phase 6: Preload neighbor images for seamless navigation
   useEffect(() => {
     const directions: Array<'up'|'down'|'left'|'right'> = ['up','down','left','right'];
