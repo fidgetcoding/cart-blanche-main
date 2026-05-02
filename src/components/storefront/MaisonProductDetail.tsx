@@ -362,7 +362,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       title: product.title,
       variantTitle: v.title,
       price: v.price ?? product.price,
-      image: product.images[0]?.thumb,
+      image: images[0]?.thumb,
     });
     onClose();
   };
