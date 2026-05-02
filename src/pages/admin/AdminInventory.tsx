@@ -157,6 +157,8 @@ export default function AdminInventory() {
   // Mark dirty when any unsaved state exists
   useEffect(() => { if (hasUnsavedChanges || editingProduct || showAddProduct || pendingDeletes.size > 0) markDirty(); else markClean(); }, [hasUnsavedChanges, editingProduct, showAddProduct, pendingDeletes, markDirty, markClean]);
   const editImageInputRef = useRef<HTMLInputElement>(null);
+  // When the "Use one file for all 3 sizes" link is clicked, this holds the imagesFull index of the entry to fill. -1 means append a new entry.
+  const fillAllSizesTargetRef = useRef<number | null>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   // Per-slot upload tracking for the inline IMAGES section. Format: `${productId}-${imgIdx}-${size}` for slot replacements, or `${productId}-new` for the + ADD button.
   const [imageUploadingSlot, setImageUploadingSlot] = useState<string | null>(null);
@@ -798,9 +800,9 @@ export default function AdminInventory() {
     setProductImagesFull(productId, next);
   }, [products, setProductImagesFull]);
 
-  // Upload one file and append a new image entry. Fills all 3 sizes with the same URL
-  // (used by the "use one file for all 3" link).
-  const addImage = useCallback(async (productId: string, file: File) => {
+  // Upload one file and fill all 3 sizes on a target entry.
+  // If targetIdx is provided, fills that existing entry; otherwise appends a new one.
+  const addImage = useCallback(async (productId: string, file: File, targetIdx?: number) => {
     try {
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -809,8 +811,10 @@ export default function AdminInventory() {
       const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
       const target = products.find(p => p.id === productId);
       if (!target) return;
-      const newEntry: ProductImage = { thumb: publicUrl, medium: publicUrl, full: publicUrl };
-      const next = [...target.imagesFull, newEntry];
+      const filledEntry: ProductImage = { thumb: publicUrl, medium: publicUrl, full: publicUrl };
+      const next = typeof targetIdx === 'number' && targetIdx >= 0 && targetIdx < target.imagesFull.length
+        ? target.imagesFull.map((img, i) => i === targetIdx ? { ...img, thumb: publicUrl, medium: publicUrl, full: publicUrl } : img)
+        : [...target.imagesFull, filledEntry];
       setProductImagesFull(productId, next);
     } catch (e) {
       console.error('Image add failed:', e);
@@ -1760,7 +1764,9 @@ export default function AdminInventory() {
                               const f = e.target.files?.[0];
                               if (f) {
                                 setImageUploadingSlot(`${p.id}-new`);
-                                addImage(p.id, f).finally(() => setImageUploadingSlot(null));
+                               const targetIdx = fillAllSizesTargetRef.current;
+                               fillAllSizesTargetRef.current = null;
+                               addImage(p.id, f, targetIdx ?? undefined).finally(() => setImageUploadingSlot(null));
                               }
                               e.target.value = '';
                             }}
@@ -2012,6 +2018,13 @@ export default function AdminInventory() {
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    // Target the first incomplete entry (any URL missing or duplicates).
+                                    // If none exist, fall through to append a new entry.
+                                    const idx = p.imagesFull.findIndex(img => {
+                                      const urls = [img.thumb, img.medium, img.full].filter(Boolean);
+                                      return new Set(urls).size < 3;
+                                    });
+                                    fillAllSizesTargetRef.current = idx;
                                     editImageInputRef.current?.click();
                                   }}
                                   disabled={imageUploadingSlot === `${p.id}-new`}
