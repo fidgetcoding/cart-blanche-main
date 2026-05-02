@@ -48,6 +48,15 @@ export interface Colorway {
                                // ColorwayManager modal — see Y.0b).
                                // 0 or 1 entries: ignored, fallback
                                // to plain hex render.
+  images?: ProductImage[];    // optional per-colorway image array.
+                               // When set, the storefront gallery
+                               // shows these images when this
+                               // colorway is selected. When unset,
+                               // gallery falls back to top-level
+                               // product.images. Same shape as
+                               // product-level images (thumb /
+                               // medium / full per ProductImage).
+                               // Storefront wiring lands in Phase 4B.
 }
 
 export interface DemoProduct {
@@ -140,8 +149,32 @@ const gridPos = (i: number) => ({
 export const DEMO_PRODUCTS: DemoProduct[] = [
   // Row 1: Coats & Jackets
   { id: 'p1', title: 'Cloud Puffer Jacket', price: 420, compare_at_price: 520, images: [imgSet('p1-cloud-puffer'), imgSet('p1-cloud-puffer-worn')], category: 'outerwear', product_type: 'jacket', gender: 'men', status: 'active', grid_position: gridPos(0), variants: makeVariants('p1'), description: 'Oversized puffer with matte shell. Cloud-weight insulation for sub-zero warmth.', weight_oz: 38, shipping_type: 'domestic', colorways: [
-    { id: 'p1-col-burgundy', name: 'Burgundy', hex: '#7B1F2B' },
-    { id: 'p1-col-forest', name: 'Forest', hex: '#1F3A2C' },
+    {
+      id: 'p1-col-burgundy',
+      name: 'Burgundy',
+      hex: '#7B1F2B',
+      images: [
+        imgSet('p1-cloud-puffer'),
+        imgSet('p1-cloud-puffer-worn'),
+      ],
+    },
+    {
+      id: 'p1-col-forest',
+      name: 'Forest',
+      hex: '#1F3A2C',
+      images: [
+        {
+          thumb: '/products/p1-cloud-puffer-medium-forestgreen.webp',
+          medium: '/products/p1-cloud-puffer-medium-forestgreen.webp',
+          full: '/products/p1-cloud-puffer-full-forestgreen.webp',
+        },
+        {
+          thumb: '/products/p1-cloud-puffer-worn-medium-forestgreen.webp',
+          medium: '/products/p1-cloud-puffer-worn-medium-forestgreen.webp',
+          full: '/products/p1-cloud-puffer-worn-full-forestgreen.webp',
+        },
+      ],
+    },
   ] },
   { id: 'p2', title: 'Stealth Trench', price: 380, images: [imgSet('p2-stealth-trench'), imgSet('p2-stealth-trench-worn')], category: 'outerwear', product_type: 'jacket', gender: 'women', status: 'active', grid_position: gridPos(1), variants: makeVariants('p2'), description: 'Minimalist trench coat in water-resistant cotton. Hidden snap closures.', weight_oz: 42, shipping_type: 'domestic', colorways: [
     { id: 'p2-col-charcoal', name: 'Charcoal', hex: '#4A4F4D' },
