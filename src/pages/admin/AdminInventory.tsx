@@ -6,7 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
 import { HsCodePicker } from '@/components/admin/HsCodePicker';
-import { type DemoProduct, PRODUCT_TYPES, type ProductType, type Colorway, getImageUrl } from '@/data/demo-data';
+import { type DemoProduct, PRODUCT_TYPES, type ProductType, type Colorway, type ProductImage, getImageUrl } from '@/data/demo-data';
+import { getSwatchStyle } from '@/lib/swatch-style';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProductWaitlist } from '@/hooks/use-product-waitlist';
 import { WaitlistTable } from '@/components/admin/WaitlistTable';
@@ -22,6 +23,7 @@ interface ProductRow {
   gender: string;
   colorways: Colorway[];
   images: string[];
+  imagesFull: ProductImage[]; // full ProductImage objects with thumb/medium/full URLs and optional colorway_id tag. Used by inline 3-slot UI; flat `images` stays for row preview thumbnails and Edit Product modal.
   description: string;
   tags: string[];
   variants: {
@@ -49,6 +51,9 @@ function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
     gender: p.gender || 'unisex',
     colorways: p.colorways || [],
     images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
+    imagesFull: p.images.map(img => typeof img === 'string'
+      ? { thumb: img, medium: img, full: img }
+      : img),
     description: p.description,
     tags: [p.category],
     variants: p.variants.map(v => ({
@@ -153,6 +158,10 @@ export default function AdminInventory() {
   useEffect(() => { if (hasUnsavedChanges || editingProduct || showAddProduct || pendingDeletes.size > 0) markDirty(); else markClean(); }, [hasUnsavedChanges, editingProduct, showAddProduct, pendingDeletes, markDirty, markClean]);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
+  // Per-slot upload tracking for the inline IMAGES section. Format: `${productId}-${imgIdx}-${size}` for slot replacements, or `${productId}-new` for the + ADD button.
+  const [imageUploadingSlot, setImageUploadingSlot] = useState<string | null>(null);
+  // Tag popover state — which image is showing its tag dropdown. Format: `${productId}-${imgIdx}` or null when none open.
+  const [tagPopoverOpenFor, setTagPopoverOpenFor] = useState<string | null>(null);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
     try {
@@ -323,6 +332,7 @@ export default function AdminInventory() {
             gender: 'unisex',
             colorways: ((p as any).colorways as Colorway[]) || [],
             images: p.images || [],
+            imagesFull: ((p.images as string[]) || []).map(url => ({ thumb: url, medium: url, full: url })),
             description: p.description || '',
             tags: p.tags || [p.category || ''].filter(Boolean),
             variants: pvs.map(v => ({
@@ -730,6 +740,82 @@ export default function AdminInventory() {
       setHasUnsavedChanges(true);
     }
   }
+
+  // ─── Unified IMAGES library handlers (Phase 5.2) ──────────────
+  const setProductImagesFull = useCallback((productId: string, newImages: ProductImage[]) => {
+    setProducts(prev => prev.map(p => {
+      if (p.id !== productId) return p;
+      const flat = newImages.map(img => img.thumb);
+      return { ...p, images: flat, imagesFull: newImages };
+    }));
+    const target = products.find(p => p.id === productId);
+    if (target?.isDemo) {
+      saveDemoProductOverride(productId, { images: newImages });
+    } else {
+      setHasUnsavedChanges(true);
+    }
+  }, [products, saveDemoProductOverride]);
+
+  const replaceImageSize = useCallback(async (
+    productId: string,
+    imgIdx: number,
+    size: 'thumb' | 'medium' | 'full',
+    file: File
+  ) => {
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('product-media').upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
+      const target = products.find(p => p.id === productId);
+      if (!target) return;
+      const next = target.imagesFull.map((img, i) =>
+        i === imgIdx ? { ...img, [size]: publicUrl } : img
+      );
+      setProductImagesFull(productId, next);
+    } catch (e) {
+      console.error('Image size replace failed:', e);
+    }
+  }, [products, setProductImagesFull]);
+
+  const tagImage = useCallback((
+    productId: string,
+    imgIdx: number,
+    colorwayId: string | undefined
+  ) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const next = target.imagesFull.map((img, i) => {
+      if (i !== imgIdx) return img;
+      const { colorway_id: _omit, ...rest } = img;
+      return colorwayId ? { ...rest, colorway_id: colorwayId } : rest;
+    });
+    setProductImagesFull(productId, next);
+  }, [products, setProductImagesFull]);
+
+  const addImage = useCallback(async (productId: string, file: File) => {
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('product-media').upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
+      const target = products.find(p => p.id === productId);
+      if (!target) return;
+      const next = [...target.imagesFull, { thumb: publicUrl, medium: publicUrl, full: publicUrl }];
+      setProductImagesFull(productId, next);
+    } catch (e) {
+      console.error('Image add failed:', e);
+    }
+  }, [products, setProductImagesFull]);
+
+  const removeImageAt = useCallback((productId: string, imgIdx: number) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const next = target.imagesFull.filter((_, i) => i !== imgIdx);
+    setProductImagesFull(productId, next);
+  }, [products, setProductImagesFull]);
 
   function removeTagFromProduct(productId: string, tag: string) {
     const target = products.find(p => p.id === productId);
@@ -1593,63 +1679,190 @@ export default function AdminInventory() {
                           </div>
                         </div>
 
-                        {/* Thumbnails quick-edit */}
+                        {/* Unified IMAGES library — 3-slot UI per image with color tag indicators (Phase 5.2) */}
                         <div>
-                          <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">IMAGES ({p.images?.length || 0})</p>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {p.images?.map((img, imgIdx) => (
-                              <div key={imgIdx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-border/50 flex-shrink-0" style={{ backgroundColor: '#e0e0e0' }}>
-                                <img src={img} alt={`${p.title} ${imgIdx + 1}`} className="w-full h-full object-contain" />
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setProducts(prev => prev.map(pr =>
-                                      pr.id === p.id ? { ...pr, images: pr.images.filter((_, i) => i !== imgIdx) } : pr
-                                    ));
-                                  }}
-                                  className="absolute top-0.5 right-0.5 p-0.5 bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/80"
+                          <p className="text-xs text-muted-foreground font-display tracking-widest mb-1">
+                            IMAGES ({p.imagesFull?.length || 0})
+                          </p>
+                          <p className="text-[10px] italic text-muted-foreground/70 mb-3 leading-relaxed">
+                            All photos for this product. Tag each with a colorway to scope it (or leave untagged to show for all colors). Each image has three sizes — click any slot to upload a different file.
+                          </p>
+
+                          <input
+                            ref={expandedId === p.id ? editImageInputRef : undefined}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                setImageUploadingSlot(`${p.id}-new`);
+                                addImage(p.id, f).finally(() => setImageUploadingSlot(null));
+                              }
+                              e.target.value = '';
+                            }}
+                          />
+
+                          <div className="space-y-2">
+                            {p.imagesFull?.map((img, imgIdx) => {
+                              const tagged = img.colorway_id
+                                ? p.colorways?.find(c => c.id === img.colorway_id)
+                                : null;
+                              const popoverKey = `${p.id}-${imgIdx}`;
+                              return (
+                                <div
+                                  key={`${p.id}-img-${imgIdx}`}
+                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  <X className="w-2.5 h-2.5" />
-                                </button>
-                              </div>
-                            ))}
-                            <input
-                              ref={expandedId === p.id ? editImageInputRef : undefined}
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={e => {
-                                const f = e.target.files?.[0];
-                                if (f) {
-                                  // Quick inline upload
-                                  const setUploading = (v: boolean) => setEditUploadingImage(v);
-                                  setUploading(true);
-                                  const ext = f.name.split('.').pop() || 'jpg';
-                                  const path = `images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-                                  supabase.storage.from('product-media').upload(path, f).then(({ error }) => {
-                                    if (!error) {
-                                      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(path);
-                                      setProducts(prev => prev.map(pr =>
-                                        pr.id === p.id ? { ...pr, images: [...pr.images, publicUrl] } : pr
-                                      ));
-                                    }
-                                    setUploading(false);
-                                  });
-                                }
-                                e.target.value = '';
-                              }}
-                            />
+                                  <div className="flex items-start gap-2">
+                                    <div className="pt-1 cursor-grab active:cursor-grabbing" title="Drag to reorder">
+                                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/50" />
+                                    </div>
+
+                                    {/* Color tag swatch indicator */}
+                                    <div className="relative pt-1">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setTagPopoverOpenFor(prev => prev === popoverKey ? null : popoverKey);
+                                        }}
+                                        className="w-4 h-4 rounded-full border border-border/60 hover:border-border flex-shrink-0"
+                                        style={
+                                          tagged
+                                            ? getSwatchStyle(tagged)
+                                            : { backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 2px, transparent 2px, transparent 4px)' }
+                                        }
+                                        title={tagged ? `Tagged: ${tagged.name}` : 'Untagged (shows for all colors)'}
+                                      />
+                                      {tagPopoverOpenFor === popoverKey && (
+                                        <div
+                                          className="absolute left-0 top-6 z-30 min-w-[140px] p-1 rounded-lg border border-border bg-card shadow-xl"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              tagImage(p.id, imgIdx, undefined);
+                                              setTagPopoverOpenFor(null);
+                                            }}
+                                            className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center gap-2"
+                                          >
+                                            <span
+                                              className="w-3 h-3 rounded-full border border-border/60 flex-shrink-0"
+                                              style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 2px, transparent 2px, transparent 4px)' }}
+                                            />
+                                            UNTAGGED
+                                          </button>
+                                          {p.colorways?.map(c => (
+                                            <button
+                                              key={c.id}
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                tagImage(p.id, imgIdx, c.id);
+                                                setTagPopoverOpenFor(null);
+                                              }}
+                                              className="w-full text-left px-2 py-1.5 rounded text-[10px] font-display tracking-wider hover:bg-secondary flex items-center gap-2"
+                                            >
+                                              <span
+                                                className="w-3 h-3 rounded-full border border-border/60 flex-shrink-0"
+                                                style={getSwatchStyle(c)}
+                                              />
+                                              {c.name.toUpperCase()}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* 3 size slots */}
+                                    <div className="flex-1 grid grid-cols-3 gap-1.5">
+                                      {(['thumb', 'medium', 'full'] as const).map((size) => {
+                                        const slotKey = `${p.id}-${imgIdx}-${size}`;
+                                        const isUploadingThis = imageUploadingSlot === slotKey;
+                                        const url = img[size];
+                                        const label = size === 'thumb' ? 'GRID + CART' : size === 'medium' ? 'DETAIL VIEW' : 'ZOOM';
+                                        const recommendedSize = size === 'thumb' ? '~400 PX' : size === 'medium' ? '~1200 PX' : '~2400 PX';
+                                        const inputId = `slot-input-${slotKey}`;
+                                        return (
+                                          <div key={size} className="space-y-1">
+                                            <input
+                                              id={inputId}
+                                              type="file"
+                                              accept="image/*"
+                                              className="hidden"
+                                              onChange={(e) => {
+                                                const f = e.target.files?.[0];
+                                                if (f) {
+                                                  setImageUploadingSlot(slotKey);
+                                                  replaceImageSize(p.id, imgIdx, size, f).finally(() => setImageUploadingSlot(null));
+                                                }
+                                                e.target.value = '';
+                                              }}
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                document.getElementById(inputId)?.click();
+                                              }}
+                                              disabled={!!imageUploadingSlot}
+                                              className="relative w-full aspect-square rounded border border-border/60 bg-cover bg-center hover:border-border transition-colors disabled:opacity-50 overflow-hidden"
+                                              style={url ? { backgroundImage: `url(${url})` } : undefined}
+                                              title={`Replace ${size} (${label}, recommended ${recommendedSize} wide)`}
+                                            >
+                                              {isUploadingThis && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+                                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                                                </div>
+                                              )}
+                                              {!url && !isUploadingThis && (
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                  <ImageIcon className="w-3 h-3 text-muted-foreground/40" />
+                                                </div>
+                                              )}
+                                            </button>
+                                            <p className="text-[8px] font-display tracking-wider text-muted-foreground/70 text-center leading-tight">
+                                              {label}
+                                            </p>
+                                            <p className="text-[7px] font-mono tracking-tight text-muted-foreground/50 text-center leading-tight">
+                                              {recommendedSize}
+                                            </p>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeImageAt(p.id, imgIdx);
+                                      }}
+                                      className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                      title="Remove image"
+                                    >
+                                      <X className="w-3.5 h-3.5 text-muted-foreground" />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+
                             <button
+                              type="button"
                               onClick={(e) => { e.stopPropagation(); editImageInputRef.current?.click(); }}
-                              disabled={editUploadingImage}
-                              className="w-16 h-16 rounded-lg border-2 border-dashed border-border/50 bg-background/20 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50 flex-shrink-0"
+                              disabled={imageUploadingSlot === `${p.id}-new`}
+                              className="w-full px-3 py-2.5 border border-dashed border-border/60 rounded-lg text-xs text-muted-foreground hover:bg-secondary hover:border-border transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                              {editUploadingImage ? (
-                                <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                              {imageUploadingSlot === `${p.id}-new` ? (
+                                <><Loader2 className="w-3 h-3 animate-spin" /> UPLOADING</>
                               ) : (
-                                <Plus className="w-4 h-4 text-muted-foreground/50" />
+                                <><Plus className="w-3 h-3" /> ADD IMAGE</>
                               )}
-                              <span className="text-[7px] font-display tracking-wider text-muted-foreground">{editUploadingImage ? 'WAIT' : 'ADD'}</span>
                             </button>
                           </div>
                         </div>
