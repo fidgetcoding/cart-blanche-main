@@ -126,14 +126,19 @@ function CarouselRow({
     scrollStartPos.current = isHorizontal
       ? scrollRef.current?.scrollLeft ?? 0
       : scrollRef.current?.scrollTop ?? 0;
-    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging.current || !scrollRef.current) return;
     const pos = isHorizontal ? e.clientX : e.clientY;
     const delta = dragStartPos.current - pos;
-    if (Math.abs(delta) > 3) hasDragged.current = true;
+    if (Math.abs(delta) > 3) {
+      if (!hasDragged.current) {
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+      }
+
+      hasDragged.current = true;
+    }
     if (isHorizontal) {
       scrollRef.current.scrollLeft = scrollStartPos.current + delta;
     } else {
