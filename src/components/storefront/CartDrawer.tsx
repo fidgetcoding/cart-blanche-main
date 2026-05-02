@@ -539,79 +539,87 @@ export function CartDrawer() {
                         </button>
                       </div>
                     ) : (
-                      items.map((item) => (
-                        <motion.div
-                          key={`${item.productId}-${item.variantId}`}
-                          layout
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, x: 50 }}
-                          className="flex gap-3 p-3 bg-secondary/50 rounded-lg relative"
-                        >
-                          {item.image ? (
-                            <img
-                              src={item.image}
-                              alt={item.title}
-                              className="w-14 h-14 rounded-md object-cover bg-muted flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-[9px] font-display flex-shrink-0">
-                              IMG
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-display text-xs font-medium truncate">{item.title}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{item.variantTitle}</p>
-                            <div className="flex items-center gap-3 mt-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1)}
-                                  className="w-5 h-5 flex items-center justify-center rounded border border-border hover:bg-muted transition-colors"
-                                >
-                                  <Minus className="w-2.5 h-2.5" />
-                                </button>
-                                <span className="text-xs w-5 text-center">{item.quantity}</span>
-                                <button
-                                  onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}
-                                  className="w-5 h-5 flex items-center justify-center rounded border border-border hover:bg-muted transition-colors"
-                                >
-                                  <Plus className="w-2.5 h-2.5" />
-                                </button>
-                              </div>
-                              <span className="font-display text-xs">${(item.price * item.quantity).toFixed(0)}</span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => removeItem(item.productId, item.variantId)}
-                            className="self-start p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                      items.map((item) => {
+                        const product = DEMO_PRODUCTS.find(p => p.id === item.productId);
+                        const firstProductImage = product?.images?.[0];
+                        const fallbackImage = typeof firstProductImage === 'string'
+                          ? firstProductImage
+                          : firstProductImage?.thumb;
+                        const resolvedImage = item.image || fallbackImage;
+
+                        return (
+                          <motion.div
+                            key={`${item.productId}-${item.variantId}`}
+                            layout
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: 50 }}
+                            className="flex gap-3 p-3 bg-secondary/50 rounded-lg relative"
                           >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                          {/* Ask about this / Find Pairs */}
-                          <div className="absolute bottom-2 right-2 flex gap-1.5">
+                            {resolvedImage ? (
+                              <img
+                                src={resolvedImage}
+                                alt={item.title}
+                                className="w-14 h-14 rounded-md object-cover bg-muted flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-[9px] font-display flex-shrink-0">
+                                IMG
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-display text-xs font-medium truncate">{item.title}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{item.variantTitle}</p>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1)}
+                                    className="w-5 h-5 flex items-center justify-center rounded border border-border hover:bg-muted transition-colors"
+                                  >
+                                    <Minus className="w-2.5 h-2.5" />
+                                  </button>
+                                  <span className="text-xs w-5 text-center">{item.quantity}</span>
+                                  <button
+                                    onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}
+                                    className="w-5 h-5 flex items-center justify-center rounded border border-border hover:bg-muted transition-colors"
+                                  >
+                                    <Plus className="w-2.5 h-2.5" />
+                                  </button>
+                                </div>
+                                <span className="font-display text-xs">${(item.price * item.quantity).toFixed(0)}</span>
+                              </div>
+                            </div>
                             <button
-                              onClick={() => handleAskAbout(item.title)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-md border border-border/40 transition-colors"
+                              onClick={() => removeItem(item.productId, item.variantId)}
+                              className="self-start p-0.5 text-muted-foreground hover:text-destructive transition-colors"
                             >
-                              <Sparkles className="w-3 h-3" />
-                              ASK AI
+                              <X className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => {
-                                const product = DEMO_PRODUCTS.find(p => p.id === item.productId);
-                                if (product) {
-                                  closeCart();
-                                  openStyleKit(product);
-                                }
-                              }}
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-md border border-border/40 transition-colors"
-                            >
-                              <Layers className="w-3 h-3" />
-                              PAIRS
-                            </button>
-                          </div>
-                        </motion.div>
-                      ))
+                            {/* Ask about this / Find Pairs */}
+                            <div className="absolute bottom-2 right-2 flex gap-1.5">
+                              <button
+                                onClick={() => handleAskAbout(item.title)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-md border border-border/40 transition-colors"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                ASK AI
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (product) {
+                                    closeCart();
+                                    openStyleKit(product);
+                                  }
+                                }}
+                                className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-display tracking-wider text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-md border border-border/40 transition-colors"
+                              >
+                                <Layers className="w-3 h-3" />
+                                PAIRS
+                              </button>
+                            </div>
+                          </motion.div>
+                        );
+                      })
                     )}
                   </div>
 
