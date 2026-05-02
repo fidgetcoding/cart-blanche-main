@@ -133,6 +133,7 @@ export default function AdminInventory() {
   const [addVariants, setAddVariants] = useState<{ title: string; inventory_count: number }[]>([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
   const [addSaving, setAddSaving] = useState(false);
   const [addImages, setAddImages] = useState<string[]>([]);
+  const [addColorways, setAddColorways] = useState<Colorway[]>([]);
   const [addVideo, setAddVideo] = useState<string | null>(null);
   const [addWeight, setAddWeight] = useState('');
   const [addShippingType, setAddShippingType] = useState<'domestic' | 'international'>('domestic');
@@ -428,11 +429,12 @@ export default function AdminInventory() {
         tags: editingProduct.tags,
         status: editingProduct.status,
         variants: editingProduct.variants,
+        colorways: editingProduct.colorways || [],
       });
     } else {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        await supabase.from('products').update({
+        await (supabase.from('products').update({
           title: editForm.title,
           price: newPrice,
           description: editForm.description,
@@ -440,7 +442,8 @@ export default function AdminInventory() {
           images: editingProduct.images,
           tags: editingProduct.tags,
           status: editingProduct.status,
-        }).eq('id', editingProduct.id);
+          colorways: editingProduct.colorways || [],
+        } as any).eq('id', editingProduct.id));
 
         for (const v of editingProduct.variants) {
           if (v.id.startsWith('new-')) {
@@ -577,6 +580,7 @@ export default function AdminInventory() {
             tags: p.tags,
             gender: p.gender || 'unisex',
             status: p.status,
+            colorways: p.colorways || [],
           } as any).eq('id', p.id));
           // Persist variant changes (title + inventory_count). Skip variants
           // whose id starts with 'new-' here — those are inserts and
@@ -763,6 +767,7 @@ export default function AdminInventory() {
       tags: addTags,
       gender: addGender || 'unisex',
       images,
+      colorways: addColorways,
     } as any).select().single());
 
     if (!error && product) {
@@ -787,6 +792,7 @@ export default function AdminInventory() {
     setAddGender('unisex');
     setAddVariants([{ title: 'S', inventory_count: 0 }, { title: 'M', inventory_count: 0 }, { title: 'L', inventory_count: 0 }]);
     setAddImages([]);
+    setAddColorways([]);
     setAddVideo(null);
     setAddWeight('');
     setAddShippingType('domestic');
@@ -1970,6 +1976,15 @@ export default function AdminInventory() {
                 </div>
               </div>
 
+              {/* Colorways management */}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">COLORS</label>
+                <ColorwayManager
+                  colorways={addColorways}
+                  onChange={setAddColorways}
+                />
+              </div>
+
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground">DESCRIPTION</label>
                 <textarea value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))} rows={3}
@@ -2324,6 +2339,18 @@ export default function AdminInventory() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Colorways management */}
+              <div>
+                <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">COLORS</label>
+                <ColorwayManager
+                  colorways={editingProduct.colorways || []}
+                  onChange={(next) => {
+                    setEditingProduct({ ...editingProduct, colorways: next });
+                    setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, colorways: next } : p));
+                  }}
+                />
               </div>
 
               {/* Variant / Size Management */}
