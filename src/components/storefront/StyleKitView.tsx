@@ -30,7 +30,11 @@ function CarouselCard({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="flex-shrink-0 liquid-glass rounded-lg overflow-hidden group cursor-pointer h-full flex flex-col"
-      onClick={() => { if (!hasDraggedRef.current) onSelect(product); }}
+      onClick={() => {
+        if (hasDraggedRef.current) return;
+        onSelect(product);
+        onAddToLook(product);
+      }}
     >
       <div className="aspect-square bg-secondary/50 flex items-center justify-center w-full relative overflow-hidden">
         {hasImages ? (
