@@ -2032,10 +2032,9 @@ export default function AdminInventory() {
                                       <X className="w-3.5 h-3.5 text-muted-foreground" />
                                     </button>
                                   </div>
-                                </Reorder.Item>
+                                </div>
                               );
                             })}
-                            </Reorder.Group>
 
                             {/* Use one file for all 3 sizes — fast path link.
                                 Only shown when relevant: no images yet, or at least one entry doesn't have 3 unique URLs. */}
