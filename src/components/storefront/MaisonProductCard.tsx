@@ -421,7 +421,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
           </p>
           <div
             className="relative mt-2 h-6 flex items-center justify-center"
-            onMouseEnter={() => setShowSizes(true)}
+            onMouseEnter={() => { if (!isOutOfStock) setShowSizes(true); }}
             onMouseLeave={() => setShowSizes(false)}
           >
             <AnimatePresence mode="wait">
@@ -440,6 +440,10 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (isOutOfStock) {
+                      setWaitlistOpen(true);
+                      return;
+                    }
                     if (product.variants.length === 1 && product.variants[0].inventory_count > 0) {
                       addItem({
                         productId: product.id,
