@@ -6,7 +6,6 @@ import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { splitSentences } from '@/lib/format-description';
-import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
 import { MaisonWaitlistModal } from './MaisonWaitlistModal';
 
 interface MaisonProductDetailProps {
