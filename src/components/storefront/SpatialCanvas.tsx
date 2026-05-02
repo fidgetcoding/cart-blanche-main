@@ -862,30 +862,37 @@ export function SpatialCanvas() {
               ))}
             </div>
 
-            {/* Gender symbols — hug the pill, multi-select toggle. Auto-hides when only one in view. */}
-            {showGenderSelector && (
-              <div className="flex items-center gap-2">
-                {['MEN', 'WOMEN', 'UNISEX'].map(g => {
-                  const isActive = activeGenders.includes(g);
-                  return (
-                    <button
-                      key={g}
-                      onMouseEnter={() => toggleGender(g)}
-                      onClick={() => toggleGender(g)}
-                      className={`p-1 transition-all duration-200 ${
-                        isActive
+            {/* Gender symbols — always rendered. Chips with no matching products in the current category are auto-disabled (grayed, non-interactive). User's selection persists across category switches. */}
+            <div className="flex items-center gap-2">
+              {['MEN', 'WOMEN', 'UNISEX'].map(g => {
+                const isActive = activeGenders.includes(g);
+                const isAvailable = isGenderAvailable(g);
+                return (
+                  <button
+                    key={g}
+                    onMouseEnter={() => isAvailable && toggleGender(g)}
+                    onClick={() => isAvailable && toggleGender(g)}
+                    disabled={!isAvailable}
+                    className={`p-1 transition-all duration-200 ${
+                      !isAvailable
+                        ? 'text-muted-foreground opacity-15 cursor-not-allowed'
+                        : isActive
                           ? 'text-foreground opacity-100'
                           : 'text-muted-foreground opacity-40 hover:opacity-80'
-                      }`}
-                      title={g.charAt(0) + g.slice(1).toLowerCase()}
-                      aria-pressed={isActive}
-                    >
-                      <GenderSymbol gender={g.toLowerCase()} size={22} />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                    }`}
+                    title={
+                      !isAvailable
+                        ? `No ${g.toLowerCase()} items in this category`
+                        : g.charAt(0) + g.slice(1).toLowerCase()
+                    }
+                    aria-pressed={isActive}
+                    aria-disabled={!isAvailable}
+                  >
+                    <GenderSymbol gender={g.toLowerCase()} size={22} />
+                  </button>
+                );
+              })}
+            </div>
           </nav>
         ) : null}
 
