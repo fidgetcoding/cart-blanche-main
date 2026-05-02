@@ -134,6 +134,14 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      onClick={() => setSizeChartOpen(true)}
+                      className="px-3 py-1.5 rounded-md text-xs font-medium border border-foreground/20 text-foreground/70 hover:text-foreground hover:border-foreground/40 transition-colors flex items-center gap-1.5"
+                    >
+                      <Ruler className="w-3 h-3" />
+                      SIZE CHART
+                    </button>
                   </div>
                 </div>
               )}
