@@ -152,6 +152,17 @@ export function getSuggestedProducts({
 
   let candidates = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id));
 
+  // Gender filter — default match rule. Style Guide presets are
+  // resolved separately above (presetProducts) and merged in
+  // unconditionally at the end, so explicit cross-gender pairings
+  // from the Style Guide always pass through.
+  candidates = candidates.filter(p => isGenderCompatible(anchor, p));
+
+  // Style-register incompatibility filter — block obvious
+  // mismatches (formal × athletic, heavy outerwear × shorts).
+  // Style Guide presets are resolved separately and bypass this.
+  candidates = candidates.filter(p => !isRegisterIncompatible(anchor, p));
+
   if (mode === 'counterparts') {
     // Accessories are always counterparts (pairs), not extras
     if (anchorZone === 'top') {
