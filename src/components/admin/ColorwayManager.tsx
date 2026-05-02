@@ -61,32 +61,14 @@ export function ColorwayManager({ colorways, onChange }: Props) {
             onDragStart={() => handleDragStart(idx)}
             onDragOver={handleDragOver}
             onDrop={() => handleDrop(idx)}
-            className={`inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded border border-border/60 bg-background/40 text-[10px] font-display ${dragSrcIdx === idx ? 'opacity-50' : ''}`}
+            className={`inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded border border-border/60 bg-background/40 text-[10px] font-display cursor-grab active:cursor-grabbing ${dragSrcIdx === idx ? 'opacity-50' : ''}`}
           >
-            <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab" />
+            <GripVertical className="w-3 h-3 text-muted-foreground/50" />
             <span
               className="w-4 h-4 rounded-full border border-border/60 bg-cover bg-center"
               style={getSwatchStyle(c)}
             />
             <span className="tracking-wider">{c.name.toUpperCase()}</span>
-            <button
-              type="button"
-              onClick={() => moveUp(idx)}
-              disabled={idx === 0}
-              className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move up"
-            >
-              <ChevronUp className="w-2.5 h-2.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => moveDown(idx)}
-              disabled={idx === colorways.length - 1}
-              className="p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move down"
-            >
-              <ChevronDown className="w-2.5 h-2.5" />
-            </button>
             <button
               type="button"
               onClick={() => setEditing({ mode: 'edit', colorway: c })}
