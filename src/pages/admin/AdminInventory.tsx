@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, ChevronUp, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { DraggableImageGrid } from '@/components/admin/DraggableImageGrid';
