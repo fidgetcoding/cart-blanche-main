@@ -304,7 +304,6 @@ export function MaisonCanvas() {
                       return (
                         <button
                           key={g}
-                          onMouseEnter={() => isAvailable && toggleGender(g)}
                           onClick={() => isAvailable && toggleGender(g)}
                           disabled={!isAvailable}
                           className={`text-[11px] tracking-[0.15em] uppercase whitespace-nowrap transition-all duration-200 ${
