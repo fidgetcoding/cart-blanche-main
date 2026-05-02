@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Ruler } from 'lucide-react';
 import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
 import { WAITLIST_COLOR_OPTIONS } from './WaitlistModal';
+import { SizeChartOverlay } from './SizeChartOverlay';
 import type { DemoProduct } from '@/data/demo-data';
 
 interface MaisonWaitlistModalProps {
@@ -21,6 +22,7 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { submit, submitting } = useWaitlistSignup();
 
   // Esc to close
