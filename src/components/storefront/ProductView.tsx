@@ -138,6 +138,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [selectedColorwayId, setSelectedColorwayId] = useState<string | null>(
     product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
   );
+  const [colorwayPage, setColorwayPage] = useState(0);
 
   // Resolve the selected colorway object. If null (no colorways) or
   // the id doesn't match any colorway (defensive), this is null.
@@ -147,6 +148,15 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   // colorway is only visible when that colorway is selected.
   const displayImages = product.images.filter(img =>
     !img.colorway_id || img.colorway_id === selectedColorwayId
+  );
+
+  const VISIBLE_COLORWAYS = 10;
+  const allColorways = product.colorways || [];
+  const totalColorwayPages = Math.max(1, Math.ceil(allColorways.length / VISIBLE_COLORWAYS));
+  const safeColorwayPage = Math.min(colorwayPage, Math.max(0, totalColorwayPages - 1));
+  const colorwaysToShow = allColorways.slice(
+    safeColorwayPage * VISIBLE_COLORWAYS,
+    (safeColorwayPage + 1) * VISIBLE_COLORWAYS
   );
 
   // Filtered visible indices for counter
@@ -171,6 +181,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     setSelectedVariant(match ? match.id : null);
     setExpandDetails(false);
     setActiveImage(0);
+    setColorwayPage(0);
     // Preload worn/alternate images for the SELECTED colorway in
     // background. Only the currently-displayed images need preloading;
     // images for other colorways will load when their swatch is selected.
@@ -187,6 +198,16 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   // colorway has fewer images than current index, clamp to last.
   useEffect(() => {
     setActiveImage(prev => Math.min(prev, Math.max(0, displayImages.length - 1)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedColorwayId]);
+
+  // Auto-page: ensure the selected colorway is always on the visible page.
+  useEffect(() => {
+    if (!selectedColorwayId) return;
+    const idx = allColorways.findIndex(c => c.id === selectedColorwayId);
+    if (idx < 0) return;
+    const targetPage = Math.floor(idx / VISIBLE_COLORWAYS);
+    if (targetPage !== colorwayPage) setColorwayPage(targetPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedColorwayId]);
 
