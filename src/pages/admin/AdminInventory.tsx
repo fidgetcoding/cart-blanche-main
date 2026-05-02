@@ -1764,7 +1764,9 @@ export default function AdminInventory() {
                               const f = e.target.files?.[0];
                               if (f) {
                                 setImageUploadingSlot(`${p.id}-new`);
-                                addImage(p.id, f).finally(() => setImageUploadingSlot(null));
+                               const targetIdx = fillAllSizesTargetRef.current;
+                               fillAllSizesTargetRef.current = null;
+                               addImage(p.id, f, targetIdx ?? undefined).finally(() => setImageUploadingSlot(null));
                               }
                               e.target.value = '';
                             }}
