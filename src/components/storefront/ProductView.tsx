@@ -183,9 +183,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     }
   }, [productIndex]);
 
-  // Reset gallery to first image when colorway changes.
+  // Preserve image index when colorway changes. If the new
+  // colorway has fewer images than current index, clamp to last.
   useEffect(() => {
-    setActiveImage(0);
+    setActiveImage(prev => Math.min(prev, Math.max(0, displayImages.length - 1)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedColorwayId]);
 
   // Phase 6: Preload neighbor images for seamless navigation
@@ -503,7 +505,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
               {product.colorways && product.colorways.length >= 1 && (
                 <div
-                  className="absolute bottom-12 right-3 flex items-center gap-1.5 z-20"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 z-20"
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
@@ -513,8 +515,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       <button
                         key={c.id}
                         type="button"
-                        onMouseEnter={() => setSelectedColorwayId(c.id)}
-                        onFocus={() => setSelectedColorwayId(c.id)}
                         onClick={(e) => { e.stopPropagation(); setSelectedColorwayId(c.id); }}
                         title={c.name}
                         className={`w-4 h-4 rounded-full border transition-all shrink-0 ${
