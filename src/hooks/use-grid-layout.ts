@@ -45,6 +45,44 @@ export interface GridLayout {
 
 const EMPTY_LAYOUT: GridLayout = { productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [], hiddenProductIds: [], hiddenGenders: [], demoProductOverrides: {} };
 
+function normalizeProductImages(images: ProductImage[] = [], colorways: Colorway[] = []): ProductImage[] {
+  if (images.length === 0) return images;
+
+  const colorwayIdOrder = new Map<string, number>();
+  colorways.forEach((c, i) => colorwayIdOrder.set(c.id, i));
+
+  const firstFeaturedIndex = images.findIndex(img => img.featured);
+  const normalized: ProductImage[] = images.map((img, idx) => {
+    if (img.featured && idx !== firstFeaturedIndex) {
+      const { featured: _featured, ...rest } = img;
+      return rest as ProductImage;
+    }
+    return img;
+  });
+
+  const withFallback: ProductImage[] = firstFeaturedIndex === -1 && normalized.length > 0
+    ? normalized.map((img, idx) => idx === 0 ? { ...img, featured: true } : img)
+    : normalized;
+
+  const indexed = withFallback.map((img, idx) => ({
+    img,
+    idx,
+    colorwayOrder: img.colorway_id && colorwayIdOrder.has(img.colorway_id)
+      ? colorwayIdOrder.get(img.colorway_id)!
+      : Number.MAX_SAFE_INTEGER,
+  }));
+
+  indexed.sort((a, b) => {
+    const aFeatured = a.img.featured ? 0 : 1;
+    const bFeatured = b.img.featured ? 0 : 1;
+    if (aFeatured !== bFeatured) return aFeatured - bFeatured;
+    if (a.colorwayOrder !== b.colorwayOrder) return a.colorwayOrder - b.colorwayOrder;
+    return a.idx - b.idx;
+  });
+
+  return indexed.map(({ img }) => img);
+}
+
 // Broadcast layout changes across hook instances
 const LAYOUT_CHANGE_EVENT = 'grid-layout-changed';
 function broadcastLayoutChange(layout: GridLayout) {
@@ -166,9 +204,12 @@ export function useGridLayout() {
             return ovV ? { ...v, ...ovV } : v;
           })
         : p.variants;
+      const mergedImages = normalizeProductImages((ov.images ?? p.images) as ProductImage[], (ov.colorways ?? p.colorways ?? []) as Colorway[]);
+
       return {
         ...p,
         ...ov,
+        images: mergedImages,
         variants: mergedVariants,
         // Cast back to DemoProduct's variant type since override variants
         // type is structurally compatible.
