@@ -171,9 +171,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     setSelectedVariant(match ? match.id : null);
     setExpandDetails(false);
     setActiveImage(0);
-    // Preload worn/alternate images in background
-    if (product?.images) {
-      product.images.forEach((src, i) => {
+    // Preload worn/alternate images for the SELECTED colorway in
+    // background. Only the currently-displayed images need preloading;
+    // images for other colorways will load when their swatch is selected.
+    if (displayImages && displayImages.length > 0) {
+      displayImages.forEach((src, i) => {
         if (i === 0) return; // already visible
         const img = new Image();
         img.src = src.medium;
@@ -219,7 +221,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     const insideImage =
       (e.target as Element)?.closest?.('[data-image-zone]') != null;
     const isHorizontal = absX > absY;
-    const imageCount = product?.images?.length ?? 0;
+    const imageCount = displayImages.length;
 
     // Horizontal swipe inside image card → cycle photos (wrap around)
     if (insideImage && isHorizontal && imageCount > 1) {
