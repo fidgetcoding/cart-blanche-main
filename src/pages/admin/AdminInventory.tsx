@@ -154,6 +154,30 @@ export default function AdminInventory() {
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
+  const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('cb_custom_product_types');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [addingTypeForId, setAddingTypeForId] = useState<string | null>(null);
+  const [newTypeInput, setNewTypeInput] = useState('');
+  const allCategoryOptions = useMemo(() => {
+    const set = new Set<string>([...PRODUCT_TYPES, ...customProductTypes]);
+    products.forEach(p => { if (p.product_type) set.add(p.product_type as string); });
+    return Array.from(set);
+  }, [customProductTypes, products]);
+  const addCustomProductType = (raw: string) => {
+    const v = raw.trim().toLowerCase();
+    if (!v) return '';
+    setCustomProductTypes(prev => {
+      if (prev.includes(v) || (PRODUCT_TYPES as readonly string[]).includes(v)) return prev;
+      const next = [...prev, v];
+      try { localStorage.setItem('cb_custom_product_types', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    return v;
+  };
 
   // Sync hiddenTags from gridLayout once loaded
   useEffect(() => {
@@ -1449,7 +1473,7 @@ export default function AdminInventory() {
                         <div>
                           <p className="text-xs text-muted-foreground font-display tracking-widest mb-2">CATEGORY</p>
                           <div className="flex flex-wrap gap-2">
-                            {PRODUCT_TYPES.map(cat => (
+                            {allCategoryOptions.map(cat => (
                               <button
                                 key={cat}
                                 onClick={(e) => {
@@ -1457,6 +1481,11 @@ export default function AdminInventory() {
                                   setProducts(prev => prev.map(pr =>
                                     pr.id === p.id ? { ...pr, product_type: (pr.product_type === cat ? '' : cat) as ProductType } : pr
                                   ));
+                                  if (p.isDemo) {
+                                    saveDemoProductOverride(p.id, { product_type: (p.product_type === cat ? '' : cat) as ProductType });
+                                  } else {
+                                    setHasUnsavedChanges(true);
+                                  }
                                 }}
                                 className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
                                   p.product_type === cat
@@ -1467,6 +1496,42 @@ export default function AdminInventory() {
                                 {cat.toUpperCase()}
                               </button>
                             ))}
+                            {addingTypeForId === p.id ? (
+                              <input
+                                autoFocus
+                                value={newTypeInput}
+                                onChange={(e) => setNewTypeInput(e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => {
+                                  e.stopPropagation();
+                                  if (e.key === 'Enter') {
+                                    const v = addCustomProductType(newTypeInput);
+                                    if (v) {
+                                      setProducts(prev => prev.map(pr =>
+                                        pr.id === p.id ? { ...pr, product_type: v as ProductType } : pr
+                                      ));
+                                      if (p.isDemo) saveDemoProductOverride(p.id, { product_type: v as ProductType });
+                                      else setHasUnsavedChanges(true);
+                                    }
+                                    setNewTypeInput('');
+                                    setAddingTypeForId(null);
+                                  } else if (e.key === 'Escape') {
+                                    setNewTypeInput('');
+                                    setAddingTypeForId(null);
+                                  }
+                                }}
+                                onBlur={() => { setNewTypeInput(''); setAddingTypeForId(null); }}
+                                placeholder="new category"
+                                className="px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border border-foreground/30 bg-transparent text-foreground outline-none w-32"
+                              />
+                            ) : (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setAddingTypeForId(p.id); }}
+                                className="px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border border-dashed border-border/60 text-muted-foreground/70 hover:text-foreground hover:border-foreground/40 transition-colors"
+                              >
+                                + ADD
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -1887,10 +1952,10 @@ export default function AdminInventory() {
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">CATEGORY</label>
                 <div className="flex flex-wrap gap-2">
-                  {PRODUCT_TYPES.map(cat => (
+                  {allCategoryOptions.map(cat => (
                     <button
                       key={cat}
-                      onClick={() => setAddProductType(addProductType === cat ? '' : cat)}
+                      onClick={() => setAddProductType((addProductType === cat ? '' : cat) as ProductType)}
                       className={`px-3 py-1.5 text-[10px] font-display tracking-wider rounded-md border transition-colors ${
                         addProductType === cat
                           ? 'bg-foreground/10 text-foreground border-foreground/20'
@@ -2147,11 +2212,11 @@ export default function AdminInventory() {
               <div>
                 <label className="text-xs font-display tracking-widest text-muted-foreground mb-2 block">CATEGORY</label>
                 <div className="flex flex-wrap gap-2">
-                  {PRODUCT_TYPES.map(cat => (
+                  {allCategoryOptions.map(cat => (
                     <button
                       key={cat}
                       onClick={() => {
-                        const newCat = editingProduct.product_type === cat ? '' as ProductType : cat;
+                        const newCat = (editingProduct.product_type === cat ? '' : cat) as ProductType;
                         setEditingProduct({ ...editingProduct, product_type: newCat });
                         setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, product_type: newCat } : p));
                       }}
