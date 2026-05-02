@@ -61,8 +61,8 @@ export function getStyleRegister(product: DemoProduct): StyleRegister {
 // merchants enable them via Style Guide presets, which bypass
 // this filter entirely.
 export function isGenderCompatible(anchor: DemoProduct, candidate: DemoProduct): boolean {
-  const a = ((anchor as any).gender || 'unisex').toLowerCase();
-  const c = ((candidate as any).gender || 'unisex').toLowerCase();
+  const a = (anchor.gender || 'unisex').toLowerCase();
+  const c = (candidate.gender || 'unisex').toLowerCase();
   if (a === 'unisex' || c === 'unisex') return true;
   return a === c;
 }
