@@ -200,17 +200,23 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
             transition: 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
           }}
         >
-          {images.map((img, i) => {
-            const resolvedSrc = getCardImageSrc(img);
-            return (
-              <ImageCellWithDebug
-                key={i}
-                src={resolvedSrc}
+          {images.map((img, i) => (
+            <div
+              key={i}
+              className="h-full flex-shrink-0 flex items-center justify-center"
+              style={{ width: `${100 / images.length}%`, padding: `${8 / images.length}%` }}
+            >
+              <img
+                src={getCardImageSrc(img)}
                 alt={product.title}
-                widthPct={100 / images.length}
+                className="object-contain"
+                style={{ width: '100%', height: '100%' }}
+                loading="lazy"
+                decoding="async"
+                draggable={false}
               />
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {/* Hover overlay — view by 6 only: frosted overlay revealing product info */}
