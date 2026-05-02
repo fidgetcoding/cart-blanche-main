@@ -49,14 +49,6 @@ export interface Colorway {
                                // ColorwayManager modal — see Y.0b).
                                // 0 or 1 entries: ignored, fallback
                                // to plain hex render.
-                               // When set, the storefront gallery
-                               // shows these images when this
-                               // colorway is selected. When unset,
-                               // gallery falls back to top-level
-                               // product.images. Same shape as
-                               // product-level images (thumb /
-                               // medium / full per ProductImage).
-                               // Storefront wiring lands in Phase 4B.
 }
 
 export interface DemoProduct {
