@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Pencil, GripVertical, ChevronUp, ChevronDown, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
+import { Plus, X, Pencil, GripVertical, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
 import type { Colorway } from '@/data/demo-data';
 import { supabase } from '@/integrations/supabase/client';
 import { getSwatchStyle } from '@/lib/swatch-style';
