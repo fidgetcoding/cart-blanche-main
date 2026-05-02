@@ -52,15 +52,15 @@ function normalizeProductImages(images: ProductImage[] = [], colorways: Colorway
   colorways.forEach((c, i) => colorwayIdOrder.set(c.id, i));
 
   const firstFeaturedIndex = images.findIndex(img => img.featured);
-  const normalized = images.map((img, idx) => {
+  const normalized: ProductImage[] = images.map((img, idx) => {
     if (img.featured && idx !== firstFeaturedIndex) {
       const { featured: _featured, ...rest } = img;
-      return rest;
+      return rest as ProductImage;
     }
     return img;
   });
 
-  const withFallback = firstFeaturedIndex === -1 && normalized.length > 0
+  const withFallback: ProductImage[] = firstFeaturedIndex === -1 && normalized.length > 0
     ? normalized.map((img, idx) => idx === 0 ? { ...img, featured: true } : img)
     : normalized;
 
