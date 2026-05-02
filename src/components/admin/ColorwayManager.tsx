@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Plus, X, Pencil, GripVertical, ChevronUp, ChevronDown, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
+import { Plus, X, Pencil, GripVertical, ChevronUp, ChevronDown, Image as ImageIcon, Loader2, Trash2, Info } from 'lucide-react';
 import type { Colorway } from '@/data/demo-data';
 import { supabase } from '@/integrations/supabase/client';
 import { getSwatchStyle } from '@/lib/swatch-style';
@@ -119,6 +119,12 @@ export function ColorwayManager({ colorways, onChange }: Props) {
         >
           <Plus className="w-2.5 h-2.5" /> ADD COLOR
         </button>
+        {colorways.length > 25 && (
+          <p className="basis-full mt-2 text-[10px] font-display text-muted-foreground/70 flex items-center gap-1.5">
+            <Info className="w-3 h-3 shrink-0" />
+            Consider grouping similar shades into color families for better browsing.
+          </p>
+        )}
       </div>
 
       <AnimatePresence>
