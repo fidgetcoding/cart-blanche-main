@@ -211,7 +211,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
               <img
                 src={getCardImageSrc(img)}
                 alt={product.title}
-                className="max-w-full max-h-full object-contain"
+                className="w-full h-full object-contain"
                 loading="lazy"
                 decoding="async"
                 draggable={false}
