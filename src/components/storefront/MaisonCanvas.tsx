@@ -11,6 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { StyleKitView } from './StyleKitView';
+import { GenderSymbol } from './GenderSymbol';
 
 
 import { ShoppingBag } from 'lucide-react';
@@ -317,7 +318,7 @@ export function MaisonCanvas() {
                           aria-pressed={isActive}
                           aria-disabled={!isAvailable}
                         >
-                          {g}
+                          <GenderSymbol gender={g.toLowerCase()} size={16} />
                         </button>
                       );
                     })}
