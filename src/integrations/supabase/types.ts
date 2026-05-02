@@ -723,6 +723,7 @@ export type Database = {
       }
       waitlist_signups: {
         Row: {
+          colorway_preference: string | null
           created_at: string
           email: string
           id: string
@@ -734,6 +735,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          colorway_preference?: string | null
           created_at?: string
           email: string
           id?: string
@@ -745,6 +747,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          colorway_preference?: string | null
           created_at?: string
           email?: string
           id?: string
