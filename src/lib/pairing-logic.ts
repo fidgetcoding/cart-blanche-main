@@ -16,6 +16,82 @@ const ZONE_MAP: Record<string, BodyZone> = {
   shorts:    'bottom',
 };
 
+// ─── Style-register classification ────────────────────────────────
+// Garments are sorted into broad style registers to detect
+// wear-context mismatches (e.g., formal blazer + athletic mesh
+// shorts). Detection is heuristic — operates on title +
+// product_type + category, no new fields required.
+//
+// Register definitions:
+//   heavy_outerwear — seasonal coats/jackets that don't pair
+//                     with shorts (puffer, trench, overcoat, moto)
+//   formal          — tailored garments (blazer, suit, dress
+//                     shirt, chinos, trousers)
+//   athletic        — strictly gymwear (mesh, track-prefix,
+//                     athletic). NOTE: joggers, sweat shorts,
+//                     and sweat pants are NOT athletic — they
+//                     read smart-casual just as easily and
+//                     should pair with formal anchors freely.
+//   casual          — everything else (default)
+type StyleRegister = 'formal' | 'athletic' | 'heavy_outerwear' | 'casual';
+
+export function getStyleRegister(product: DemoProduct): StyleRegister {
+  const title = product.title.toLowerCase();
+  const cat = (product.category || '').toLowerCase();
+  const ptype = (product.product_type || '').toLowerCase();
+  const haystack = `${title} ${cat} ${ptype}`;
+
+  if (/puffer|trench|overcoat|wool coat|down coat|parka|moto/.test(haystack)) {
+    return 'heavy_outerwear';
+  }
+  if (/blazer|suit|dress shirt|oxford shirt|tuxedo|chinos|trouser/.test(haystack)) {
+    return 'formal';
+  }
+  if (/\bmesh\b|athletic|gym wear|gym short|track jacket|track pant/.test(haystack)) {
+    return 'athletic';
+  }
+  return 'casual';
+}
+
+// ─── Gender-compatibility helper ──────────────────────────────────
+// Default rule: a candidate matches an anchor when gender axes
+// overlap. 'unisex' on either side is a wildcard. Anchor of
+// 'unisex' matches anything; unisex candidate matches any anchor.
+// Cross-gender pairings are not blocked at the algorithm level —
+// merchants enable them via Style Guide presets, which bypass
+// this filter entirely.
+export function isGenderCompatible(anchor: DemoProduct, candidate: DemoProduct): boolean {
+  const a = (anchor.gender || 'unisex').toLowerCase();
+  const c = (candidate.gender || 'unisex').toLowerCase();
+  if (a === 'unisex' || c === 'unisex') return true;
+  return a === c;
+}
+
+// ─── Register-incompatibility detection ───────────────────────────
+// Returns true if the two products represent a style-register
+// mismatch the algorithm should not auto-suggest. Currently:
+//   formal × athletic — yes, block
+//   heavy_outerwear × shorts — yes, block (seasonal)
+// Manual Style Guide presets bypass this check entirely.
+export function isRegisterIncompatible(anchor: DemoProduct, candidate: DemoProduct): boolean {
+  const aReg = getStyleRegister(anchor);
+  const cReg = getStyleRegister(candidate);
+  const aZone = getBodyZone(anchor);
+  const cZone = getBodyZone(candidate);
+
+  if ((aReg === 'formal' && cReg === 'athletic') || (cReg === 'formal' && aReg === 'athletic')) {
+    return true;
+  }
+
+  const isShorts = (p: DemoProduct) =>
+    /\bshorts?\b/.test(p.title.toLowerCase()) || (p.product_type || '').toLowerCase() === 'shorts';
+
+  if (aReg === 'heavy_outerwear' && cZone === 'bottom' && isShorts(candidate)) return true;
+  if (cReg === 'heavy_outerwear' && aZone === 'bottom' && isShorts(anchor)) return true;
+
+  return false;
+}
+
 export function getBodyZone(product: DemoProduct): BodyZone {
   // Use product_type first (typed field), fall back to category string
   const pc = product.product_type?.toLowerCase();
@@ -76,6 +152,17 @@ export function getSuggestedProducts({
 
   let candidates = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id));
 
+  // Gender filter — default match rule. Style Guide presets are
+  // resolved separately above (presetProducts) and merged in
+  // unconditionally at the end, so explicit cross-gender pairings
+  // from the Style Guide always pass through.
+  candidates = candidates.filter(p => isGenderCompatible(anchor, p));
+
+  // Style-register incompatibility filter — block obvious
+  // mismatches (formal × athletic, heavy outerwear × shorts).
+  // Style Guide presets are resolved separately and bypass this.
+  candidates = candidates.filter(p => !isRegisterIncompatible(anchor, p));
+
   if (mode === 'counterparts') {
     // Accessories are always counterparts (pairs), not extras
     if (anchorZone === 'top') {
@@ -133,7 +220,14 @@ export function getSuggestedProducts({
       fallback = fallback.filter(p => getBodyZone(p) === anchorZone);
     }
 
-    return fallback;
+    // Apply gender + register filters to fallback. If filtering
+    // empties the list (very thin catalog edge case), return the
+    // unfiltered zone-correct version — better to show SOMETHING
+    // than an empty drawer.
+    const filtered = fallback
+      .filter(p => isGenderCompatible(anchor, p))
+      .filter(p => !isRegisterIncompatible(anchor, p));
+    return filtered.length > 0 ? filtered : fallback;
   }
 
   return result;
