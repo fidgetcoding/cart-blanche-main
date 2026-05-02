@@ -377,6 +377,95 @@ function ColorwayEditModal({ initial, onClose, onSave, onDelete }: ModalProps) {
           </div>
         )}
 
+        <div className="border-t border-border/40 pt-4">
+          <label className="text-[9px] font-display tracking-widest text-muted-foreground">
+            GALLERY IMAGES
+          </label>
+          <p className="mt-1 text-[10px] text-muted-foreground/70 leading-relaxed">
+            Photos shown when this color is selected on the storefront.
+            Each image has three sizes — click any slot to upload a
+            different file for that size only. Empty slots will not
+            render on their target surface.
+          </p>
+          <div className="mt-3 space-y-2">
+            {galleryImages.map((img, idx) => (
+              <div
+                key={`gallery-${idx}-${img.thumb}`}
+                draggable
+                onDragStart={() => handleGalleryDragStart(idx)}
+                onDragOver={handleGalleryDragOver}
+                onDrop={() => handleGalleryDrop(idx)}
+                className={`relative border border-border/40 rounded-lg p-2 bg-background/40 ${galleryDragIdx === idx ? 'opacity-50' : ''}`}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="pt-1 cursor-grab active:cursor-grabbing" title="Drag to reorder">
+                    <GripVertical className="w-3.5 h-3.5 text-muted-foreground/50" />
+                  </div>
+                  <div className="flex-1 grid grid-cols-3 gap-1.5">
+                    {(['thumb', 'medium', 'full'] as const).map((size) => {
+                      const slotKey = `${idx}-${size}`;
+                      const isUploadingThis = uploadingSlot === slotKey;
+                      const url = img[size];
+                      const label = size === 'thumb' ? 'GRID + CART' : size === 'medium' ? 'DETAIL VIEW' : 'ZOOM';
+                      return (
+                        <div key={size} className="space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => triggerReplace(idx, size)}
+                            disabled={!!uploadingSlot}
+                            className="relative w-full aspect-square rounded border border-border/60 bg-cover bg-center hover:border-border transition-colors disabled:opacity-50 overflow-hidden"
+                            style={url ? { backgroundImage: `url(${url})` } : undefined}
+                            title={`Replace ${size} image (${label})`}
+                          >
+                            {isUploadingThis && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                              </div>
+                            )}
+                            {!url && !isUploadingThis && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <ImageIcon className="w-3 h-3 text-muted-foreground/40" />
+                              </div>
+                            )}
+                          </button>
+                          <p className="text-[8px] font-display tracking-wider text-muted-foreground/70 text-center leading-tight">
+                            {label}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    title="Remove image"
+                  >
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={triggerAdd}
+              disabled={!!uploadingSlot}
+              className="w-full px-3 py-2.5 border border-dashed border-border/60 rounded-lg text-xs text-muted-foreground hover:bg-secondary hover:border-border transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              {uploadingSlot === 'new'
+                ? <><Loader2 className="w-3 h-3 animate-spin" /> UPLOADING</>
+                : <><Plus className="w-3 h-3" /> ADD IMAGE</>}
+            </button>
+            <input
+              ref={galleryFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleGalleryFileChange}
+            />
+          </div>
+        </div>
+
         <div className="flex items-center gap-2 pt-2">
           <button
             type="button"
