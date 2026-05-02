@@ -1861,9 +1861,19 @@ export default function AdminInventory() {
                               return (
                                 <div
                                   key={`${p.id}-img-${imgIdx}-${img.thumb}-${img.medium}-${img.full}`}
-                                  className="relative border border-border/40 rounded-lg p-2 bg-background/40"
+                                  className={`relative border rounded-lg p-2 transition-colors ${
+                                    img.featured
+                                      ? 'border-primary/70 bg-primary/5 ring-1 ring-primary/40'
+                                      : 'border-border/40 bg-background/40'
+                                  }`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
+                                  {img.featured && (
+                                    <div className="absolute -top-2 left-3 px-2 py-0.5 rounded-sm bg-primary text-primary-foreground text-[8px] font-display tracking-[0.15em] leading-none flex items-center gap-1 shadow-sm">
+                                      <Star className="w-2.5 h-2.5 fill-current" />
+                                      FEATURED ON STORE GRID
+                                    </div>
+                                  )}
                                   <div className="flex items-start gap-2">
 
                                     {/* Color tag swatch indicator */}
