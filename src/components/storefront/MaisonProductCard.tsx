@@ -22,7 +22,12 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const [showCompactSizes, setShowCompactSizes] = useState(false);
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const isOutOfStock = product.variants.every(v => v.inventory_count === 0);
+  const cardColorwayId = product.colorways?.[0]?.id ?? null;
+  const visibleVariants = product.variants.filter(
+    v => !v.colorway_id || v.colorway_id === cardColorwayId
+  );
+  const isOutOfStock = visibleVariants.length > 0 &&
+    visibleVariants.every(v => v.inventory_count === 0);
   const { addItem } = useCart();
   
   const cooldown = useRef(false);
@@ -301,7 +306,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
                     {/* Sizes row */}
                     <div className="flex items-center justify-center gap-2">
-                      {product.variants.map(v => (
+                      {visibleVariants.map(v => (
                         <button
                           key={v.id}
                           onClick={(e) => {
