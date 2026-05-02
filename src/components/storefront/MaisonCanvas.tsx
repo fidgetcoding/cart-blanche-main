@@ -51,9 +51,9 @@ export function MaisonCanvas() {
   }, []);
 
   const handleBuildSet = useCallback((product: DemoProduct) => {
-    openStyleKit(product, 'counterparts');
+    openStyleKit(product, 'counterparts', null, activeGenders);
     setBuildSetProduct(product);
-  }, [openStyleKit]);
+  }, [openStyleKit, activeGenders]);
 
   const closeBuildSet = useCallback(() => {
     setBuildSetProduct(null);
