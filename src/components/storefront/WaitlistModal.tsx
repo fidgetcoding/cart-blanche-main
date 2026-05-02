@@ -148,28 +148,30 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
                 </div>
               )}
 
-              <div>
-                <span className="text-[11px] tracking-wider uppercase text-foreground/60">Color preference</span>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {WAITLIST_COLOR_OPTIONS.map((c) => {
-                    const active = color === c;
-                    return (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setColor(active ? '' : c)}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                          active
-                            ? 'bg-foreground text-background border-foreground'
-                            : 'bg-background/40 text-foreground border-foreground/20 hover:border-foreground/40'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    );
-                  })}
+              {product.colorways && product.colorways.length >= 1 && (
+                <div>
+                  <span className="text-[11px] tracking-wider uppercase text-foreground/60">Color preference</span>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {product.colorways.map((c) => {
+                      const active = color === c.name;
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => setColor(active ? '' : c.name)}
+                          title={c.name}
+                          className={`w-4 h-4 rounded-full border transition-all shrink-0 ${
+                            active
+                              ? 'border-foreground/40 ring-2 ring-foreground ring-offset-2 ring-offset-background'
+                              : 'border-foreground/30 hover:border-foreground/60'
+                          }`}
+                          style={getSwatchStyle(c)}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <button
                 type="submit"
