@@ -98,8 +98,9 @@ export default function AdminLayout() {
           <NavLink
             to="/admin/settings"
             title="Settings"
+            aria-label="Settings"
             className={({ isActive }) =>
-              `flex items-center gap-1.5 px-2 xl:px-3.5 py-1.5 rounded-md text-[11px] font-display tracking-wider transition-colors whitespace-nowrap flex-shrink-0 ${
+              `flex items-center justify-center p-1.5 rounded-md transition-colors flex-shrink-0 ${
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                   : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -107,7 +108,6 @@ export default function AdminLayout() {
             }
           >
             <Settings className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Settings</span>
           </NavLink>
         </header>
 
