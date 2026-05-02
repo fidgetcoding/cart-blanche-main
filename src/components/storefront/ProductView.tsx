@@ -176,7 +176,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     const group = getSizeGroup(product?.product_type);
     const remembered = group ? rememberedSizeByGroup.get(group) : undefined;
     const match = remembered
-      ? product?.variants.find(v => v.title === remembered && v.inventory_count > 0)
+      ? product?.variants.find(v =>
+          v.title === remembered &&
+          v.inventory_count > 0 &&
+          (!v.colorway_id || v.colorway_id === (product?.colorways?.[0]?.id ?? null))
+        )
       : undefined;
     setSelectedVariant(match ? match.id : null);
     setExpandDetails(false);
@@ -201,6 +205,24 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   // colorway has fewer images than current index, clamp to last.
   useEffect(() => {
     setActiveImage(prev => Math.min(prev, Math.max(0, displayImages.length - 1)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedColorwayId]);
+
+  // When colorway changes, try to keep the same SIZE selected by
+  // looking up the equivalent variant in the new colorway. If the
+  // matching variant is OOS or doesn't exist, clear selection.
+  useEffect(() => {
+    if (!selectedVariant) return;
+    const current = product.variants.find(v => v.id === selectedVariant);
+    if (!current) { setSelectedVariant(null); return; }
+    if (current.colorway_id && current.colorway_id !== selectedColorwayId) {
+      const equivalent = product.variants.find(
+        v => v.title === current.title &&
+             (!v.colorway_id || v.colorway_id === selectedColorwayId) &&
+             v.inventory_count > 0
+      );
+      setSelectedVariant(equivalent ? equivalent.id : null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedColorwayId]);
 
@@ -351,6 +373,12 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const canAdd = product.variants.length <= 1 || selectedVariant !== null;
   const isOutOfStock = variant ? variant.inventory_count === 0 : false;
   const isWholeProductOutOfStock = product.variants.every(v => v.inventory_count === 0);
+
+  const availableVariants = product.variants.filter(
+    v => !v.colorway_id || v.colorway_id === selectedColorwayId
+  );
+  const isCurrentColorwayOutOfStock = availableVariants.length > 0 &&
+    availableVariants.every(v => v.inventory_count === 0);
 
   const handleAddToCart = () => {
     if (!canAdd || isOutOfStock) return;
@@ -643,7 +671,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                   {product.compare_at_price && (
                     <span className="text-sm text-foreground/50 line-through">${product.compare_at_price}</span>
                   )}
-                  {(variant ? variant.inventory_count === 0 : product.variants.every(v => v.inventory_count === 0)) ? (
+                  {(variant ? variant.inventory_count === 0 : isCurrentColorwayOutOfStock) ? (
                     <span className="text-destructive tracking-wider text-sm">(OUT OF STOCK)</span>
                   ) : variant && variant.inventory_count > 0 && variant.inventory_count <= 5 ? (
                     <span className="text-warning tracking-wider text-sm">(LOW STOCK)</span>
@@ -714,9 +742,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                     <div className="[@media(max-height:760px)]:grid [@media(max-height:760px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:760px)]:items-start [@media(max-height:760px)]:gap-x-4 [@media(max-height:760px)]:gap-y-2">
                       <div className="space-y-4 [@media(max-height:760px)]:min-w-[10.5rem] [@media(max-height:760px)]:space-y-2.5 mb-2 [@media(max-height:760px)]:mb-0">
                         {/* Variants */}
-                        {product.variants.length > 1 && (
+                        {availableVariants.length > 1 && (
                           <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-1.5">
-                            {product.variants.map(v => {
+                            {availableVariants.map(v => {
                               const lockSize = () => {
                                 if (v.inventory_count === 0) return;
                                 setSelectedVariant(v.id);

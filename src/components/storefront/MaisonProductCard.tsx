@@ -22,7 +22,12 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
   const [showCompactSizes, setShowCompactSizes] = useState(false);
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const isOutOfStock = product.variants.every(v => v.inventory_count === 0);
+  const cardColorwayId = product.colorways?.[0]?.id ?? null;
+  const visibleVariants = product.variants.filter(
+    v => !v.colorway_id || v.colorway_id === cardColorwayId
+  );
+  const isOutOfStock = visibleVariants.length > 0 &&
+    visibleVariants.every(v => v.inventory_count === 0);
   const { addItem } = useCart();
   
   const cooldown = useRef(false);
@@ -301,7 +306,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
                     {/* Sizes row */}
                     <div className="flex items-center justify-center gap-2">
-                      {product.variants.map(v => (
+                      {visibleVariants.map(v => (
                         <button
                           key={v.id}
                           onClick={(e) => {
@@ -431,7 +436,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
             onMouseLeave={() => setShowSizes(false)}
           >
             <AnimatePresence mode="wait">
-              {!showSizes || product.variants.length <= 1 ? (
+              {!showSizes || visibleVariants.length <= 1 ? (
                 <motion.p
                   key="cta"
                   initial={{ opacity: 0 }}
@@ -450,19 +455,19 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                       setWaitlistOpen(true);
                       return;
                     }
-                    if (product.variants.length === 1 && product.variants[0].inventory_count > 0) {
+                    if (visibleVariants.length === 1 && visibleVariants[0].inventory_count > 0) {
                       addItem({
                         productId: product.id,
-                        variantId: product.variants[0].id,
+                        variantId: visibleVariants[0].id,
                         title: product.title,
-                        variantTitle: product.variants[0].title,
-                        price: product.variants[0].price ?? product.price,
+                        variantTitle: visibleVariants[0].title,
+                        price: visibleVariants[0].price ?? product.price,
                         image: product.images[0]?.thumb,
                       });
                     }
                   }}
                 >
-                  {product.variants.every(v => v.inventory_count === 0)
+                  {visibleVariants.every(v => v.inventory_count === 0)
                     ? 'JOIN THE WAITLIST'
                     : themeSettings.slExpandTriggerStyle === 'icon'
                       ? '+'
@@ -481,7 +486,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
                 >
                   {/* Sizes */}
                   <div className="flex items-center gap-2">
-                    {product.variants.map(v => (
+                    {visibleVariants.map(v => (
                       <button
                         key={v.id}
                         onClick={(e) => {
