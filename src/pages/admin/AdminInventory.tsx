@@ -764,11 +764,15 @@ export default function AdminInventory() {
   function setProductColorways(productId: string, next: Colorway[]) {
     const target = products.find(p => p.id === productId);
     if (!target) return;
+    const sortedImages = sortImagesByColorwayOrder(target.imagesFull, next);
+    const flat = sortedImages.map(img => img.thumb);
     setProducts(prev => prev.map(p =>
-      p.id === productId ? { ...p, colorways: next } : p
+      p.id === productId
+        ? { ...p, colorways: next, imagesFull: sortedImages, images: flat }
+        : p
     ));
     if (target.isDemo) {
-      saveDemoProductOverride(productId, { colorways: next });
+      saveDemoProductOverride(productId, { colorways: next, images: sortedImages });
     } else {
       setHasUnsavedChanges(true);
     }
