@@ -855,24 +855,20 @@ export default function AdminInventory() {
     setProductImagesFull(productId, sorted);
   }, [products, setProductImagesFull]);
 
-  // Mark a single image as featured for its colorway group (or the untagged group).
-  // Clears featured on any other image in the same group. Re-sorts so the featured
-  // image floats to the top of its group — making it images[0] of the first colorway,
-  // which the storefront grid view consumes.
+  // Mark a single image as THE featured image for the whole product. Only one
+  // image across the entire product can be featured (it's what appears on the
+  // store grid). Clears featured on every other image.
   const toggleFeatured = useCallback((productId: string, imgIdx: number) => {
     const target = products.find(p => p.id === productId);
     if (!target) return;
     const targetImg = target.imagesFull[imgIdx];
     if (!targetImg) return;
-    const groupId = targetImg.colorway_id; // undefined for untagged group
     const wasFeatured = !!targetImg.featured;
-    const next = target.imagesFull.map((img, i) => {
-      const sameGroup = (img.colorway_id || undefined) === (groupId || undefined);
+    const next: ProductImage[] = target.imagesFull.map((img, i) => {
       if (i === imgIdx) {
         return { ...img, featured: !wasFeatured };
       }
-      // Clear featured on others in the same group when we're marking a new featured.
-      if (sameGroup && !wasFeatured && img.featured) {
+      if (img.featured) {
         const { featured: _drop, ...rest } = img;
         return rest;
       }
