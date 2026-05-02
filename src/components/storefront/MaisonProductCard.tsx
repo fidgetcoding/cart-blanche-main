@@ -138,6 +138,10 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
 
 
   const isCompact = viewMode === 6;
+  const getCardImageSrc = useCallback((img: DemoProduct['images'][number]) => {
+    if (typeof img === 'string') return img;
+    return isCompact ? img.medium : img.thumb;
+  }, [isCompact]);
 
   // Thumbnail background: respect tileBgMode setting
   const tileBg = themeSettings.tileBgMode === 'transparent'
@@ -202,7 +206,7 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
               style={{ width: `${100 / images.length}%`, padding: '8%' }}
             >
               <img
-                src={typeof img === 'string' ? img : img.medium}
+                src={getCardImageSrc(img)}
                 alt={product.title}
                 className="max-w-full max-h-full object-contain"
                 loading="lazy"
