@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, LayoutDashboard } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { MaisonProductCard } from './MaisonProductCard';
 import { MaisonProductDetail } from './MaisonProductDetail';
@@ -16,6 +17,7 @@ import { ShoppingBag } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 
 export function MaisonCanvas() {
+  const navigate = useNavigate();
   const { loading, layout, getOrderedProducts, getOrderedCategories } = useGridLayout();
   const { items, openCart, itemCount } = useCart();
   const { themeSettings } = useTheme();
@@ -197,15 +199,27 @@ export function MaisonCanvas() {
           ))}
         </nav>
 
-        {/* Cart — right */}
-        <button onClick={openCart} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
-          <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
-          {itemCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-foreground text-background rounded-full text-[9px] flex items-center justify-center">
-              {itemCount}
+        {/* Right: Smart Portal + Cart */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => navigate('/admin')}
+            className="group flex items-center gap-1.5 p-2 text-muted-foreground hover:text-foreground transition-colors"
+            title="Smart Portal"
+          >
+            <LayoutDashboard className="w-4 h-4" strokeWidth={1.5} />
+            <span className="overflow-hidden max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out text-[10px] tracking-[0.2em] uppercase whitespace-nowrap">
+              Smart Portal
             </span>
-          )}
-        </button>
+          </button>
+          <button onClick={openCart} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+            <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
+            {itemCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-foreground text-background rounded-full text-[9px] flex items-center justify-center">
+                {itemCount}
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
       {/* Sub-header: type selector + view toggle */}
