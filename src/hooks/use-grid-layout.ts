@@ -204,9 +204,7 @@ export function useGridLayout() {
             return ovV ? { ...v, ...ovV } : v;
           })
         : p.variants;
-      const isPufferDiagnostic = p.id === 'p1' || p.id === 'p1b';
-      const effectiveOvImages = isPufferDiagnostic ? undefined : ov.images;
-      const mergedImages = normalizeProductImages((effectiveOvImages ?? p.images) as ProductImage[], (ov.colorways ?? p.colorways ?? []) as Colorway[]);
+      const mergedImages = normalizeProductImages((ov.images ?? p.images) as ProductImage[], (ov.colorways ?? p.colorways ?? []) as Colorway[]);
 
       return {
         ...p,
