@@ -18,18 +18,6 @@ export function ColorwayManager({ colorways, onChange }: Props) {
   const [editing, setEditing] = useState<{ mode: 'add' } | { mode: 'edit'; colorway: Colorway } | null>(null);
   const [dragSrcIdx, setDragSrcIdx] = useState<number | null>(null);
 
-  function moveUp(idx: number) {
-    if (idx <= 0) return;
-    const next = [...colorways];
-    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-    onChange(next);
-  }
-  function moveDown(idx: number) {
-    if (idx >= colorways.length - 1) return;
-    const next = [...colorways];
-    [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
-    onChange(next);
-  }
   function remove(idx: number) {
     onChange(colorways.filter((_, i) => i !== idx));
   }
