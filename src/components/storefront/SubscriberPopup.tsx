@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check } from 'lucide-react';
 import { useSubscriberSignup } from '@/hooks/use-subscriber-signup';
@@ -91,8 +92,11 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
     ? 'w-full h-11 bg-foreground text-background font-display font-bold text-[11px] tracking-[0.22em] uppercase rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed'
     : 'w-full h-11 bg-foreground text-background font-display text-[11px] tracking-[0.28em] uppercase rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed';
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
+
       {stage !== 'hidden' && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
@@ -182,6 +186,7 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
