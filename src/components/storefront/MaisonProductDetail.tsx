@@ -639,7 +639,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
         category={product.product_type || product.category}
         onClose={() => setSizeChartOpen(false)}
         variant="maison"
-        centerInDetailPanel
+        placement="right-panel"
       />
 
       <MaisonWaitlistModal
