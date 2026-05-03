@@ -718,7 +718,7 @@ export default function AdminStylingGuide() {
                         <div className="flex items-center gap-3">
                           <p className="text-[10px] font-display tracking-[0.2em] text-foreground/80">CONFIGURED MATCHES</p>
                           <div className="flex flex-wrap gap-1">
-                            {(['ALL', 'TOPS', 'BOTTOMS', 'ACCESSORIES'] as const).map(cat => (
+                            {storefrontCategories.map(cat => (
                               <button
                                 key={cat}
                                 onClick={() => setMatchFilter(cat)}
