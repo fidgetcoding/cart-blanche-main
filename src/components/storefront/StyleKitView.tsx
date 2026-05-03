@@ -3,7 +3,7 @@ import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, Chevro
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
-import { getSuggestedProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
+import { getSuggestedProducts, getFillProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { DemoProduct } from '@/data/demo-data';
 import { splitSentences } from '@/lib/format-description';
@@ -274,11 +274,6 @@ function CarouselRow({
           </div>
         ))}
 
-        {products.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground/40 text-xs font-display tracking-wider">
-            BROWSE MORE IN STORE
-          </div>
-        )}
       </div>
     </div>
   );
@@ -692,6 +687,40 @@ export function StyleKitView() {
   console.log('[DEBUG-CHIP] StyleKitView suggestions count:', suggestions.length,
     'first 5:', suggestions.slice(0, 5).map(p => `${p.title} (${p.gender})`));
 
+  const cartProductIdsForFill = cartItems.map(i => i.productId);
+  const lookProductIdsForFill = lookItems.map(p => p.id);
+
+  const topLaneSuggestions = suggestions.filter(p => getBodyZone(p) === 'top' || getBodyZone(p) === 'accessory');
+  const topLaneProducts = topLaneSuggestions.length > 0
+    ? topLaneSuggestions
+    : getFillProducts({
+        anchor: anchorProduct,
+        cartProductIds: cartProductIdsForFill,
+        lookProductIds: lookProductIdsForFill,
+        activeGenders,
+        zone: 'top',
+      });
+
+  const bottomLaneSuggestions = suggestions.filter(p => getBodyZone(p) === 'bottom');
+  const bottomLaneProducts = bottomLaneSuggestions.length > 0
+    ? bottomLaneSuggestions
+    : getFillProducts({
+        anchor: anchorProduct,
+        cartProductIds: cartProductIdsForFill,
+        lookProductIds: lookProductIdsForFill,
+        activeGenders,
+        zone: 'bottom',
+      });
+
+  const extrasLaneProducts = suggestions.length > 0
+    ? suggestions
+    : getFillProducts({
+        anchor: anchorProduct,
+        cartProductIds: cartProductIdsForFill,
+        lookProductIds: lookProductIdsForFill,
+        activeGenders,
+      });
+
   const handleRemoveProduct = (productId: string) => {
     const removedProduct = lookItems.find(p => p.id === productId);
     if (removedProduct) {
@@ -844,7 +873,7 @@ export function StyleKitView() {
                   ) : (
                     <CarouselRow
                       key="carousel-top"
-                      products={suggestions.filter(p => getBodyZone(p) === 'top' || getBodyZone(p) === 'accessory')}
+                      products={topLaneProducts}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="horizontal"
@@ -867,7 +896,7 @@ export function StyleKitView() {
                   ) : (
                     <CarouselRow
                       key="carousel-bottom"
-                      products={suggestions.filter(p => getBodyZone(p) === 'bottom')}
+                      products={bottomLaneProducts}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="horizontal"
@@ -886,7 +915,7 @@ export function StyleKitView() {
                 {carouselSide === 'left' && !pairedProduct ? (
                   <CarouselRow
                     key="carousel-left"
-                    products={suggestions}
+                    products={extrasLaneProducts}
                     onSelect={setPreviewProduct}
                     onAddToLook={handleAddToLook}
                     direction="vertical"
@@ -911,7 +940,7 @@ export function StyleKitView() {
                   ) : carouselSide === 'right' ? (
                     <CarouselRow
                       key="carousel-right"
-                      products={suggestions}
+                      products={extrasLaneProducts}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="vertical"

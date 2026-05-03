@@ -230,3 +230,47 @@ export function getSuggestedProducts({
 
   return result;
 }
+
+// ─── Fill-mode helper — guarantees a non-empty lane ───────────────
+export function getFillProducts(opts: {
+  anchor: DemoProduct;
+  cartProductIds: string[];
+  lookProductIds: string[];
+  activeGenders?: string[];
+  zone?: 'top' | 'bottom';
+  limit?: number;
+}): DemoProduct[] {
+  const { anchor, cartProductIds, lookProductIds, activeGenders, zone, limit = 12 } = opts;
+  const excludeIds = new Set<string>([anchor.id, ...cartProductIds, ...lookProductIds]);
+
+  const matchesZone = (p: DemoProduct): boolean => {
+    if (!zone) return true;
+    const pz = getBodyZone(p);
+    if (zone === 'top') return pz === 'top' || pz === 'accessory';
+    return pz === 'bottom';
+  };
+
+  const rankByRelevance = (pool: DemoProduct[]): DemoProduct[] => {
+    const sameCategory: DemoProduct[] = [];
+    const sameType: DemoProduct[] = [];
+    const rest: DemoProduct[] = [];
+    for (const p of pool) {
+      if (p.category === anchor.category) sameCategory.push(p);
+      else if (p.product_type === anchor.product_type) sameType.push(p);
+      else rest.push(p);
+    }
+    return [...sameCategory, ...sameType, ...rest];
+  };
+
+  const base = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id) && p.status === 'active');
+
+  const tier1 = base
+    .filter(matchesZone)
+    .filter(p => isGenderCompatible(anchor, p, activeGenders));
+  if (tier1.length > 0) return rankByRelevance(tier1).slice(0, limit);
+
+  const tier2 = base.filter(matchesZone);
+  if (tier2.length > 0) return rankByRelevance(tier2).slice(0, limit);
+
+  return rankByRelevance(base).slice(0, limit);
+}
