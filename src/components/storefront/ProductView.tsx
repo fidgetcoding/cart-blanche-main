@@ -748,11 +748,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                           <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-1.5">
                             {availableVariants.map(v => {
                               const lockSize = () => {
-                                if (v.inventory_count === 0) return;
                                 setSelectedVariant(v.id);
                                 const group = getSizeGroup(product.product_type);
                                 if (group) rememberedSizeByGroup.set(group, v.title);
                               };
+                              const isOOSVariant = v.inventory_count === 0;
                               return (
                               <button
                                 key={v.id}
@@ -761,12 +761,13 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                                 onClick={lockSize}
                                 className={`h-9 px-4 text-sm font-display rounded-md border transition-all flex items-center justify-center [@media(max-height:760px)]:px-3 ${
                                   selectedVariant === v.id
-                                    ? 'border-foreground bg-foreground text-background'
-                                    : v.inventory_count === 0
-                                    ? 'border-foreground/20 text-foreground/30 cursor-not-allowed'
+                                    ? isOOSVariant
+                                      ? 'border-dashed border-foreground bg-foreground text-background'
+                                      : 'border-foreground bg-foreground text-background'
+                                    : isOOSVariant
+                                    ? 'border-dashed border-foreground/40 text-foreground/60 hover:border-foreground/70 cursor-pointer'
                                     : 'border-foreground/30 text-foreground hover:border-foreground/60'
                                 }`}
-                                disabled={v.inventory_count === 0}
                               >
                                 {v.title}
                               </button>
