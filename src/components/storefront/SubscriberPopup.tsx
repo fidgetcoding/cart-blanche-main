@@ -108,8 +108,8 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
 
   const inDockedPreview = portalTarget !== document.body;
   const popupPositionClass = inDockedPreview
-    ? 'absolute inset-x-0 bottom-6 flex justify-center px-4 sm:px-6'
-    : 'fixed inset-x-0 bottom-6 flex justify-center px-4 sm:px-6';
+    ? 'absolute inset-0 flex items-center justify-center px-4 sm:px-6'
+    : 'fixed inset-0 flex items-center justify-center px-4 sm:px-6';
 
   return (
     <>
