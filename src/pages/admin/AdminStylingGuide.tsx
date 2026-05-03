@@ -265,13 +265,14 @@ export default function AdminStylingGuide() {
   const canvasRef = useRef<StyleGuideCanvasHandle | null>(null);
 
   const grouped = useMemo(() => {
-    const groups: Record<BodyZoneGroup, DemoProduct[]> = { TOPS: [], BOTTOMS: [], ACCESSORIES: [] };
+    const groups: Record<string, DemoProduct[]> = {};
     const q = searchQuery.toLowerCase();
     DEMO_PRODUCTS.forEach(p => {
       if (q && !p.title.toLowerCase().includes(q)) return;
-      const group = classifyGroup(p);
-      if (filterGroup !== 'ALL' && group !== filterGroup) return;
-      groups[group].push(p);
+      const cat = p.category.toUpperCase();
+      if (filterGroup !== 'ALL' && cat !== filterGroup) return;
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
     });
     return groups;
   }, [searchQuery, filterGroup]);
