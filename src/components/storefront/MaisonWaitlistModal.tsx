@@ -10,6 +10,8 @@ interface MaisonWaitlistModalProps {
   open: boolean;
   onClose: () => void;
   product: DemoProduct;
+  /** When provided, modal opens with this size pre-filled and not editable. */
+  lockedSize?: string;
 }
 
 /**
