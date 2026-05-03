@@ -118,13 +118,24 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
         <AnimatePresence>
           {stage !== 'hidden' && (
             <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className={`${popupPositionClass} z-50 pointer-events-none`}
+              className={`${popupPositionClass} z-50`}
             >
-              <div className={`pointer-events-auto relative w-full max-w-[640px] bg-background text-foreground shadow-2xl ${cardClass} p-6 sm:p-8`}>
+              <div
+                className={`absolute inset-0 ${inDockedPreview ? 'bg-background/70' : 'bg-background/70'} backdrop-blur-sm`}
+                onClick={dismiss}
+                aria-hidden
+              />
+              <motion.div
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 40, opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className={`relative w-full max-w-[640px] bg-background text-foreground shadow-2xl ${cardClass} p-6 sm:p-8`}
+              >
                 <button
                   type="button"
                   onClick={dismiss}
@@ -136,7 +147,7 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
 
                 {stage === 'form' && (
                   <div className="flex flex-col gap-4">
-                    <h2 className={headerClass}>Receive Website Updates</h2>
+                    <h2 className={headerClass}>Subscribe to Store Updates for 10% Off</h2>
                     <input
                       type="email"
                       value={email}
