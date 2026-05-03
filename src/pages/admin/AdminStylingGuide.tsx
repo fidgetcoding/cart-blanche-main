@@ -247,7 +247,7 @@ export default function AdminStylingGuide() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterGroup, setFilterGroup] = useState<'ALL' | BodyZoneGroup>('ALL');
+  const [filterGroup, setFilterGroup] = useState<string>('ALL');
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
   const [matchTypeFilter, setMatchTypeFilter] = useState<'all' | 'pairs' | 'extras'>('all');
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
