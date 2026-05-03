@@ -554,22 +554,26 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
                 SELECT SIZE
               </p>
               <div className="flex gap-2 flex-wrap justify-center">
-                {availableVariants.map(v => (
-                  <button
-                    key={v.id}
-                    onClick={(e) => { e.stopPropagation(); setSelectedVariant(v.id === selectedVariant ? null : v.id); }}
-                    className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
-                      v.id === selectedVariant
-                        ? 'bg-foreground text-background border-foreground'
-                        : v.inventory_count === 0
-                          ? 'border-border text-muted-foreground/30 line-through cursor-not-allowed'
+                {availableVariants.map(v => {
+                  const isOOSVariant = v.inventory_count === 0;
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={(e) => { e.stopPropagation(); setSelectedVariant(v.id === selectedVariant ? null : v.id); }}
+                      className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
+                        v.id === selectedVariant
+                          ? isOOSVariant
+                            ? 'bg-foreground text-background border-dashed border-foreground'
+                            : 'bg-foreground text-background border-foreground'
+                          : isOOSVariant
+                          ? 'border-dashed border-border text-foreground/50 hover:border-foreground/60 cursor-pointer'
                           : 'border-border text-foreground hover:border-foreground'
-                    }`}
-                    disabled={v.inventory_count === 0}
-                  >
-                    {v.title}
-                  </button>
-                ))}
+                      }`}
+                    >
+                      {v.title}
+                    </button>
+                  );
+                })}
                 <button
                   onClick={(e) => { e.stopPropagation(); setSizeChartOpen(true); }}
                   className="px-4 py-2 text-[10px] tracking-[0.15em] uppercase border border-border text-foreground/70 hover:border-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
