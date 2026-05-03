@@ -125,23 +125,29 @@ export function WaitlistModal({ open, onClose, product, lockedSize }: WaitlistMo
                 <div>
                   <span className="text-[11px] tracking-wider uppercase text-foreground/60">Size preference</span>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {product.variants.map((v) => {
-                      const active = size === v.title;
-                      return (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => setSize(active ? '' : v.title)}
-                          className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                            active
-                              ? 'bg-foreground text-background border-foreground'
-                              : 'bg-background/40 text-foreground border-foreground/20 hover:border-foreground/40'
-                          }`}
-                        >
-                          {v.title}
-                        </button>
-                      );
-                    })}
+                    {lockedSize ? (
+                      <span className="px-3 py-1.5 rounded-md text-xs font-medium border bg-foreground text-background border-foreground">
+                        {lockedSize}
+                      </span>
+                    ) : (
+                      product.variants.map((v) => {
+                        const active = size === v.title;
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => setSize(active ? '' : v.title)}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                              active
+                                ? 'bg-foreground text-background border-foreground'
+                                : 'bg-background/40 text-foreground border-foreground/20 hover:border-foreground/40'
+                            }`}
+                          >
+                            {v.title}
+                          </button>
+                        );
+                      })
+                    )}
                     <button
                       type="button"
                       onClick={() => setSizeChartOpen(true)}
@@ -151,6 +157,11 @@ export function WaitlistModal({ open, onClose, product, lockedSize }: WaitlistMo
                       SIZE CHART
                     </button>
                   </div>
+                  {lockedSize && (
+                    <p className="mt-2 text-[11px] text-foreground/60">
+                      We'll notify you when this specific size is back in stock.
+                    </p>
+                  )}
                 </div>
               )}
 
