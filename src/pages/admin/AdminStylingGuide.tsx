@@ -615,12 +615,12 @@ export default function AdminStylingGuide() {
               ))}
             </div>
           </div>
-          {(['TOPS', 'BOTTOMS', 'ACCESSORIES'] as BodyZoneGroup[]).map(group => (
+          {storefrontCategories.filter(c => c !== 'ALL').map(group => (
             <div key={group}>
               <div className="px-4 py-2 bg-foreground/3 border-b border-foreground/5">
                 <p className="text-[9px] font-display tracking-[0.2em] text-muted-foreground/60">{group}</p>
               </div>
-              {grouped[group].map(product => {
+              {(grouped[group] || []).map(product => {
                 return (
                   <button
                     key={product.id}
