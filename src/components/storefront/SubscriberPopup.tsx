@@ -92,8 +92,11 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
     ? 'w-full h-11 bg-foreground text-background font-display font-bold text-[11px] tracking-[0.22em] uppercase rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed'
     : 'w-full h-11 bg-foreground text-background font-display text-[11px] tracking-[0.28em] uppercase rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed';
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
+
       {stage !== 'hidden' && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
