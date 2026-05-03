@@ -1023,6 +1023,14 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onPresetsChange(newPresets);
   }, [selectedNodeId, selectedPreset, presets, onPresetsChange]);
 
+  const visibleEdges = useMemo(() => {
+    if (matchTypeFilter === 'all') return edges;
+    return edges.filter(e => {
+      const t = (e.data as { type?: string } | undefined)?.type;
+      return t === matchTypeFilter || t === 'pending';
+    });
+  }, [edges, matchTypeFilter]);
+
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
       <div
