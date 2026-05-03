@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check } from 'lucide-react';
 import { useSubscriberSignup } from '@/hooks/use-subscriber-signup';
@@ -182,6 +183,7 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
