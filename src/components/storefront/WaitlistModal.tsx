@@ -10,6 +10,8 @@ interface WaitlistModalProps {
   open: boolean;
   onClose: () => void;
   product: DemoProduct;
+  /** When provided, modal opens with this size pre-filled and not editable. */
+  lockedSize?: string;
 }
 
 // Shared neutral preference palette — no per-product color data exists,
