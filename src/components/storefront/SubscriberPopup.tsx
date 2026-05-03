@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check } from 'lucide-react';
@@ -24,6 +24,11 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
   const [welcomeCode, setWelcomeCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { submit, submitting } = useSubscriberSignup();
+
+  const portalTarget = useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    return document.querySelector<HTMLElement>('[data-storefront-root]') ?? document.body;
+  }, []);
 
   // Show popup after delay, unless previously dismissed.
   useEffect(() => {
@@ -92,7 +97,12 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
     ? 'w-full h-11 bg-foreground text-background font-display font-bold text-[11px] tracking-[0.22em] uppercase rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed'
     : 'w-full h-11 bg-foreground text-background font-display text-[11px] tracking-[0.28em] uppercase rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed';
 
-  if (typeof document === 'undefined') return null;
+  if (!portalTarget) return null;
+
+  const inDockedPreview = portalTarget !== document.body;
+  const popupPositionClass = inDockedPreview
+    ? 'absolute inset-x-0 bottom-6 flex justify-center px-4 sm:px-6'
+    : 'fixed inset-x-0 bottom-6 flex justify-center px-4 sm:px-6';
 
   return createPortal(
     <AnimatePresence>
@@ -103,9 +113,9 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100vw-32px)] max-w-[640px]"
+          className={`${popupPositionClass} z-50 pointer-events-none`}
         >
-          <div className={`relative bg-background text-foreground shadow-2xl ${cardClass} p-6 sm:p-8`}>
+          <div className={`pointer-events-auto relative w-full max-w-[640px] bg-background text-foreground shadow-2xl ${cardClass} p-6 sm:p-8`}>
             <button
               type="button"
               onClick={dismiss}
@@ -187,6 +197,6 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body
+    portalTarget
   );
 }
