@@ -759,6 +759,11 @@ export default function AdminStylingGuide() {
                           if (matchFilter === 'ALL') return true;
                           const p = DEMO_PRODUCTS.find(pr => pr.id === preset.anchorProductId);
                           return p ? classifyGroup(p) === matchFilter : false;
+                        }).filter(preset => {
+                          if (matchTypeFilter === 'all') return true;
+                          if (matchTypeFilter === 'pairs') return preset.pairs.length > 0;
+                          if (matchTypeFilter === 'extras') return preset.extras.length > 0;
+                          return true;
                         }).map((preset, presetIndex) => {
                           const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
                           if (!product) return null;

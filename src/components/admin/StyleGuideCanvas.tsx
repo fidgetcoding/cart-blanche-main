@@ -1031,6 +1031,29 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     });
   }, [edges, matchTypeFilter]);
 
+  // Filter nodes to only those participating in at least one visible edge.
+  const visibleNodes = useMemo(() => {
+    if (matchTypeFilter === 'all') return nodes;
+    const involvedIds = new Set<string>();
+    visibleEdges.forEach(e => {
+      involvedIds.add(e.source);
+      involvedIds.add(e.target);
+    });
+    if (nodes.some(n => n.id === BLANK_NODE_ID)) {
+      involvedIds.add(BLANK_NODE_ID);
+    }
+    return nodes.filter(n => involvedIds.has(n.id));
+  }, [nodes, visibleEdges, matchTypeFilter]);
+
+  // Auto-deselect when the currently selected node is filtered out.
+  useEffect(() => {
+    if (matchTypeFilter === 'all') return;
+    if (!selectedNodeId) return;
+    if (!visibleNodes.some(n => n.id === selectedNodeId)) {
+      setSelectedNodeId(null);
+    }
+  }, [matchTypeFilter, selectedNodeId, visibleNodes]);
+
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
       <div
@@ -1087,7 +1110,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         </div>
 
         <ReactFlow
-          nodes={nodes}
+          nodes={visibleNodes}
           edges={visibleEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={handleEdgesChange}
