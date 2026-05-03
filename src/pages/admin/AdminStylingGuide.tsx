@@ -761,7 +761,7 @@ export default function AdminStylingGuide() {
                         {allPresets.filter(preset => {
                           if (matchFilter === 'ALL') return true;
                           const p = DEMO_PRODUCTS.find(pr => pr.id === preset.anchorProductId);
-                          return p ? classifyGroup(p) === matchFilter : false;
+                          return p ? p.category.toUpperCase() === matchFilter.toUpperCase() : false;
                         }).filter(preset => {
                           if (matchTypeFilter === 'all') return true;
                           if (matchTypeFilter === 'pairs') return preset.pairs.length > 0;
