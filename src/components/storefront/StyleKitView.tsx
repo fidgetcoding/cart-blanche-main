@@ -3,7 +3,7 @@ import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, Chevro
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
-import { getSuggestedProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
+import { getSuggestedProducts, getFillProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { DemoProduct } from '@/data/demo-data';
 import { splitSentences } from '@/lib/format-description';
