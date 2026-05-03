@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check } from 'lucide-react';
@@ -23,12 +23,15 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
   const [emailError, setEmailError] = useState('');
   const [welcomeCode, setWelcomeCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const anchorRef = useRef<HTMLSpanElement | null>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const { submit, submitting } = useSubscriberSignup();
 
-  const portalTarget = useMemo(() => {
-    if (typeof document === 'undefined') return null;
-    return document.querySelector<HTMLElement>('[data-storefront-root]') ?? document.body;
-  }, []);
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const host = anchorRef.current?.closest<HTMLElement>('[data-storefront-root]') ?? document.body;
+    setPortalTarget(host);
+  }, [stage]);
 
   // Show popup after delay, unless previously dismissed.
   useEffect(() => {
@@ -97,106 +100,114 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
     ? 'w-full h-11 bg-foreground text-background font-display font-bold text-[11px] tracking-[0.22em] uppercase rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed'
     : 'w-full h-11 bg-foreground text-background font-display text-[11px] tracking-[0.28em] uppercase rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed';
 
-  if (!portalTarget) return null;
+  if (typeof document === 'undefined') return null;
+
+  if (!portalTarget) {
+    return <span ref={anchorRef} style={{ display: 'none' }} aria-hidden />;
+  }
 
   const inDockedPreview = portalTarget !== document.body;
   const popupPositionClass = inDockedPreview
     ? 'absolute inset-x-0 bottom-6 flex justify-center px-4 sm:px-6'
     : 'fixed inset-x-0 bottom-6 flex justify-center px-4 sm:px-6';
 
-  return createPortal(
-    <AnimatePresence>
-
-      {stage !== 'hidden' && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className={`${popupPositionClass} z-50 pointer-events-none`}
-        >
-          <div className={`pointer-events-auto relative w-full max-w-[640px] bg-background text-foreground shadow-2xl ${cardClass} p-6 sm:p-8`}>
-            <button
-              type="button"
-              onClick={dismiss}
-              aria-label="Dismiss"
-              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center text-foreground/50 hover:text-foreground transition-colors"
+  return (
+    <>
+      <span ref={anchorRef} style={{ display: 'none' }} aria-hidden />
+      {createPortal(
+        <AnimatePresence>
+          {stage !== 'hidden' && (
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className={`${popupPositionClass} z-50 pointer-events-none`}
             >
-              <X className="w-4 h-4" />
-            </button>
-
-            {stage === 'form' && (
-              <div className="flex flex-col gap-4">
-                <h2 className={headerClass}>Receive Website Updates</h2>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(''); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
-                  placeholder="Email Address"
-                  className={inputClass}
-                  autoComplete="email"
-                  disabled={submitting}
-                />
-                {emailError && (
-                  <p className="text-xs text-destructive -mt-2">{emailError}</p>
-                )}
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className={submitButtonClass}
-                >
-                  {submitting ? 'Submitting...' : 'Subscribe'}
-                </button>
-              </div>
-            )}
-
-            {stage === 'success' && (
-              <div className="flex flex-col gap-4">
-                <h2 className={headerClass}>You're In</h2>
-                <p className="text-sm text-foreground/70 leading-relaxed">
-                  Use this code at checkout for 10% off your first order.
-                </p>
-                <div className="flex items-stretch gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCopyCode}
-                    className={`flex-1 h-12 px-4 flex items-center justify-center font-display font-bold text-sm tracking-[0.3em] uppercase border ${isYZ ? 'border-foreground/25 rounded-md' : 'border-border rounded-lg'} hover:bg-foreground/5 transition-colors`}
-                  >
-                    {welcomeCode}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCopyCode}
-                    className={`h-12 px-4 flex items-center gap-2 font-display text-[11px] tracking-[0.22em] uppercase border ${isYZ ? 'border-foreground/25 rounded-md' : 'border-border rounded-lg'} hover:bg-foreground/5 transition-colors`}
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        Copy
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div className={`pointer-events-auto relative w-full max-w-[640px] bg-background text-foreground shadow-2xl ${cardClass} p-6 sm:p-8`}>
                 <button
                   type="button"
                   onClick={dismiss}
-                  className={submitButtonClass}
+                  aria-label="Dismiss"
+                  className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center text-foreground/50 hover:text-foreground transition-colors"
                 >
-                  Continue Browsing
+                  <X className="w-4 h-4" />
                 </button>
+
+                {stage === 'form' && (
+                  <div className="flex flex-col gap-4">
+                    <h2 className={headerClass}>Receive Website Updates</h2>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(''); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                      placeholder="Email Address"
+                      className={inputClass}
+                      autoComplete="email"
+                      disabled={submitting}
+                    />
+                    {emailError && (
+                      <p className="text-xs text-destructive -mt-2">{emailError}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={submitting}
+                      className={submitButtonClass}
+                    >
+                      {submitting ? 'Submitting...' : 'Subscribe'}
+                    </button>
+                  </div>
+                )}
+
+                {stage === 'success' && (
+                  <div className="flex flex-col gap-4">
+                    <h2 className={headerClass}>You're In</h2>
+                    <p className="text-sm text-foreground/70 leading-relaxed">
+                      Use this code at checkout for 10% off your first order.
+                    </p>
+                    <div className="flex items-stretch gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className={`flex-1 h-12 px-4 flex items-center justify-center font-display font-bold text-sm tracking-[0.3em] uppercase border ${isYZ ? 'border-foreground/25 rounded-md' : 'border-border rounded-lg'} hover:bg-foreground/5 transition-colors`}
+                      >
+                        {welcomeCode}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className={`h-12 px-4 flex items-center gap-2 font-display text-[11px] tracking-[0.22em] uppercase border ${isYZ ? 'border-foreground/25 rounded-md' : 'border-border rounded-lg'} hover:bg-foreground/5 transition-colors`}
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={dismiss}
+                      className={submitButtonClass}
+                    >
+                      Continue Browsing
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        portalTarget
       )}
-    </AnimatePresence>,
-    portalTarget
+    </>
   );
 }
