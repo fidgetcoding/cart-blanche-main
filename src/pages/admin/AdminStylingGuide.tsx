@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Save, Plus, X, GripVertical, Search, Pencil, Check } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 import type { DemoProduct } from '@/data/demo-data';
 import type { StyleGuideCanvasHandle } from '@/components/admin/StyleGuideCanvas';
 
@@ -253,7 +254,9 @@ export default function AdminStylingGuide() {
   const [blankNodeActive, setBlankNodeActive] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [matchFilter, setMatchFilter] = useState<'ALL' | BodyZoneGroup>('ALL');
+  const [matchFilter, setMatchFilter] = useState<string>('ALL');
+  const { getOrderedCategories } = useGridLayout();
+  const storefrontCategories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [listDragHover, setListDragHover] = useState(false);
   const { isDirty, markDirty, markClean, BlockerDialog } = useUnsavedChanges();
@@ -715,7 +718,7 @@ export default function AdminStylingGuide() {
                         <div className="flex items-center gap-3">
                           <p className="text-[10px] font-display tracking-[0.2em] text-foreground/80">CONFIGURED MATCHES</p>
                           <div className="flex flex-wrap gap-1">
-                            {(['ALL', 'TOPS', 'BOTTOMS', 'ACCESSORIES'] as const).map(cat => (
+                            {storefrontCategories.map(cat => (
                               <button
                                 key={cat}
                                 onClick={() => setMatchFilter(cat)}
@@ -758,7 +761,7 @@ export default function AdminStylingGuide() {
                         {allPresets.filter(preset => {
                           if (matchFilter === 'ALL') return true;
                           const p = DEMO_PRODUCTS.find(pr => pr.id === preset.anchorProductId);
-                          return p ? classifyGroup(p) === matchFilter : false;
+                          return p ? p.category.toUpperCase() === matchFilter.toUpperCase() : false;
                         }).filter(preset => {
                           if (matchTypeFilter === 'all') return true;
                           if (matchTypeFilter === 'pairs') return preset.pairs.length > 0;
