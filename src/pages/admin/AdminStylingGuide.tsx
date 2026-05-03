@@ -513,35 +513,63 @@ export default function AdminStylingGuide() {
     <div className="flex flex-col h-full border-t border-border">
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
         <h1 className="font-display text-2xl font-bold tracking-wide">Look Book</h1>
-        <div className="flex items-center bg-secondary rounded-lg p-1">
-          <button
-            onClick={() => { setActiveView('list'); setExpandedProductId(null); }}
-            className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
-              activeView === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
-            }`}
-          >
-            LIST
-          </button>
-          <button
-            onClick={() => {
-              setActiveView('canvas');
-              if (selectedProductId && activeView === 'list') {
-                const product = DEMO_PRODUCTS.find(p => p.id === selectedProductId);
-                if (product) {
-                  setTimeout(() => {
-                    if (!canvasNodeIds.has(selectedProductId)) {
-                      canvasRef.current?.addProduct(product);
-                    }
-                  }, 100);
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-secondary rounded-lg p-1">
+            <button
+              onClick={() => { setActiveView('list'); setExpandedProductId(null); }}
+              className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                activeView === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              LIST
+            </button>
+            <button
+              onClick={() => {
+                setActiveView('canvas');
+                if (selectedProductId && activeView === 'list') {
+                  const product = DEMO_PRODUCTS.find(p => p.id === selectedProductId);
+                  if (product) {
+                    setTimeout(() => {
+                      if (!canvasNodeIds.has(selectedProductId)) {
+                        canvasRef.current?.addProduct(product);
+                      }
+                    }, 100);
+                  }
                 }
-              }
-            }}
-            className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
-              activeView === 'canvas' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
-            }`}
-          >
-            CANVAS
-          </button>
+              }}
+              className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                activeView === 'canvas' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              CANVAS
+            </button>
+          </div>
+          <div className="flex items-center bg-secondary rounded-lg p-1">
+            <button
+              onClick={() => setMatchTypeFilter('all')}
+              className={`px-4 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                matchTypeFilter === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              ALL
+            </button>
+            <button
+              onClick={() => setMatchTypeFilter('pairs')}
+              className={`px-4 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                matchTypeFilter === 'pairs' ? 'bg-[#facc15] text-background' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              PAIRS
+            </button>
+            <button
+              onClick={() => setMatchTypeFilter('extras')}
+              className={`px-4 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                matchTypeFilter === 'extras' ? 'bg-[#f472b6] text-background' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              EXTRAS
+            </button>
+          </div>
         </div>
       </div>
 
