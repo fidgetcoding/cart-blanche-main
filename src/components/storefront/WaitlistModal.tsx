@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Ruler } from 'lucide-react';
 import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
