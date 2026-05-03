@@ -687,6 +687,40 @@ export function StyleKitView() {
   console.log('[DEBUG-CHIP] StyleKitView suggestions count:', suggestions.length,
     'first 5:', suggestions.slice(0, 5).map(p => `${p.title} (${p.gender})`));
 
+  const cartProductIdsForFill = cartItems.map(i => i.productId);
+  const lookProductIdsForFill = lookItems.map(p => p.id);
+
+  const topLaneSuggestions = suggestions.filter(p => getBodyZone(p) === 'top' || getBodyZone(p) === 'accessory');
+  const topLaneProducts = topLaneSuggestions.length > 0
+    ? topLaneSuggestions
+    : getFillProducts({
+        anchor: anchorProduct,
+        cartProductIds: cartProductIdsForFill,
+        lookProductIds: lookProductIdsForFill,
+        activeGenders,
+        zone: 'top',
+      });
+
+  const bottomLaneSuggestions = suggestions.filter(p => getBodyZone(p) === 'bottom');
+  const bottomLaneProducts = bottomLaneSuggestions.length > 0
+    ? bottomLaneSuggestions
+    : getFillProducts({
+        anchor: anchorProduct,
+        cartProductIds: cartProductIdsForFill,
+        lookProductIds: lookProductIdsForFill,
+        activeGenders,
+        zone: 'bottom',
+      });
+
+  const extrasLaneProducts = suggestions.length > 0
+    ? suggestions
+    : getFillProducts({
+        anchor: anchorProduct,
+        cartProductIds: cartProductIdsForFill,
+        lookProductIds: lookProductIdsForFill,
+        activeGenders,
+      });
+
   const handleRemoveProduct = (productId: string) => {
     const removedProduct = lookItems.find(p => p.id === productId);
     if (removedProduct) {
