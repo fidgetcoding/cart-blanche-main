@@ -147,7 +147,7 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
 
                 {stage === 'form' && (
                   <div className="flex flex-col gap-4">
-                    <h2 className={headerClass}>Subscribe to Store Updates for 10% Off</h2>
+                    <h2 className={headerClass}>Subscribe to Our Newsletter for 10% Off</h2>
                     <input
                       type="email"
                       value={email}
