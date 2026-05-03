@@ -27,13 +27,17 @@ export const WAITLIST_COLOR_OPTIONS = [
   'Burgundy',
 ];
 
-export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
+export function WaitlistModal({ open, onClose, product, lockedSize }: WaitlistModalProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { submit, submitting } = useWaitlistSignup();
+
+  useEffect(() => {
+    if (open && lockedSize) setSize(lockedSize);
+  }, [open, lockedSize]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
