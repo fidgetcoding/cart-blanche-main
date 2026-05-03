@@ -854,20 +854,24 @@ export default function AdminStylingGuide() {
                               {/* Expanded dropdown content */}
                               {isExpanded && (
                                 <div className="px-3 pb-3 space-y-3 border-t border-foreground/5">
-                                  <div className="liquid-glass rounded-lg p-3 mt-3">
-                                    <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={presetPairs} availableProducts={pAvail}
-                                      anchorZone={zone} listType="pairs"
-                                      onAdd={(p) => addToPreset('pairs', p)}
-                                      onRemove={(id) => removeFromPreset('pairs', id)}
-                                      onReorder={(newItems) => updatePreset(preset.anchorProductId, 'pairs', newItems.map(p => p.id))} />
-                                  </div>
-                                  <div className="liquid-glass rounded-lg p-3">
-                                    <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={presetExtras} availableProducts={eAvail}
-                                      anchorZone={zone} listType="extras"
-                                      onAdd={(p) => addToPreset('extras', p)}
-                                      onRemove={(id) => removeFromPreset('extras', id)}
-                                      onReorder={(newItems) => updatePreset(preset.anchorProductId, 'extras', newItems.map(p => p.id))} />
-                                  </div>
+                                  {(matchTypeFilter === 'all' || matchTypeFilter === 'pairs') && (
+                                    <div className="liquid-glass rounded-lg p-3 mt-3">
+                                      <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={presetPairs} availableProducts={pAvail}
+                                        anchorZone={zone} listType="pairs"
+                                        onAdd={(p) => addToPreset('pairs', p)}
+                                        onRemove={(id) => removeFromPreset('pairs', id)}
+                                        onReorder={(newItems) => updatePreset(preset.anchorProductId, 'pairs', newItems.map(p => p.id))} />
+                                    </div>
+                                  )}
+                                  {(matchTypeFilter === 'all' || matchTypeFilter === 'extras') && (
+                                    <div className="liquid-glass rounded-lg p-3">
+                                      <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={presetExtras} availableProducts={eAvail}
+                                        anchorZone={zone} listType="extras"
+                                        onAdd={(p) => addToPreset('extras', p)}
+                                        onRemove={(id) => removeFromPreset('extras', id)}
+                                        onReorder={(newItems) => updatePreset(preset.anchorProductId, 'extras', newItems.map(p => p.id))} />
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
