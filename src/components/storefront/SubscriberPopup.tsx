@@ -213,7 +213,7 @@ export function SubscriberPopup({ variant }: SubscriberPopupProps) {
                     </button>
                   </div>
                 )}
-              </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>,
