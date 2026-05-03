@@ -832,9 +832,9 @@ export default function AdminStylingGuide() {
                                 <div className="flex-1 min-w-0">
                                   <p className="font-display text-[11px] tracking-wide truncate group-hover:text-foreground transition-colors">{product.title}</p>
                                   <div className="flex items-center gap-2 mt-1">
-                                    {preset.pairs.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#facc15]">{preset.pairs.length} PAIR{preset.pairs.length !== 1 ? 'S' : ''}</span>}
-                                    {preset.extras.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#f472b6]">{preset.extras.length} EXTRA{preset.extras.length !== 1 ? 'S' : ''}</span>}
-                                    {preset.pairs.length === 0 && preset.extras.length === 0 && <span className="text-[8px] font-display tracking-wider text-muted-foreground/50">NO MATCHES YET</span>}
+                                    {(matchTypeFilter === 'all' || matchTypeFilter === 'pairs') && preset.pairs.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#facc15]">{preset.pairs.length} PAIR{preset.pairs.length !== 1 ? 'S' : ''}</span>}
+                                    {(matchTypeFilter === 'all' || matchTypeFilter === 'extras') && preset.extras.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#f472b6]">{preset.extras.length} EXTRA{preset.extras.length !== 1 ? 'S' : ''}</span>}
+                                    {((matchTypeFilter === 'all' && preset.pairs.length === 0 && preset.extras.length === 0) || (matchTypeFilter === 'pairs' && preset.pairs.length === 0) || (matchTypeFilter === 'extras' && preset.extras.length === 0)) && <span className="text-[8px] font-display tracking-wider text-muted-foreground/50">NO MATCHES YET</span>}
                                   </div>
                                 </div>
                                 {!editMode && isExpanded && (
