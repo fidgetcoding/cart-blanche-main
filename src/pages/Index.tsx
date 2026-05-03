@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { SpatialCanvas } from '@/components/storefront/SpatialCanvas';
 import { MaisonCanvas } from '@/components/storefront/MaisonCanvas';
 import { StyleKitView } from '@/components/storefront/StyleKitView';
+import { SubscriberPopup } from '@/components/storefront/SubscriberPopup';
 import { getActiveTemplate, subscribeActiveTemplate, type ActiveTemplate } from '@/lib/active-template';
 
 const StorefrontShell = ({ activeTemplate }: { activeTemplate: ActiveTemplate }) => {
@@ -19,6 +20,7 @@ const StorefrontShell = ({ activeTemplate }: { activeTemplate: ActiveTemplate })
           <StyleKitProvider>
             {activeTemplate === 'sl' ? <MaisonCanvas /> : <SpatialCanvas />}
             <StyleKitView />
+            <SubscriberPopup variant={activeTemplate} />
           </StyleKitProvider>
         </SmartCartProvider>
       </CartProvider>
