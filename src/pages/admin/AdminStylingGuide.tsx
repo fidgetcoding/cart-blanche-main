@@ -247,7 +247,7 @@ export default function AdminStylingGuide() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterGroup, setFilterGroup] = useState<'ALL' | BodyZoneGroup>('ALL');
+  const [filterGroup, setFilterGroup] = useState<string>('ALL');
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
   const [matchTypeFilter, setMatchTypeFilter] = useState<'all' | 'pairs' | 'extras'>('all');
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
@@ -265,13 +265,14 @@ export default function AdminStylingGuide() {
   const canvasRef = useRef<StyleGuideCanvasHandle | null>(null);
 
   const grouped = useMemo(() => {
-    const groups: Record<BodyZoneGroup, DemoProduct[]> = { TOPS: [], BOTTOMS: [], ACCESSORIES: [] };
+    const groups: Record<string, DemoProduct[]> = {};
     const q = searchQuery.toLowerCase();
     DEMO_PRODUCTS.forEach(p => {
       if (q && !p.title.toLowerCase().includes(q)) return;
-      const group = classifyGroup(p);
-      if (filterGroup !== 'ALL' && group !== filterGroup) return;
-      groups[group].push(p);
+      const cat = p.category.toUpperCase();
+      if (filterGroup !== 'ALL' && cat !== filterGroup) return;
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
     });
     return groups;
   }, [searchQuery, filterGroup]);
@@ -599,7 +600,7 @@ export default function AdminStylingGuide() {
               />
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {(['ALL', 'TOPS', 'BOTTOMS', 'ACCESSORIES'] as const).map(cat => (
+              {storefrontCategories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setFilterGroup(cat)}
@@ -614,12 +615,12 @@ export default function AdminStylingGuide() {
               ))}
             </div>
           </div>
-          {(['TOPS', 'BOTTOMS', 'ACCESSORIES'] as BodyZoneGroup[]).map(group => (
+          {storefrontCategories.filter(c => c !== 'ALL').map(group => (
             <div key={group}>
               <div className="px-4 py-2 bg-foreground/3 border-b border-foreground/5">
                 <p className="text-[9px] font-display tracking-[0.2em] text-muted-foreground/60">{group}</p>
               </div>
-              {grouped[group].map(product => {
+              {(grouped[group] || []).map(product => {
                 return (
                   <button
                     key={product.id}
