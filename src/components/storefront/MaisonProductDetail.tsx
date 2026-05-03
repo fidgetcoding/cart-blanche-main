@@ -645,6 +645,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
         open={waitlistOpen}
         onClose={() => setWaitlistOpen(false)}
         product={product}
+        lockedSize={variant && variant.inventory_count === 0 ? variant.title : undefined}
       />
     </motion.div>
   );
