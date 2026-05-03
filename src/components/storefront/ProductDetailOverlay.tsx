@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, ShoppingBag } from 'lucide-react';
+import { X, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { getImageUrl } from '@/data/demo-data';
@@ -13,7 +13,7 @@ interface ProductDetailOverlayProps {
 
 export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
-  const [isSaved, setIsSaved] = useState(false);
+  
   const { addItem } = useCart();
 
   if (!product) return null;
@@ -151,14 +151,6 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
               >
                 <ShoppingBag className="w-4 h-4" />
                 {isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}
-              </button>
-              <button
-                onClick={() => setIsSaved(!isSaved)}
-                className={`p-3 border rounded-lg transition-colors ${
-                  isSaved ? 'border-accent text-accent' : 'border-border hover:border-muted-foreground'
-                }`}
-              >
-                <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
               </button>
             </div>
           </div>
