@@ -721,6 +721,38 @@ export type Database = {
           },
         ]
       }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          merchant_id: string
+          welcome_code: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          merchant_id: string
+          welcome_code?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          merchant_id?: string
+          welcome_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscribers_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       waitlist_signups: {
         Row: {
           colorway_preference: string | null
