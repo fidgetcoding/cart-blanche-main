@@ -29,6 +29,14 @@ export function SizeChartOverlay({
   placement = 'viewport',
 }: SizeChartOverlayProps) {
   const [chart, setChart] = useState<SizeChart | null>(null);
+  const anchorRef = useRef<HTMLSpanElement | null>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const host = anchorRef.current?.closest<HTMLElement>('[data-storefront-root]') ?? document.body;
+    setPortalTarget(host);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
