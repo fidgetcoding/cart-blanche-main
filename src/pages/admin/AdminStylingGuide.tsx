@@ -248,6 +248,7 @@ export default function AdminStylingGuide() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGroup, setFilterGroup] = useState<'ALL' | BodyZoneGroup>('ALL');
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
+  const [matchTypeFilter, setMatchTypeFilter] = useState<'all' | 'pairs' | 'extras'>('all');
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
   const [blankNodeActive, setBlankNodeActive] = useState(false);
   const [editMode, setEditMode] = useState(false);
