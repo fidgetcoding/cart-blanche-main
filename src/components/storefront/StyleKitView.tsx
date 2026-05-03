@@ -274,11 +274,6 @@ function CarouselRow({
           </div>
         ))}
 
-        {products.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground/40 text-xs font-display tracking-wider">
-            BROWSE MORE IN STORE
-          </div>
-        )}
       </div>
     </div>
   );
