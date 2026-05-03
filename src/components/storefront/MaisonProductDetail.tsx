@@ -589,18 +589,13 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (isWholeProductOutOfStock) {
+              if (isOutOfStock) {
                 setWaitlistOpen(true);
               } else {
                 handleAddToCart();
               }
             }}
-            disabled={isOutOfStock && !isWholeProductOutOfStock}
-            className={`w-full py-3.5 mt-8 text-[10px] tracking-[0.25em] uppercase transition-colors ${
-              isOutOfStock && !isWholeProductOutOfStock
-                ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                : 'bg-foreground text-background hover:bg-foreground/90'
-            }`}
+            className="w-full py-3.5 mt-8 text-[10px] tracking-[0.25em] uppercase transition-colors bg-foreground text-background hover:bg-foreground/90"
             style={{ fontFamily: 'var(--font-body)' }}
           >
             {isOutOfStock ? 'JOIN THE WAITLIST' : 'ADD TO CART'}
