@@ -254,7 +254,9 @@ export default function AdminStylingGuide() {
   const [blankNodeActive, setBlankNodeActive] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [matchFilter, setMatchFilter] = useState<'ALL' | BodyZoneGroup>('ALL');
+  const [matchFilter, setMatchFilter] = useState<string>('ALL');
+  const { getOrderedCategories } = useGridLayout();
+  const storefrontCategories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [listDragHover, setListDragHover] = useState(false);
   const { isDirty, markDirty, markClean, BlockerDialog } = useUnsavedChanges();
