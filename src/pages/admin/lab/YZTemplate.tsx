@@ -8,6 +8,7 @@ import { SmartCartProvider } from '@/contexts/SmartCartContext';
 import { StyleKitProvider } from '@/contexts/StyleKitContext';
 import { SpatialCanvas } from '@/components/storefront/SpatialCanvas';
 import { StyleKitView } from '@/components/storefront/StyleKitView';
+import { SubscriberPopup } from '@/components/storefront/SubscriberPopup';
 import { toast } from 'sonner';
 import { processMessage } from '@/lib/template-agent';
 
@@ -573,6 +574,7 @@ function YzTemplateInner() {
                 <StyleKitProvider>
                   <SpatialCanvas />
                   <StyleKitView />
+                  <SubscriberPopup variant="yz" />
                 </StyleKitProvider>
               </SmartCartProvider>
             </CartProvider>

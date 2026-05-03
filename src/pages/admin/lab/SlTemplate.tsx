@@ -8,6 +8,7 @@ import { CartProvider } from '@/contexts/CartContext';
 import { SmartCartProvider } from '@/contexts/SmartCartContext';
 import { StyleKitProvider } from '@/contexts/StyleKitContext';
 import { MaisonCanvas } from '@/components/storefront/MaisonCanvas';
+import { SubscriberPopup } from '@/components/storefront/SubscriberPopup';
 import { toast } from 'sonner';
 import { processMessage } from '@/lib/template-agent';
 
@@ -604,6 +605,7 @@ function SlTemplateInner() {
               <SmartCartProvider>
                 <StyleKitProvider>
                   <MaisonCanvas />
+                  <SubscriberPopup variant="sl" />
                 </StyleKitProvider>
               </SmartCartProvider>
             </CartProvider>
