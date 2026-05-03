@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Save, Plus, X, GripVertical, Search, Pencil, Check } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 import type { DemoProduct } from '@/data/demo-data';
 import type { StyleGuideCanvasHandle } from '@/components/admin/StyleGuideCanvas';
 
