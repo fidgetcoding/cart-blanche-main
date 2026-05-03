@@ -600,7 +600,7 @@ export default function AdminStylingGuide() {
               />
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {(['ALL', 'TOPS', 'BOTTOMS', 'ACCESSORIES'] as const).map(cat => (
+              {storefrontCategories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setFilterGroup(cat)}
