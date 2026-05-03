@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Heart, X, ShoppingBag, Layers, Ruler, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, ShoppingBag, Layers, Ruler, Plus } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, useMemo, forwardRef } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
@@ -119,7 +119,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const { themeSettings } = useTheme();
 
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
-  const [isSaved, setIsSaved] = useState(false);
+  
   const [expandDetails, setExpandDetails] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
@@ -809,14 +809,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                         >
                           <Layers className="w-4 h-4 shrink-0" />
                           BUILD A SET
-                        </button>
-                        <button
-                          onClick={() => setIsSaved(!isSaved)}
-                          className={`p-3 border rounded-lg transition-colors text-foreground flex items-center justify-center [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:w-9 [@media(max-height:760px)]:p-0 [@media(max-height:760px)]:shrink-0 ${
-                            isSaved ? 'border-foreground/60' : 'border-foreground/30 hover:border-foreground/60'
-                          }`}
-                        >
-                          <Heart className={`w-5 h-5 [@media(max-height:760px)]:w-4 [@media(max-height:760px)]:h-4 ${isSaved ? 'fill-current' : ''}`} />
                         </button>
                       </div>
                     </div>
