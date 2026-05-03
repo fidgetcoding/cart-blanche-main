@@ -171,24 +171,33 @@ export function MaisonWaitlistModal({ open, onClose, product, lockedSize }: Mais
                     Size Preference
                   </label>
                   <div className="flex gap-2 flex-wrap">
-                    {product.variants.map(v => {
-                      const active = size === v.title;
-                      return (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => setSize(active ? '' : v.title)}
-                          className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
-                            active
-                              ? 'bg-foreground text-background border-foreground'
-                              : 'border-border text-foreground hover:border-foreground'
-                          }`}
-                          style={{ fontFamily: 'var(--font-body)' }}
-                        >
-                          {v.title}
-                        </button>
-                      );
-                    })}
+                    {lockedSize ? (
+                      <span
+                        className="px-4 py-2 text-[10px] tracking-[0.15em] uppercase border bg-foreground text-background border-foreground"
+                        style={{ fontFamily: 'var(--font-body)' }}
+                      >
+                        {lockedSize}
+                      </span>
+                    ) : (
+                      product.variants.map(v => {
+                        const active = size === v.title;
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => setSize(active ? '' : v.title)}
+                            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
+                              active
+                                ? 'bg-foreground text-background border-foreground'
+                                : 'border-border text-foreground hover:border-foreground'
+                            }`}
+                            style={{ fontFamily: 'var(--font-body)' }}
+                          >
+                            {v.title}
+                          </button>
+                        );
+                      })
+                    )}
                     <button
                       type="button"
                       onClick={() => setSizeChartOpen(true)}
@@ -199,6 +208,14 @@ export function MaisonWaitlistModal({ open, onClose, product, lockedSize }: Mais
                       Chart
                     </button>
                   </div>
+                  {lockedSize && (
+                    <p
+                      className="mt-3 text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      We'll notify you when this specific size is back in stock.
+                    </p>
+                  )}
                 </div>
               )}
 
