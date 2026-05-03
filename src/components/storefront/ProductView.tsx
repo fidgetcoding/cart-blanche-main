@@ -865,6 +865,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         open={waitlistOpen}
         onClose={() => setWaitlistOpen(false)}
         product={product}
+        lockedSize={variant && variant.inventory_count === 0 ? variant.title : undefined}
       />
     </motion.div>
   );
