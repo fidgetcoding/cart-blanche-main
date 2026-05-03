@@ -699,6 +699,7 @@ export default function AdminStylingGuide() {
                 isDirty={isDirty}
                 onCanvasNodeIdsChange={setCanvasNodeIds}
                 onBlankNodeChange={setBlankNodeActive}
+                matchTypeFilter={matchTypeFilter}
               />
             </Suspense>
           ) : (
