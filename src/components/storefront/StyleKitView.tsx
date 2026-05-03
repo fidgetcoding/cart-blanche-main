@@ -873,7 +873,7 @@ export function StyleKitView() {
                   ) : (
                     <CarouselRow
                       key="carousel-top"
-                      products={suggestions.filter(p => getBodyZone(p) === 'top' || getBodyZone(p) === 'accessory')}
+                      products={topLaneProducts}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="horizontal"
@@ -896,7 +896,7 @@ export function StyleKitView() {
                   ) : (
                     <CarouselRow
                       key="carousel-bottom"
-                      products={suggestions.filter(p => getBodyZone(p) === 'bottom')}
+                      products={bottomLaneProducts}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="horizontal"
@@ -915,7 +915,7 @@ export function StyleKitView() {
                 {carouselSide === 'left' && !pairedProduct ? (
                   <CarouselRow
                     key="carousel-left"
-                    products={suggestions}
+                    products={extrasLaneProducts}
                     onSelect={setPreviewProduct}
                     onAddToLook={handleAddToLook}
                     direction="vertical"
@@ -940,7 +940,7 @@ export function StyleKitView() {
                   ) : carouselSide === 'right' ? (
                     <CarouselRow
                       key="carousel-right"
-                      products={suggestions}
+                      products={extrasLaneProducts}
                       onSelect={setPreviewProduct}
                       onAddToLook={handleAddToLook}
                       direction="vertical"
