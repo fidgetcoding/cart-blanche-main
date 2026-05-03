@@ -19,7 +19,7 @@ interface MaisonWaitlistModalProps {
  * thin borders, button-style size + color preference selectors. Mirrors the
  * YZ modal flow but follows the Maison aesthetic.
  */
-export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistModalProps) {
+export function MaisonWaitlistModal({ open, onClose, product, lockedSize }: MaisonWaitlistModalProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
@@ -41,6 +41,11 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
       setEmail(''); setName(''); setSize(''); setColor('');
     }
   }, [open]);
+
+  // Sync lockedSize → size state when modal opens with a per-variant lock.
+  useEffect(() => {
+    if (open && lockedSize) setSize(lockedSize);
+  }, [open, lockedSize]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
