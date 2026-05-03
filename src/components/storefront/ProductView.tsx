@@ -851,6 +851,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         open={sizeChartOpen}
         category={product.product_type || product.category}
         onClose={() => setSizeChartOpen(false)}
+        placement="right-drawer"
       />
       <WaitlistModal
         open={waitlistOpen}
