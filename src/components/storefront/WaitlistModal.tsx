@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Ruler } from 'lucide-react';
 import { useWaitlistSignup } from '@/hooks/use-waitlist-signup';
@@ -10,6 +10,8 @@ interface WaitlistModalProps {
   open: boolean;
   onClose: () => void;
   product: DemoProduct;
+  /** When provided, modal opens with this size pre-filled and not editable. */
+  lockedSize?: string;
 }
 
 // Shared neutral preference palette — no per-product color data exists,
@@ -25,13 +27,17 @@ export const WAITLIST_COLOR_OPTIONS = [
   'Burgundy',
 ];
 
-export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
+export function WaitlistModal({ open, onClose, product, lockedSize }: WaitlistModalProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { submit, submitting } = useWaitlistSignup();
+
+  useEffect(() => {
+    if (open && lockedSize) setSize(lockedSize);
+  }, [open, lockedSize]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -119,23 +125,29 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
                 <div>
                   <span className="text-[11px] tracking-wider uppercase text-foreground/60">Size preference</span>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {product.variants.map((v) => {
-                      const active = size === v.title;
-                      return (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => setSize(active ? '' : v.title)}
-                          className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                            active
-                              ? 'bg-foreground text-background border-foreground'
-                              : 'bg-background/40 text-foreground border-foreground/20 hover:border-foreground/40'
-                          }`}
-                        >
-                          {v.title}
-                        </button>
-                      );
-                    })}
+                    {lockedSize ? (
+                      <span className="px-3 py-1.5 rounded-md text-xs font-medium border bg-foreground text-background border-foreground">
+                        {lockedSize}
+                      </span>
+                    ) : (
+                      product.variants.map((v) => {
+                        const active = size === v.title;
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => setSize(active ? '' : v.title)}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                              active
+                                ? 'bg-foreground text-background border-foreground'
+                                : 'bg-background/40 text-foreground border-foreground/20 hover:border-foreground/40'
+                            }`}
+                          >
+                            {v.title}
+                          </button>
+                        );
+                      })
+                    )}
                     <button
                       type="button"
                       onClick={() => setSizeChartOpen(true)}
@@ -145,6 +157,11 @@ export function WaitlistModal({ open, onClose, product }: WaitlistModalProps) {
                       SIZE CHART
                     </button>
                   </div>
+                  {lockedSize && (
+                    <p className="mt-2 text-[11px] text-foreground/60">
+                      We'll notify you when this specific size is back in stock.
+                    </p>
+                  )}
                 </div>
               )}
 

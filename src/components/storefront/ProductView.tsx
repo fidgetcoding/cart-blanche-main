@@ -748,11 +748,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                           <div className="flex flex-wrap items-center justify-center gap-2 [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-1.5">
                             {availableVariants.map(v => {
                               const lockSize = () => {
-                                if (v.inventory_count === 0) return;
                                 setSelectedVariant(v.id);
                                 const group = getSizeGroup(product.product_type);
                                 if (group) rememberedSizeByGroup.set(group, v.title);
                               };
+                              const isOOSVariant = v.inventory_count === 0;
                               return (
                               <button
                                 key={v.id}
@@ -761,12 +761,13 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                                 onClick={lockSize}
                                 className={`h-9 px-4 text-sm font-display rounded-md border transition-all flex items-center justify-center [@media(max-height:760px)]:px-3 ${
                                   selectedVariant === v.id
-                                    ? 'border-foreground bg-foreground text-background'
-                                    : v.inventory_count === 0
-                                    ? 'border-foreground/20 text-foreground/30 cursor-not-allowed'
+                                    ? isOOSVariant
+                                      ? 'border-dashed border-foreground bg-foreground text-background'
+                                      : 'border-foreground bg-foreground text-background'
+                                    : isOOSVariant
+                                    ? 'border-dashed border-foreground/40 text-foreground/60 hover:border-foreground/70 cursor-pointer'
                                     : 'border-foreground/30 text-foreground hover:border-foreground/60'
                                 }`}
-                                disabled={v.inventory_count === 0}
                               >
                                 {v.title}
                               </button>
@@ -789,16 +790,23 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                       {/* Actions */}
                       <div className="flex flex-wrap justify-center gap-3 mt-2 [@media(max-height:760px)]:col-start-2 [@media(max-height:760px)]:row-start-1 [@media(max-height:760px)]:flex-nowrap [@media(max-height:760px)]:items-center [@media(max-height:760px)]:justify-start [@media(max-height:760px)]:gap-2 [@media(max-height:760px)]:min-w-0 [@media(max-height:760px)]:mt-0">
                         <button
-                          onClick={handleAddToCart}
-                          disabled={!canAdd || isOutOfStock}
+                          onClick={() => {
+                            if (!canAdd) return;
+                            if (isOutOfStock) {
+                              setWaitlistOpen(true);
+                            } else {
+                              handleAddToCart();
+                            }
+                          }}
+                          disabled={!canAdd}
                           className={`px-6 py-3 font-display font-semibold text-sm tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:py-0 [@media(max-height:760px)]:px-3 [@media(max-height:760px)]:text-[11px] [@media(max-height:760px)]:min-w-0 ${
-                            !canAdd || isOutOfStock
+                            !canAdd
                               ? 'bg-foreground/10 text-foreground/50 cursor-not-allowed'
                               : 'bg-foreground text-background hover:opacity-90'
                           }`}
                         >
                           <ShoppingBag className="w-4 h-4 shrink-0" />
-                          <span className="[@media(max-height:760px)]:truncate">{isOutOfStock ? 'OUT OF STOCK' : !canAdd ? 'SELECT SIZE' : 'ADD TO CART'}</span>
+                          <span className="[@media(max-height:760px)]:truncate">{!canAdd ? 'SELECT SIZE' : isOutOfStock ? 'JOIN THE WAITLIST' : 'ADD TO CART'}</span>
                         </button>
                         <button
                           onClick={() => {
@@ -857,6 +865,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         open={waitlistOpen}
         onClose={() => setWaitlistOpen(false)}
         product={product}
+        lockedSize={variant && variant.inventory_count === 0 ? variant.title : undefined}
       />
     </motion.div>
   );

@@ -10,6 +10,8 @@ interface MaisonWaitlistModalProps {
   open: boolean;
   onClose: () => void;
   product: DemoProduct;
+  /** When provided, modal opens with this size pre-filled and not editable. */
+  lockedSize?: string;
 }
 
 /**
@@ -17,7 +19,7 @@ interface MaisonWaitlistModalProps {
  * thin borders, button-style size + color preference selectors. Mirrors the
  * YZ modal flow but follows the Maison aesthetic.
  */
-export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistModalProps) {
+export function MaisonWaitlistModal({ open, onClose, product, lockedSize }: MaisonWaitlistModalProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [size, setSize] = useState('');
@@ -39,6 +41,11 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
       setEmail(''); setName(''); setSize(''); setColor('');
     }
   }, [open]);
+
+  // Sync lockedSize → size state when modal opens with a per-variant lock.
+  useEffect(() => {
+    if (open && lockedSize) setSize(lockedSize);
+  }, [open, lockedSize]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -164,24 +171,33 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
                     Size Preference
                   </label>
                   <div className="flex gap-2 flex-wrap">
-                    {product.variants.map(v => {
-                      const active = size === v.title;
-                      return (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => setSize(active ? '' : v.title)}
-                          className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
-                            active
-                              ? 'bg-foreground text-background border-foreground'
-                              : 'border-border text-foreground hover:border-foreground'
-                          }`}
-                          style={{ fontFamily: 'var(--font-body)' }}
-                        >
-                          {v.title}
-                        </button>
-                      );
-                    })}
+                    {lockedSize ? (
+                      <span
+                        className="px-4 py-2 text-[10px] tracking-[0.15em] uppercase border bg-foreground text-background border-foreground"
+                        style={{ fontFamily: 'var(--font-body)' }}
+                      >
+                        {lockedSize}
+                      </span>
+                    ) : (
+                      product.variants.map(v => {
+                        const active = size === v.title;
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => setSize(active ? '' : v.title)}
+                            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
+                              active
+                                ? 'bg-foreground text-background border-foreground'
+                                : 'border-border text-foreground hover:border-foreground'
+                            }`}
+                            style={{ fontFamily: 'var(--font-body)' }}
+                          >
+                            {v.title}
+                          </button>
+                        );
+                      })
+                    )}
                     <button
                       type="button"
                       onClick={() => setSizeChartOpen(true)}
@@ -192,6 +208,14 @@ export function MaisonWaitlistModal({ open, onClose, product }: MaisonWaitlistMo
                       Chart
                     </button>
                   </div>
+                  {lockedSize && (
+                    <p
+                      className="mt-3 text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      We'll notify you when this specific size is back in stock.
+                    </p>
+                  )}
                 </div>
               )}
 
