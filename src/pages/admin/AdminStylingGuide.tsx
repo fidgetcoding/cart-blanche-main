@@ -248,6 +248,7 @@ export default function AdminStylingGuide() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGroup, setFilterGroup] = useState<'ALL' | BodyZoneGroup>('ALL');
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
+  const [matchTypeFilter, setMatchTypeFilter] = useState<'all' | 'pairs' | 'extras'>('all');
   const [canvasLayout, setCanvasLayout] = useState<any>(null);
   const [blankNodeActive, setBlankNodeActive] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -512,35 +513,63 @@ export default function AdminStylingGuide() {
     <div className="flex flex-col h-full border-t border-border">
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
         <h1 className="font-display text-2xl font-bold tracking-wide">Look Book</h1>
-        <div className="flex items-center bg-secondary rounded-lg p-1">
-          <button
-            onClick={() => { setActiveView('list'); setExpandedProductId(null); }}
-            className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
-              activeView === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
-            }`}
-          >
-            LIST
-          </button>
-          <button
-            onClick={() => {
-              setActiveView('canvas');
-              if (selectedProductId && activeView === 'list') {
-                const product = DEMO_PRODUCTS.find(p => p.id === selectedProductId);
-                if (product) {
-                  setTimeout(() => {
-                    if (!canvasNodeIds.has(selectedProductId)) {
-                      canvasRef.current?.addProduct(product);
-                    }
-                  }, 100);
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-secondary rounded-lg p-1">
+            <button
+              onClick={() => { setActiveView('list'); setExpandedProductId(null); }}
+              className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                activeView === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              LIST
+            </button>
+            <button
+              onClick={() => {
+                setActiveView('canvas');
+                if (selectedProductId && activeView === 'list') {
+                  const product = DEMO_PRODUCTS.find(p => p.id === selectedProductId);
+                  if (product) {
+                    setTimeout(() => {
+                      if (!canvasNodeIds.has(selectedProductId)) {
+                        canvasRef.current?.addProduct(product);
+                      }
+                    }, 100);
+                  }
                 }
-              }
-            }}
-            className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
-              activeView === 'canvas' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
-            }`}
-          >
-            CANVAS
-          </button>
+              }}
+              className={`px-5 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                activeView === 'canvas' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              CANVAS
+            </button>
+          </div>
+          <div className="flex items-center bg-secondary rounded-lg p-1">
+            <button
+              onClick={() => setMatchTypeFilter('all')}
+              className={`px-4 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                matchTypeFilter === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              ALL
+            </button>
+            <button
+              onClick={() => setMatchTypeFilter('pairs')}
+              className={`px-4 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                matchTypeFilter === 'pairs' ? 'bg-[#facc15] text-background' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              PAIRS
+            </button>
+            <button
+              onClick={() => setMatchTypeFilter('extras')}
+              className={`px-4 py-2 rounded-md text-sm font-display tracking-wider transition-colors ${
+                matchTypeFilter === 'extras' ? 'bg-[#f472b6] text-background' : 'text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              EXTRAS
+            </button>
+          </div>
         </div>
       </div>
 
@@ -670,6 +699,7 @@ export default function AdminStylingGuide() {
                 isDirty={isDirty}
                 onCanvasNodeIdsChange={setCanvasNodeIds}
                 onBlankNodeChange={setBlankNodeActive}
+                matchTypeFilter={matchTypeFilter}
               />
             </Suspense>
           ) : (
@@ -802,9 +832,9 @@ export default function AdminStylingGuide() {
                                 <div className="flex-1 min-w-0">
                                   <p className="font-display text-[11px] tracking-wide truncate group-hover:text-foreground transition-colors">{product.title}</p>
                                   <div className="flex items-center gap-2 mt-1">
-                                    {preset.pairs.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#facc15]">{preset.pairs.length} PAIR{preset.pairs.length !== 1 ? 'S' : ''}</span>}
-                                    {preset.extras.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#f472b6]">{preset.extras.length} EXTRA{preset.extras.length !== 1 ? 'S' : ''}</span>}
-                                    {preset.pairs.length === 0 && preset.extras.length === 0 && <span className="text-[8px] font-display tracking-wider text-muted-foreground/50">NO MATCHES YET</span>}
+                                    {(matchTypeFilter === 'all' || matchTypeFilter === 'pairs') && preset.pairs.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#facc15]">{preset.pairs.length} PAIR{preset.pairs.length !== 1 ? 'S' : ''}</span>}
+                                    {(matchTypeFilter === 'all' || matchTypeFilter === 'extras') && preset.extras.length > 0 && <span className="text-[8px] font-display tracking-wider text-[#f472b6]">{preset.extras.length} EXTRA{preset.extras.length !== 1 ? 'S' : ''}</span>}
+                                    {((matchTypeFilter === 'all' && preset.pairs.length === 0 && preset.extras.length === 0) || (matchTypeFilter === 'pairs' && preset.pairs.length === 0) || (matchTypeFilter === 'extras' && preset.extras.length === 0)) && <span className="text-[8px] font-display tracking-wider text-muted-foreground/50">NO MATCHES YET</span>}
                                   </div>
                                 </div>
                                 {!editMode && isExpanded && (
@@ -824,20 +854,24 @@ export default function AdminStylingGuide() {
                               {/* Expanded dropdown content */}
                               {isExpanded && (
                                 <div className="px-3 pb-3 space-y-3 border-t border-foreground/5">
-                                  <div className="liquid-glass rounded-lg p-3 mt-3">
-                                    <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={presetPairs} availableProducts={pAvail}
-                                      anchorZone={zone} listType="pairs"
-                                      onAdd={(p) => addToPreset('pairs', p)}
-                                      onRemove={(id) => removeFromPreset('pairs', id)}
-                                      onReorder={(newItems) => updatePreset(preset.anchorProductId, 'pairs', newItems.map(p => p.id))} />
-                                  </div>
-                                  <div className="liquid-glass rounded-lg p-3">
-                                    <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={presetExtras} availableProducts={eAvail}
-                                      anchorZone={zone} listType="extras"
-                                      onAdd={(p) => addToPreset('extras', p)}
-                                      onRemove={(id) => removeFromPreset('extras', id)}
-                                      onReorder={(newItems) => updatePreset(preset.anchorProductId, 'extras', newItems.map(p => p.id))} />
-                                  </div>
+                                  {(matchTypeFilter === 'all' || matchTypeFilter === 'pairs') && (
+                                    <div className="liquid-glass rounded-lg p-3 mt-3">
+                                      <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={presetPairs} availableProducts={pAvail}
+                                        anchorZone={zone} listType="pairs"
+                                        onAdd={(p) => addToPreset('pairs', p)}
+                                        onRemove={(id) => removeFromPreset('pairs', id)}
+                                        onReorder={(newItems) => updatePreset(preset.anchorProductId, 'pairs', newItems.map(p => p.id))} />
+                                    </div>
+                                  )}
+                                  {(matchTypeFilter === 'all' || matchTypeFilter === 'extras') && (
+                                    <div className="liquid-glass rounded-lg p-3">
+                                      <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={presetExtras} availableProducts={eAvail}
+                                        anchorZone={zone} listType="extras"
+                                        onAdd={(p) => addToPreset('extras', p)}
+                                        onRemove={(id) => removeFromPreset('extras', id)}
+                                        onReorder={(newItems) => updatePreset(preset.anchorProductId, 'extras', newItems.map(p => p.id))} />
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>

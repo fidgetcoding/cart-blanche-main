@@ -57,6 +57,7 @@ interface StyleGuideCanvasProps {
   isDirty: boolean;
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
   onBlankNodeChange: (active: boolean) => void;
+  matchTypeFilter: 'all' | 'pairs' | 'extras';
 }
 
 type BodyZoneGroup = 'TOPS' | 'BOTTOMS' | 'ACCESSORIES';
@@ -261,6 +262,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   isDirty,
   onCanvasNodeIdsChange,
   onBlankNodeChange,
+  matchTypeFilter,
 }, ref) => {
   const { fitView, setCenter, screenToFlowPosition } = useReactFlow();
   const nodeCountRef = useRef(0);
@@ -1021,6 +1023,14 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onPresetsChange(newPresets);
   }, [selectedNodeId, selectedPreset, presets, onPresetsChange]);
 
+  const visibleEdges = useMemo(() => {
+    if (matchTypeFilter === 'all') return edges;
+    return edges.filter(e => {
+      const t = (e.data as { type?: string } | undefined)?.type;
+      return t === matchTypeFilter || t === 'pending';
+    });
+  }, [edges, matchTypeFilter]);
+
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
       <div
@@ -1078,7 +1088,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={visibleEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
@@ -1171,59 +1181,60 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
                 </div>
               </div>
 
-              {/* Pairs & Extras side by side */}
+              {/* Pairs & Extras side by side — gated by matchTypeFilter */}
               <div className="flex gap-4">
-                {/* Pairs */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[8px] font-display tracking-[0.2em] text-[#facc15] mb-1.5">PAIRS</p>
-                  {(selectedPreset?.pairs ?? []).length === 0 ? (
-                    <p className="text-[9px] text-muted-foreground/40 italic">No connections</p>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      {(selectedPreset?.pairs ?? []).map((id, i) => {
-                        const p = DEMO_PRODUCTS.find(x => x.id === id);
-                        if (!p) return null;
-                        return (
-                          <div key={id} className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-foreground/5">
-                            <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-6 h-6 rounded object-cover" />
-                            <span className="text-[9px] font-display tracking-wide flex-1 truncate">{p.title}</span>
-                            <div className="flex items-center gap-0.5">
-                              <button onClick={() => moveItem('pairs', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
-                              <button onClick={() => moveItem('pairs', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
-                              <button onClick={() => removeConnection(id, 'pairs')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
+                {(matchTypeFilter === 'all' || matchTypeFilter === 'pairs') && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[8px] font-display tracking-[0.2em] text-[#facc15] mb-1.5">PAIRS</p>
+                    {(selectedPreset?.pairs ?? []).length === 0 ? (
+                      <p className="text-[9px] text-muted-foreground/40 italic">No connections</p>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        {(selectedPreset?.pairs ?? []).map((id, i) => {
+                          const p = DEMO_PRODUCTS.find(x => x.id === id);
+                          if (!p) return null;
+                          return (
+                            <div key={id} className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-foreground/5">
+                              <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-6 h-6 rounded object-cover" />
+                              <span className="text-[9px] font-display tracking-wide flex-1 truncate">{p.title}</span>
+                              <div className="flex items-center gap-0.5">
+                                <button onClick={() => moveItem('pairs', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
+                                <button onClick={() => moveItem('pairs', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
+                                <button onClick={() => removeConnection(id, 'pairs')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Extras */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[8px] font-display tracking-[0.2em] text-[#f472b6] mb-1.5">EXTRAS</p>
-                  {(selectedPreset?.extras ?? []).length === 0 ? (
-                    <p className="text-[9px] text-muted-foreground/40 italic">No connections</p>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      {(selectedPreset?.extras ?? []).map((id, i) => {
-                        const p = DEMO_PRODUCTS.find(x => x.id === id);
-                        if (!p) return null;
-                        return (
-                          <div key={id} className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-foreground/5">
-                            <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-6 h-6 rounded object-cover" />
-                            <span className="text-[9px] font-display tracking-wide flex-1 truncate">{p.title}</span>
-                            <div className="flex items-center gap-0.5">
-                              <button onClick={() => moveItem('extras', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
-                              <button onClick={() => moveItem('extras', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
-                              <button onClick={() => removeConnection(id, 'extras')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {(matchTypeFilter === 'all' || matchTypeFilter === 'extras') && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[8px] font-display tracking-[0.2em] text-[#f472b6] mb-1.5">EXTRAS</p>
+                    {(selectedPreset?.extras ?? []).length === 0 ? (
+                      <p className="text-[9px] text-muted-foreground/40 italic">No connections</p>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        {(selectedPreset?.extras ?? []).map((id, i) => {
+                          const p = DEMO_PRODUCTS.find(x => x.id === id);
+                          if (!p) return null;
+                          return (
+                            <div key={id} className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-foreground/5">
+                              <img src={getImageUrl(p.images[0], 'thumb')} alt={p.title} className="w-6 h-6 rounded object-cover" />
+                              <span className="text-[9px] font-display tracking-wide flex-1 truncate">{p.title}</span>
+                              <div className="flex items-center gap-0.5">
+                                <button onClick={() => moveItem('extras', i, -1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronUp className="w-3 h-3 text-muted-foreground" /></button>
+                                <button onClick={() => moveItem('extras', i, 1)} className="p-0.5 hover:bg-foreground/10 rounded"><ChevronDown className="w-3 h-3 text-muted-foreground" /></button>
+                                <button onClick={() => removeConnection(id, 'extras')} className="p-0.5 hover:bg-destructive/20 rounded"><X className="w-3 h-3 text-muted-foreground" /></button>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
