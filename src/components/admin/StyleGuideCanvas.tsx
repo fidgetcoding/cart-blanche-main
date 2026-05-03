@@ -57,6 +57,7 @@ interface StyleGuideCanvasProps {
   isDirty: boolean;
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
   onBlankNodeChange: (active: boolean) => void;
+  matchTypeFilter: 'all' | 'pairs' | 'extras';
 }
 
 type BodyZoneGroup = 'TOPS' | 'BOTTOMS' | 'ACCESSORIES';
