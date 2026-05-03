@@ -121,71 +121,77 @@ export function SizeChartOverlay({
     </>
   );
 
-  return createPortal(
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          className={`fixed inset-0 z-[100] ${isMaison ? 'light' : ''}`}
-          onClick={onClose}
-        >
-          {/* Visual backdrop layer — coverage varies by placement */}
-          {placement === 'viewport' && (
-            <div className={`absolute inset-0 backdrop-blur-md ${backdropTone}`} />
-          )}
-          {placement === 'right-panel' && (
-            <div className={`absolute inset-y-0 right-0 w-[45%] backdrop-blur-md ${backdropTone}`} />
-          )}
-          {/* placement === 'right-drawer' renders no backdrop */}
+  const isScoped = !!portalTarget && portalTarget !== document.body;
+  const positionClass = isScoped ? 'absolute' : 'fixed';
 
-          {placement === 'viewport' && (
-            <div className="absolute inset-0 flex items-center justify-center p-6">
-              <motion.div
-                initial={{ y: 12, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 8, opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                onClick={e => e.stopPropagation()}
-                className="relative w-full max-w-2xl rounded-xl border border-foreground/15 bg-background shadow-2xl"
-              >
-                {chartCard}
-              </motion.div>
-            </div>
-          )}
-
-          {placement === 'right-panel' && (
-            <div className="absolute inset-y-0 right-0 w-[45%] flex items-center justify-center p-6">
-              <motion.div
-                initial={{ y: 12, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 8, opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                onClick={e => e.stopPropagation()}
-                className="relative w-full max-w-md rounded-xl border border-foreground/15 bg-background shadow-2xl"
-              >
-                {chartCard}
-              </motion.div>
-            </div>
-          )}
-
-          {placement === 'right-drawer' && (
+  return (
+    <>
+      <span ref={anchorRef} style={{ display: 'none' }} aria-hidden />
+      {portalTarget && createPortal(
+        <AnimatePresence>
+          {open && (
             <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              onClick={e => e.stopPropagation()}
-              className="absolute inset-y-0 right-0 w-[min(380px,90vw)] bg-background border-l border-foreground/20 shadow-2xl overflow-y-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className={`${positionClass} inset-0 z-[100] ${isMaison ? 'light' : ''}`}
+              onClick={onClose}
             >
-              {chartCard}
+              {placement === 'viewport' && (
+                <div className={`absolute inset-0 backdrop-blur-md ${backdropTone}`} />
+              )}
+              {placement === 'right-panel' && (
+                <div className={`absolute inset-y-0 right-0 w-[45%] backdrop-blur-md ${backdropTone}`} />
+              )}
+
+              {placement === 'viewport' && (
+                <div className="absolute inset-0 flex items-center justify-center p-6">
+                  <motion.div
+                    initial={{ y: 12, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 8, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    onClick={e => e.stopPropagation()}
+                    className="relative w-full max-w-2xl rounded-xl border border-foreground/15 bg-background shadow-2xl"
+                  >
+                    {chartCard}
+                  </motion.div>
+                </div>
+              )}
+
+              {placement === 'right-panel' && (
+                <div className="absolute inset-y-0 right-0 w-[45%] flex items-center justify-center p-6">
+                  <motion.div
+                    initial={{ y: 12, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 8, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    onClick={e => e.stopPropagation()}
+                    className="relative w-full max-w-md rounded-xl border border-foreground/15 bg-background shadow-2xl"
+                  >
+                    {chartCard}
+                  </motion.div>
+                </div>
+              )}
+
+              {placement === 'right-drawer' && (
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  onClick={e => e.stopPropagation()}
+                  className="absolute inset-y-0 right-0 w-[min(380px,90vw)] bg-background border-l border-foreground/20 shadow-2xl overflow-y-auto"
+                >
+                  {chartCard}
+                </motion.div>
+              )}
             </motion.div>
           )}
-        </motion.div>
+        </AnimatePresence>,
+        portalTarget
       )}
-    </AnimatePresence>,
-    document.body
+    </>
   );
 }
