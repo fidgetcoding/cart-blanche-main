@@ -15,6 +15,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminWaitlist from './pages/admin/AdminWaitlist';
+import AdminSubscribers from './pages/admin/AdminSubscribers';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminPageEditor from './pages/admin/AdminPageEditor';
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
       { path: "grid", element: <AdminPageEditor /> },
       { path: "orders", element: <AdminOrders /> },
       { path: "waitlist", element: <AdminWaitlist /> },
+      { path: "subscribers", element: <AdminSubscribers /> },
       { path: "inventory", element: <AdminInventory /> },
       { path: "styling-guide", element: <AdminStylingGuide /> },
       { path: "settings", element: <AdminSettings /> },
