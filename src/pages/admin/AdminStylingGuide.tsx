@@ -273,15 +273,21 @@ export default function AdminStylingGuide() {
   useEffect(() => { presetsRef.current = presets; }, [presets]);
   useEffect(() => { canvasLayoutRef.current = canvasLayout; }, [canvasLayout]);
 
+  const productTypes = useMemo(() => {
+    const set = new Set<string>();
+    DEMO_PRODUCTS.forEach(p => { if (p.product_type) set.add(p.product_type.toUpperCase()); });
+    return ['ALL', ...Array.from(set).sort()];
+  }, []);
+
   const grouped = useMemo(() => {
     const groups: Record<string, DemoProduct[]> = {};
     const q = searchQuery.toLowerCase();
     DEMO_PRODUCTS.forEach(p => {
       if (q && !p.title.toLowerCase().includes(q)) return;
-      const cat = p.category.toUpperCase();
-      if (filterGroup !== 'ALL' && cat !== filterGroup) return;
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(p);
+      const pt = (p.product_type || 'OTHER').toUpperCase();
+      if (filterGroup !== 'ALL' && pt !== filterGroup) return;
+      if (!groups[pt]) groups[pt] = [];
+      groups[pt].push(p);
     });
     return groups;
   }, [searchQuery, filterGroup]);
@@ -626,7 +632,7 @@ export default function AdminStylingGuide() {
               />
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {storefrontCategories.map(cat => (
+              {productTypes.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setFilterGroup(cat)}
@@ -641,7 +647,7 @@ export default function AdminStylingGuide() {
               ))}
             </div>
           </div>
-          {storefrontCategories.filter(c => c !== 'ALL').map(group => (
+          {productTypes.filter(c => c !== 'ALL').map(group => (
             <div key={group}>
               <div className="px-4 py-2 bg-foreground/3 border-b border-foreground/5">
                 <p className="text-[9px] font-display tracking-[0.2em] text-muted-foreground/60">{group}</p>
