@@ -88,11 +88,15 @@ describe('getSuggestedProducts — extras mode', () => {
 });
 
 describe('getSuggestedProducts — preset integration', () => {
+  // Fixture note: anchor and all preset products share gender ('men') so
+  // gender-compatibility filtering doesn't act as a confounder in tests
+  // that are meant to exercise PRESET ORDERING. Gender filtering is
+  // covered separately by tests in the gender chip / strict-mode block.
   const presets: ProductPreset[] = [
     {
-      anchorProductId: 'p1', // Cloud Puffer (top)
-      pairs: ['p5', 'p16', 'p25'],  // Cargo, Joggers, Utility
-      extras: ['p2', 'p3'],         // Trench, Bomber
+      anchorProductId: 'p1',                    // Cloud Puffer (men, top)
+      pairs: ['p5', 'p25', 'p5b'],              // Cargo, Utility, Cargo II — all men's pants
+      extras: ['p1b', 'p9'],                    // Cloud Puffer II, Leather Moto — all men's jackets
     },
   ];
 
@@ -104,8 +108,8 @@ describe('getSuggestedProducts — preset integration', () => {
     });
     // First three should be the preset products in order
     expect(results[0].id).toBe('p5');  // Cargo Pants
-    expect(results[1].id).toBe('p16'); // Crème Joggers
-    expect(results[2].id).toBe('p25'); // Utility Pant
+    expect(results[1].id).toBe('p25'); // Utility Pant
+    expect(results[2].id).toBe('p5b'); // Cargo Pants II
   });
 
   it('preset products appear first in extras mode', () => {
@@ -114,8 +118,8 @@ describe('getSuggestedProducts — preset integration', () => {
       mode: 'extras',
       presets,
     });
-    expect(results[0].id).toBe('p2'); // Stealth Trench
-    expect(results[1].id).toBe('p3'); // Bomber
+    expect(results[0].id).toBe('p1b'); // Cloud Puffer Jacket II
+    expect(results[1].id).toBe('p9');  // Leather Moto Jacket
   });
 
   it('automatic suggestions follow after preset products (deduped)', () => {
@@ -127,8 +131,8 @@ describe('getSuggestedProducts — preset integration', () => {
     // After the 3 presets, remaining products should NOT include them again
     const afterPresets = results.slice(3);
     expect(afterPresets.find(p => p.id === 'p5')).toBeUndefined();
-    expect(afterPresets.find(p => p.id === 'p16')).toBeUndefined();
     expect(afterPresets.find(p => p.id === 'p25')).toBeUndefined();
+    expect(afterPresets.find(p => p.id === 'p5b')).toBeUndefined();
   });
 
   it('excludes preset products that are in cart', () => {
@@ -138,8 +142,8 @@ describe('getSuggestedProducts — preset integration', () => {
       presets,
       cartProductIds: ['p5'], // Cargo Pants in cart
     });
-    expect(results[0].id).toBe('p16'); // Joggers first since Cargo excluded
-    expect(results[1].id).toBe('p25'); // Utility second
+    expect(results[0].id).toBe('p25'); // Utility first since Cargo excluded
+    expect(results[1].id).toBe('p5b'); // Cargo II second
   });
 
   it('falls back to automatic when no preset exists for anchor', () => {
