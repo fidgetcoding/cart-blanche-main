@@ -264,6 +264,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   onCanvasNodeIdsChange,
   onBlankNodeChange,
   matchTypeFilter,
+  matchFilter,
 }, ref) => {
   const { fitView, setCenter, screenToFlowPosition } = useReactFlow();
   const nodeCountRef = useRef(0);
