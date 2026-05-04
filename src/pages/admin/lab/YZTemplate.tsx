@@ -116,6 +116,29 @@ function ThemeControls() {
             </div>
           </div>
 
+          {/* Peek Mode — toggles adjacent item peeks + chrome tuck in YZ detail view */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">PEEK MODE</label>
+            <div className="flex gap-1">
+              {([
+                { value: true,  label: 'ON' },
+                { value: false, label: 'OFF' },
+              ]).map(opt => (
+                <button
+                  key={String(opt.value)}
+                  onClick={() => updateTheme({ yzPeekMode: opt.value })}
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-display tracking-wider transition-colors ${
+                    themeSettings.yzPeekMode === opt.value
+                      ? 'bg-foreground/15 text-foreground border border-foreground/30'
+                      : 'bg-muted/50 text-muted-foreground border border-border/50 hover:border-foreground/30'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Mode */}
           <div className="space-y-1">
             <label className="text-[10px] font-display tracking-[0.2em] text-muted-foreground">BACKGROUND MODE</label>

@@ -21,6 +21,7 @@ const defaults: ThemeSettings = {
   storeNameColor: '',
   yzExpandTriggerStyle: 'icon',
   slExpandTriggerStyle: 'text',
+  yzPeekMode: false,
 };
 
 let current: ThemeSettings;

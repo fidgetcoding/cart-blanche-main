@@ -184,7 +184,10 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     try { window.localStorage.setItem(PEEK_STORAGE_KEY, JSON.stringify(peekConfig)); } catch { /* ignore */ }
   }, [peekConfig, peekFlag]);
 
-  const peeksVisible = peekFlag !== 'off' && !isMobile && !expandDetails;
+  const effectivePeekMode = peekFlag === 'off' ? false
+    : peekFlag === 'dev' ? true
+    : themeSettings.yzPeekMode;
+  const peeksVisible = effectivePeekMode && !isMobile && !expandDetails;
   const peekNeighbors = useMemo(() => {
     if (!peeksVisible) return null;
     const dirs: Array<'left' | 'right' | 'up' | 'down'> = ['left', 'right', 'up', 'down'];
@@ -648,7 +651,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       <div className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto pt-20 pb-8 pointer-events-none">
 
         {/* Category tabs + gender symbols — centered as one group, mirroring SpatialCanvas header */}
-        <div className="absolute top-4 left-4 z-50 pointer-events-auto flex flex-col items-start gap-2">
+        <div className={
+          effectivePeekMode
+            ? 'absolute top-4 left-4 z-50 pointer-events-auto flex flex-col items-start gap-2'
+            : 'absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-3'
+        }>
           <div className="flex items-center gap-0.5 bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
             {CATEGORIES.map(cat => (
               <button
@@ -671,7 +678,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
           {/* Gender symbols — vertical stack under ALL */}
           {onToggleGender && availableGenders && availableGenders.size > 1 && (
-            <div className="flex flex-col items-center gap-1 pl-2">
+            <div className={
+              effectivePeekMode
+                ? 'flex flex-col items-center gap-1 pl-2'
+                : 'flex items-center gap-2'
+            }>
               {['MEN', 'WOMEN', 'UNISEX'].map(g => {
                 const isActive = activeGenders.includes(g);
                 return (

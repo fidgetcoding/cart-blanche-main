@@ -23,6 +23,7 @@ export interface ThemeSettings {
   storeNameColor: string;
   yzExpandTriggerStyle: YzExpandTriggerStyle;
   slExpandTriggerStyle: SlExpandTriggerStyle;
+  yzPeekMode: boolean;
 }
 
 const DEFAULT_SETTINGS: ThemeSettings = {
@@ -43,6 +44,7 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   storeNameColor: '',
   yzExpandTriggerStyle: 'icon',
   slExpandTriggerStyle: 'text',
+  yzPeekMode: false,
 };
 
 const DEFAULT_STORAGE_KEY = 'cb-theme-settings';
