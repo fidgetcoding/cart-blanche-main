@@ -113,6 +113,52 @@ function getWrappingNeighbor(
   }
 }
 
+// ─── Adjacent Item Peeks — feature flag + tuning state ──────────────────────
+type PeekFade = 'none' | 'soft' | 'strong';
+interface PeekConfig {
+  width: number;
+  opacity: number;
+  blur: number;
+  edgeFade: PeekFade;
+}
+const PEEK_CONFIG_DEFAULT: PeekConfig = { width: 14, opacity: 0.32, blur: 2, edgeFade: 'soft' };
+const PEEK_STORAGE_KEY = 'cb-peeks-config';
+
+function getPeekFlag(): 'off' | 'on' | 'dev' {
+  if (typeof window === 'undefined') return 'off';
+  const v = new URLSearchParams(window.location.search).get('peeks');
+  if (v === 'dev') return 'dev';
+  if (v === '1' || v === 'on') return 'on';
+  return 'off';
+}
+
+function loadPeekConfig(): PeekConfig {
+  if (typeof window === 'undefined') return PEEK_CONFIG_DEFAULT;
+  try {
+    const raw = window.localStorage.getItem(PEEK_STORAGE_KEY);
+    if (!raw) return PEEK_CONFIG_DEFAULT;
+    const parsed = JSON.parse(raw);
+    return {
+      width: typeof parsed.width === 'number' ? parsed.width : PEEK_CONFIG_DEFAULT.width,
+      opacity: typeof parsed.opacity === 'number' ? parsed.opacity : PEEK_CONFIG_DEFAULT.opacity,
+      blur: typeof parsed.blur === 'number' ? parsed.blur : PEEK_CONFIG_DEFAULT.blur,
+      edgeFade: ['none', 'soft', 'strong'].includes(parsed.edgeFade) ? parsed.edgeFade : PEEK_CONFIG_DEFAULT.edgeFade,
+    };
+  } catch {
+    return PEEK_CONFIG_DEFAULT;
+  }
+}
+
+function fadeMaskFor(direction: 'left' | 'right' | 'top' | 'bottom', edgeFade: PeekFade): string | undefined {
+  if (edgeFade === 'none') return undefined;
+  const stop = edgeFade === 'soft' ? 40 : 70;
+  const dir = direction === 'left' ? 'to right'
+            : direction === 'right' ? 'to left'
+            : direction === 'top' ? 'to bottom'
+            : 'to top';
+  return `linear-gradient(${dir}, transparent 0%, black ${stop}%)`;
+}
+
 export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders }, _ref) {
   const DEMO_PRODUCTS = products;
   const CATEGORIES = categories;
