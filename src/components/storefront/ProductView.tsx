@@ -648,7 +648,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       <div className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto pt-20 pb-8 pointer-events-none">
 
         {/* Category tabs + gender symbols — centered as one group, mirroring SpatialCanvas header */}
-        <div className="absolute top-4 left-4 z-50 pointer-events-auto flex items-center gap-3">
+        <div className="absolute top-4 left-4 z-50 pointer-events-auto flex flex-col items-start gap-2">
           <div className="flex items-center gap-0.5 bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
             {CATEGORIES.map(cat => (
               <button
@@ -669,9 +669,9 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
             ))}
           </div>
 
-          {/* Gender symbols — only when more than one gender exists in current view */}
+          {/* Gender symbols — vertical stack under ALL */}
           {onToggleGender && availableGenders && availableGenders.size > 1 && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-1 pl-2">
               {['MEN', 'WOMEN', 'UNISEX'].map(g => {
                 const isActive = activeGenders.includes(g);
                 return (
