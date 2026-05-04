@@ -121,15 +121,15 @@ interface PeekConfig {
   blur: number;
   edgeFade: PeekFade;
 }
-const PEEK_CONFIG_DEFAULT: PeekConfig = { width: 14, opacity: 0.32, blur: 2, edgeFade: 'soft' };
+const PEEK_CONFIG_DEFAULT: PeekConfig = { width: 18, opacity: 0.7, blur: 1, edgeFade: 'soft' };
 const PEEK_STORAGE_KEY = 'cb-peeks-config';
 
 function getPeekFlag(): 'off' | 'on' | 'dev' {
-  if (typeof window === 'undefined') return 'off';
+  if (typeof window === 'undefined') return 'on';
   const v = new URLSearchParams(window.location.search).get('peeks');
   if (v === 'dev') return 'dev';
-  if (v === '1' || v === 'on') return 'on';
-  return 'off';
+  if (v === '0' || v === 'off') return 'off';
+  return 'on';
 }
 
 function loadPeekConfig(): PeekConfig {
