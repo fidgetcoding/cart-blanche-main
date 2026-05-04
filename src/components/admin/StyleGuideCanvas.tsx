@@ -805,9 +805,10 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       posMap[n.id] = n.position;
       nodeIds.push(n.id);
     });
-    onCanvasLayoutChange({ positions: posMap, nodeIds });
-    onManualSave();
-  }, [nodes, onCanvasLayoutChange, onSave]);
+    const newLayout = { positions: posMap, nodeIds };
+    onCanvasLayoutChange(newLayout);
+    onManualSave({ canvasLayout: newLayout });
+  }, [nodes, onCanvasLayoutChange, onManualSave]);
 
   // Auto-arrange all nodes by their connections (Shift+F)
   const autoArrangeNodes = useCallback(() => {
