@@ -113,6 +113,52 @@ function getWrappingNeighbor(
   }
 }
 
+// ─── Adjacent Item Peeks — feature flag + tuning state ──────────────────────
+type PeekFade = 'none' | 'soft' | 'strong';
+interface PeekConfig {
+  width: number;
+  opacity: number;
+  blur: number;
+  edgeFade: PeekFade;
+}
+const PEEK_CONFIG_DEFAULT: PeekConfig = { width: 14, opacity: 0.32, blur: 2, edgeFade: 'soft' };
+const PEEK_STORAGE_KEY = 'cb-peeks-config';
+
+function getPeekFlag(): 'off' | 'on' | 'dev' {
+  if (typeof window === 'undefined') return 'off';
+  const v = new URLSearchParams(window.location.search).get('peeks');
+  if (v === 'dev') return 'dev';
+  if (v === '1' || v === 'on') return 'on';
+  return 'off';
+}
+
+function loadPeekConfig(): PeekConfig {
+  if (typeof window === 'undefined') return PEEK_CONFIG_DEFAULT;
+  try {
+    const raw = window.localStorage.getItem(PEEK_STORAGE_KEY);
+    if (!raw) return PEEK_CONFIG_DEFAULT;
+    const parsed = JSON.parse(raw);
+    return {
+      width: typeof parsed.width === 'number' ? parsed.width : PEEK_CONFIG_DEFAULT.width,
+      opacity: typeof parsed.opacity === 'number' ? parsed.opacity : PEEK_CONFIG_DEFAULT.opacity,
+      blur: typeof parsed.blur === 'number' ? parsed.blur : PEEK_CONFIG_DEFAULT.blur,
+      edgeFade: ['none', 'soft', 'strong'].includes(parsed.edgeFade) ? parsed.edgeFade : PEEK_CONFIG_DEFAULT.edgeFade,
+    };
+  } catch {
+    return PEEK_CONFIG_DEFAULT;
+  }
+}
+
+function fadeMaskFor(direction: 'left' | 'right' | 'top' | 'bottom', edgeFade: PeekFade): string | undefined {
+  if (edgeFade === 'none') return undefined;
+  const stop = edgeFade === 'soft' ? 40 : 70;
+  const dir = direction === 'left' ? 'to right'
+            : direction === 'right' ? 'to left'
+            : direction === 'top' ? 'to bottom'
+            : 'to top';
+  return `linear-gradient(${dir}, transparent 0%, black ${stop}%)`;
+}
+
 export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders }, _ref) {
   const DEMO_PRODUCTS = products;
   const CATEGORIES = categories;
@@ -121,6 +167,34 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   
   const [expandDetails, setExpandDetails] = useState(false);
+
+  // Adjacent Item Peeks — feature flag + tuning state
+  const peekFlag = useMemo(() => getPeekFlag(), []);
+  const [peekConfig, setPeekConfig] = useState<PeekConfig>(loadPeekConfig);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
+  useEffect(() => {
+    if (peekFlag !== 'dev') return;
+    try { window.localStorage.setItem(PEEK_STORAGE_KEY, JSON.stringify(peekConfig)); } catch { /* ignore */ }
+  }, [peekConfig, peekFlag]);
+
+  const peeksVisible = peekFlag !== 'off' && !isMobile && !expandDetails;
+  const peekNeighbors = useMemo(() => {
+    if (!peeksVisible) return null;
+    const dirs: Array<'left' | 'right' | 'up' | 'down'> = ['left', 'right', 'up', 'down'];
+    const out: Record<'left' | 'right' | 'up' | 'down', DemoProduct | null> = { left: null, right: null, up: null, down: null };
+    for (const dir of dirs) {
+      const idx = getWrappingNeighbor(productIndex, dir, products, activeCategory);
+      if (idx !== productIndex) out[dir] = products[idx] ?? null;
+    }
+    return out;
+  }, [peeksVisible, productIndex, products, activeCategory]);
   const [activeImage, setActiveImage] = useState(0);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
@@ -441,6 +515,126 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         className="absolute inset-0 bg-background"
         onClick={onClose}
       />
+
+      {/* ── Adjacent Item Peeks — gated on URL param + viewport + details state ── */}
+      {peeksVisible && peekNeighbors && (
+        <>
+          {peekNeighbors.left && peekNeighbors.left.images?.[0] && (
+            <div
+              aria-hidden
+              className="absolute top-0 bottom-0 left-0 pointer-events-none bg-cover bg-no-repeat"
+              style={{
+                width: `${peekConfig.width}%`,
+                opacity: peekConfig.opacity,
+                filter: peekConfig.blur > 0 ? `blur(${peekConfig.blur}px)` : undefined,
+                backgroundImage: `url(${peekNeighbors.left.images[0].medium})`,
+                backgroundPosition: 'right center',
+                maskImage: fadeMaskFor('left', peekConfig.edgeFade),
+                WebkitMaskImage: fadeMaskFor('left', peekConfig.edgeFade),
+              }}
+            />
+          )}
+          {peekNeighbors.right && peekNeighbors.right.images?.[0] && (
+            <div
+              aria-hidden
+              className="absolute top-0 bottom-0 right-0 pointer-events-none bg-cover bg-no-repeat"
+              style={{
+                width: `${peekConfig.width}%`,
+                opacity: peekConfig.opacity,
+                filter: peekConfig.blur > 0 ? `blur(${peekConfig.blur}px)` : undefined,
+                backgroundImage: `url(${peekNeighbors.right.images[0].medium})`,
+                backgroundPosition: 'left center',
+                maskImage: fadeMaskFor('right', peekConfig.edgeFade),
+                WebkitMaskImage: fadeMaskFor('right', peekConfig.edgeFade),
+              }}
+            />
+          )}
+          {peekNeighbors.up && peekNeighbors.up.images?.[0] && (
+            <div
+              aria-hidden
+              className="absolute left-0 right-0 top-0 pointer-events-none bg-cover bg-no-repeat"
+              style={{
+                height: `${peekConfig.width}%`,
+                opacity: peekConfig.opacity,
+                filter: peekConfig.blur > 0 ? `blur(${peekConfig.blur}px)` : undefined,
+                backgroundImage: `url(${peekNeighbors.up.images[0].medium})`,
+                backgroundPosition: 'center bottom',
+                maskImage: fadeMaskFor('top', peekConfig.edgeFade),
+                WebkitMaskImage: fadeMaskFor('top', peekConfig.edgeFade),
+              }}
+            />
+          )}
+          {peekNeighbors.down && peekNeighbors.down.images?.[0] && (
+            <div
+              aria-hidden
+              className="absolute left-0 right-0 bottom-0 pointer-events-none bg-cover bg-no-repeat"
+              style={{
+                height: `${peekConfig.width}%`,
+                opacity: peekConfig.opacity,
+                filter: peekConfig.blur > 0 ? `blur(${peekConfig.blur}px)` : undefined,
+                backgroundImage: `url(${peekNeighbors.down.images[0].medium})`,
+                backgroundPosition: 'center top',
+                maskImage: fadeMaskFor('bottom', peekConfig.edgeFade),
+                WebkitMaskImage: fadeMaskFor('bottom', peekConfig.edgeFade),
+              }}
+            />
+          )}
+        </>
+      )}
+
+      {/* ── Dev panel — live-tuning controls, only when ?peeks=dev ── */}
+      {peekFlag === 'dev' && (
+        <div
+          className="absolute top-4 right-4 z-50 pointer-events-auto bg-background/95 backdrop-blur-md border border-foreground/20 rounded-lg p-3 text-[10px] font-display tracking-wider text-foreground/80"
+          style={{ width: '220px' }}
+        >
+          <div className="text-[9px] tracking-[0.2em] text-foreground/50 mb-2">PEEKS — DEV PANEL</div>
+          <div className="space-y-2">
+            <label className="flex items-center justify-between gap-2">
+              <span>WIDTH</span>
+              <input type="range" min={5} max={25} step={1} value={peekConfig.width}
+                onChange={(e) => setPeekConfig(c => ({ ...c, width: Number(e.target.value) }))}
+                className="flex-1 mx-2" />
+              <span className="w-8 text-right text-foreground">{peekConfig.width}%</span>
+            </label>
+            <label className="flex items-center justify-between gap-2">
+              <span>OPACITY</span>
+              <input type="range" min={10} max={60} step={1} value={Math.round(peekConfig.opacity * 100)}
+                onChange={(e) => setPeekConfig(c => ({ ...c, opacity: Number(e.target.value) / 100 }))}
+                className="flex-1 mx-2" />
+              <span className="w-8 text-right text-foreground">{Math.round(peekConfig.opacity * 100)}%</span>
+            </label>
+            <label className="flex items-center justify-between gap-2">
+              <span>BLUR</span>
+              <input type="range" min={0} max={16} step={1} value={peekConfig.blur}
+                onChange={(e) => setPeekConfig(c => ({ ...c, blur: Number(e.target.value) }))}
+                className="flex-1 mx-2" />
+              <span className="w-8 text-right text-foreground">{peekConfig.blur}px</span>
+            </label>
+            <label className="flex items-center justify-between gap-2">
+              <span>FADE</span>
+              <select value={peekConfig.edgeFade}
+                onChange={(e) => setPeekConfig(c => ({ ...c, edgeFade: e.target.value as PeekFade }))}
+                className="flex-1 ml-2 bg-foreground/10 border border-foreground/15 rounded px-2 py-1 text-foreground text-[10px]">
+                <option value="none">none</option>
+                <option value="soft">soft</option>
+                <option value="strong">strong</option>
+              </select>
+            </label>
+          </div>
+          <div className="flex gap-1 mt-3">
+            <button onClick={() => setPeekConfig({ width: 8, opacity: 0.18, blur: 4, edgeFade: 'soft' })}
+              className="flex-1 px-2 py-1 bg-foreground/10 hover:bg-foreground/20 rounded text-[9px]">SUBTLE</button>
+            <button onClick={() => setPeekConfig({ width: 14, opacity: 0.32, blur: 2, edgeFade: 'soft' })}
+              className="flex-1 px-2 py-1 bg-foreground/10 hover:bg-foreground/20 rounded text-[9px]">MOD</button>
+            <button onClick={() => setPeekConfig({ width: 22, opacity: 0.48, blur: 0, edgeFade: 'none' })}
+              className="flex-1 px-2 py-1 bg-foreground/10 hover:bg-foreground/20 rounded text-[9px]">BOLD</button>
+          </div>
+          <div className="mt-2 text-[9px] text-foreground/40 leading-relaxed">
+            Spec: w {peekConfig.width}% · o {peekConfig.opacity.toFixed(2)} · b {peekConfig.blur}px · fade {peekConfig.edgeFade}
+          </div>
+        </div>
+      )}
 
       {/* Content layer — pointer-events-none container, auto on interactive children */}
       <div className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto pt-20 pb-8 pointer-events-none">
