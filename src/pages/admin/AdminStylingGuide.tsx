@@ -611,6 +611,27 @@ export default function AdminStylingGuide() {
 
       <div className="border-b border-border" />
 
+      {allPresets.length > 0 && (
+        <div className="px-6 py-2 border-b border-border flex items-center gap-3 flex-wrap">
+          <p className="text-[10px] font-display tracking-[0.2em] text-foreground/80">CONFIGURED MATCHES</p>
+          <div className="flex flex-wrap gap-1">
+            {storefrontCategories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setMatchFilter(cat)}
+                className={`px-2.5 py-1 rounded-full text-[9px] font-display tracking-wider transition-all duration-200 ${
+                  matchFilter === cat
+                    ? 'bg-foreground/15 text-foreground border border-foreground/20 shadow-[0_0_8px_rgba(255,255,255,0.05)]'
+                    : 'bg-foreground/5 text-muted-foreground border border-foreground/8 hover:bg-foreground/10 hover:text-foreground/80'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 flex min-h-0">
         {/* LEFT: Product list sidebar */}
         <div className={`w-96 border-r border-foreground/5 overflow-y-auto flex-shrink-0 liquid-glass transition-shadow duration-500 ${activeView === 'canvas' && blankNodeActive ? 'shadow-[0_0_40px_8px_hsl(var(--primary)/0.25),inset_0_0_30px_-10px_hsl(var(--primary)/0.1)]' : ''}`}>
