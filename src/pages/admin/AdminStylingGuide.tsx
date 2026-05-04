@@ -848,10 +848,39 @@ export default function AdminStylingGuide() {
                                         const from = currentIdx;
                                         const to = i;
                                         setPresets(prev => {
-                                          const next = [...prev];
-                                          const [moved] = next.splice(from, 1);
-                                          next.splice(to, 0, moved);
-                                          return next;
+                                          // HIGH fix: from/to are FILTERED indices. Re-derive
+                                          // the filtered subset from prev, reorder within it,
+                                          // then splice back into the unfiltered array.
+                                          const filteredFromPrev = prev.filter(preset => {
+                                            if (matchFilter === 'ALL') return true;
+                                            const p = DEMO_PRODUCTS.find(pr => pr.id === preset.anchorProductId);
+                                            return p ? p.category.toUpperCase() === matchFilter.toUpperCase() : false;
+                                          }).filter(preset => {
+                                            if (matchTypeFilter === 'all') return true;
+                                            if (matchTypeFilter === 'pairs') return preset.pairs.length > 0;
+                                            if (matchTypeFilter === 'extras') return preset.extras.length > 0;
+                                            return true;
+                                          });
+                                          if (from < 0 || from >= filteredFromPrev.length) return prev;
+                                          if (to < 0 || to >= filteredFromPrev.length) return prev;
+                                          const newFilteredOrder = [...filteredFromPrev];
+                                          const [moved] = newFilteredOrder.splice(from, 1);
+                                          newFilteredOrder.splice(to, 0, moved);
+                                          const filteredAnchorSet = new Set(filteredFromPrev.map(pp => pp.anchorProductId));
+                                          const newAnchorOrder = newFilteredOrder.map(pp => pp.anchorProductId);
+                                          const lookup = new Map(prev.map(pp => [pp.anchorProductId, pp]));
+                                          const result: ProductPreset[] = [];
+                                          let nextFilteredIdx = 0;
+                                          for (const pp of prev) {
+                                            if (filteredAnchorSet.has(pp.anchorProductId)) {
+                                              const nextAnchorId = newAnchorOrder[nextFilteredIdx++];
+                                              const nextPreset = lookup.get(nextAnchorId);
+                                              if (nextPreset) result.push(nextPreset);
+                                            } else {
+                                              result.push(pp);
+                                            }
+                                          }
+                                          return result;
                                         });
                                         currentIdx = to;
                                         setDragIdx(to);
