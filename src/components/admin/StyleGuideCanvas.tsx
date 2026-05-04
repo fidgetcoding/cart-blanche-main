@@ -58,6 +58,7 @@ interface StyleGuideCanvasProps {
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
   onBlankNodeChange: (active: boolean) => void;
   matchTypeFilter: 'all' | 'pairs' | 'extras';
+  matchFilter: string;
 }
 
 type BodyZoneGroup = 'TOPS' | 'BOTTOMS' | 'ACCESSORIES';
@@ -263,6 +264,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   onCanvasNodeIdsChange,
   onBlankNodeChange,
   matchTypeFilter,
+  matchFilter,
 }, ref) => {
   const { fitView, setCenter, screenToFlowPosition } = useReactFlow();
   const nodeCountRef = useRef(0);
@@ -1041,36 +1043,60 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onPresetsChange(newPresets);
   }, [selectedNodeId, selectedPreset, presets, onPresetsChange]);
 
-  const visibleEdges = useMemo(() => {
-    if (matchTypeFilter === 'all') return edges;
-    return edges.filter(e => {
-      const t = (e.data as { type?: string } | undefined)?.type;
-      return t === matchTypeFilter || t === 'pending';
+  const categoryPassNodeIds = useMemo(() => {
+    if (matchFilter === 'ALL') return null;
+    const ids = new Set<string>();
+    nodes.forEach(n => {
+      if (n.id === BLANK_NODE_ID) { ids.add(n.id); return; }
+      const product = DEMO_PRODUCTS.find(p => p.id === n.id);
+      if (product && product.category.toUpperCase() === matchFilter.toUpperCase()) {
+        ids.add(n.id);
+      }
     });
-  }, [edges, matchTypeFilter]);
+    return ids;
+  }, [nodes, matchFilter]);
 
-  // Filter nodes to only those participating in at least one visible edge.
+  const visibleEdges = useMemo(() => {
+    let result = edges;
+    if (matchTypeFilter !== 'all') {
+      result = result.filter(e => {
+        const t = (e.data as { type?: string } | undefined)?.type;
+        return t === matchTypeFilter || t === 'pending';
+      });
+    }
+    if (categoryPassNodeIds !== null) {
+      result = result.filter(e => {
+        const t = (e.data as { type?: string } | undefined)?.type;
+        if (t === 'pending') return true;
+        return categoryPassNodeIds.has(e.source) && categoryPassNodeIds.has(e.target);
+      });
+    }
+    return result;
+  }, [edges, matchTypeFilter, categoryPassNodeIds]);
+
   const visibleNodes = useMemo(() => {
-    if (matchTypeFilter === 'all') return nodes;
+    let pool = nodes;
+    if (categoryPassNodeIds !== null) {
+      pool = nodes.filter(n => categoryPassNodeIds.has(n.id));
+    }
+    if (matchTypeFilter === 'all') return pool;
     const involvedIds = new Set<string>();
     visibleEdges.forEach(e => {
       involvedIds.add(e.source);
       involvedIds.add(e.target);
     });
-    if (nodes.some(n => n.id === BLANK_NODE_ID)) {
+    if (pool.some(n => n.id === BLANK_NODE_ID)) {
       involvedIds.add(BLANK_NODE_ID);
     }
-    return nodes.filter(n => involvedIds.has(n.id));
-  }, [nodes, visibleEdges, matchTypeFilter]);
+    return pool.filter(n => involvedIds.has(n.id));
+  }, [nodes, visibleEdges, matchTypeFilter, categoryPassNodeIds]);
 
-  // Auto-deselect when the currently selected node is filtered out.
   useEffect(() => {
-    if (matchTypeFilter === 'all') return;
     if (!selectedNodeId) return;
     if (!visibleNodes.some(n => n.id === selectedNodeId)) {
       setSelectedNodeId(null);
     }
-  }, [matchTypeFilter, selectedNodeId, visibleNodes]);
+  }, [selectedNodeId, visibleNodes]);
 
   return (
     <div className="flex-1 flex relative h-full [&_.react-flow]:!bg-[#0a0a0a] [&_.react-flow__pane]:!bg-[#0a0a0a]">
