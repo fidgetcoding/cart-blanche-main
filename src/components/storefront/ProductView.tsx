@@ -522,12 +522,14 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           {peekNeighbors.left && peekNeighbors.left.images?.[0] && (
             <div
               aria-hidden
-              className="absolute top-0 bottom-0 left-0 pointer-events-none bg-cover bg-no-repeat"
+              className="absolute top-1/2 -translate-y-1/2 left-0 pointer-events-none bg-no-repeat"
               style={{
                 width: `${peekConfig.width}%`,
+                height: '50vh',
                 opacity: peekConfig.opacity,
                 filter: peekConfig.blur > 0 ? `blur(${peekConfig.blur}px)` : undefined,
                 backgroundImage: `url(${peekNeighbors.left.images[0].medium})`,
+                backgroundSize: 'auto 100%',
                 backgroundPosition: 'right center',
                 maskImage: fadeMaskFor('left', peekConfig.edgeFade),
                 WebkitMaskImage: fadeMaskFor('left', peekConfig.edgeFade),
@@ -537,12 +539,14 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           {peekNeighbors.right && peekNeighbors.right.images?.[0] && (
             <div
               aria-hidden
-              className="absolute top-0 bottom-0 right-0 pointer-events-none bg-cover bg-no-repeat"
+              className="absolute top-1/2 -translate-y-1/2 right-0 pointer-events-none bg-no-repeat"
               style={{
                 width: `${peekConfig.width}%`,
+                height: '50vh',
                 opacity: peekConfig.opacity,
                 filter: peekConfig.blur > 0 ? `blur(${peekConfig.blur}px)` : undefined,
                 backgroundImage: `url(${peekNeighbors.right.images[0].medium})`,
+                backgroundSize: 'auto 100%',
                 backgroundPosition: 'left center',
                 maskImage: fadeMaskFor('right', peekConfig.edgeFade),
                 WebkitMaskImage: fadeMaskFor('right', peekConfig.edgeFade),
@@ -552,12 +556,14 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           {peekNeighbors.up && peekNeighbors.up.images?.[0] && (
             <div
               aria-hidden
-              className="absolute left-0 right-0 top-0 pointer-events-none bg-cover bg-no-repeat"
+              className="absolute left-1/2 -translate-x-1/2 top-0 pointer-events-none bg-no-repeat"
               style={{
+                width: '40vw',
                 height: `${peekConfig.width}%`,
                 opacity: peekConfig.opacity,
                 filter: peekConfig.blur > 0 ? `blur(${peekConfig.blur}px)` : undefined,
                 backgroundImage: `url(${peekNeighbors.up.images[0].medium})`,
+                backgroundSize: '100% auto',
                 backgroundPosition: 'center bottom',
                 maskImage: fadeMaskFor('top', peekConfig.edgeFade),
                 WebkitMaskImage: fadeMaskFor('top', peekConfig.edgeFade),
@@ -567,12 +573,14 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
           {peekNeighbors.down && peekNeighbors.down.images?.[0] && (
             <div
               aria-hidden
-              className="absolute left-0 right-0 bottom-0 pointer-events-none bg-cover bg-no-repeat"
+              className="absolute left-1/2 -translate-x-1/2 bottom-0 pointer-events-none bg-no-repeat"
               style={{
+                width: '40vw',
                 height: `${peekConfig.width}%`,
                 opacity: peekConfig.opacity,
                 filter: peekConfig.blur > 0 ? `blur(${peekConfig.blur}px)` : undefined,
                 backgroundImage: `url(${peekNeighbors.down.images[0].medium})`,
+                backgroundSize: '100% auto',
                 backgroundPosition: 'center top',
                 maskImage: fadeMaskFor('bottom', peekConfig.edgeFade),
                 WebkitMaskImage: fadeMaskFor('bottom', peekConfig.edgeFade),
