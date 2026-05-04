@@ -167,6 +167,34 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   
   const [expandDetails, setExpandDetails] = useState(false);
+
+  // Adjacent Item Peeks — feature flag + tuning state
+  const peekFlag = useMemo(() => getPeekFlag(), []);
+  const [peekConfig, setPeekConfig] = useState<PeekConfig>(loadPeekConfig);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
+  useEffect(() => {
+    if (peekFlag !== 'dev') return;
+    try { window.localStorage.setItem(PEEK_STORAGE_KEY, JSON.stringify(peekConfig)); } catch { /* ignore */ }
+  }, [peekConfig, peekFlag]);
+
+  const peeksVisible = peekFlag !== 'off' && !isMobile && !expandDetails;
+  const peekNeighbors = useMemo(() => {
+    if (!peeksVisible) return null;
+    const dirs: Array<'left' | 'right' | 'up' | 'down'> = ['left', 'right', 'up', 'down'];
+    const out: Record<'left' | 'right' | 'up' | 'down', DemoProduct | null> = { left: null, right: null, up: null, down: null };
+    for (const dir of dirs) {
+      const idx = getWrappingNeighbor(productIndex, dir, products, activeCategory);
+      if (idx !== productIndex) out[dir] = products[idx] ?? null;
+    }
+    return out;
+  }, [peeksVisible, productIndex, products, activeCategory]);
   const [activeImage, setActiveImage] = useState(0);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
