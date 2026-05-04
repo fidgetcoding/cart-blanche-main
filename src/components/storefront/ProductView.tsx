@@ -678,7 +678,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
 
           {/* Gender symbols — vertical stack under ALL */}
           {onToggleGender && availableGenders && availableGenders.size > 1 && (
-            <div className="flex flex-col items-center gap-1 pl-2">
+            <div className={
+              effectivePeekMode
+                ? 'flex flex-col items-center gap-1 pl-2'
+                : 'flex items-center gap-2'
+            }>
               {['MEN', 'WOMEN', 'UNISEX'].map(g => {
                 const isActive = activeGenders.includes(g);
                 return (
