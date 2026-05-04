@@ -264,6 +264,15 @@ export default function AdminStylingGuide() {
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
   const canvasRef = useRef<StyleGuideCanvasHandle | null>(null);
 
+  // Refs that always track latest committed state. saveGuide reads from these
+  // instead of from closure so the auto-save timer (captured at scheduling
+  // time) doesn't persist stale snapshots. For the synchronous setState→save
+  // race in canvas's manual handleSave, an explicit override is passed.
+  const presetsRef = useRef<ProductPreset[]>([]);
+  const canvasLayoutRef = useRef<any>(null);
+  useEffect(() => { presetsRef.current = presets; }, [presets]);
+  useEffect(() => { canvasLayoutRef.current = canvasLayout; }, [canvasLayout]);
+
   const grouped = useMemo(() => {
     const groups: Record<string, DemoProduct[]> = {};
     const q = searchQuery.toLowerCase();
@@ -341,11 +350,21 @@ export default function AdminStylingGuide() {
     setLoading(false);
   };
 
-  const saveGuide = async (silent = false) => {
+  const saveGuide = async (
+    silent = false,
+    override?: { presets?: ProductPreset[]; canvasLayout?: any },
+  ) => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
-    const rules = { version: 2, presets, canvasLayout };
+
+    const finalPresets = override?.presets ?? presetsRef.current;
+    const finalLayout = override?.canvasLayout ?? canvasLayoutRef.current;
+
+    // MEDIUM-2: garbage-collect empty preset rows at save time.
+    const cleanedPresets = finalPresets.filter(p => p.pairs.length > 0 || p.extras.length > 0);
+
+    const rules = { version: 2, presets: cleanedPresets, canvasLayout: finalLayout };
     if (guideId) {
       await supabase.from('styling_guides').update({ rules: rules as unknown as any }).eq('id', guideId);
     } else {
@@ -359,7 +378,14 @@ export default function AdminStylingGuide() {
     }
   };
 
-  const saveGuideSilent = useCallback(() => saveGuide(true), [presets, canvasLayout, guideId]);
+  const saveGuideSilent = useCallback(
+    (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => saveGuide(true, override),
+    [guideId],
+  );
+  const saveGuideManual = useCallback(
+    (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => saveGuide(false, override),
+    [guideId],
+  );
 
   const updatePreset = (anchorId: string, field: 'pairs' | 'extras', ids: string[]) => {
     markDirty();
@@ -694,11 +720,27 @@ export default function AdminStylingGuide() {
               <StyleGuideCanvas
                 ref={canvasRef}
                 presets={presets}
-                onPresetsChange={(p) => { setPresets(normalizeBidirectional(p)); markDirty(); }}
+                onPresetsChange={(p) => {
+                  // MEDIUM-1: preserve existing list order across canvas edits.
+                  setPresets(prev => {
+                    const newByAnchor = new Map(p.map(np => [np.anchorProductId, np]));
+                    const merged: ProductPreset[] = [];
+                    prev.forEach(cp => {
+                      const updated = newByAnchor.get(cp.anchorProductId);
+                      if (updated) {
+                        merged.push(updated);
+                        newByAnchor.delete(cp.anchorProductId);
+                      }
+                    });
+                    newByAnchor.forEach(np => merged.push(np));
+                    return normalizeBidirectional(merged);
+                  });
+                  markDirty();
+                }}
                 canvasLayout={canvasLayout}
                 onCanvasLayoutChange={(l) => { setCanvasLayout(l); markDirty(); }}
                 onSave={saveGuideSilent}
-                onManualSave={() => saveGuide()}
+                onManualSave={saveGuideManual}
                 saving={saving}
                 isDirty={isDirty}
                 onCanvasNodeIdsChange={setCanvasNodeIds}
@@ -806,10 +848,39 @@ export default function AdminStylingGuide() {
                                         const from = currentIdx;
                                         const to = i;
                                         setPresets(prev => {
-                                          const next = [...prev];
-                                          const [moved] = next.splice(from, 1);
-                                          next.splice(to, 0, moved);
-                                          return next;
+                                          // HIGH fix: from/to are FILTERED indices. Re-derive
+                                          // the filtered subset from prev, reorder within it,
+                                          // then splice back into the unfiltered array.
+                                          const filteredFromPrev = prev.filter(preset => {
+                                            if (matchFilter === 'ALL') return true;
+                                            const p = DEMO_PRODUCTS.find(pr => pr.id === preset.anchorProductId);
+                                            return p ? p.category.toUpperCase() === matchFilter.toUpperCase() : false;
+                                          }).filter(preset => {
+                                            if (matchTypeFilter === 'all') return true;
+                                            if (matchTypeFilter === 'pairs') return preset.pairs.length > 0;
+                                            if (matchTypeFilter === 'extras') return preset.extras.length > 0;
+                                            return true;
+                                          });
+                                          if (from < 0 || from >= filteredFromPrev.length) return prev;
+                                          if (to < 0 || to >= filteredFromPrev.length) return prev;
+                                          const newFilteredOrder = [...filteredFromPrev];
+                                          const [moved] = newFilteredOrder.splice(from, 1);
+                                          newFilteredOrder.splice(to, 0, moved);
+                                          const filteredAnchorSet = new Set(filteredFromPrev.map(pp => pp.anchorProductId));
+                                          const newAnchorOrder = newFilteredOrder.map(pp => pp.anchorProductId);
+                                          const lookup = new Map(prev.map(pp => [pp.anchorProductId, pp]));
+                                          const result: ProductPreset[] = [];
+                                          let nextFilteredIdx = 0;
+                                          for (const pp of prev) {
+                                            if (filteredAnchorSet.has(pp.anchorProductId)) {
+                                              const nextAnchorId = newAnchorOrder[nextFilteredIdx++];
+                                              const nextPreset = lookup.get(nextAnchorId);
+                                              if (nextPreset) result.push(nextPreset);
+                                            } else {
+                                              result.push(pp);
+                                            }
+                                          }
+                                          return result;
                                         });
                                         currentIdx = to;
                                         setDragIdx(to);

@@ -51,8 +51,8 @@ interface StyleGuideCanvasProps {
   onPresetsChange: (presets: ProductPreset[]) => void;
   canvasLayout: { positions: Record<string, { x: number; y: number }>; nodeIds?: string[] } | null;
   onCanvasLayoutChange: (layout: any) => void;
-  onSave: () => void;
-  onManualSave: () => void;
+  onSave: (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => void;
+  onManualSave: (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => void;
   saving: boolean;
   isDirty: boolean;
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
@@ -314,8 +314,9 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         posMap[n.id] = n.position;
         nodeIds.push(n.id);
       });
-      onCanvasLayoutChange({ positions: posMap, nodeIds });
-      onSave();
+      const newLayout = { positions: posMap, nodeIds };
+      onCanvasLayoutChange(newLayout);
+      onSave({ canvasLayout: newLayout });
     }, 800);
   }, [onCanvasLayoutChange, onSave]);
 
@@ -657,9 +658,17 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
     setEdges(eds => {
       if (eds.some(e => e.id === newEdge.id)) return eds;
-      // Also check canonical reverse
       const reverseId = `${connectionType}-${connection.target}-${connection.source}`;
       if (eds.some(e => e.id === reverseId)) return eds;
+      // MEDIUM-3: dedup ANY existing edge between this node-pair regardless of type.
+      const canonical = [connection.source, connection.target].sort().join('::');
+      const hasAnyEdge = eds.some(e => {
+        if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return false;
+        const t = (e.data as any)?.type;
+        if (t === 'pending') return false;
+        return [e.source, e.target].sort().join('::') === canonical;
+      });
+      if (hasAnyEdge) return eds;
       const newEdges = addEdge(newEdge, eds);
       syncPresetsFromEdges(newEdges);
       return newEdges;
@@ -694,9 +703,17 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           const style = connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE;
 
           setEdges(eds => {
-            // Don't add duplicate (check both directions)
             if (eds.some(e => e.source === sourceId && e.target === targetNodeId && (e.data as any)?.type === connectionType)) return eds;
             if (eds.some(e => e.source === targetNodeId && e.target === sourceId && (e.data as any)?.type === connectionType)) return eds;
+            // MEDIUM-3: dedup any existing non-pending edge between these two nodes regardless of type.
+            const canonical = [sourceId, targetNodeId].sort().join('::');
+            const hasAnyEdge = eds.some(e => {
+              if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return false;
+              const t = (e.data as any)?.type;
+              if (t === 'pending') return false;
+              return [e.source, e.target].sort().join('::') === canonical;
+            });
+            if (hasAnyEdge) return eds;
 
             const newEdge: Edge = {
               id: `${connectionType}-${sourceId}-${targetNodeId}`,
@@ -804,9 +821,10 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       posMap[n.id] = n.position;
       nodeIds.push(n.id);
     });
-    onCanvasLayoutChange({ positions: posMap, nodeIds });
-    onManualSave();
-  }, [nodes, onCanvasLayoutChange, onSave]);
+    const newLayout = { positions: posMap, nodeIds };
+    onCanvasLayoutChange(newLayout);
+    onManualSave({ canvasLayout: newLayout });
+  }, [nodes, onCanvasLayoutChange, onManualSave]);
 
   // Auto-arrange all nodes by their connections (Shift+F)
   const autoArrangeNodes = useCallback(() => {
