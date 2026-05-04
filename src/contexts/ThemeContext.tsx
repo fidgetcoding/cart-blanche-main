@@ -23,6 +23,7 @@ export interface ThemeSettings {
   storeNameColor: string;
   yzExpandTriggerStyle: YzExpandTriggerStyle;
   slExpandTriggerStyle: SlExpandTriggerStyle;
+  yzPeekMode: boolean;
 }
 
 const DEFAULT_SETTINGS: ThemeSettings = {
