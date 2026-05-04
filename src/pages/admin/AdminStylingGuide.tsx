@@ -264,6 +264,15 @@ export default function AdminStylingGuide() {
   const [canvasNodeIds, setCanvasNodeIds] = useState<Set<string>>(new Set());
   const canvasRef = useRef<StyleGuideCanvasHandle | null>(null);
 
+  // Refs that always track latest committed state. saveGuide reads from these
+  // instead of from closure so the auto-save timer (captured at scheduling
+  // time) doesn't persist stale snapshots. For the synchronous setState→save
+  // race in canvas's manual handleSave, an explicit override is passed.
+  const presetsRef = useRef<ProductPreset[]>([]);
+  const canvasLayoutRef = useRef<any>(null);
+  useEffect(() => { presetsRef.current = presets; }, [presets]);
+  useEffect(() => { canvasLayoutRef.current = canvasLayout; }, [canvasLayout]);
+
   const grouped = useMemo(() => {
     const groups: Record<string, DemoProduct[]> = {};
     const q = searchQuery.toLowerCase();
