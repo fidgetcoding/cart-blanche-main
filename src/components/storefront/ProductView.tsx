@@ -1044,8 +1044,8 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
         {/* Navigation hints — bottom left */}
         <div className="group absolute bottom-14 left-6 pointer-events-auto cursor-default">
           <p className="text-[10px] tracking-wider text-muted-foreground/30 group-hover:text-foreground/80 transition-colors duration-700" style={{ fontFamily: 'var(--font-body)' }}>
-            <span className="hidden md:inline">SWIPE OR USE ARROW-KEYS TO CYCLE PRODUCT & PHOTOS</span>
-            <span className="md:hidden">SWIPE OR USE ARROW-KEYS TO CYCLE PRODUCT & PHOTOS</span>
+            <span className="hidden md:inline">SWIPE OR USE ARROW-KEYS TO CYCLE PRODUCTS & PHOTOS</span>
+            <span className="md:hidden">SWIPE OR USE ARROW-KEYS TO CYCLE PRODUCTS & PHOTOS</span>
           </p>
         </div>
 
