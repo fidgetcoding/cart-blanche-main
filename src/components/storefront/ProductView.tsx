@@ -184,7 +184,10 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     try { window.localStorage.setItem(PEEK_STORAGE_KEY, JSON.stringify(peekConfig)); } catch { /* ignore */ }
   }, [peekConfig, peekFlag]);
 
-  const peeksVisible = peekFlag !== 'off' && !isMobile && !expandDetails;
+  const effectivePeekMode = peekFlag === 'off' ? false
+    : peekFlag === 'dev' ? true
+    : themeSettings.yzPeekMode;
+  const peeksVisible = effectivePeekMode && !isMobile && !expandDetails;
   const peekNeighbors = useMemo(() => {
     if (!peeksVisible) return null;
     const dirs: Array<'left' | 'right' | 'up' | 'down'> = ['left', 'right', 'up', 'down'];
