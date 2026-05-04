@@ -1043,7 +1043,6 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onPresetsChange(newPresets);
   }, [selectedNodeId, selectedPreset, presets, onPresetsChange]);
 
-  const visibleEdges = useMemo(() => {
   const categoryPassNodeIds = useMemo(() => {
     if (matchFilter === 'ALL') return null;
     const ids = new Set<string>();
