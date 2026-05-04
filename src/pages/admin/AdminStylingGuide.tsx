@@ -613,7 +613,7 @@ export default function AdminStylingGuide() {
 
       {allPresets.length > 0 && (
         <div className="px-6 py-2 border-b border-border flex items-center gap-3 flex-wrap">
-          <p className="text-[10px] font-display tracking-[0.2em] text-foreground/80">CONFIGURED MATCHES</p>
+          <p className="text-[10px] font-display tracking-[0.2em] text-foreground/80">BROWSE BY TAG</p>
           <div className="flex flex-wrap gap-1">
             {storefrontCategories.map(cat => (
               <button
