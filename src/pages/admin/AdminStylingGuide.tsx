@@ -720,11 +720,27 @@ export default function AdminStylingGuide() {
               <StyleGuideCanvas
                 ref={canvasRef}
                 presets={presets}
-                onPresetsChange={(p) => { setPresets(normalizeBidirectional(p)); markDirty(); }}
+                onPresetsChange={(p) => {
+                  // MEDIUM-1: preserve existing list order across canvas edits.
+                  setPresets(prev => {
+                    const newByAnchor = new Map(p.map(np => [np.anchorProductId, np]));
+                    const merged: ProductPreset[] = [];
+                    prev.forEach(cp => {
+                      const updated = newByAnchor.get(cp.anchorProductId);
+                      if (updated) {
+                        merged.push(updated);
+                        newByAnchor.delete(cp.anchorProductId);
+                      }
+                    });
+                    newByAnchor.forEach(np => merged.push(np));
+                    return normalizeBidirectional(merged);
+                  });
+                  markDirty();
+                }}
                 canvasLayout={canvasLayout}
                 onCanvasLayoutChange={(l) => { setCanvasLayout(l); markDirty(); }}
                 onSave={saveGuideSilent}
-                onManualSave={() => saveGuide()}
+                onManualSave={saveGuideManual}
                 saving={saving}
                 isDirty={isDirty}
                 onCanvasNodeIdsChange={setCanvasNodeIds}
