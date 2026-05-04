@@ -27,34 +27,12 @@ const StorefrontShell = ({ activeTemplate }: { activeTemplate: ActiveTemplate })
 };
 
 const Index = () => {
-  const [isReady, setIsReady] = useState(false);
-  const navigate = useNavigate();
   const [activeTemplate, setActiveTemplateState] = useState<ActiveTemplate>(() => getActiveTemplate());
 
   useEffect(() => {
     const unsub = subscribeActiveTemplate(setActiveTemplateState);
     return unsub;
   }, []);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate('/auth', { replace: true });
-      } else {
-        setIsReady(true);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        navigate('/auth', { replace: true });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  if (!isReady) return null;
 
   const themeKey = activeTemplate === 'sl' ? 'cb-theme-sl' : 'cb-theme-yz';
   const themeDefaults = activeTemplate === 'sl'
