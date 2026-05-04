@@ -273,15 +273,21 @@ export default function AdminStylingGuide() {
   useEffect(() => { presetsRef.current = presets; }, [presets]);
   useEffect(() => { canvasLayoutRef.current = canvasLayout; }, [canvasLayout]);
 
+  const productTypes = useMemo(() => {
+    const set = new Set<string>();
+    DEMO_PRODUCTS.forEach(p => { if (p.product_type) set.add(p.product_type.toUpperCase()); });
+    return ['ALL', ...Array.from(set).sort()];
+  }, []);
+
   const grouped = useMemo(() => {
     const groups: Record<string, DemoProduct[]> = {};
     const q = searchQuery.toLowerCase();
     DEMO_PRODUCTS.forEach(p => {
       if (q && !p.title.toLowerCase().includes(q)) return;
-      const cat = p.category.toUpperCase();
-      if (filterGroup !== 'ALL' && cat !== filterGroup) return;
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(p);
+      const pt = (p.product_type || 'OTHER').toUpperCase();
+      if (filterGroup !== 'ALL' && pt !== filterGroup) return;
+      if (!groups[pt]) groups[pt] = [];
+      groups[pt].push(p);
     });
     return groups;
   }, [searchQuery, filterGroup]);
