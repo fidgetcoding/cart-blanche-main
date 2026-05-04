@@ -314,8 +314,9 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         posMap[n.id] = n.position;
         nodeIds.push(n.id);
       });
-      onCanvasLayoutChange({ positions: posMap, nodeIds });
-      onSave();
+      const newLayout = { positions: posMap, nodeIds };
+      onCanvasLayoutChange(newLayout);
+      onSave({ canvasLayout: newLayout });
     }, 800);
   }, [onCanvasLayoutChange, onSave]);
 
