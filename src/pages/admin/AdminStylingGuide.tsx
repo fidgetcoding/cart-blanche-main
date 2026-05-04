@@ -350,11 +350,21 @@ export default function AdminStylingGuide() {
     setLoading(false);
   };
 
-  const saveGuide = async (silent = false) => {
+  const saveGuide = async (
+    silent = false,
+    override?: { presets?: ProductPreset[]; canvasLayout?: any },
+  ) => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
-    const rules = { version: 2, presets, canvasLayout };
+
+    const finalPresets = override?.presets ?? presetsRef.current;
+    const finalLayout = override?.canvasLayout ?? canvasLayoutRef.current;
+
+    // MEDIUM-2: garbage-collect empty preset rows at save time.
+    const cleanedPresets = finalPresets.filter(p => p.pairs.length > 0 || p.extras.length > 0);
+
+    const rules = { version: 2, presets: cleanedPresets, canvasLayout: finalLayout };
     if (guideId) {
       await supabase.from('styling_guides').update({ rules: rules as unknown as any }).eq('id', guideId);
     } else {
@@ -368,7 +378,14 @@ export default function AdminStylingGuide() {
     }
   };
 
-  const saveGuideSilent = useCallback(() => saveGuide(true), [presets, canvasLayout, guideId]);
+  const saveGuideSilent = useCallback(
+    (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => saveGuide(true, override),
+    [guideId],
+  );
+  const saveGuideManual = useCallback(
+    (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => saveGuide(false, override),
+    [guideId],
+  );
 
   const updatePreset = (anchorId: string, field: 'pairs' | 'extras', ids: string[]) => {
     markDirty();
