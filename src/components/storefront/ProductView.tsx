@@ -665,7 +665,7 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
                   onCategoryChange(cat);
                   onClose();
                 }}
-                className={`text-[10px] font-display tracking-[0.12em] uppercase rounded-md px-2.5 py-1 transition-colors ${
+                className={`whitespace-nowrap text-[10px] font-display tracking-[0.12em] uppercase rounded-md px-2.5 py-1 transition-colors ${
                   activeCategory === cat
                     ? 'bg-foreground/[0.15] text-foreground font-medium'
                     : 'text-foreground/40 hover:text-foreground/70'
