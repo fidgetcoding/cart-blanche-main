@@ -651,7 +651,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       <div className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto pt-20 pb-8 pointer-events-none">
 
         {/* Category tabs + gender symbols — centered as one group, mirroring SpatialCanvas header */}
-        <div className="absolute top-4 left-4 z-50 pointer-events-auto flex flex-col items-start gap-2">
+        <div className={
+          effectivePeekMode
+            ? 'absolute top-4 left-4 z-50 pointer-events-auto flex flex-col items-start gap-2'
+            : 'absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-3'
+        }>
           <div className="flex items-center gap-0.5 bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
             {CATEGORIES.map(cat => (
               <button
