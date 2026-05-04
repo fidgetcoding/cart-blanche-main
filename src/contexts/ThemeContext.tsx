@@ -44,6 +44,7 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   storeNameColor: '',
   yzExpandTriggerStyle: 'icon',
   slExpandTriggerStyle: 'text',
+  yzPeekMode: false,
 };
 
 const DEFAULT_STORAGE_KEY = 'cb-theme-settings';
