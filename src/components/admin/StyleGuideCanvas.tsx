@@ -658,9 +658,17 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
     setEdges(eds => {
       if (eds.some(e => e.id === newEdge.id)) return eds;
-      // Also check canonical reverse
       const reverseId = `${connectionType}-${connection.target}-${connection.source}`;
       if (eds.some(e => e.id === reverseId)) return eds;
+      // MEDIUM-3: dedup ANY existing edge between this node-pair regardless of type.
+      const canonical = [connection.source, connection.target].sort().join('::');
+      const hasAnyEdge = eds.some(e => {
+        if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return false;
+        const t = (e.data as any)?.type;
+        if (t === 'pending') return false;
+        return [e.source, e.target].sort().join('::') === canonical;
+      });
+      if (hasAnyEdge) return eds;
       const newEdges = addEdge(newEdge, eds);
       syncPresetsFromEdges(newEdges);
       return newEdges;
