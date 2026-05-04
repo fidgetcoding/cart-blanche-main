@@ -703,9 +703,17 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           const style = connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE;
 
           setEdges(eds => {
-            // Don't add duplicate (check both directions)
             if (eds.some(e => e.source === sourceId && e.target === targetNodeId && (e.data as any)?.type === connectionType)) return eds;
             if (eds.some(e => e.source === targetNodeId && e.target === sourceId && (e.data as any)?.type === connectionType)) return eds;
+            // MEDIUM-3: dedup any existing non-pending edge between these two nodes regardless of type.
+            const canonical = [sourceId, targetNodeId].sort().join('::');
+            const hasAnyEdge = eds.some(e => {
+              if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return false;
+              const t = (e.data as any)?.type;
+              if (t === 'pending') return false;
+              return [e.source, e.target].sort().join('::') === canonical;
+            });
+            if (hasAnyEdge) return eds;
 
             const newEdge: Edge = {
               id: `${connectionType}-${sourceId}-${targetNodeId}`,
