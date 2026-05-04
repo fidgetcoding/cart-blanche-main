@@ -51,8 +51,8 @@ interface StyleGuideCanvasProps {
   onPresetsChange: (presets: ProductPreset[]) => void;
   canvasLayout: { positions: Record<string, { x: number; y: number }>; nodeIds?: string[] } | null;
   onCanvasLayoutChange: (layout: any) => void;
-  onSave: () => void;
-  onManualSave: () => void;
+  onSave: (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => void;
+  onManualSave: (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => void;
   saving: boolean;
   isDirty: boolean;
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
