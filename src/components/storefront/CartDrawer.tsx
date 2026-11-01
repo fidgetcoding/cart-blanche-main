@@ -226,6 +226,11 @@ function CartFooter({ subtotal, discount, discountAmount, total, applyDiscount, 
 
     setPromoLoading(false);
 
+    if (match?.status === 'rate_limited') {
+      setPromoError('Too many tries. Please wait a minute.');
+      return;
+    }
+
     if (error || !match || match.status === 'not_started') {
       setPromoError('Invalid discount code');
       return;
