@@ -22,6 +22,36 @@ const IP_LIMIT_PER_DAY = 200;
 const GLOBAL_LIMIT_PER_DAY = 2_000;
 const DAY_SECONDS = 86_400;
 
+interface CatalogItem {
+  id: string;
+  title: string;
+  price: number;
+  compare_at_price?: number;
+  category: string;
+  description: string;
+  variants?: { title: string; inventory_count: number }[];
+}
+
+interface CartLine {
+  productId: string;
+  title: string;
+  variantTitle: string;
+  quantity: number;
+  price: number;
+}
+
+interface Outfit {
+  name: string;
+  budget: number | null;
+  items: { product_id: string; type: string }[];
+  total?: number;
+  remaining?: number;
+}
+
+type AiContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
 function jsonResponse(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
     status,
@@ -161,8 +191,8 @@ serve(async (req) => {
       return jsonResponse({ error: "Invalid JSON." }, 400);
     }
     const { mode } = body;
-    const catalog = Array.isArray(body.catalog) ? body.catalog : [];
-    const cart_items = Array.isArray(body.cart_items) ? body.cart_items : [];
+    const catalog: CatalogItem[] = Array.isArray(body.catalog) ? body.catalog : [];
+    const cart_items: CartLine[] = Array.isArray(body.cart_items) ? body.cart_items : [];
 
     if (catalog.length > MAX_CATALOG_ITEMS || cart_items.length > MAX_CART_ITEMS) {
       return jsonResponse({ error: "Request too large." }, 413);
@@ -208,8 +238,8 @@ serve(async (req) => {
     if (catalog.length > 0) {
       catalogContext = catalog
         .map(
-          (p: any) =>
-            `- ID: ${p.id} | "${p.title}" | $${p.price}${p.compare_at_price ? ` (was $${p.compare_at_price})` : ""} | Category: ${p.category} | ${p.description} | Variants: ${p.variants?.map((v: any) => `${v.title}${v.inventory_count <= 0 ? " (OUT OF STOCK)" : ""}`).join(", ") || "default"}`
+          (p) =>
+            `- ID: ${p.id} | "${p.title}" | $${p.price}${p.compare_at_price ? ` (was $${p.compare_at_price})` : ""} | Category: ${p.category} | ${p.description} | Variants: ${p.variants?.map((v) => `${v.title}${v.inventory_count <= 0 ? " (OUT OF STOCK)" : ""}`).join(", ") || "default"}`
         )
         .join("\n");
     }
@@ -218,7 +248,7 @@ serve(async (req) => {
     let cartContext = "Cart is empty.";
     if (cart_items.length > 0) {
       cartContext = cart_items
-        .map((i: any) => `- ID: ${i.productId} | "${i.title}" (${i.variantTitle}) x${i.quantity} — $${i.price * i.quantity}`)
+        .map((i) => `- ID: ${i.productId} | "${i.title}" (${i.variantTitle}) x${i.quantity} — $${i.price * i.quantity}`)
         .join("\n");
     }
 
@@ -260,7 +290,7 @@ ${mode === "proactive_review" ? "The shopper is reviewing their cart with multip
 ${mode === "proactive_remove" ? "The shopper just removed an item (possible price sensitivity). Suggest 1-2 similar alternatives at different price points. Be tactful." : ""}`;
 
     // Build messages with image support
-    const aiMessages: any[] = [{ role: "system", content: systemPrompt }];
+    const aiMessages: { role: string; content: string | AiContentPart[] }[] = [{ role: "system", content: systemPrompt }];
     
     for (const msg of messages) {
       if (msg.image_url) {
@@ -299,9 +329,9 @@ ${mode === "proactive_remove" ? "The shopper just removed an item (possible pric
 
     const message = choice.message;
     const textContent = message.content || "";
-    let products: any[] | null = null;
-    let outfit: any | null = null;
-    let budget_comparison: any | null = null;
+    let products: unknown[] | null = null;
+    let outfit: Outfit | null = null;
+    let budget_comparison: Record<string, unknown> | null = null;
 
     // Process tool calls
     if (message.tool_calls && message.tool_calls.length > 0) {
@@ -335,7 +365,7 @@ ${mode === "proactive_remove" ? "The shopper just removed an item (possible pric
       let total = 0;
       for (const item of outfit.items) {
         if (item.type === "external") continue;
-        const prod = catalog.find((p: any) => p.id === item.product_id);
+        const prod = catalog.find((p) => p.id === item.product_id);
         if (prod) total += prod.price;
       }
       outfit.total = total;

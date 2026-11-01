@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.96.0";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.96.0";
 import { AI_NOT_CONFIGURED, aiFailure, chatCompletions, readAiConfig } from "../_shared/ai.ts";
 import { checkMessages, pickProductFields } from "../_shared/chat-guards.ts";
 
@@ -246,11 +246,27 @@ const tools = [
 ];
 
 // Execute tool calls against Supabase
+interface OrderItem {
+  product_id?: string;
+  title?: string;
+  price?: number;
+  qty?: number;
+}
+
+// A variant's product is a single row, which the client's generated type can't tell.
+interface VariantRow {
+  id: string;
+  title: string;
+  inventory_count: number | null;
+  product_id: string;
+  products: { title?: string; merchant_id: string } | null;
+}
+
 async function executeTool(
   toolName: string,
   args: Record<string, unknown>,
   merchantId: string,
-  supabaseAdmin: ReturnType<typeof createClient>
+  supabaseAdmin: SupabaseClient
 ): Promise<unknown> {
   switch (toolName) {
     case "query_products": {
@@ -391,12 +407,12 @@ async function executeTool(
       // Top products
       const productSales: Record<string, { title: string; revenue: number; qty: number }> = {};
       for (const o of useOrders) {
-        const orderItems = Array.isArray(o.items) ? o.items : [];
+        const orderItems: OrderItem[] = Array.isArray(o.items) ? o.items : [];
         for (const item of orderItems) {
-          const pid = (item as any).product_id || (item as any).title;
-          if (!productSales[pid]) productSales[pid] = { title: (item as any).title || pid, revenue: 0, qty: 0 };
-          productSales[pid].revenue += (item as any).price * ((item as any).qty || 1);
-          productSales[pid].qty += (item as any).qty || 1;
+          const pid = item.product_id || item.title || "unknown";
+          if (!productSales[pid]) productSales[pid] = { title: item.title || pid, revenue: 0, qty: 0 };
+          productSales[pid].revenue += (item.price ?? 0) * (item.qty || 1);
+          productSales[pid].qty += item.qty || 1;
         }
       }
       const topProducts = Object.values(productSales).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
@@ -416,9 +432,9 @@ async function executeTool(
         .from("product_variants")
         .select("id, title, inventory_count, product_id, products(title, merchant_id)")
         .eq("id", args.variant_id)
-        .single();
+        .single<VariantRow>();
 
-      if (!variant || (variant as any).products?.merchant_id !== merchantId) {
+      if (!variant || variant.products?.merchant_id !== merchantId) {
         throw new Error("Variant not found");
       }
 
@@ -427,7 +443,7 @@ async function executeTool(
         requires_confirmation: true,
         variant_id: args.variant_id,
         variant_title: variant.title,
-        product_title: (variant as any).products?.title,
+        product_title: variant.products?.title,
         current_count: variant.inventory_count,
         new_count: args.inventory_count,
       };
@@ -607,9 +623,9 @@ serve(async (req) => {
           .from("product_variants")
           .select("id, product_id, products!inner(merchant_id)")
           .eq("id", actionArgs.variant_id)
-          .single();
+          .single<VariantRow>();
 
-        if (!variant || (variant as any).products?.merchant_id !== merchantId) {
+        if (!variant || variant.products?.merchant_id !== merchantId) {
           throw new Error("Unauthorized: variant not found or not owned by merchant");
         }
 
@@ -711,7 +727,7 @@ Guidelines:
     const reader = aiResponse.body!.getReader();
     const decoder = new TextDecoder();
     let fullContent = "";
-    let toolCallsAccumulator: Record<number, { name: string; arguments: string }> = {};
+    const toolCallsAccumulator: Record<number, { name: string; arguments: string }> = {};
     let finishReason = "";
     let buffer = "";
 
@@ -758,7 +774,7 @@ Guidelines:
     // If there are tool calls, execute them and do a second pass
     const toolCallKeys = Object.keys(toolCallsAccumulator);
     if (toolCallKeys.length > 0 || finishReason === "tool_calls") {
-      const toolResults = [];
+      const toolResults: { role: string; tool_call_id: string; content: string }[] = [];
 
       for (const idx of toolCallKeys) {
         const tc = toolCallsAccumulator[Number(idx)];
