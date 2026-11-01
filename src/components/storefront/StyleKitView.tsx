@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { carouselItems } from '@/lib/carousel-items';
 import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check } from 'lucide-react';
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
@@ -164,12 +165,11 @@ function CarouselRow({
     }, 0);
   };
 
-  const loopedProducts = products.length > 0
-    ? [...products, ...products, ...products]
-    : [];
+  const loopedProducts = carouselItems(products);
+  const loops = loopedProducts.length > products.length;
 
   useEffect(() => {
-    if (!scrollRef.current || products.length === 0) return;
+    if (!scrollRef.current || !loops) return;
     const el = scrollRef.current;
     requestAnimationFrame(() => {
       if (isHorizontal) {
@@ -178,11 +178,11 @@ function CarouselRow({
         el.scrollTop = el.scrollHeight / 3;
       }
     });
-  }, [products.length, isHorizontal]);
+  }, [loops, products.length, isHorizontal]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
-    if (!el || products.length === 0) return;
+    if (!el || !loops) return;
     const third = isHorizontal ? el.scrollWidth / 3 : el.scrollHeight / 3;
     const pos = isHorizontal ? el.scrollLeft : el.scrollTop;
     const max = isHorizontal ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight;
@@ -193,7 +193,7 @@ function CarouselRow({
       if (isHorizontal) el.scrollLeft -= third;
       else el.scrollTop -= third;
     }
-  }, [products.length, isHorizontal]);
+  }, [loops, isHorizontal]);
 
   // In vertical (EXTRAS) mode, cards should fill the width; in horizontal (PAIRS) use fixed widths
   const cardWidthClass = isHorizontal
