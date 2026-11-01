@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Outlet, NavLink } from 'react-router-dom';
+import { useNavigate, Outlet, NavLink, Link } from 'react-router-dom';
+import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { SmartChatPanel } from '@/components/admin/SmartChatPanel';
 import {
@@ -33,18 +34,19 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
 
+  // No session means demo data, never a redirect: pages read through the
+  // demo-aware client in @/lib/demo/client, so they stay away from the database.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) navigate('/auth');
+    const applySession = (session: Session | null) => {
+      setIsDemo(!session);
       setLoading(false);
-    });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) navigate('/auth');
-      setLoading(false);
-    });
+    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => applySession(session));
+    supabase.auth.getSession().then(({ data: { session } }) => applySession(session));
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   if (loading) {
     return (
@@ -56,11 +58,20 @@ export default function AdminLayout() {
 
   /* ── MAIN ADMIN LAYOUT ── */
   return (
-    <div className="h-screen dynamic-bg flex overflow-hidden">
+    <div key={isDemo ? 'demo' : 'live'} className="h-screen dynamic-bg flex overflow-hidden">
       {/* Left side: brand header + chat panel */}
       <div className="flex flex-col flex-shrink-0 border-r border-sidebar-border h-full">
         <div className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 gap-2">
           <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">CART BLANCHE</h1>
+          {isDemo && (
+            <Link
+              to="/auth"
+              title="Sample data. Changes aren't saved. Merchants can sign in here."
+              className="text-[9px] font-display tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground whitespace-nowrap flex-shrink-0 transition-colors"
+            >
+              Demo data
+            </Link>
+          )}
           <div className="flex-1" />
           <button
             onClick={() => navigate('/')}

@@ -7,7 +7,7 @@ import { useSmartCart } from '@/contexts/SmartCartContext';
 import type { BudgetComparison, OutfitItem } from '@/contexts/SmartCartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/demo/client';
 
 type Tab = 'cart' | 'assistant';
 

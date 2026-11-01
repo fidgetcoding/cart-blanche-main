@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/demo/client';
 import { toast } from 'sonner';
 
 interface SubmitInput {

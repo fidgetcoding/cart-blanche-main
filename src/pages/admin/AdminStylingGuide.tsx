@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, lazy, Suspense, useRef, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/demo/client';
 import { Save, Plus, X, GripVertical, Search, Pencil, Check } from 'lucide-react';
 import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';

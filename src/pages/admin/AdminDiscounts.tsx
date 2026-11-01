@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/demo/client';
 import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight, Tag, Percent, DollarSign, Truck } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 

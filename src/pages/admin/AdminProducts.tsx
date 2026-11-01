@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/demo/client';
 import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, EyeOff, Archive } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 

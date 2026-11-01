@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/demo/client';
 
 // V1 hardcoded welcome code. When merchants get a configurable
 // "subscriber welcome promo" UI, swap this for a dynamic lookup.

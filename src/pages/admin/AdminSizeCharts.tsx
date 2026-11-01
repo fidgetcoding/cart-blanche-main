@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/demo/client';
 import { Plus, Trash2, Save, RotateCcw } from 'lucide-react';
 import {
   CHART_CATEGORIES,

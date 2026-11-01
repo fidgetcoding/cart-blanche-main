@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, Check, XCircle, Sparkles, BarChart3, Package, Tag, ImagePlus, X, Plus, MessageSquare, PanelLeftClose, PanelLeft, Trash2, Warehouse, Grid3X3, ShoppingCart, Settings, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { supabase } from '@/integrations/supabase/client';
+import { DEMO_CHAT_MESSAGE, isDemoSession, supabase } from '@/lib/demo/client';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'react-router-dom';
 
@@ -255,6 +255,13 @@ export function SmartChatPanel() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      if (isDemoSession(session)) {
+        const canned: ChatMessage = { role: 'assistant', content: DEMO_CHAT_MESSAGE };
+        setMessages(prev => [...prev, canned]);
+        saveMessage(canned, convId);
+        return;
+      }
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -363,7 +370,7 @@ export function SmartChatPanel() {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      if (!session || isDemoSession(session)) throw new Error('Not authenticated');
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {

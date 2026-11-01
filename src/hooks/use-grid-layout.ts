@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/demo/client';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import type { DemoProduct, ProductImage, Colorway } from '@/data/demo-data';
 
