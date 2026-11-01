@@ -5,6 +5,11 @@ project_id = "cart-blanche"
 site_url = "http://127.0.0.1:8080"
 additional_redirect_urls = ["http://127.0.0.1:8080/admin", "http://localhost:8080/admin"]
 
+# Log collection needs direct access to the Docker socket, which breaks on Colima
+# and similar setups, and nothing here uses it.
+[analytics]
+enabled = false
+
 # Both functions check their callers themselves: smartcart-chat is public behind
 # its rate limits, and smart-chat validates the merchant's token.
 [functions.smartcart-chat]
