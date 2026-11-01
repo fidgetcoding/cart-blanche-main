@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { isDemoSession, supabase } from '@/lib/demo/client';
-import { mergeInventoryRows } from '@/lib/inventory-rows';
+import { mergeInventoryRows, productUpdate } from '@/lib/inventory-rows';
+import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, ChevronUp, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -399,8 +400,8 @@ export default function AdminInventory() {
             price: p.price,
             compare_at_price: p.compare_at_price ?? undefined,
             category: p.category || '',
-            product_type: '' as ProductType,
-            gender: 'unisex',
+            product_type: (p.product_type || '') as ProductType,
+            gender: p.gender || 'unisex',
             colorways: (p.colorways as unknown as Colorway[]) || [],
             images: p.images || [],
             imagesFull: ((p.images as string[]) || []).map(url => ({ thumb: url, medium: url, full: url })),
@@ -415,9 +416,9 @@ export default function AdminInventory() {
             })),
             totalStock: pvs.reduce((sum, v) => sum + (v.inventory_count ?? 0), 0),
             isDemo: false,
-            weight_oz: 0,
-            shipping_type: 'domestic' as const,
-            hs_code: '',
+            weight_oz: Number(p.weight_oz) || 0,
+            shipping_type: (p.shipping_type === 'international' ? 'international' : 'domestic') as 'domestic' | 'international',
+            hs_code: p.hs_code || '',
             status: (p.status as 'active' | 'draft' | 'archived') ?? 'draft',
           };
         });
@@ -540,7 +541,7 @@ export default function AdminInventory() {
     } else {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        await (supabase.from('products').update({
+        const { error } = await supabase.from('products').update({
           title: editForm.title,
           price: newPrice,
           description: editForm.description,
@@ -549,7 +550,11 @@ export default function AdminInventory() {
           tags: editingProduct.tags,
           status: editingProduct.status,
           colorways: (editingProduct.colorways || []) as unknown as Json,
-        }).eq('id', editingProduct.id));
+        }).eq('id', editingProduct.id);
+        if (error) {
+          toast.error("That product didn't save. Please try again.");
+          return;
+        }
 
         for (const v of editingProduct.variants) {
           if (v.id.startsWith('new-')) {
@@ -567,6 +572,8 @@ export default function AdminInventory() {
             }).eq('id', v.id);
           }
         }
+        // New sizes now have real ids, and saving again mustn't add them a second time.
+        await fetchInventory();
       }
     }
 
@@ -719,36 +726,44 @@ export default function AdminInventory() {
     }
 
     // === Persist non-demo product changes (separate table, no race with grid_layouts) ===
+    let saveFailed = false;
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       for (const p of products) {
         if (!p.isDemo) {
-          await (supabase.from('products').update({
-            title: p.title,
-            price: p.price,
-            compare_at_price: p.compare_at_price ?? null,
-            description: p.description,
-            category: p.category,
-            tags: p.tags,
-            gender: p.gender || 'unisex',
-            status: p.status,
+          const { error } = await supabase.from('products').update({
+            ...productUpdate(p),
             colorways: (p.colorways || []) as unknown as Json,
-          }).eq('id', p.id));
+          }).eq('id', p.id);
+          if (error) saveFailed = true;
           for (const v of p.variants) {
-            if (!v.id.startsWith('new-')) {
-              await supabase.from('product_variants').update({
-                title: v.title,
-                inventory_count: v.inventory_count,
-                colorway_id: v.colorway_id ?? null,
-              }).eq('id', v.id);
-            }
+            const { error: variantError } = v.id.startsWith('new-')
+              ? await supabase.from('product_variants').insert({
+                  product_id: p.id,
+                  title: v.title,
+                  inventory_count: v.inventory_count,
+                  colorway_id: v.colorway_id ?? null,
+                })
+              : await supabase.from('product_variants').update({
+                  title: v.title,
+                  inventory_count: v.inventory_count,
+                  colorway_id: v.colorway_id ?? null,
+                }).eq('id', v.id);
+            if (variantError) saveFailed = true;
           }
         }
       }
     }
 
+    if (saveFailed) {
+      toast.error("Some changes didn't save. Please try again.");
+      return;
+    }
+
     setPendingDemoOverrides({});
     setHasUnsavedChanges(false);
+    // New sizes now have real ids, and saving again mustn't add them a second time.
+    await fetchInventory();
   }
 
   function togglePendingDelete(productId: string) {
@@ -1100,7 +1115,19 @@ export default function AdminInventory() {
       gender: addGender || 'unisex',
       images,
       colorways: addColorways as unknown as Json,
+      product_type: addProductType,
+      weight_oz: parseFloat(addWeight) || 0,
+      shipping_type: addShippingType,
+      hs_code: addHsCode.trim(),
+      video_url: addVideo,
     }).select().single());
+
+    if (error) {
+      console.error('Add product failed:', error);
+      toast.error("That product didn't save. Please try again.");
+      setAddSaving(false);
+      return;
+    }
 
     if (!error && product) {
       const validVariants = addVariants.filter(v => v.title.trim());

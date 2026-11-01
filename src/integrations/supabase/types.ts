@@ -538,6 +538,11 @@ export type Database = {
           created_at: string | null
           description: string | null
           gender: string
+          hs_code: string
+          product_type: string
+          shipping_type: string
+          video_url: string | null
+          weight_oz: number
           grid_position: Json | null
           id: string
           images: string[] | null
@@ -558,6 +563,11 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           gender?: string
+          hs_code?: string
+          product_type?: string
+          shipping_type?: string
+          video_url?: string | null
+          weight_oz?: number
           grid_position?: Json | null
           id?: string
           images?: string[] | null
@@ -578,6 +588,11 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           gender?: string
+          hs_code?: string
+          product_type?: string
+          shipping_type?: string
+          video_url?: string | null
+          weight_oz?: number
           grid_position?: Json | null
           id?: string
           images?: string[] | null

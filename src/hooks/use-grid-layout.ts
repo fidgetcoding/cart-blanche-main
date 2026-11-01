@@ -4,7 +4,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import { DEMO_MERCHANT_ID } from '@/lib/demo/store';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
-import type { DemoProduct, ProductImage, Colorway } from '@/data/demo-data';
+import type { DemoProduct, ProductImage, ProductType, Colorway } from '@/data/demo-data';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -178,7 +178,7 @@ export function useGridLayout() {
                 thumb: url, medium: url, full: url,
               })),
               category: p.category || 'uncategorized',
-              product_type: '' as const,
+              product_type: (p.product_type || '') as ProductType,
               gender: p.gender || 'unisex',
               status: 'active' as const,
               grid_position: { x: 0, y: 0 },
