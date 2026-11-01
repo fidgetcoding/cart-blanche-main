@@ -159,7 +159,7 @@ function fadeMaskFor(direction: 'left' | 'right' | 'top' | 'bottom', edgeFade: P
   return `linear-gradient(${dir}, transparent 0%, black ${stop}%)`;
 }
 
-export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders }, _ref) {
+const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function ProductViewContent({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders }, _ref) {
   const DEMO_PRODUCTS = products;
   const CATEGORIES = categories;
   const { themeSettings } = useTheme();
@@ -204,6 +204,8 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(true);
+  const colorwayWheelLockRef = useRef(false);
+  const colorwayTouchStartY = useRef<number | null>(null);
 
   // Release initial cooldown after mount
   useEffect(() => {
@@ -444,8 +446,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate, onClose]);
 
-  if (!product) return null;
-
   const variant = product.variants.find(v => v.id === selectedVariant);
   const canAdd = product.variants.length <= 1 || selectedVariant !== null;
   const isOutOfStock = variant ? variant.inventory_count === 0 : false;
@@ -471,9 +471,6 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       colorwayName: selectedColorway?.name,
     });
   };
-
-  const colorwayWheelLockRef = useRef(false);
-  const colorwayTouchStartY = useRef<number | null>(null);
 
   const handleColorwayWheel = (e: React.WheelEvent) => {
     if (totalColorwayPages <= 1) return;
@@ -1082,4 +1079,11 @@ export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function
       />
     </motion.div>
   );
+});
+
+// A filter or page change can remove the open product, so the view's hooks only
+// run while there is one to show.
+export const ProductView = forwardRef<HTMLDivElement, ProductViewProps>(function ProductView(props, ref) {
+  if (!props.products[props.productIndex]) return null;
+  return <ProductViewContent {...props} ref={ref} />;
 });
