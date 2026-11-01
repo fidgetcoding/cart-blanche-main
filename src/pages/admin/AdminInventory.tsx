@@ -821,6 +821,15 @@ export default function AdminInventory() {
     setHasUnsavedChanges(true);
   }
 
+  function applyInlineEdit(p: ProductRow, patch: Partial<ProductRow>) {
+    setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, ...patch } : pr));
+    if (p.isDemo) {
+      queueDemoOverride(p.id, patch);
+    } else {
+      setHasUnsavedChanges(true);
+    }
+  }
+
   function saveVariantStock(productId: string, variantId: string) {
     const count = parseInt(editVariantValue);
     if (isNaN(count) || count < 0) return;
@@ -1698,7 +1707,7 @@ export default function AdminInventory() {
                                     onKeyDown={e => {
                                       if (e.key === 'Enter') {
                                         const val = inlineValues[p.id]?.title?.trim();
-                                        if (val) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, title: val } : pr));
+                                        if (val) applyInlineEdit(p, { title: val });
                                         setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: false } }));
                                       }
                                       if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: false } }));
@@ -1706,7 +1715,7 @@ export default function AdminInventory() {
                                   />
                                   <button onClick={() => {
                                     const val = inlineValues[p.id]?.title?.trim();
-                                    if (val) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, title: val } : pr));
+                                    if (val) applyInlineEdit(p, { title: val });
                                     setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], title: false } }));
                                   }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
                                 </div>
@@ -1734,7 +1743,7 @@ export default function AdminInventory() {
                                       onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           const val = parseFloat(inlineValues[p.id]?.price);
-                                          if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, price: val } : pr));
+                                          if (!isNaN(val) && val >= 0) applyInlineEdit(p, { price: val });
                                           setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
                                         }
                                         if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
@@ -1742,7 +1751,7 @@ export default function AdminInventory() {
                                     />
                                     <button onClick={() => {
                                       const val = parseFloat(inlineValues[p.id]?.price);
-                                      if (!isNaN(val) && val >= 0) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, price: val } : pr));
+                                      if (!isNaN(val) && val >= 0) applyInlineEdit(p, { price: val });
                                       setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: false } }));
                                     }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
                                   </div>
@@ -1768,7 +1777,7 @@ export default function AdminInventory() {
                                       onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           const val = e.currentTarget.value ? parseFloat(e.currentTarget.value) : undefined;
-                                          setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, compare_at_price: val } : pr));
+                                          applyInlineEdit(p, { compare_at_price: val });
                                           setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: false } }));
                                         }
                                         if (e.key === 'Escape') setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: false } }));
@@ -1777,7 +1786,7 @@ export default function AdminInventory() {
                                     <button onClick={() => {
                                       const raw = inlineValues[p.id]?.comparePrice;
                                       const val = raw ? parseFloat(raw) : undefined;
-                                      setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, compare_at_price: val } : pr));
+                                      applyInlineEdit(p, { compare_at_price: val });
                                       setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], comparePrice: false } }));
                                     }} className="p-1 text-success"><Check className="w-3.5 h-3.5" /></button>
                                   </div>
@@ -1807,7 +1816,7 @@ export default function AdminInventory() {
                                   />
                                   <button onClick={() => {
                                     const val = inlineValues[p.id]?.description?.trim();
-                                    if (val !== undefined) setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, description: val } : pr));
+                                    if (val !== undefined) applyInlineEdit(p, { description: val });
                                     setInlineEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], description: false } }));
                                   }} className="p-1 text-success mt-1"><Check className="w-3.5 h-3.5" /></button>
                                 </div>
