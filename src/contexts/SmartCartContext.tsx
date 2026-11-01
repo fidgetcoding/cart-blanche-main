@@ -59,6 +59,8 @@ const SmartCartContext = createContext<SmartCartContextType | undefined>(undefin
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smartcart-chat`;
 
+const MAX_HISTORY_MESSAGES = 20;
+
 function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -158,7 +160,8 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
-    const history = [...messages, userMsg].map(m => ({
+    // The function caps conversation size, so only send the recent turns.
+    const history = [...messages, userMsg].slice(-MAX_HISTORY_MESSAGES).map(m => ({
       role: m.role,
       content: m.content,
       ...(m.image_url ? { image_url: m.image_url } : {}),
