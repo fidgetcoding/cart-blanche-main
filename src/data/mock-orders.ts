@@ -109,7 +109,7 @@ export function generateMockOrders(count: number = 100): MockOrder[] {
     orders.push({
       id: `mock-${String(i + 1).padStart(4, '0')}`,
       order_number: `CB-${String(1001 + i).padStart(4, '0')}`,
-      customer_email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
+      customer_email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
       customer_name: `${firstName} ${lastName}`,
       items,
       subtotal,

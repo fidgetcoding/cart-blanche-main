@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets. .env stays tracked on purpose: it only holds the public anon key.
+.env*
+!.env
+*.pem
+*.key
