@@ -39,9 +39,8 @@ describe('which products a store shows', () => {
     expect(await productsFor('real-merchant', [realProduct])).toEqual(['real-1']);
   });
 
-  it('shows the samples while a real store has no products yet', async () => {
-    const ids = await productsFor('real-merchant', []);
-    expect(ids).toHaveLength(DEMO_PRODUCTS.length);
+  it('shows no samples on a real store with no products yet', async () => {
+    expect(await productsFor('real-merchant', [])).toEqual([]);
   });
 
   it('keeps the samples in the demo when a reviewer adds a product', async () => {

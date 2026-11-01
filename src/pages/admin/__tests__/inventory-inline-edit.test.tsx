@@ -3,6 +3,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const update = vi.hoisted(() => vi.fn());
+const stock = vi.hoisted(() => ({ rows: [] as unknown[] }));
 const row = vi.hoisted(() => ({
   id: 'real-1', merchant_id: 'm', title: 'Real Tee', price: 40, compare_at_price: 50, description: 'Soft',
   category: 'essentials', product_type: 'shirt', gender: 'unisex', colorways: [], images: [], tags: [],
@@ -17,7 +18,7 @@ vi.mock('@/hooks/use-grid-layout', () => ({
     saveHiddenGenders: vi.fn(),
     saveDemoProductOverride: vi.fn(),
     saveLayout: vi.fn(),
-    getAllProductsUnfiltered: () => [],
+    getAllProductsUnfiltered: () => [{ id: 'sample', title: 'Cloud Puffer Jacket', price: 1, images: [], category: 'x', variants: [], description: '' }],
   }),
 }));
 vi.mock('@/hooks/use-product-waitlist', () => ({
@@ -46,7 +47,7 @@ vi.mock('@/lib/demo/client', () => {
         getUser: async () => ({ data: { user: session.user } }),
       },
       from: (table: string) => {
-        if (table === 'products') return chain([row]);
+        if (table === 'products') return chain(stock.rows);
         if (table === 'grid_layouts') return { upsert: async () => ({ error: null }) };
         return chain([]);
       },
@@ -64,7 +65,10 @@ async function openRow() {
 const saveButton = () => screen.getByRole('button', { name: /^SAVE$/ }) as HTMLButtonElement;
 
 describe('editing a real product in its row', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    stock.rows = [row];
+  });
 
   it('lets the merchant save a new title on its own', async () => {
     await openRow();
@@ -87,5 +91,15 @@ describe('editing a real product in its row', () => {
     expect(saveButton().disabled).toBe(false);
     fireEvent.click(saveButton());
     await waitFor(() => expect(update).toHaveBeenCalledWith(expect.objectContaining({ price: 45 })));
+  });
+});
+
+describe('a real store with no products', () => {
+  it('starts empty, without the samples', async () => {
+    stock.rows = [];
+    render(<RouterProvider router={createMemoryRouter([{ path: '/', element: <AdminInventory /> }])} />);
+    await screen.findByRole('button', { name: /ADD PRODUCT/ });
+    await waitFor(() => expect(screen.queryByText('LOADING...')).toBeNull());
+    expect(screen.queryByText('Cloud Puffer Jacket')).toBeNull();
   });
 });

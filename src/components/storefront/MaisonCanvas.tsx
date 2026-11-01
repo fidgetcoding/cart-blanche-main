@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, LayoutDashboard } from 'lucide-react';
+import { EmptyStoreNote } from './EmptyStoreNote';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { MaisonProductCard } from './MaisonProductCard';
 import { MaisonProductDetail } from './MaisonProductDetail';
@@ -359,6 +360,8 @@ export function MaisonCanvas() {
         )}
       </div>
       </div>
+
+      {allProducts.length === 0 && <EmptyStoreNote className="min-h-[60vh]" />}
 
       {/* Product grid OR detail view */}
       {selectedProduct ? (

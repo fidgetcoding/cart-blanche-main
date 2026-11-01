@@ -8,6 +8,7 @@ import { ProductView } from '@/components/storefront/ProductView';
 import { DemoStoreLabel } from '@/components/storefront/DemoStoreLabel';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
+import { EmptyStoreNote } from './EmptyStoreNote';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 
 import { useStyleKit } from '@/contexts/StyleKitContext';
@@ -1027,6 +1028,8 @@ export function SpatialCanvas() {
           </div>
         </>
       )}
+
+      {!layoutLoading && DEMO_PRODUCTS.length === 0 && <EmptyStoreNote className="absolute inset-0 z-10" />}
 
       {/* Unified bottom footer */}
       <div className={`group absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-500 ${footerGlass ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>

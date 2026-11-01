@@ -96,7 +96,7 @@ export function useGridLayout() {
   const [layout, setLayout] = useState<GridLayout | null>(null);
   const [dbProducts, setDbProducts] = useState<DemoProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  // A real store with its own products shouldn't also sell the sample catalogue.
+  // A real store only ever sells its own products, even before it has any.
   const [hideSamples, setHideSamples] = useState(false);
 
   // Listen for layout changes from other hook instances
@@ -230,7 +230,7 @@ export function useGridLayout() {
       } as DemoProduct;
     });
 
-    if (hideSamples && dbProducts.length > 0) return dbProducts;
+    if (hideSamples) return dbProducts;
     return [...mergedDemos, ...dbProducts];
   }, [dbProducts, layout, hideSamples]);
 

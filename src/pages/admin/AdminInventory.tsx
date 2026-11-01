@@ -380,6 +380,13 @@ export default function AdminInventory() {
       const { data: dbProducts } = await supabase.from('products').select('*')
         .eq('merchant_id', session.user.id);
 
+      // A new store starts empty: the samples are only for the demo.
+      if (!dbProducts?.length && !isDemoSession(session)) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
       if (dbProducts && dbProducts.length > 0) {
         const productIds = dbProducts.map(p => p.id);
         const { data: variants } = await supabase.from('product_variants').select('*')
