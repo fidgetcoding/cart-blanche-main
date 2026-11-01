@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/demo/client';
 import type { Json } from '@/integrations/supabase/types';
 import { resolveStoreMerchantId } from '@/lib/store-merchant';
+import { DEMO_MERCHANT_ID } from '@/lib/demo/store';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import type { DemoProduct, ProductImage, Colorway } from '@/data/demo-data';
 
@@ -95,6 +96,8 @@ export function useGridLayout() {
   const [layout, setLayout] = useState<GridLayout | null>(null);
   const [dbProducts, setDbProducts] = useState<DemoProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  // A real store with its own products shouldn't also sell the sample catalogue.
+  const [hideSamples, setHideSamples] = useState(false);
 
   // Listen for layout changes from other hook instances
   useEffect(() => {
@@ -117,6 +120,7 @@ export function useGridLayout() {
           setLoading(false);
           return;
         }
+        setHideSamples(merchantId !== DEMO_MERCHANT_ID);
 
         const { data: layoutData } = await supabase
           .from('grid_layouts')
@@ -225,8 +229,10 @@ export function useGridLayout() {
         // type is structurally compatible.
       } as DemoProduct;
     });
+
+    if (hideSamples && dbProducts.length > 0) return dbProducts;
     return [...mergedDemos, ...dbProducts];
-  }, [dbProducts, layout]);
+  }, [dbProducts, layout, hideSamples]);
 
   // Save layout to Supabase (requires auth)
   const saveLayout = useCallback(async (productOrder: string[], categoryOrder: string[]) => {

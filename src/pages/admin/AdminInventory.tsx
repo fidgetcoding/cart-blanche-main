@@ -422,7 +422,9 @@ export default function AdminInventory() {
         });
 
         // Merge: use saved order — DB products slot in where grid layout places them, demo products fill the rest
-        const allRows = [...dbRows, ...demoRows];
+        // The grid hook's list already includes DB products, so don't list them twice.
+        const dbIds = new Set(dbRows.map(row => row.id));
+        const allRows = [...dbRows, ...demoRows.filter(row => !dbIds.has(row.id))];
         if (gridLayout?.productOrder && gridLayout.productOrder.length > 0) {
           const idMap = new Map(allRows.map(p => [p.id, p]));
           const finalOrder: ProductRow[] = [];
