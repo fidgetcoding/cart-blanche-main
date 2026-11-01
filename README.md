@@ -1,73 +1,34 @@
-# Welcome to your Lovable project
+# Cart Blanche
 
-## Project info
+A clothing store you move around in instead of scroll through, with a merchant admin and an AI stylist. Clone it and it runs right away on sample data, no accounts needed.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Why it exists
 
-## How can I edit this code?
+Most online stores are a grid and a filter sidebar. Cart Blanche tries a store laid out like a space: pan and zoom across the collection, open a piece, and ask a stylist what goes with it.
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Try it
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+bun install
+bun run dev
 ```
 
-**Edit a file directly in GitHub**
+Open http://127.0.0.1:8080. Go to `/admin` for the merchant side. It runs on sample data, and nothing you change is saved.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## What's inside
 
-**Use GitHub Codespaces**
+- **Spatial storefront:** pan, zoom and swipe through products, filter by category and gender, and build a cart.
+- **AI stylist:** recommends products, builds outfits and rebuilds a cart to a budget.
+- **Merchant admin:** dashboard, orders, inventory, grid editor, discounts, size charts, look book, waitlist and subscribers.
+- **AI store manager:** answers questions about sales and stock, and proposes edits for the merchant to confirm.
+- **Template lab:** alternate storefront templates to try out.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Want the real thing?
 
-## What technologies are used for this project?
+I'm not hosting a database for anyone. To get real accounts and saved data you connect your own Supabase project, and to get the AI features you bring your own AI key.
 
-This project is built with:
+[SETUP.md](SETUP.md) walks through it, local or hosted, and has a block you can paste straight into your coding agent.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Built with
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+React, Vite, Tailwind, Supabase and any OpenAI-compatible AI provider. MIT licensed.

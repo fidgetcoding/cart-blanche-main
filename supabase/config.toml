@@ -1,1 +1,14 @@
-project_id = "uohkmqhespzflvfksaze"
+# Name for the local Docker stack. Hosted projects are chosen with `supabase link`.
+project_id = "cart-blanche"
+
+[auth]
+site_url = "http://127.0.0.1:8080"
+additional_redirect_urls = ["http://127.0.0.1:8080/admin", "http://localhost:8080/admin"]
+
+# Both functions check their callers themselves: smartcart-chat is public behind
+# its rate limits, and smart-chat validates the merchant's token.
+[functions.smartcart-chat]
+verify_jwt = false
+
+[functions.smart-chat]
+verify_jwt = false
