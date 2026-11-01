@@ -849,6 +849,10 @@ export type Database = {
       }
     }
     Functions: {
+      store_name: {
+        Args: { p_merchant_id: string }
+        Returns: string | null
+      }
       validate_discount: {
         Args: { p_merchant_id: string; p_code: string }
         Returns: {

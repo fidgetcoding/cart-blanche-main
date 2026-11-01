@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, LayoutDashboard } from 'lucide-react';
 import { EmptyStoreNote } from './EmptyStoreNote';
+import { useStoreName } from '@/hooks/use-store-name';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { MaisonProductCard } from './MaisonProductCard';
 import { MaisonProductDetail } from './MaisonProductDetail';
@@ -25,6 +26,7 @@ export function MaisonCanvas() {
   const { loading, layout, getOrderedProducts, getOrderedCategories } = useGridLayout();
   const { items, openCart, itemCount } = useCart();
   const { themeSettings } = useTheme();
+  const storeName = useStoreName(themeSettings.storeName);
   const { openStyleKit, closeStyleKit, isOpen: styleKitOpen } = useStyleKit();
   const [viewMode, setViewMode] = useState<3 | 6>(3);
   const isMobile = useIsMobile();
@@ -178,7 +180,7 @@ export function MaisonCanvas() {
           className="relative text-sm tracking-[0.3em] uppercase font-medium flex-shrink-0 text-foreground"
           style={{ color: themeSettings.storeNameColor || undefined }}
         >
-          {themeSettings.storeName}
+          {storeName}
           <DemoStoreLabel />
         </div>
 

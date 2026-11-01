@@ -9,6 +9,7 @@ import { DemoStoreLabel } from '@/components/storefront/DemoStoreLabel';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { EmptyStoreNote } from './EmptyStoreNote';
+import { useStoreName } from '@/hooks/use-store-name';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 
 import { useStyleKit } from '@/contexts/StyleKitContext';
@@ -35,6 +36,7 @@ export function SpatialCanvas() {
   const isNarrowHeader = useIsMobile(1024);
   const isTablet = useIsTablet();
   const { themeSettings } = useTheme();
+  const storeName = useStoreName(themeSettings.storeName);
 
   // Load layout from Supabase
   const { loading: layoutLoading, getOrderedProducts, getOrderedCategories } = useGridLayout();
@@ -842,7 +844,7 @@ export function SpatialCanvas() {
         {/* Left: Brand */}
         <div className="relative flex items-center gap-2 flex-shrink-0">
           <span className="font-display font-semibold tracking-[0.2em] uppercase text-foreground" style={{ fontSize: '11px', color: themeSettings.storeNameColor || undefined }}>
-            {themeSettings.storeName}
+            {storeName}
           </span>
           <DemoStoreLabel />
         </div>
