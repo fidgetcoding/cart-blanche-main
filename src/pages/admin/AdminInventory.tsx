@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
-import { supabase } from '@/lib/demo/client';
+import { isDemoSession, supabase } from '@/lib/demo/client';
+import { mergeInventoryRows } from '@/lib/inventory-rows';
 import type { Json } from '@/integrations/supabase/types';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, ChevronUp, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -422,9 +423,7 @@ export default function AdminInventory() {
         });
 
         // Merge: use saved order — DB products slot in where grid layout places them, demo products fill the rest
-        // The grid hook's list already includes DB products, so don't list them twice.
-        const dbIds = new Set(dbRows.map(row => row.id));
-        const allRows = [...dbRows, ...demoRows.filter(row => !dbIds.has(row.id))];
+        const allRows = mergeInventoryRows(dbRows, demoRows, isDemoSession(session));
         if (gridLayout?.productOrder && gridLayout.productOrder.length > 0) {
           const idMap = new Map(allRows.map(p => [p.id, p]));
           const finalOrder: ProductRow[] = [];
