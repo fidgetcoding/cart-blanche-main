@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/demo/client';
 import { toast } from 'sonner';
 import { generateMockOrders } from '@/data/mock-orders';
+import { downloadCsv } from '@/lib/csv';
+import { ordersCsv } from '@/lib/orders-csv';
 import {
   Search, ChevronDown, Truck, Package, CheckCircle, XCircle, Clock,
   ArrowLeft, MoreHorizontal, MapPin, FileText, Printer, Eye,
@@ -319,6 +321,11 @@ export default function AdminOrders() {
     return list;
   }, [orders, tab, search]);
 
+  function exportOrders() {
+    const today = new Date().toISOString().slice(0, 10);
+    downloadCsv(`orders-${today}.csv`, ordersCsv(filtered));
+  }
+
   const allSelected = filtered.length > 0 && selected.size === filtered.length;
   const toggleAll = () => {
     if (allSelected) setSelected(new Set());
@@ -360,7 +367,7 @@ export default function AdminOrders() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight">Orders</h1>
-          <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mt-1 transition-colors">
+          <button onClick={exportOrders} disabled={filtered.length === 0} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mt-1 transition-colors">
             <Download className="w-3 h-3" /> Export
           </button>
         </div>

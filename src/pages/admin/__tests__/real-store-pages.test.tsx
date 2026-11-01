@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -25,6 +25,7 @@ vi.stubGlobal('ResizeObserver', class {
 });
 
 import AdminDashboard from '../AdminDashboard';
+import { ordersCsv } from '@/lib/orders-csv';
 import AdminOrders from '../AdminOrders';
 
 describe('pages for a real merchant', () => {
@@ -37,6 +38,27 @@ describe('pages for a real merchant', () => {
     render(<MemoryRouter><AdminOrders /></MemoryRouter>);
     await screen.findByText(/No orders yet/);
     expect(screen.queryByText(/CB-1\d+/)).toBeNull();
+  });
+
+  it('downloads the orders on the page as a CSV', async () => {
+    orders.rows = [{
+      id: '1', order_number: 'R-1', customer_email: 'c@example.com', customer_name: 'Cy', items: [{ quantity: 2 }],
+      subtotal: 50, total: 50, status: 'pending', tracking_number: null, shipping_address: null, notes: null,
+      created_at: '2026-11-01T00:00:00.000Z',
+    }];
+    const createObjectURL = vi.fn((_blob: Blob) => 'blob:x');
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<MemoryRouter><AdminOrders /></MemoryRouter>);
+    await screen.findByText(/R-1/);
+    fireEvent.click(screen.getByRole('button', { name: /Export/ }));
+    expect(click).toHaveBeenCalledOnce();
+    expect(createObjectURL.mock.calls[0][0].type).toContain('text/csv');
+    click.mockRestore();
+    expect(ordersCsv(orders.rows as never)).toBe(
+      'order,date,customer,email,items,total,status,tracking\nR-1,2026-11-01T00:00:00.000Z,Cy,c@example.com,2,50.00,pending,',
+    );
   });
 
   it('labels the dashboard figures as samples', async () => {
