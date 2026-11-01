@@ -10,10 +10,16 @@ additional_redirect_urls = ["http://127.0.0.1:8080/admin", "http://localhost:808
 [analytics]
 enabled = false
 
-# Both functions check their callers themselves: smartcart-chat is public behind
-# its rate limits, and smart-chat validates the merchant's token.
+# All four functions check their callers themselves: the shopper ones are public
+# behind their rate limits, and smart-chat validates the merchant's token.
 [functions.smartcart-chat]
 verify_jwt = false
 
 [functions.smart-chat]
+verify_jwt = false
+
+[functions.store-signup]
+verify_jwt = false
+
+[functions.chat-upload]
 verify_jwt = false

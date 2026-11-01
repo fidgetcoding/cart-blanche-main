@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/demo/client';
+import { submitStoreSignup } from '@/lib/shopper-api';
 import { toast } from 'sonner';
 
 interface SubmitInput {
@@ -23,8 +24,25 @@ export function useWaitlistSignup() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Waitlist is unavailable right now. Please try again later.');
-        return { ok: false, duplicate: false };
+        // A logged-out shopper on a real store: only the edge function can write this.
+        const merchantId = import.meta.env.VITE_STORE_MERCHANT_ID;
+        const result = merchantId
+          ? await submitStoreSignup({
+              kind: 'waitlist',
+              merchant_id: merchantId,
+              email: input.email,
+              name: input.name,
+              product_id: input.productId,
+              size_preference: input.sizePreference,
+              colorway_preference: input.colorPreference,
+            })
+          : { ok: false };
+        if (!result.ok) {
+          toast.error(result.error || 'Waitlist is unavailable right now. Please try again later.');
+          return { ok: false, duplicate: false };
+        }
+        toast.success("You're on the list — we'll email you when this is back in stock.");
+        return { ok: true, duplicate: false };
       }
 
       const { error } = await supabase.from('waitlist_signups').insert({

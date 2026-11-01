@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/demo/client';
+import { submitStoreSignup } from '@/lib/shopper-api';
 
 // V1 hardcoded welcome code. When merchants get a configurable
 // "subscriber welcome promo" UI, swap this for a dynamic lookup.
@@ -12,12 +13,9 @@ interface SubmitResult {
 }
 
 /**
- * Submits a subscriber row to public.subscribers, scoped to the
- * authenticated merchant (whose storefront the shopper is browsing).
- *
- * Multi-tenancy model mirrors useWaitlistSignup: merchant_id = the
- * authenticated user's id. Anonymous shoppers cannot submit unless
- * the storefront session itself has a merchant auth context.
+ * Adds a subscriber for the store being browsed. A signed-in merchant writes
+ * their own row directly. A logged-out shopper goes through the store-signup
+ * edge function, for the store set in VITE_STORE_MERCHANT_ID.
  *
  * Duplicate signup (same email + merchant) returns ok=true with
  * duplicate=true so the caller can show the friendly "already
@@ -31,11 +29,17 @@ export function useSubscriberSignup() {
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return { ok: false, duplicate: false, welcomeCode: null };
-      }
-
       const normalized = email.trim().toLowerCase();
+
+      if (!user) {
+        const merchantId = import.meta.env.VITE_STORE_MERCHANT_ID;
+        const result = merchantId
+          ? await submitStoreSignup({ kind: 'subscriber', merchant_id: merchantId, email: normalized })
+          : { ok: false };
+        return result.ok
+          ? { ok: true, duplicate: false, welcomeCode: WELCOME_CODE }
+          : { ok: false, duplicate: false, welcomeCode: null };
+      }
 
       const { error } = await supabase.from('subscribers').insert({
         merchant_id: user.id,
