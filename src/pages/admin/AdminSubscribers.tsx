@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, Mail, ArrowUpDown, Download, Trash2 } from 'lucide-react';
 import { useSubscribers, type Subscriber } from '@/hooks/use-subscribers';
+import { downloadCsv, toCsv } from '@/lib/csv';
 
 type SortDir = 'desc' | 'asc';
 
@@ -9,32 +10,8 @@ function formatDate(iso: string) {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function escapeCsv(value: string): string {
-  if (/[",\n\r]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
-
 function buildCsv(rows: Subscriber[]): string {
-  const header = ['email', 'signed_up_at'].join(',');
-  const lines = rows.map(r => [
-    escapeCsv(r.email),
-    escapeCsv(new Date(r.created_at).toISOString()),
-  ].join(','));
-  return [header, ...lines].join('\n');
-}
-
-function downloadCsv(filename: string, csv: string) {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  return toCsv(['email', 'signed_up_at'], rows.map(r => [r.email, new Date(r.created_at).toISOString()]));
 }
 
 export default function AdminSubscribers() {
