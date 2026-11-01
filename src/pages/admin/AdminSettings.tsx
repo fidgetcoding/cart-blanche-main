@@ -47,14 +47,15 @@ export default function AdminSettings() {
 
     const { error: merchantErr } = await supabase.from('merchants').update({
       store_name: storeName,
-      store_slug: storeSlug,
+      // Slugs are unique, so a blank one has to be null or a second store can't save.
+      store_slug: storeSlug || null,
       store_description: storeDescription,
       store_tagline: storeTagline,
       store_category: storeCategory || null,
     }).eq('id', uid);
 
     if (merchantErr) {
-      setMessage('Error saving settings');
+      setMessage(merchantErr.code === '23505' ? 'Error: that store slug is taken' : 'Error saving settings');
     } else {
       setMessage('Settings saved!');
       markClean();
