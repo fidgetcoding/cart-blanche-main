@@ -12,6 +12,8 @@ import {
   Handle,
   type NodeProps,
   type EdgeProps,
+  type EdgeChange,
+  type FinalConnectionState,
   BackgroundVariant,
   useReactFlow,
   ReactFlowProvider,
@@ -46,13 +48,23 @@ export interface StyleGuideCanvasHandle {
   hasBlankNode: () => boolean;
 }
 
+export interface CanvasLayout {
+  positions: Record<string, { x: number; y: number }>;
+  nodeIds?: string[];
+}
+
+export interface GuideSaveOverride {
+  presets?: ProductPreset[];
+  canvasLayout?: CanvasLayout;
+}
+
 interface StyleGuideCanvasProps {
   presets: ProductPreset[];
   onPresetsChange: (presets: ProductPreset[]) => void;
-  canvasLayout: { positions: Record<string, { x: number; y: number }>; nodeIds?: string[] } | null;
-  onCanvasLayoutChange: (layout: any) => void;
-  onSave: (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => void;
-  onManualSave: (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => void;
+  canvasLayout: CanvasLayout | null;
+  onCanvasLayoutChange: (layout: CanvasLayout) => void;
+  onSave: (override?: GuideSaveOverride) => void;
+  onManualSave: (override?: GuideSaveOverride) => void;
   saving: boolean;
   isDirty: boolean;
   onCanvasNodeIdsChange: (ids: Set<string>) => void;
@@ -77,7 +89,7 @@ function OffsetEdge({
   sourcePosition: _sp, targetPosition: _tp,
   style, data, markerEnd, id,
 }: EdgeProps) {
-  const offset = (data as any)?.offset || 0;
+  const offset = (data?.offset as number | undefined) || 0;
 
   // Determine smart source/target positions based on relative node positions
   const dx = targetX - sourceX;
@@ -232,7 +244,7 @@ function edgesToPresets(edges: Edge[]): ProductPreset[] {
 
   edges.forEach(e => {
     if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return;
-    const edgeType = (e.data as any)?.type;
+    const edgeType = e.data?.type;
     if (edgeType !== 'pairs' && edgeType !== 'extras') return;
 
     // Bidirectional: one edge creates entries for both directions
@@ -284,7 +296,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           id: product.id,
           type: 'product' as const,
           position: canvasLayout.positions[id] ?? { x: 0, y: 0 },
-          data: { product, zone: classifyGroup(product), onDelete: undefined as any },
+          data: { product, zone: classifyGroup(product), onDelete: undefined },
         };
       })
       .filter(Boolean) as Node[];
@@ -385,7 +397,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
     if (missingIds.length > 0) {
       // Calculate starting position below existing nodes
-      let startX = 100;
+      const startX = 100;
       let startY = 100;
       if (nodes.length > 0) {
         const maxY = Math.max(...nodes.map(n => n.position.y));
@@ -494,7 +506,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           const newEdges = presetsToEdges(presets).filter(e => allNodeIds.has(e.source) && allNodeIds.has(e.target));
           setTimeout(() => {
             setEdges(eds => {
-              const pendingEdges = eds.filter(e => (e.data as any)?.type === 'pending');
+              const pendingEdges = eds.filter(e => e.data?.type === 'pending');
               return [...newEdges, ...pendingEdges];
             });
           }, 0);
@@ -513,7 +525,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const nodeIds = new Set(nodesForEdges.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
     const newPresetEdges = presetsToEdges(presets).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
     setEdges(eds => {
-      const pendingEdges = eds.filter(e => (e.data as any)?.type === 'pending' || e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID);
+      const pendingEdges = eds.filter(e => e.data?.type === 'pending' || e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID);
       return [...newPresetEdges, ...pendingEdges];
     });
   }, [nodes, presets, setEdges]);
@@ -577,7 +589,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const pendingSourceId = pendingConnectionSourceRef.current;
     setEdges(eds => {
       // Remove pending edge
-      let newEdges = eds.filter(e => !(e.data as any)?.type || (e.data as any).type !== 'pending');
+      let newEdges = eds.filter(e => !e.data?.type || e.data?.type !== 'pending');
       // Also update any edges referencing the blank node ID
       newEdges = newEdges.map(e => {
         if (e.target === BLANK_NODE_ID) return { ...e, target: product.id, id: e.id.replace(BLANK_NODE_ID, product.id) };
@@ -666,7 +678,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       const canonical = [connection.source, connection.target].sort().join('::');
       const hasAnyEdge = eds.some(e => {
         if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return false;
-        const t = (e.data as any)?.type;
+        const t = e.data?.type;
         if (t === 'pending') return false;
         return [e.source, e.target].sort().join('::') === canonical;
       });
@@ -679,7 +691,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   }, [setEdges, syncPresetsFromEdges, saveLayoutDebounced]);
 
   // Drag-to-empty: create blank node at drop position
-  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, connectionState: any) => {
+  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, connectionState: FinalConnectionState) => {
     // If the connection was completed successfully, do nothing
     if (connectionState?.isValid) return;
     const sourceId = connectionState?.fromNode?.id;
@@ -705,13 +717,13 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           const style = connectionType === 'pairs' ? PAIRS_STYLE : EXTRAS_STYLE;
 
           setEdges(eds => {
-            if (eds.some(e => e.source === sourceId && e.target === targetNodeId && (e.data as any)?.type === connectionType)) return eds;
-            if (eds.some(e => e.source === targetNodeId && e.target === sourceId && (e.data as any)?.type === connectionType)) return eds;
+            if (eds.some(e => e.source === sourceId && e.target === targetNodeId && e.data?.type === connectionType)) return eds;
+            if (eds.some(e => e.source === targetNodeId && e.target === sourceId && e.data?.type === connectionType)) return eds;
             // MEDIUM-3: dedup any existing non-pending edge between these two nodes regardless of type.
             const canonical = [sourceId, targetNodeId].sort().join('::');
             const hasAnyEdge = eds.some(e => {
               if (e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID) return false;
-              const t = (e.data as any)?.type;
+              const t = e.data?.type;
               if (t === 'pending') return false;
               return [e.source, e.target].sort().join('::') === canonical;
             });
@@ -740,10 +752,10 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     createBlankNode(position, sourceId);
   }, [screenToFlowPosition, createBlankNode, setEdges, syncPresetsFromEdges]);
 
-  const handleEdgesChange = useCallback((changes: any) => {
-    const removals = changes.filter((c: any) => c.type === 'remove');
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+    const removals = changes.filter(c => c.type === 'remove');
     if (removals.length > 0) {
-      const removedIds = new Set<string>(removals.map((c: any) => c.id as string));
+      const removedIds = new Set<string>(removals.map(c => c.id));
       setEdges(eds => {
         const filtered = eds.filter(e => !removedIds.has(e.id));
         syncPresetsFromEdges(filtered);
@@ -760,7 +772,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     }, 0);
   }, [onEdgesChange, setEdges, syncPresetsFromEdges]);
 
-  const handleNodeClick = useCallback((_: any, node: Node) => {
+  const handleNodeClick = useCallback((_event: unknown, node: Node) => {
     if (node.id === BLANK_NODE_ID) return;
     setSelectedNodeId(node.id);
   }, []);
@@ -1014,7 +1026,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   const removeConnection = useCallback((targetId: string, type: 'pairs' | 'extras') => {
     setEdges(eds => {
       const filtered = eds.filter(e => {
-        const edgeType = (e.data as any)?.type;
+        const edgeType = e.data?.type;
         if (edgeType !== type) return true;
         const isForward = e.source === selectedNodeId && e.target === targetId;
         const isReverse = e.source === targetId && e.target === selectedNodeId;

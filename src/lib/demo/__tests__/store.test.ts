@@ -16,7 +16,7 @@ describe('demo store', () => {
     expect(error).toBeNull();
     expect(data).toHaveLength(3);
     expect(data[0].created_at >= data[1].created_at).toBe(true);
-    expect(data.every((row: { email: string }) => row.email.endsWith('@example.com'))).toBe(true);
+    expect((data as { email: string }[]).every(row => row.email.endsWith('@example.com'))).toBe(true);
   });
 
   it('returns no rows for a different merchant', () => {
@@ -31,7 +31,7 @@ describe('demo store', () => {
       ['single', []],
     ));
     expect(data).toMatchObject({ code: 'NEW5', times_used: 0 });
-    expect(data.id).toBeTruthy();
+    expect((data as { id: string }).id).toBeTruthy();
     const after = runDemoQuery('discount_codes', q(['select', ['*']], ['eq', ['code', 'NEW5']]));
     expect(after.data).toHaveLength(1);
   });
@@ -45,9 +45,9 @@ describe('demo store', () => {
   it('updates and deletes only the matched rows', () => {
     runDemoQuery('discount_codes', q(['update', [{ is_active: false }]], ['eq', ['id', 'demo-code-1']]));
     const updated = runDemoQuery('discount_codes', q(['select', ['*']], ['eq', ['id', 'demo-code-1']], ['single', []]));
-    expect(updated.data.is_active).toBe(false);
+    expect((updated.data as { is_active: boolean }).is_active).toBe(false);
 
-    const before = runDemoQuery('discount_codes', q(['select', ['*']])).data.length;
+    const before = (runDemoQuery('discount_codes', q(['select', ['*']])).data as unknown[]).length;
     runDemoQuery('discount_codes', q(['delete', []], ['eq', ['id', 'demo-code-2']]));
     expect(runDemoQuery('discount_codes', q(['select', ['*']])).data).toHaveLength(before - 1);
   });
@@ -66,9 +66,9 @@ describe('demo store', () => {
 
   it('does not let callers mutate stored rows through results', () => {
     const { data } = runDemoQuery('merchants', q(['select', ['*']], ['eq', ['id', DEMO_MERCHANT_ID]], ['single', []]));
-    data.store_name = 'changed';
+    (data as { store_name: string }).store_name = 'changed';
     const again = runDemoQuery('merchants', q(['select', ['*']], ['eq', ['id', DEMO_MERCHANT_ID]], ['single', []]));
-    expect(again.data.store_name).not.toBe('changed');
+    expect((again.data as { store_name: string }).store_name).not.toBe('changed');
   });
 
   it('single() errors when nothing matches, maybeSingle() does not', () => {

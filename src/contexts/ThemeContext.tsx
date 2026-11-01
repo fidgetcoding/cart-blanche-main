@@ -53,7 +53,9 @@ function loadSaved(key: string = DEFAULT_STORAGE_KEY): ThemeSettings | null {
   try {
     const raw = localStorage.getItem(key);
     if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-  } catch {}
+  } catch {
+    // Storage blocked or saved value corrupt: fall back to the defaults.
+  }
   return null;
 }
 

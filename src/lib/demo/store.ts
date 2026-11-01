@@ -4,7 +4,7 @@ import { generateMockOrders } from '@/data/mock-orders';
 
 export const DEMO_MERCHANT_ID = '00000000-0000-4000-8000-00000000d3a0';
 
-type Row = Record<string, any>;
+type Row = Record<string, unknown>;
 export type QueryOp = [method: string, args: unknown[]];
 
 export interface DemoError {
@@ -13,7 +13,7 @@ export interface DemoError {
 }
 
 export interface DemoResult {
-  data: any;
+  data: unknown;
   error: DemoError | null;
   count: number | null;
   status: number;
@@ -130,7 +130,7 @@ export function isWriteQuery(ops: QueryOp[]): boolean {
   return ops.some(([method]) => WRITE_METHODS.has(method));
 }
 
-function success(data: any, count: number | null = null): DemoResult {
+function success(data: unknown, count: number | null = null): DemoResult {
   return { data, error: null, count, status: 200, statusText: 'OK' };
 }
 
@@ -146,11 +146,11 @@ function matchesKeys(row: Row, payload: Row, keys: string[]): boolean {
   return keys.every(key => sameKey(row[key], payload[key]));
 }
 
-function compareValues(a: any, b: any, ascending: boolean): number {
+function compareValues(a: unknown, b: unknown, ascending: boolean): number {
   if (a === b) return 0;
   if (a === null || a === undefined) return 1;
   if (b === null || b === undefined) return -1;
-  const order = a < b ? -1 : 1;
+  const order = (a as string) < (b as string) ? -1 : 1;
   return ascending ? order : -order;
 }
 
@@ -275,14 +275,14 @@ export function runDemoRpc(fn: string, args: Record<string, unknown> | undefined
   if (fn !== 'validate_discount') return failure({ message: `Demo data does not support ${fn}()` });
   const code = String(args?.p_code ?? '').trim().toLowerCase();
   const found = rowsFor('discount_codes').find(row =>
-    row.merchant_id === args?.p_merchant_id && row.is_active && row.code.toLowerCase() === code);
+    row.merchant_id === args?.p_merchant_id && row.is_active && String(row.code).toLowerCase() === code);
   if (!found) return success([], 0);
 
   const now = Date.now();
   let status = 'ok';
-  if (found.starts_at && new Date(found.starts_at).getTime() > now) status = 'not_started';
-  else if (found.expires_at && new Date(found.expires_at).getTime() <= now) status = 'expired';
-  else if (found.max_uses !== null && found.times_used >= found.max_uses) status = 'exhausted';
+  if (found.starts_at && new Date(found.starts_at as string).getTime() > now) status = 'not_started';
+  else if (found.expires_at && new Date(found.expires_at as string).getTime() <= now) status = 'expired';
+  else if (found.max_uses !== null && (found.times_used as number) >= (found.max_uses as number)) status = 'exhausted';
 
   const usable = status === 'ok';
   return success([{

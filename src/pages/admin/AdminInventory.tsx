@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/lib/demo/client';
+import type { Json } from '@/integrations/supabase/types';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, ChevronUp, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useGridLayout } from '@/hooks/use-grid-layout';
@@ -247,7 +248,11 @@ export default function AdminInventory() {
     setCustomProductTypes(prev => {
       if (prev.includes(v) || (PRODUCT_TYPES as readonly string[]).includes(v)) return prev;
       const next = [...prev, v];
-      try { localStorage.setItem('cb_custom_product_types', JSON.stringify(next)); } catch {}
+      try {
+        localStorage.setItem('cb_custom_product_types', JSON.stringify(next));
+      } catch {
+        // Storage blocked: the type still works for this visit.
+      }
       return next;
     });
     return v;
@@ -395,7 +400,7 @@ export default function AdminInventory() {
             category: p.category || '',
             product_type: '' as ProductType,
             gender: 'unisex',
-            colorways: ((p as any).colorways as Colorway[]) || [],
+            colorways: (p.colorways as unknown as Colorway[]) || [],
             images: p.images || [],
             imagesFull: ((p.images as string[]) || []).map(url => ({ thumb: url, medium: url, full: url })),
             description: p.description || '',
@@ -405,7 +410,7 @@ export default function AdminInventory() {
               title: v.title,
               inventory_count: v.inventory_count ?? 0,
               sku: v.sku,
-              colorway_id: (v as any).colorway_id ?? undefined,
+              colorway_id: v.colorway_id ?? undefined,
             })),
             totalStock: pvs.reduce((sum, v) => sum + (v.inventory_count ?? 0), 0),
             isDemo: false,
@@ -542,8 +547,8 @@ export default function AdminInventory() {
           images: editingProduct.images,
           tags: editingProduct.tags,
           status: editingProduct.status,
-          colorways: editingProduct.colorways || [],
-        } as any).eq('id', editingProduct.id));
+          colorways: (editingProduct.colorways || []) as unknown as Json,
+        }).eq('id', editingProduct.id));
 
         for (const v of editingProduct.variants) {
           if (v.id.startsWith('new-')) {
@@ -552,13 +557,13 @@ export default function AdminInventory() {
               title: v.title,
               inventory_count: v.inventory_count,
               colorway_id: v.colorway_id ?? null,
-            } as any);
+            });
           } else {
             await supabase.from('product_variants').update({
               title: v.title,
               inventory_count: v.inventory_count,
               colorway_id: v.colorway_id ?? null,
-            } as any).eq('id', v.id);
+            }).eq('id', v.id);
           }
         }
       }
@@ -703,9 +708,9 @@ export default function AdminInventory() {
           hidden_product_types: gridLayout?.hiddenProductTypes || [],
           hidden_product_ids: hiddenIds,
           hidden_genders: gridLayout?.hiddenGenders || [],
-          demo_product_overrides: finalOverrides,
+          demo_product_overrides: finalOverrides as unknown as Json,
           updated_at: new Date().toISOString(),
-        } as any, { onConflict: 'merchant_id,layout_type' });
+        }, { onConflict: 'merchant_id,layout_type' });
       if (layoutError) {
         console.error('grid_layouts atomic save failed:', layoutError);
         return;
@@ -726,15 +731,15 @@ export default function AdminInventory() {
             tags: p.tags,
             gender: p.gender || 'unisex',
             status: p.status,
-            colorways: p.colorways || [],
-          } as any).eq('id', p.id));
+            colorways: (p.colorways || []) as unknown as Json,
+          }).eq('id', p.id));
           for (const v of p.variants) {
             if (!v.id.startsWith('new-')) {
               await supabase.from('product_variants').update({
                 title: v.title,
                 inventory_count: v.inventory_count,
                 colorway_id: v.colorway_id ?? null,
-              } as any).eq('id', v.id);
+              }).eq('id', v.id);
             }
           }
         }
@@ -1093,8 +1098,8 @@ export default function AdminInventory() {
       tags: addTags,
       gender: addGender || 'unisex',
       images,
-      colorways: addColorways,
-    } as any).select().single());
+      colorways: addColorways as unknown as Json,
+    }).select().single());
 
     if (!error && product) {
       const validVariants = addVariants.filter(v => v.title.trim());
@@ -1105,7 +1110,7 @@ export default function AdminInventory() {
             title: v.title.trim(),
             inventory_count: v.inventory_count,
             colorway_id: v.colorway_id ?? null,
-          })) as any
+          }))
         );
       }
     }
@@ -1346,7 +1351,7 @@ export default function AdminInventory() {
                         if (!session) return;
                         const affected = products.filter(p => !p.isDemo && p.gender?.toLowerCase() === g);
                         for (const ap of affected) {
-                          await supabase.from('products').update({ gender: 'unisex' as any }).eq('id', ap.id);
+                          await supabase.from('products').update({ gender: 'unisex' }).eq('id', ap.id);
                         }
                       })();
                     }}

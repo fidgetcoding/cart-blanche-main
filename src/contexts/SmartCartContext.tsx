@@ -143,8 +143,8 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
         budget_comparison: data.budget_comparison,
         timestamp: Date.now(),
       };
-    } catch (e: any) {
-      if (e.name === 'AbortError') return null;
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return null;
       console.error('SmartCart error:', e);
       return {
         id: generateId(),

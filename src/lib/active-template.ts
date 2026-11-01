@@ -7,7 +7,9 @@ export function getActiveTemplate(): ActiveTemplate {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw === 'yz' || raw === 'sl') return raw;
-  } catch {}
+  } catch {
+    // Storage blocked: use the default template.
+  }
   return DEFAULT;
 }
 
@@ -17,7 +19,9 @@ export function setActiveTemplate(t: ActiveTemplate): void {
     // Notify same-tab listeners — storage event only fires
     // cross-tab. Custom event handles same-tab updates.
     window.dispatchEvent(new CustomEvent('cb-active-template-change', { detail: t }));
-  } catch {}
+  } catch {
+    // Storage blocked: the choice just won't be remembered.
+  }
 }
 
 export function getActiveTemplateThemeKey(): string {

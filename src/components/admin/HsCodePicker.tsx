@@ -403,8 +403,8 @@ export function HsCodePicker({ value, onChange, compact = false }: HsCodePickerP
             ) : (
               displayItems.map((item) => {
                 const entry = 'children' in item ? item as HsEntry : null;
-                const code = 'code' in item ? (item as any).code : '';
-                const label = 'label' in item ? (item as any).label : '';
+                const code = 'code' in item ? item.code : '';
+                const label = 'label' in item ? item.label : '';
                 const hasChildren = entry?.children && entry.children.length > 0;
                 const isSelected = value === code;
 

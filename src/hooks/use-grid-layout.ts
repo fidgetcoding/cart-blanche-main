@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/demo/client';
+import type { Json } from '@/integrations/supabase/types';
 import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import type { DemoProduct, ProductImage, Colorway } from '@/data/demo-data';
@@ -133,8 +134,8 @@ export function useGridLayout() {
             hiddenTags: (layoutData.hidden_tags as string[]) || [],
             hiddenProductTypes: (layoutData.hidden_product_types as string[]) || [],
             hiddenProductIds: (layoutData.hidden_product_ids as string[]) || [],
-            hiddenGenders: ((layoutData as any).hidden_genders as string[]) || [],
-            demoProductOverrides: ((layoutData as any).demo_product_overrides as DemoProductOverrides) || {},
+            hiddenGenders: (layoutData.hidden_genders as string[]) || [],
+            demoProductOverrides: (layoutData.demo_product_overrides as unknown as DemoProductOverrides) || {},
           });
         }
 
@@ -155,7 +156,7 @@ export function useGridLayout() {
             .in('product_id', productIds)
             .order('id', { ascending: true });
 
-          const variantMap = new Map<string, any[]>();
+          const variantMap = new Map<string, NonNullable<typeof variants>>();
           variants?.forEach(v => {
             const list = variantMap.get(v.product_id) || [];
             list.push(v);
@@ -174,7 +175,7 @@ export function useGridLayout() {
               })),
               category: p.category || 'uncategorized',
               product_type: '' as const,
-              gender: (p as any).gender || 'unisex',
+              gender: p.gender || 'unisex',
               status: 'active' as const,
               grid_position: { x: 0, y: 0 },
               description: p.description || '',
@@ -184,7 +185,7 @@ export function useGridLayout() {
                 options: v.options as Record<string, string> || {},
                 inventory_count: v.inventory_count ?? 0,
                 price: v.price ?? undefined,
-                colorway_id: (v as any).colorway_id ?? undefined,
+                colorway_id: v.colorway_id ?? undefined,
               })),
             };
           }));
@@ -244,9 +245,9 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: current.hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides,
+        demo_product_overrides: current.demoProductOverrides as unknown as Json,
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: 'merchant_id,layout_type' });
+      }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, productOrder, categoryOrder };
@@ -273,9 +274,9 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: current.hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides,
+        demo_product_overrides: current.demoProductOverrides as unknown as Json,
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: 'merchant_id,layout_type' });
+      }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenTags };
@@ -302,9 +303,9 @@ export function useGridLayout() {
         hidden_product_types: hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: current.hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides,
+        demo_product_overrides: current.demoProductOverrides as unknown as Json,
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: 'merchant_id,layout_type' });
+      }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenProductTypes };
@@ -331,9 +332,9 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: hiddenProductIds,
         hidden_genders: current.hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides,
+        demo_product_overrides: current.demoProductOverrides as unknown as Json,
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: 'merchant_id,layout_type' });
+      }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenProductIds };
@@ -360,9 +361,9 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides,
+        demo_product_overrides: current.demoProductOverrides as unknown as Json,
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: 'merchant_id,layout_type' });
+      }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, hiddenGenders };
@@ -403,9 +404,9 @@ export function useGridLayout() {
         hidden_product_types: current.hiddenProductTypes,
         hidden_product_ids: current.hiddenProductIds,
         hidden_genders: current.hiddenGenders,
-        demo_product_overrides: nextOverrides,
+        demo_product_overrides: nextOverrides as unknown as Json,
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: 'merchant_id,layout_type' });
+      }, { onConflict: 'merchant_id,layout_type' });
 
     if (!error) {
       const updated: GridLayout = { ...current, demoProductOverrides: nextOverrides };

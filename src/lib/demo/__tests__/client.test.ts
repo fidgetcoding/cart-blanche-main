@@ -27,7 +27,7 @@ function setPath(path: string) {
 /** A stand-in postgrest builder that records its chain and resolves when awaited. */
 function fakeBuilder(result: unknown) {
   const calls: [string, unknown[]][] = [];
-  const builder: any = new Proxy({}, {
+  const builder = new Proxy({} as Record<string, unknown>, {
     get(_t, prop) {
       if (prop === 'then') return (resolve: (v: unknown) => void) => resolve(result);
       return (...args: unknown[]) => {
@@ -66,7 +66,7 @@ describe('demo-aware client', () => {
 
     it('does not toast for reads or chat history', async () => {
       await supabase.from('orders').select('*');
-      await (supabase.from('conversations') as any).insert({ merchant_id: DEMO_MERCHANT_ID, title: 'x' });
+      await supabase.from('conversations').insert({ merchant_id: DEMO_MERCHANT_ID, title: 'x' });
       expect(toast).not.toHaveBeenCalled();
     });
 
@@ -88,7 +88,7 @@ describe('demo-aware client', () => {
     });
 
     it('answers validate_discount locally', async () => {
-      const { data } = await (supabase.rpc as any)('validate_discount', { p_merchant_id: DEMO_MERCHANT_ID, p_code: 'welcome10' });
+      const { data } = await supabase.rpc('validate_discount', { p_merchant_id: DEMO_MERCHANT_ID, p_code: 'welcome10' });
       expect(data[0].status).toBe('ok');
       expect(realRpc).not.toHaveBeenCalled();
     });
@@ -135,7 +135,7 @@ describe('demo-aware client', () => {
       await supabase.auth.signOut();
       expect(realAuth.signOut).toHaveBeenCalled();
       realRpc.mockResolvedValue({ data: [], error: null });
-      await (supabase.rpc as any)('validate_discount', { p_merchant_id: 'm', p_code: 'c' });
+      await supabase.rpc('validate_discount', { p_merchant_id: 'm', p_code: 'c' });
       expect(realRpc).toHaveBeenCalled();
       const file = new File(['x'], 'x.png');
       const { data } = await supabase.storage.from('product-media').upload('a.png', file);

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, Check, XCircle, Sparkles, BarChart3, Package, Tag, ImagePlus, X, Plus, MessageSquare, PanelLeftClose, PanelLeft, Trash2, Warehouse, Grid3X3, ShoppingCart, Settings, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { DEMO_CHAT_MESSAGE, isDemoSession, supabase } from '@/lib/demo/client';
+import type { Json } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'react-router-dom';
 
@@ -125,7 +126,7 @@ export function SmartChatPanel() {
   const loadConversations = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await (supabase.from('conversations') as any)
+    const { data } = await supabase.from('conversations')
       .select('*')
       .eq('merchant_id', user.id)
       .order('updated_at', { ascending: false });
@@ -138,19 +139,19 @@ export function SmartChatPanel() {
   const loadMessages = async (conversationId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await (supabase.from('chat_messages') as any)
+    const { data } = await supabase.from('chat_messages')
       .select('*')
       .eq('merchant_id', user.id)
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
       .limit(200);
     if (data) {
-      setMessages(data.map((m: any) => ({
-        role: m.role,
+      setMessages(data.map(m => ({
+        role: m.role as ChatMessage['role'],
         content: m.content,
         id: m.id,
-        tool_calls: m.tool_calls || [],
-        attachments: m.attachments || [],
+        tool_calls: (m.tool_calls as unknown as ToolCall[]) || [],
+        attachments: (m.attachments as unknown as string[]) || [],
       })));
     } else {
       setMessages([]);
@@ -171,7 +172,7 @@ export function SmartChatPanel() {
 
   const deleteConversation = async (convId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    await (supabase.from('conversations') as any).delete().eq('id', convId);
+    await supabase.from('conversations').delete().eq('id', convId);
     if (activeConversationId === convId) {
       startNewChat();
     }
@@ -182,7 +183,7 @@ export function SmartChatPanel() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     const title = firstMessage.slice(0, 50) + (firstMessage.length > 50 ? '...' : '');
-    const { data, error } = await (supabase.from('conversations') as any)
+    const { data, error } = await supabase.from('conversations')
       .insert({ merchant_id: user.id, title })
       .select()
       .single();
@@ -195,11 +196,11 @@ export function SmartChatPanel() {
   const saveMessage = async (msg: ChatMessage, conversationId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await (supabase.from('chat_messages') as any).insert({
+    await supabase.from('chat_messages').insert({
       merchant_id: user.id,
       role: msg.role,
       content: msg.content,
-      tool_calls: msg.tool_calls || [],
+      tool_calls: (msg.tool_calls || []) as unknown as Json,
       attachments: msg.attachments || [],
       conversation_id: conversationId,
     });
@@ -313,7 +314,7 @@ export function SmartChatPanel() {
             if (parsed.tool_calls) {
               toolCalls = parsed.tool_calls;
               for (const tc of toolCalls) {
-                if ((tc.result as any)?.requires_confirmation) {
+                if ((tc.result as { requires_confirmation?: boolean } | null)?.requires_confirmation) {
                   setMessages(prev => [
                     ...prev,
                     { role: 'assistant', content: '', tool_calls: toolCalls, pending_action: tc.result as Record<string, unknown> },
@@ -332,7 +333,7 @@ export function SmartChatPanel() {
       }
 
       if (textBuffer.trim()) {
-        for (let raw of textBuffer.split('\n')) {
+        for (const raw of textBuffer.split('\n')) {
           if (!raw || !raw.startsWith('data: ')) continue;
           const jsonStr = raw.slice(6).trim();
           if (jsonStr === '[DONE]') continue;
@@ -348,7 +349,7 @@ export function SmartChatPanel() {
         saveMessage({ role: 'assistant', content: assistantContent, tool_calls: toolCalls }, convId);
         // Update conversation title if it was the first exchange
         if (messages.length === 0) {
-          await (supabase.from('conversations') as any)
+          await supabase.from('conversations')
             .update({ updated_at: new Date().toISOString() })
             .eq('id', convId);
         }

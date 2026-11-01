@@ -8,17 +8,40 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
+interface OrderItem {
+  title?: string;
+  name?: string;
+  variant?: string;
+  variantTitle?: string;
+  sku?: string;
+  image?: string;
+  price?: number;
+  qty?: number;
+  quantity?: number;
+}
+
+interface ShippingAddress {
+  name?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  postal_code?: string;
+  country?: string;
+}
+
 interface Order {
   id: string;
   order_number: string;
   customer_email: string;
   customer_name: string | null;
-  items: any;
+  items: OrderItem[];
   subtotal: number;
   total: number;
   status: string;
   tracking_number: string | null;
-  shipping_address: any;
+  shipping_address: ShippingAddress | null;
   notes: string | null;
   created_at: string;
 }
@@ -130,7 +153,7 @@ function OrderDetail({ order, onBack, onUpdateStatus }: {
 
             {items.length > 0 ? (
               <div className="space-y-3">
-                {items.map((item: any, i: number) => (
+                {items.map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
                     {item.image ? (
                       <img src={item.image} alt={item.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-secondary" />
@@ -258,16 +281,16 @@ export default function AdminOrders() {
   async function fetchOrders() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      setOrders(generateMockOrders(100) as any);
+      setOrders(generateMockOrders(100));
       setLoading(false);
       return;
     }
     const { data } = await supabase.from('orders').select('*')
       .eq('merchant_id', session.user.id).order('created_at', { ascending: false });
     if (data && data.length > 0) {
-      setOrders(data as Order[]);
+      setOrders(data as unknown as Order[]);
     } else {
-      setOrders(generateMockOrders(100) as any);
+      setOrders(generateMockOrders(100));
     }
     setLoading(false);
   }
@@ -439,7 +462,7 @@ export default function AdminOrders() {
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center -space-x-1.5">
-                        {(Array.isArray(o.items) ? o.items : []).slice(0, 3).map((item: any, idx: number) => (
+                        {(Array.isArray(o.items) ? o.items : []).slice(0, 3).map((item, idx) => (
                           item.image ? (
                             <img key={idx} src={item.image} alt="" className="w-7 h-7 rounded-md object-cover border-2 border-card" />
                           ) : (

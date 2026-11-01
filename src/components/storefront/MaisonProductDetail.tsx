@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, X, Ruler } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { splitSentences } from '@/lib/format-description';
 import { MaisonWaitlistModal } from './MaisonWaitlistModal';
@@ -23,7 +23,7 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
   product: DemoProduct;
   allProducts: DemoProduct[];
   onNavigate: (p: DemoProduct) => void;
-  themeSettings: any;
+  themeSettings: ThemeSettings;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const items = allProducts.filter(p => p.id !== product.id);

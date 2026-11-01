@@ -205,7 +205,8 @@ function ThemeControls() {
                 onClick={async () => {
                   if ('EyeDropper' in window) {
                     try {
-                      const dropper = new (window as any).EyeDropper();
+                      const { EyeDropper } = window as unknown as { EyeDropper: new () => { open(): Promise<{ sRGBHex: string }> } };
+                      const dropper = new EyeDropper();
                       const result = await dropper.open();
                       setCustomColor(result.sRGBHex);
                       updateTheme({ tileHoverGlow: result.sRGBHex });

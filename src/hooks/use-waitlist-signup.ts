@@ -34,7 +34,7 @@ export function useWaitlistSignup() {
         name: input.name.trim(),
         size_preference: input.sizePreference?.trim() || null,
         colorway_preference: input.colorPreference?.trim() || null,
-      } as any);
+      });
 
       if (error) {
         if (error.code === '23505') {

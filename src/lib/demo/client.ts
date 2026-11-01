@@ -58,6 +58,8 @@ function announceDemoWrite(table?: string): void {
   }
 }
 
+type QueryBuilder = { [method: string]: (...args: unknown[]) => QueryBuilder };
+
 function deferredQuery(table: string) {
   const ops: QueryOp[] = [];
 
@@ -67,12 +69,15 @@ function deferredQuery(table: string) {
       if (isWriteQuery(ops) && !result.error) announceDemoWrite(table);
       return result;
     }
-    return ops.reduce((builder, [method, args]) => builder[method](...args), realClient!.from(table as never) as any);
+    return ops.reduce((builder, [method, args]) => builder[method](...args), realClient!.from(table as never) as unknown as QueryBuilder);
   };
 
-  const chain: any = new Proxy({}, {
+  const chain = new Proxy({} as QueryBuilder, {
     get(_target, prop) {
-      if (prop === 'then') return (resolve: any, reject: any) => execute().then(resolve, reject);
+      if (prop === 'then') {
+        return ((resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
+          execute().then(resolve, reject)) as unknown as QueryBuilder[string];
+      }
       if (typeof prop !== 'string') return undefined;
       return (...args: unknown[]) => {
         ops.push([prop, args]);

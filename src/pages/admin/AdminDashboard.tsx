@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { getDashboardDataForRange } from '@/data/mock-orders';
-import { TrendingUp, TrendingDown, ShoppingCart, Package, DollarSign, BarChart3, MapPin, Globe } from 'lucide-react';
+import { type LucideIcon, TrendingUp, TrendingDown, ShoppingCart, Package, DollarSign, BarChart3, MapPin, Globe } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 function formatK(n: number) {
@@ -9,7 +9,7 @@ function formatK(n: number) {
 }
 
 function StatCard({ label, value, icon: Icon, change, changeLabel }: {
-  label: string; value: string; icon: any; change?: number; changeLabel?: string;
+  label: string; value: string; icon: LucideIcon; change?: number; changeLabel?: string;
 }) {
   const positive = (change ?? 0) >= 0;
   return (

@@ -7,7 +7,8 @@ import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import type { DemoProduct } from '@/data/demo-data';
-import type { StyleGuideCanvasHandle } from '@/components/admin/StyleGuideCanvas';
+import type { CanvasLayout, GuideSaveOverride, StyleGuideCanvasHandle } from '@/components/admin/StyleGuideCanvas';
+import type { Json } from '@/integrations/supabase/types';
 
 const StyleGuideCanvas = lazy(() => import('@/components/admin/StyleGuideCanvas'));
 
@@ -250,7 +251,7 @@ export default function AdminStylingGuide() {
   const [filterGroup, setFilterGroup] = useState<string>('ALL');
   const [activeView, setActiveView] = useState<'list' | 'canvas'>('list');
   const [matchTypeFilter, setMatchTypeFilter] = useState<'all' | 'pairs' | 'extras'>('all');
-  const [canvasLayout, setCanvasLayout] = useState<any>(null);
+  const [canvasLayout, setCanvasLayout] = useState<CanvasLayout | null>(null);
   const [blankNodeActive, setBlankNodeActive] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -269,7 +270,7 @@ export default function AdminStylingGuide() {
   // time) doesn't persist stale snapshots. For the synchronous setState→save
   // race in canvas's manual handleSave, an explicit override is passed.
   const presetsRef = useRef<ProductPreset[]>([]);
-  const canvasLayoutRef = useRef<any>(null);
+  const canvasLayoutRef = useRef<CanvasLayout | null>(null);
   useEffect(() => { presetsRef.current = presets; }, [presets]);
   useEffect(() => { canvasLayoutRef.current = canvasLayout; }, [canvasLayout]);
 
@@ -342,7 +343,7 @@ export default function AdminStylingGuide() {
       .limit(1)
       .maybeSingle();
 
-    const rules = data ? (data.rules as any) : DEFAULT_CANVAS_RULES;
+    const rules = data ? (data.rules as unknown as typeof DEFAULT_CANVAS_RULES) : DEFAULT_CANVAS_RULES;
     if (data) setGuideId(data.id);
 
     if (rules?.version === 2 && Array.isArray(rules.presets)) {
@@ -358,7 +359,7 @@ export default function AdminStylingGuide() {
 
   const saveGuide = async (
     silent = false,
-    override?: { presets?: ProductPreset[]; canvasLayout?: any },
+    override?: GuideSaveOverride,
   ) => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -372,9 +373,9 @@ export default function AdminStylingGuide() {
 
     const rules = { version: 2, presets: cleanedPresets, canvasLayout: finalLayout };
     if (guideId) {
-      await supabase.from('styling_guides').update({ rules: rules as unknown as any }).eq('id', guideId);
+      await supabase.from('styling_guides').update({ rules: rules as unknown as Json }).eq('id', guideId);
     } else {
-      const { data } = await supabase.from('styling_guides').insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as any }).select('id').single();
+      const { data } = await supabase.from('styling_guides').insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as Json }).select('id').single();
       if (data) setGuideId(data.id);
     }
     setSaving(false);
@@ -385,11 +386,11 @@ export default function AdminStylingGuide() {
   };
 
   const saveGuideSilent = useCallback(
-    (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => saveGuide(true, override),
+    (override?: GuideSaveOverride) => saveGuide(true, override),
     [guideId],
   );
   const saveGuideManual = useCallback(
-    (override?: { presets?: ProductPreset[]; canvasLayout?: any }) => saveGuide(false, override),
+    (override?: GuideSaveOverride) => saveGuide(false, override),
     [guideId],
   );
 

@@ -135,7 +135,11 @@ function CarouselRow({
     const delta = dragStartPos.current - pos;
     if (Math.abs(delta) > 3) {
       if (!hasDragged.current) {
-        try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {
+          // The pointer may already be gone; dragging still works without capture.
+        }
       }
 
       hasDragged.current = true;
@@ -628,8 +632,9 @@ export function StyleKitView() {
         .eq('merchant_id', merchantId)
         .limit(1)
         .maybeSingle();
-      if (data?.rules && (data.rules as any).version === 2) {
-        setPresets((data.rules as any).presets || []);
+      const rules = data?.rules as unknown as { version?: number; presets?: ProductPreset[] } | null;
+      if (rules?.version === 2) {
+        setPresets(rules.presets || []);
       }
     }
     loadPresets();
