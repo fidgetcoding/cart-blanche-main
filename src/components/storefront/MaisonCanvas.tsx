@@ -11,6 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { DemoStoreLabel } from './DemoStoreLabel';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { StyleKitView } from './StyleKitView';
 import { GenderSymbol } from './GenderSymbol';
 
@@ -25,6 +26,7 @@ export function MaisonCanvas() {
   const { themeSettings } = useTheme();
   const { openStyleKit, closeStyleKit, isOpen: styleKitOpen } = useStyleKit();
   const [viewMode, setViewMode] = useState<3 | 6>(3);
+  const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [activeType, setActiveType] = useState('ALL');
   const [activeGenders, setActiveGenders] = useState<string[]>([]);
@@ -164,9 +166,10 @@ export function MaisonCanvas() {
 
   return (
     <div ref={canvasRef} className={`min-h-screen w-full bg-background text-foreground ${themeSettings.mode === 'light' ? 'light' : ''}`}>
-      {/* Sticky header with integrated category nav */}
+      {/* Sticky header with integrated category nav, and the sub-header below it */}
+      <div className="sticky top-0 z-30">
       <header
-        className="sticky top-0 z-30 flex items-center px-6 py-3 bg-background border-b border-border"
+        className="flex flex-wrap md:flex-nowrap items-center px-4 md:px-6 py-3 bg-background border-b border-border"
         style={{ fontFamily: 'var(--font-display)' }}
       >
         {/* Store name — left */}
@@ -179,14 +182,14 @@ export function MaisonCanvas() {
         </div>
 
         {/* Category links — center */}
-        <nav className="flex-1 flex items-center justify-center gap-8" style={{ fontFamily: 'var(--font-body)' }}>
+        <nav className="order-last md:order-none w-full md:w-auto md:flex-1 mt-2 md:mt-0 flex items-center md:justify-center gap-6 md:gap-8 overflow-x-auto scrollbar-hide" style={{ fontFamily: 'var(--font-body)' }}>
           {categories.map(cat => (
             <button
               key={cat}
               
               onMouseEnter={() => handleRibbonChange(cat)}
               onClick={() => handleRibbonChange(cat)}
-              className={`relative py-1 transition-all duration-200 ${
+              className={`relative py-1 flex-shrink-0 whitespace-nowrap transition-all duration-200 ${
                 activeCategory === cat ? 'opacity-100' : 'opacity-50 hover:opacity-80'
               }`}
               style={{
@@ -203,7 +206,7 @@ export function MaisonCanvas() {
         </nav>
 
         {/* Right: Smart Portal + Cart */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="ml-auto md:ml-0 flex items-center gap-1 flex-shrink-0">
           <button
             onClick={() => navigate('/admin')}
             className="group flex items-center gap-1.5 p-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -227,7 +230,7 @@ export function MaisonCanvas() {
 
       {/* Sub-header: type selector + view toggle */}
       <div
-        className="sticky top-[49px] z-20 flex items-center justify-between px-6 py-3 border-b border-border bg-background"
+        className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border bg-background"
         style={{ fontFamily: 'var(--font-body)' }}
       >
         {/* Product type horizontal reveal */}
@@ -333,8 +336,8 @@ export function MaisonCanvas() {
           </AnimatePresence>
         </div>
 
-        {/* View toggle — hidden when detail is open */}
-        {!selectedProduct && (
+        {/* View toggle — hidden when detail is open, and on phones, which always show two across */}
+        {!selectedProduct && !isMobile && (
           <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onMouseEnter={() => setViewMode(3)}
@@ -355,7 +358,7 @@ export function MaisonCanvas() {
           </div>
         )}
       </div>
-
+      </div>
 
       {/* Product grid OR detail view */}
       {selectedProduct ? (
@@ -372,7 +375,7 @@ export function MaisonCanvas() {
           <div
             className="grid w-full"
             style={{
-              gridTemplateColumns: `repeat(${viewMode}, 1fr)`,
+              gridTemplateColumns: `repeat(${isMobile ? 2 : viewMode}, 1fr)`,
               borderLeft: '1px solid hsl(var(--border))',
               borderTop: '1px solid hsl(var(--border))',
             }}
