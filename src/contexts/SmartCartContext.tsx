@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { DEMO_PRODUCTS } from '@/data/demo-data';
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
+import type { DemoProduct } from '@/data/demo-data';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 import { isBackendConfigured } from '@/integrations/supabase/client';
 import type { CartItem } from '@/contexts/CartContext';
 
@@ -54,6 +55,8 @@ interface SmartCartContextType {
   sendMessage: (text: string, cartItems: CartItem[], imageUrl?: string) => Promise<void>;
   triggerProactive: (mode: 'proactive_add' | 'proactive_review' | 'proactive_remove', cartItems: CartItem[], context?: string) => Promise<void>;
   clearChat: () => void;
+  /** What this store actually sells, which the stylist and its cards work from. */
+  storeProducts: DemoProduct[];
 }
 
 const SmartCartContext = createContext<SmartCartContextType | undefined>(undefined);
@@ -68,8 +71,8 @@ function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function buildCatalog() {
-  return DEMO_PRODUCTS.map(p => ({
+function buildCatalog(products: DemoProduct[]) {
+  return products.map(p => ({
     id: p.id,
     title: p.title,
     price: p.price,
@@ -89,6 +92,8 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const { getOrderedProducts } = useGridLayout();
+  const storeProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
 
   const clearUnread = useCallback(() => setHasUnread(false), []);
   const clearChat = useCallback(() => setMessages([]), []);
@@ -115,7 +120,7 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
         },
         body: JSON.stringify({
           messages: userMessages,
-          catalog: buildCatalog(),
+          catalog: buildCatalog(storeProducts),
           cart_items: cartItems,
           mode: mode || undefined,
         }),
@@ -153,7 +158,7 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
         timestamp: Date.now(),
       };
     }
-  }, []);
+  }, [storeProducts]);
 
   const sendMessage = useCallback(async (text: string, cartItems: CartItem[], imageUrl?: string) => {
     const userMsg: ChatMessage = {
@@ -211,7 +216,7 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
   }, [isLoading, callAI]);
 
   return (
-    <SmartCartContext.Provider value={{ messages, isLoading, hasUnread, clearUnread, sendMessage, triggerProactive, clearChat }}>
+    <SmartCartContext.Provider value={{ messages, isLoading, hasUnread, clearUnread, sendMessage, triggerProactive, clearChat, storeProducts }}>
       {children}
     </SmartCartContext.Provider>
   );

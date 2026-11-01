@@ -6,7 +6,6 @@ import { useCart } from '@/contexts/CartContext';
 import { useSmartCart } from '@/contexts/SmartCartContext';
 import type { BudgetComparison, OutfitItem } from '@/contexts/SmartCartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
-import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { supabase } from '@/lib/demo/client';
 import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import { uploadChatImage } from '@/lib/shopper-api';
@@ -19,7 +18,8 @@ function ProductCard({ productId, reason, onAddToCart }: {
   reason: string;
   onAddToCart: (productId: string) => void;
 }) {
-  const product = DEMO_PRODUCTS.find(p => p.id === productId);
+  const { storeProducts } = useSmartCart();
+  const product = storeProducts.find(p => p.id === productId);
   if (!product) return null;
 
   return (
@@ -49,6 +49,7 @@ function OutfitCard({ outfit, onAddAll, onAddToCart }: {
   onAddAll: () => void;
   onAddToCart: (productId: string) => void;
 }) {
+  const { storeProducts } = useSmartCart();
   const storeItems = outfit.items.filter(i => i.type !== 'external');
   
   return (
@@ -90,7 +91,7 @@ function OutfitCard({ outfit, onAddAll, onAddToCart }: {
             );
           }
           
-          const product = DEMO_PRODUCTS.find(p => p.id === item.product_id);
+          const product = storeProducts.find(p => p.id === item.product_id);
           if (!product) return null;
           return (
             <div key={item.product_id} className="flex items-center gap-2 px-2 py-1.5 rounded bg-secondary/40">
@@ -340,7 +341,7 @@ const PROMPT_CARDS = [
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, itemCount, subtotal, addItem, discount, discountAmount, total, applyDiscount, removeDiscount } = useCart();
-  const { messages, isLoading, hasUnread, clearUnread, sendMessage, triggerProactive, clearChat } = useSmartCart();
+  const { messages, isLoading, hasUnread, clearUnread, sendMessage, triggerProactive, clearChat, storeProducts } = useSmartCart();
   const { openStyleKit } = useStyleKit();
   const [activeTab, setActiveTab] = useState<Tab>(items.length > 0 ? 'cart' : 'assistant');
   const [inputValue, setInputValue] = useState('');
@@ -400,7 +401,7 @@ export function CartDrawer() {
   };
 
   const handleAddToCart = (productId: string) => {
-    const product = DEMO_PRODUCTS.find(p => p.id === productId);
+    const product = storeProducts.find(p => p.id === productId);
     if (!product) return;
     const v = product.variants.find(v => v.inventory_count > 0) || product.variants[0];
     if (v) {
@@ -426,7 +427,7 @@ export function CartDrawer() {
   const handleSwapAll = (comparison: BudgetComparison) => {
     for (const swap of comparison.swaps) {
       // Remove old, add new
-      const oldProduct = DEMO_PRODUCTS.find(p => p.id === swap.original_product_id);
+      const oldProduct = storeProducts.find(p => p.id === swap.original_product_id);
       if (oldProduct) {
         const oldVariant = oldProduct.variants[0];
         if (oldVariant) removeItem(oldProduct.id, oldVariant.id);
@@ -436,7 +437,7 @@ export function CartDrawer() {
   };
 
   const handleSwapOne = (originalProductId: string, suggestedProductId: string) => {
-    const oldProduct = DEMO_PRODUCTS.find(p => p.id === originalProductId);
+    const oldProduct = storeProducts.find(p => p.id === originalProductId);
     if (oldProduct) {
       const oldVariant = oldProduct.variants[0];
       if (oldVariant) removeItem(oldProduct.id, oldVariant.id);
@@ -543,7 +544,7 @@ export function CartDrawer() {
                       </div>
                     ) : (
                       items.map((item) => {
-                        const product = DEMO_PRODUCTS.find(p => p.id === item.productId);
+                        const product = storeProducts.find(p => p.id === item.productId);
                         const firstProductImage = product?.images?.[0];
                         const fallbackImage = typeof firstProductImage === 'string'
                           ? firstProductImage
