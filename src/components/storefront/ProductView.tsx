@@ -1035,7 +1035,6 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
                     <div className="flex justify-center pt-1">
                       <button
                         onClick={() => setExpandDetails(false)}
-                        onMouseEnter={() => setExpandDetails(false)}
                         className="p-2 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 flex items-center justify-center"
                         aria-label="Close details"
                       >
