@@ -30,6 +30,8 @@ export function SpatialCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  // The full category bar runs into the wordmark and icons below this width.
+  const isNarrowHeader = useIsMobile(1024);
   const isTablet = useIsTablet();
   const { themeSettings } = useTheme();
 
@@ -830,7 +832,7 @@ export function SpatialCanvas() {
     targetTransformRef.current.y = rect.height / 2 - (pos.y + 140) * s;
   }, [focusedIndex, displayPositions]);
 
-  const compactHeader = isMobile;
+  const compactHeader = isNarrowHeader;
 
   return (
     <div ref={rootRef} className={`relative w-full h-full overflow-hidden dynamic-bg select-none outline-none ${themeSettings.mode === 'light' ? 'light' : ''}`} style={{ overscrollBehavior: 'none' }} tabIndex={0} onKeyDown={handleKeyDown} onClick={(e) => { if (e.target === rootRef.current || (e.target as HTMLElement).closest('[data-canvas-area]')) rootRef.current?.focus(); }}>
