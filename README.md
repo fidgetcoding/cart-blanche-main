@@ -2,6 +2,10 @@
 
 A clothing store you move around in instead of scroll through, with a merchant admin and an AI stylist. Clone it and it runs right away on sample data, no accounts needed.
 
+## ▶ [Try it live, no login: cart-blanche-main.vercel.app](https://cart-blanche-main.vercel.app)
+
+The store portal is at [/admin](https://cart-blanche-main.vercel.app/admin), on sample data. The live copy has no AI key, so the store manager gives a canned reply and the stylist says it isn't set up.
+
 ## Why it exists
 
 Most online stores are a grid and a filter sidebar. Cart Blanche tries a store laid out like a space: pan and zoom across the collection, open a piece, and ask a stylist what goes with it.
