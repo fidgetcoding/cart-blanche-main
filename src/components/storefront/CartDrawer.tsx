@@ -199,7 +199,7 @@ function BudgetComparisonCard({ comparison, onSwapAll, onSwapOne }: {
 
 import type { AppliedDiscount } from '@/contexts/CartContext';
 
-function CartFooter({ subtotal, discount, discountAmount, total, applyDiscount, removeDiscount, closeCart }: {
+export function CartFooter({ subtotal, discount, discountAmount, total, applyDiscount, removeDiscount, closeCart }: {
   subtotal: number;
   discount: AppliedDiscount | null;
   discountAmount: number;
@@ -321,7 +321,7 @@ function CartFooter({ subtotal, discount, discountAmount, total, applyDiscount, 
           <span className="text-base font-semibold">${total.toFixed(0)}</span>
         </div>
       </div>
-      <button className="w-full py-2.5 bg-primary text-primary-foreground font-display font-semibold tracking-wider text-xs rounded-lg hover:opacity-90 transition-opacity">
+      <button onClick={() => toast("Checkout isn't connected yet, so nothing was charged.")} className="w-full py-2.5 bg-primary text-primary-foreground font-display font-semibold tracking-wider text-xs rounded-lg hover:opacity-90 transition-opacity">
         CHECKOUT
       </button>
       <button onClick={closeCart} className="w-full py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/demo/client';
 import { Save, LogOut } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
+import { toast } from 'sonner';
 
 export default function AdminSettings() {
   const navigate = useNavigate();
@@ -137,7 +138,10 @@ export default function AdminSettings() {
           <div className="liquid-glass rounded-xl p-4">
             <p className="font-display text-xs font-medium">Stripe Connect</p>
             <p className="text-[10px] text-muted-foreground mt-0.5 mb-2.5">Accept payments via Stripe</p>
-            <button className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-xs font-display tracking-wider hover:bg-muted transition-colors">
+            <button
+              onClick={() => toast("Stripe Connect isn't wired up yet.")}
+              className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-xs font-display tracking-wider hover:bg-muted transition-colors"
+            >
               CONNECT STRIPE
             </button>
           </div>
@@ -158,7 +162,7 @@ export default function AdminSettings() {
         </section>
       </div>
 
-      <p className="text-center text-[10px] text-muted-foreground/50 font-display tracking-widest pb-4"><p className="text-center text-[10px] text-muted-foreground/50 font-display tracking-widest pb-4">Version 1.36</p></p>
+      <p className="text-center text-[10px] text-muted-foreground/50 font-display tracking-widest pb-4">Version 1.36</p>
     </div>
     </>
   );

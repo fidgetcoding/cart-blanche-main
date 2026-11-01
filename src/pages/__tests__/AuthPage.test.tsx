@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -40,6 +40,6 @@ describe('AuthPage', () => {
   it('shows other errors', async () => {
     signInWithOtp.mockResolvedValue({ error: { code: 'over_email_send_rate_limit', message: 'Too many emails' } });
     await requestLink();
-    await waitFor(() => expect(screen.getByText('Too many emails')).toBeInTheDocument());
+    await screen.findByText('Too many emails');
   });
 });
