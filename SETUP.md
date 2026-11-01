@@ -1,6 +1,6 @@
 # Setting up Cart Blanche
 
-No database is hosted for you. Out of the box this repo runs on sample data with nothing to configure, and when you want real accounts you connect your own Supabase project, either on your machine or hosted.
+I'm not hosting a database for you. Out of the box this repo runs on sample data with nothing to configure, and when you want real accounts you connect your own Supabase project, either on your machine or hosted.
 
 ## Paste this to your coding agent
 
@@ -13,7 +13,8 @@ Set up this Cart Blanche repo for me by following SETUP.md.
 2. Install dependencies and start the app. Confirm the storefront and /admin load.
 3. For a backend: apply every migration in supabase/migrations, write .env from
    .env.example, and restart the dev server.
-4. Prove sign-in works: request a magic link on /auth, open the email, and check
+4. Create my merchant account as the "First merchant account" section describes.
+   Prove sign-in works: request a magic link on /auth, open the email, and check
    that I land on /admin with no "Demo data" marker, then create a discount code
    and confirm it survives a reload.
 5. If I give you an AI key, set AI_API_KEY for the functions and check that the
@@ -72,9 +73,43 @@ supabase db push
 - **Sign-in redirects:** under Authentication, URL Configuration, set the Site URL to your site and add `<your-site>/admin` to the redirect URLs. Add `http://127.0.0.1:8080/admin` too if you'll develop against this project.
 - **Email:** the built-in email service has a low hourly limit. Add your own SMTP before real people sign in.
 
-## 3. Turn on the AI features
+### First merchant account
 
-The storefront stylist (`smartcart-chat`) and the merchant assistant (`smart-chat`) are Supabase Edge Functions that talk to any OpenAI-compatible API:
+Merchant accounts are by invitation, so strangers can't create one on your store. Add yourself first, then sign in at `/auth`.
+
+- **Local:** run this with the `API_URL` and `SERVICE_ROLE_KEY` from `supabase status -o env`:
+
+  ```sh
+  curl -X POST "$API_URL/auth/v1/admin/users" \
+    -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"email":"you@example.com","email_confirm":true}'
+  ```
+
+- **Hosted:** under Authentication, Users, add or invite the user. Then turn off "Allow new users to sign up" in the Authentication settings. Locally `config.toml` already has it off.
+
+Each person you add gets their own store.
+
+## 3. Turn on the shopper features
+
+Four Supabase Edge Functions handle what logged-out shoppers and the AI do. Deploy them on a hosted project once the migrations are in, because they refuse requests without the rate limiter those add:
+
+```sh
+supabase functions deploy store-signup
+supabase functions deploy chat-upload
+supabase functions deploy smartcart-chat
+supabase functions deploy smart-chat
+```
+
+Locally, `supabase functions serve` runs them all.
+
+- `store-signup` adds shoppers to waitlists and subscriber lists.
+- `chat-upload` stores photos shoppers send the stylist.
+- `smartcart-chat` is the storefront stylist, and `smart-chat` is the merchant assistant. Both need an AI key.
+
+## 4. Turn on the AI features
+
+The stylist and the merchant assistant talk to any OpenAI-compatible API:
 
 | Name | Default | What it does |
 |---|---|---|
@@ -95,19 +130,26 @@ Some other values, checked against each provider's docs on 2026-11-01. Model nam
 supabase functions serve
 ```
 
-**Hosted:** apply the migrations first, because the functions refuse requests without the rate limiter they add. Then:
+**Hosted:**
 
 ```sh
 supabase secrets set AI_API_KEY=<your-key>
-supabase functions deploy smartcart-chat
-supabase functions deploy smart-chat
 ```
 
-Limits are built in and stored in your database. The stylist allows 20 requests a minute and 200 a day per visitor, and 2,000 a day overall. The assistant allows each merchant 60 an hour and 300 a day. The constants are at the top of each function.
+Limits are built in and stored in your database:
+
+| What | Per visitor | Overall |
+|---|---|---|
+| Stylist | 20 a minute, 200 a day | 2,000 a day |
+| Photo uploads | 5 a minute, 20 a day | 200 a day |
+| Shopper signups | 5 a minute, 30 a day | 2,000 a day per store |
+| Discount code checks | 20 a minute | 300 wrong guesses an hour per store |
+
+The assistant allows each merchant 60 requests an hour and 300 a day. The constants are at the top of each function, and in `supabase/migrations` for discount codes.
 
 Photo questions in the stylist only work on a hosted project, because your AI provider has to be able to download the image from your storage.
 
-## 4. Put the frontend on Vercel
+## 5. Put the frontend on Vercel
 
 1. Import the repo. Vercel detects Vite, and `vercel.json` sends every route to the app so links like `/admin` work.
 2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` under Environment Variables, plus `VITE_STORE_MERCHANT_ID` if you want one. Leave them out to publish the demo.
@@ -116,6 +158,6 @@ Photo questions in the stylist only work on a hosted project, because your AI pr
 ## Good to know
 
 - **Showing your store to everyone:** by default, logged-out visitors see the bundled catalogue and only a signed-in merchant sees their own products. Set `VITE_STORE_MERCHANT_ID` to a merchant's user ID (Authentication, Users) to change that.
-- **Shopper signups:** with `VITE_STORE_MERCHANT_ID` set, logged-out shoppers can't join a waitlist or subscribe, because the database only lets merchants write those rows. Collecting them would need an edge function.
+- **Shopper signups:** with `VITE_STORE_MERCHANT_ID` set, logged-out shoppers join waitlists and subscribe through the `store-signup` function, so deploy it or those forms will say they're unavailable.
 - **Colima:** `supabase functions serve` needs the repo and its temp folder somewhere the VM can read. Keep the repo under your home folder and run `TMPDIR=~/.cache supabase functions serve` if you see "failed to determine entrypoint".
 - **Older Supabase projects:** the migrations set table access explicitly, so they work on new projects, which no longer expose tables by default, and old ones alike.

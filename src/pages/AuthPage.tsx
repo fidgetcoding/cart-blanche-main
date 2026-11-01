@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
 
+// What Supabase answers when an email has no account and signups are closed.
+const NO_ACCOUNT_CODES = ['otp_disabled', 'signup_disabled'];
+
 function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen dynamic-bg flex items-center justify-center px-4">
@@ -56,10 +59,11 @@ function AuthForm({ client }: { client: NonNullable<typeof supabase> }) {
 
     const { error } = await client.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/admin` },
+      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/admin` },
     });
-    if (error) setError(error.message);
-    else setMessage('Check your email for a sign-in link.');
+    // Unknown emails get the same answer, so this can't reveal who has an account.
+    if (error && !NO_ACCOUNT_CODES.includes(error.code ?? '')) setError(error.message);
+    else setMessage('If that email has a merchant account, a sign-in link is on its way.');
     setLoading(false);
   };
 

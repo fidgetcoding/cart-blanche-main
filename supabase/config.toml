@@ -2,6 +2,8 @@
 project_id = "cart-blanche"
 
 [auth]
+# Merchant accounts are by invitation, so a stranger can't create one.
+enable_signup = false
 site_url = "http://127.0.0.1:8080"
 additional_redirect_urls = ["http://127.0.0.1:8080/admin", "http://localhost:8080/admin"]
 
