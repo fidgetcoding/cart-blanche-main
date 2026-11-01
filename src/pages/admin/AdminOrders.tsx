@@ -287,11 +287,8 @@ export default function AdminOrders() {
     }
     const { data } = await supabase.from('orders').select('*')
       .eq('merchant_id', session.user.id).order('created_at', { ascending: false });
-    if (data && data.length > 0) {
-      setOrders(data as unknown as Order[]);
-    } else {
-      setOrders(generateMockOrders(100));
-    }
+    // A real store with no orders yet gets the empty state, not made-up orders.
+    setOrders((data ?? []) as unknown as Order[]);
     setLoading(false);
   }
 

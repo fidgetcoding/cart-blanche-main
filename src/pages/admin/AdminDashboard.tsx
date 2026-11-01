@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { isDemoMode } from '@/lib/demo/client';
 import { getDashboardDataForRange } from '@/data/mock-orders';
 import { type LucideIcon, TrendingUp, TrendingDown, ShoppingCart, Package, DollarSign, BarChart3, MapPin, Globe } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -57,6 +58,12 @@ type TimeRange = typeof TIME_RANGES[number];
 
 export default function AdminDashboard() {
   const [range, setRange] = useState<TimeRange>('1M');
+  // These figures are generated, not read from a store, so a signed-in merchant
+  // needs telling. In the demo the header already says so.
+  const [isRealStore, setIsRealStore] = useState(false);
+  useEffect(() => {
+    isDemoMode().then(demo => setIsRealStore(!demo));
+  }, []);
   const data = useMemo(() => getDashboardDataForRange(range), [range]);
 
   const prevLabel = range === '1D' ? 'vs yesterday' : range === '7D' ? 'vs last week' : 'vs prev period';
@@ -64,7 +71,12 @@ export default function AdminDashboard() {
   return (
     <div className="p-6 md:p-8 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="font-display text-2xl font-bold">Dashboard</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold">Dashboard</h1>
+          {isRealStore && (
+            <p className="text-xs text-muted-foreground mt-1">Sample numbers. Real store stats aren't connected yet.</p>
+          )}
+        </div>
         <div className="flex items-center bg-secondary rounded-lg p-0.5 gap-0.5">
           {TIME_RANGES.map(r => (
             <button
