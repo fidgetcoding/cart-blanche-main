@@ -541,6 +541,7 @@ export type Database = {
           hs_code: string
           product_type: string
           shipping_type: string
+          image_details: Json | null
           video_url: string | null
           weight_oz: number
           grid_position: Json | null
@@ -566,6 +567,7 @@ export type Database = {
           hs_code?: string
           product_type?: string
           shipping_type?: string
+          image_details?: Json | null
           video_url?: string | null
           weight_oz?: number
           grid_position?: Json | null
@@ -591,6 +593,7 @@ export type Database = {
           hs_code?: string
           product_type?: string
           shipping_type?: string
+          image_details?: Json | null
           video_url?: string | null
           weight_oz?: number
           grid_position?: Json | null

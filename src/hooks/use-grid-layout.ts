@@ -4,6 +4,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import { DEMO_MERCHANT_ID } from '@/lib/demo/store';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
+import { productImages } from '@/lib/inventory-rows';
 import type { DemoProduct, ProductImage, ProductType, Colorway } from '@/data/demo-data';
 
 const TILE_W = 220;
@@ -169,14 +170,14 @@ export function useGridLayout() {
 
           setDbProducts(products.map(p => {
             const pvs = variantMap.get(p.id) || [];
+            const colorways = (p.colorways as unknown as Colorway[] | null) ?? [];
             return {
               id: p.id,
               title: p.title,
               price: p.price,
               compare_at_price: p.compare_at_price ?? undefined,
-              images: (p.images || []).map((url: string) => ({
-                thumb: url, medium: url, full: url,
-              })),
+              images: normalizeProductImages(productImages(p.images, p.image_details), colorways),
+              colorways,
               category: p.category || 'uncategorized',
               product_type: (p.product_type || '') as ProductType,
               gender: p.gender || 'unisex',

@@ -1,3 +1,6 @@
+import type { ProductImage } from '@/data/demo-data';
+import type { Json } from '@/integrations/supabase/types';
+
 interface HasId {
   id: string;
 }
@@ -23,6 +26,7 @@ export interface SavableProduct {
   gender: string;
   tags: string[];
   images: string[];
+  imagesFull: ProductImage[];
   status: string;
   weight_oz: number;
   shipping_type: string;
@@ -41,9 +45,22 @@ export function productUpdate(product: SavableProduct) {
     gender: product.gender || 'unisex',
     tags: product.tags,
     images: product.images,
+    image_details: product.imagesFull as unknown as Json,
     status: product.status,
     weight_oz: product.weight_oz,
     shipping_type: product.shipping_type,
     hs_code: product.hs_code,
   };
+}
+
+/**
+ * A real product's photos, with what the merchant set on each. The details only
+ * count while they still describe the photos on the product: anything else that
+ * changes its images leaves them out of date.
+ */
+export function productImages(images: string[] | null, details: unknown): ProductImage[] {
+  const urls = images ?? [];
+  const saved = Array.isArray(details) ? (details as ProductImage[]) : [];
+  const matches = saved.length === urls.length && saved.every((image, i) => image?.thumb === urls[i]);
+  return matches ? saved : urls.map(url => ({ thumb: url, medium: url, full: url }));
 }

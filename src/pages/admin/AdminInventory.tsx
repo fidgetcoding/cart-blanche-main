@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { isDemoSession, supabase } from '@/lib/demo/client';
-import { mergeInventoryRows, productUpdate } from '@/lib/inventory-rows';
+import { mergeInventoryRows, productImages, productUpdate } from '@/lib/inventory-rows';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, ChevronUp, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
@@ -67,6 +67,12 @@ function sortImagesByColorwayOrder(
     return a.idx - b.idx;
   });
   return indexed.map(x => x.img);
+}
+
+// The grid shows the first photo until the merchant picks one, so that's what's marked.
+function withGridPhoto(images: ProductImage[]): ProductImage[] {
+  if (images.length === 0 || images.some(img => img.featured)) return images;
+  return images.map((img, i) => i === 0 ? { ...img, featured: true } : img);
 }
 
 function buildProductRows(orderedProducts: DemoProduct[]): ProductRow[] {
@@ -411,7 +417,7 @@ export default function AdminInventory() {
             gender: p.gender || 'unisex',
             colorways: (p.colorways as unknown as Colorway[]) || [],
             images: p.images || [],
-            imagesFull: ((p.images as string[]) || []).map(url => ({ thumb: url, medium: url, full: url })),
+            imagesFull: withGridPhoto(productImages(p.images, p.image_details)),
             description: p.description || '',
             tags: p.tags || [p.category || ''].filter(Boolean),
             variants: pvs.map(v => ({

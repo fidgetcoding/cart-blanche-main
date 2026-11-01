@@ -39,6 +39,25 @@ describe('which products a store shows', () => {
     expect(await productsFor('real-merchant', [realProduct])).toEqual(['real-1']);
   });
 
+  it('gives shoppers the colors and photo choices the merchant saved', async () => {
+    const olive = { id: 'olive', name: 'Olive', hex: '#556b2f' };
+    resolveStoreMerchantId.mockResolvedValue('real-merchant');
+    rows.products = [{
+      ...realProduct,
+      colorways: [olive],
+      images: ['a', 'b'],
+      image_details: [
+        { thumb: 'a', medium: 'a', full: 'a' },
+        { thumb: 'b', medium: 'b', full: 'b', featured: true, colorway_id: 'olive' },
+      ],
+    }];
+    const { result } = renderHook(() => useGridLayout());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const [product] = result.current.getOrderedProducts();
+    expect(product.colorways).toEqual([olive]);
+    expect(product.images[0]).toMatchObject({ thumb: 'b', featured: true, colorway_id: 'olive' });
+  });
+
   it('shows no samples on a real store with no products yet', async () => {
     expect(await productsFor('real-merchant', [])).toEqual([]);
   });
