@@ -22,6 +22,27 @@ function jsonResponse(body: unknown, status: number) {
   });
 }
 
+// Reads the body without holding more than the limit in memory. It keeps draining
+// past the limit, because answering mid-upload makes the gateway hang the client.
+async function readUpTo(req: Request, limit: number): Promise<Uint8Array | null> {
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  if (req.body) {
+    for await (const chunk of req.body) {
+      total += chunk.length;
+      if (total <= limit) chunks.push(chunk);
+    }
+  }
+  if (total > limit) return null;
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return bytes;
+}
+
 // Stores a shopper's photo for the AI stylist. Visitors can't write to storage
 // directly, so this is the only way in, and it picks the file name itself.
 serve(async (req) => {
@@ -37,11 +58,8 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase config missing");
 
-    if (Number(req.headers.get("content-length") ?? 0) > MAX_CHAT_IMAGE_BYTES) {
-      return jsonResponse({ error: "That image is over 5 MB." }, 413);
-    }
-    const bytes = new Uint8Array(await req.arrayBuffer());
-    if (bytes.length > MAX_CHAT_IMAGE_BYTES) {
+    const bytes = await readUpTo(req, MAX_CHAT_IMAGE_BYTES);
+    if (!bytes) {
       return jsonResponse({ error: "That image is over 5 MB." }, 413);
     }
 
