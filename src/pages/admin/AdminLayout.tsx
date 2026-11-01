@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Outlet, NavLink, Link } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { realAuth } from '@/lib/demo/client';
 import { SmartChatPanel } from '@/components/admin/SmartChatPanel';
 import {
   LayoutDashboard,
@@ -43,8 +43,8 @@ export default function AdminLayout() {
       setIsDemo(!session);
       setLoading(false);
     };
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => applySession(session));
-    supabase.auth.getSession().then(({ data: { session } }) => applySession(session));
+    const { data: { subscription } } = realAuth.onAuthStateChange((_event, session) => applySession(session));
+    realAuth.getSession().then(({ data: { session } }) => applySession(session));
     return () => subscription.unsubscribe();
   }, []);
 

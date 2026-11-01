@@ -15,6 +15,19 @@ const QUIET_TABLES = new Set(['conversations', 'chat_messages']);
 // Shopper chat images must reach the AI, so they stay real outside /admin.
 const SHOPPER_BUCKET = 'chat-uploads';
 
+type RealClient = NonNullable<typeof realClient>;
+
+// Stands in for the auth client when no backend is configured.
+const offlineAuth = {
+  getSession: async () => ({ data: { session: null }, error: null }),
+  getUser: async () => ({ data: { user: null }, error: null }),
+  signOut: async () => ({ error: null }),
+  onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+} as unknown as RealClient['auth'];
+
+/** The real auth state, never the demo session. Works with no backend too. */
+export const realAuth = realClient?.auth ?? offlineAuth;
+
 const DEMO_USER = { id: DEMO_MERCHANT_ID, email: 'demo@example.com', aud: 'demo', role: 'demo' } as unknown as User;
 const DEMO_SESSION = { access_token: 'demo', token_type: 'bearer', user: DEMO_USER } as unknown as Session;
 
@@ -23,15 +36,15 @@ function isAdminPath(): boolean {
 }
 
 /**
- * /admin always falls back to demo data. The storefront only does when no
- * VITE_STORE_MERCHANT_ID is configured; otherwise anon shoppers see that store.
+ * With no backend everything is demo data. Otherwise /admin always falls back to
+ * it, and the storefront only does when no VITE_STORE_MERCHANT_ID is configured.
  */
 function demoAppliesToPage(): boolean {
-  return isAdminPath() || !import.meta.env.VITE_STORE_MERCHANT_ID;
+  return !realClient || isAdminPath() || !import.meta.env.VITE_STORE_MERCHANT_ID;
 }
 
 export async function isDemoMode(): Promise<boolean> {
-  const { data: { session } } = await realClient.auth.getSession();
+  const { data: { session } } = await realAuth.getSession();
   return !session && demoAppliesToPage();
 }
 
@@ -54,7 +67,7 @@ function deferredQuery(table: string) {
       if (isWriteQuery(ops) && !result.error) announceDemoWrite(table);
       return result;
     }
-    return ops.reduce((builder, [method, args]) => builder[method](...args), realClient.from(table as never) as any);
+    return ops.reduce((builder, [method, args]) => builder[method](...args), realClient!.from(table as never) as any);
   };
 
   const chain: any = new Proxy({}, {
@@ -73,23 +86,23 @@ function deferredQuery(table: string) {
 const demoUploads = new Map<string, string>();
 
 function storageBucket(bucket: string) {
-  const real = realClient.storage.from(bucket);
+  const real = realClient?.storage.from(bucket);
   return {
-    upload: async (path: string, file: File, options?: Parameters<typeof real.upload>[2]) => {
+    upload: async (path: string, file: File, options?: Parameters<NonNullable<typeof real>['upload']>[2]) => {
       const keepReal = bucket === SHOPPER_BUCKET && !isAdminPath();
-      if (keepReal || !(await isDemoMode())) return real.upload(path, file, options);
+      if (real && (keepReal || !(await isDemoMode()))) return real.upload(path, file, options);
       demoUploads.set(`${bucket}/${path}`, URL.createObjectURL(file));
       announceDemoWrite();
       return { data: { path }, error: null };
     },
     getPublicUrl: (path: string) => {
       const blobUrl = demoUploads.get(`${bucket}/${path}`);
-      return blobUrl ? { data: { publicUrl: blobUrl } } : real.getPublicUrl(path);
+      return blobUrl || !real ? { data: { publicUrl: blobUrl ?? '' } } : real.getPublicUrl(path);
     },
   };
 }
 
-const demoAwareAuth = new Proxy(realClient.auth, {
+const demoAwareAuth = new Proxy(realAuth, {
   get(auth, prop) {
     if (prop === 'getSession') {
       return async () => {
@@ -113,6 +126,6 @@ export const supabase = {
   auth: demoAwareAuth,
   from: deferredQuery,
   rpc: async (fn: string, args?: Record<string, unknown>) =>
-    (await isDemoMode()) ? runDemoRpc(fn, args) : realClient.rpc(fn as never, args as never),
+    (await isDemoMode()) ? runDemoRpc(fn, args) : realClient!.rpc(fn as never, args as never),
   storage: { from: storageBucket },
-} as unknown as typeof realClient;
+} as unknown as RealClient;

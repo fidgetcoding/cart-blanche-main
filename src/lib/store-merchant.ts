@@ -7,5 +7,5 @@ import { supabase } from '@/lib/demo/client';
  */
 export async function resolveStoreMerchantId(): Promise<string | null> {
   const { data: { user } } = await supabase.auth.getUser();
-  return user?.id ?? import.meta.env.VITE_STORE_MERCHANT_ID ?? null;
+  return user?.id || import.meta.env.VITE_STORE_MERCHANT_ID || null;
 }

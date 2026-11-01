@@ -1,8 +1,40 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
+function AuthShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen dynamic-bg flex items-center justify-center px-4">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="text-center">
+          <h1 className="font-display text-2xl font-bold tracking-[0.2em]">CART BLANCHE</h1>
+          <p className="text-sm text-muted-foreground mt-2">Merchant Portal</p>
+        </div>
+
+        <div className="liquid-glass rounded-2xl p-6 space-y-6">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 export default function AuthPage() {
+  if (!supabase) {
+    return (
+      <AuthShell>
+        <p className="text-sm">No backend is configured, so signing in is switched off.</p>
+        <p className="text-sm text-muted-foreground">
+          This copy runs on sample data. To use real accounts, connect your own Supabase project by following SETUP.md.
+        </p>
+        <Link to="/admin" className="block text-center text-xs font-display tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+          OPEN THE DEMO ADMIN
+        </Link>
+      </AuthShell>
+    );
+  }
+  return <AuthForm client={supabase} />;
+}
+
+function AuthForm({ client }: { client: NonNullable<typeof supabase> }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -11,10 +43,10 @@ export default function AuthPage() {
 
   // If already signed in, skip to storefront
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    client.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate('/', { replace: true });
     });
-  }, [navigate]);
+  }, [client, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +54,7 @@ export default function AuthPage() {
     setError('');
     setMessage('');
 
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await client.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/admin` },
     });
@@ -32,14 +64,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen dynamic-bg flex items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center">
-          <h1 className="font-display text-2xl font-bold tracking-[0.2em]">CART BLANCHE</h1>
-          <p className="text-sm text-muted-foreground mt-2">Merchant Portal</p>
-        </div>
-
-        <div className="liquid-glass rounded-2xl p-6 space-y-6">
+    <AuthShell>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-display tracking-widest text-muted-foreground">EMAIL</label>
@@ -63,8 +88,6 @@ export default function AuthPage() {
               {loading ? '...' : 'EMAIL ME A SIGN-IN LINK'}
             </button>
           </form>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 }
