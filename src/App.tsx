@@ -25,7 +25,6 @@ import LabIndex from './pages/admin/lab/LabIndex';
 
 // Only lazy-load completely separate sections (different entry points)
 const AuthPage = lazy(() => import('./pages/AuthPage'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const YzTemplate = lazy(() => import('./pages/admin/lab/YZTemplate'));
 const SlTemplate = lazy(() => import('./pages/admin/lab/SlTemplate'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -35,7 +34,6 @@ const queryClient = new QueryClient();
 const router = createBrowserRouter([
   { path: "/", element: <Index /> },
   { path: "/auth", element: <Suspense fallback={null}><AuthPage /></Suspense> },
-  { path: "/reset-password", element: <Suspense fallback={null}><ResetPassword /></Suspense> },
   { path: "/admin/lab/yz", element: <Suspense fallback={null}><YzTemplate /></Suspense> },
   { path: "/admin/lab/sl", element: <Suspense fallback={null}><SlTemplate /></Suspense> },
   {
