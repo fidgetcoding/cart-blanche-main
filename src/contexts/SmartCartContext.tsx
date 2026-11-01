@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
+import { isBackendConfigured } from '@/integrations/supabase/client';
 import type { CartItem } from '@/contexts/CartContext';
 
 export interface BudgetSwap {
@@ -60,6 +61,8 @@ const SmartCartContext = createContext<SmartCartContextType | undefined>(undefin
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smartcart-chat`;
 
 const MAX_HISTORY_MESSAGES = 20;
+const STYLIST_NOT_SET_UP = "The AI stylist isn't set up on this site yet. Browsing and your cart still work.";
+const STYLIST_UNAVAILABLE = "The AI stylist isn't available right now. Browsing and your cart still work.";
 
 function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -95,6 +98,10 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
     cartItems: CartItem[],
     mode?: string
   ): Promise<ChatMessage | null> => {
+    if (!isBackendConfigured) {
+      return { id: generateId(), role: 'assistant', content: STYLIST_NOT_SET_UP, timestamp: Date.now() };
+    }
+
     try {
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -116,12 +123,12 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: 'Request failed' }));
+        const err = await resp.json().catch(() => ({}));
         console.error('SmartCart AI error:', err);
         return {
           id: generateId(),
           role: 'assistant',
-          content: err.error || 'Something went wrong. Please try again.',
+          content: err.code === 'ai_not_configured' ? STYLIST_NOT_SET_UP : err.error || STYLIST_UNAVAILABLE,
           timestamp: Date.now(),
         };
       }
@@ -142,7 +149,7 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
       return {
         id: generateId(),
         role: 'assistant',
-        content: 'Something went wrong. Please try again.',
+        content: STYLIST_UNAVAILABLE,
         timestamp: Date.now(),
       };
     }
@@ -179,7 +186,7 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
     cartItems: CartItem[],
     context?: string
   ) => {
-    if (isLoading) return;
+    if (isLoading || !isBackendConfigured) return;
 
     const proactivePrompt = context
       ? `[System: ${context}]`

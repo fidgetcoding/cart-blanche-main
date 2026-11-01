@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.96.0";
+import { AI_NOT_CONFIGURED, aiFailure, chatCompletions, readAiConfig } from "../_shared/ai.ts";
 import { checkMessages, pickProductFields } from "../_shared/chat-guards.ts";
 
 const corsHeaders = {
@@ -11,7 +12,7 @@ const corsHeaders = {
 const MAX_MESSAGES = 50;
 const MAX_MESSAGE_CHARS = 10_000;
 const MAX_CONVERSATION_CHARS = 120_000;
-const MAX_TOKENS = 4_096;
+const MAX_TOKENS = 8_192;
 const USER_LIMIT_PER_HOUR = 60;
 const USER_LIMIT_PER_DAY = 300;
 
@@ -495,26 +496,33 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase config missing");
 
     // Get merchant from auth token
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Sign in to use the assistant." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Use the apikey from the request header (sent by the client)
-    const anonKey = req.headers.get("apikey") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
+    const anonKey = req.headers.get("apikey") || Deno.env.get("SUPABASE_ANON_KEY") || "";
     if (!anonKey) throw new Error("No API key available");
 
     const supabaseUser = createClient(SUPABASE_URL, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    if (authError || !user) throw new Error("Unauthorized");
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Sign in to use the assistant." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const merchantId = user.id;
 
@@ -623,6 +631,15 @@ serve(async (req) => {
       });
     }
 
+    // Confirmed actions above don't use the model, so only chat needs a key.
+    const ai = readAiConfig((name) => Deno.env.get(name));
+    if (!ai) {
+      return new Response(JSON.stringify(AI_NOT_CONFIGURED), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Per-user AI quota. Any failure here refuses the request: an open limiter
     // would leave the AI bill uncapped.
     const quotas: [string, number, number][] = [
@@ -673,38 +690,20 @@ Guidelines:
 - Use currency formatting for prices (e.g., $45.00).
 - Keep responses focused and practical.`;
 
-    // Call Lovable AI with tools
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
-        tools,
-        max_tokens: MAX_TOKENS,
-        stream: true,
-      }),
+    const aiResponse = await chatCompletions(ai, {
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      tools,
+      max_tokens: MAX_TOKENS,
+      stream: true,
     });
 
     if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const text = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, text);
-      throw new Error("AI gateway error");
+      console.error("AI provider error:", aiResponse.status, await aiResponse.text());
+      const failure = aiFailure(aiResponse.status);
+      return new Response(JSON.stringify(failure.body), {
+        status: failure.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // We need to handle tool calls non-streaming first
@@ -791,34 +790,29 @@ Guidelines:
       }));
 
       // Second call with tool results — stream this one
-      const secondResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...messages,
-            {
-              role: "assistant",
-              content: fullContent || null,
-              tool_calls: assistantToolCalls,
-            },
-            ...toolResults,
-          ],
-          tools,
-          max_tokens: MAX_TOKENS,
-          stream: true,
-        }),
+      const secondResponse = await chatCompletions(ai, {
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+          {
+            role: "assistant",
+            content: fullContent || null,
+            tool_calls: assistantToolCalls,
+          },
+          ...toolResults,
+        ],
+        tools,
+        max_tokens: MAX_TOKENS,
+        stream: true,
       });
 
       if (!secondResponse.ok) {
-        const text = await secondResponse.text();
-        console.error("AI second pass error:", secondResponse.status, text);
-        throw new Error("AI gateway error on tool result processing");
+        console.error("AI second pass error:", secondResponse.status, await secondResponse.text());
+        const failure = aiFailure(secondResponse.status);
+        return new Response(JSON.stringify(failure.body), {
+          status: failure.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       // Stream the second response back with tool call metadata
