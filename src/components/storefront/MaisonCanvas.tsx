@@ -10,6 +10,7 @@ import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
+import { DemoStoreLabel } from './DemoStoreLabel';
 import { StyleKitView } from './StyleKitView';
 import { GenderSymbol } from './GenderSymbol';
 
@@ -170,10 +171,11 @@ export function MaisonCanvas() {
       >
         {/* Store name — left */}
         <div
-          className="text-sm tracking-[0.3em] uppercase font-medium flex-shrink-0 text-foreground"
+          className="relative text-sm tracking-[0.3em] uppercase font-medium flex-shrink-0 text-foreground"
           style={{ color: themeSettings.storeNameColor || undefined }}
         >
           {themeSettings.storeName}
+          <DemoStoreLabel />
         </div>
 
         {/* Category links — center */}

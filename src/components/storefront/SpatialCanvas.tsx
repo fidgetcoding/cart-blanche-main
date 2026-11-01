@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { ProductTile } from '@/components/storefront/ProductTile';
 import { ProductView } from '@/components/storefront/ProductView';
+import { DemoStoreLabel } from '@/components/storefront/DemoStoreLabel';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 import { useGridLayout } from '@/hooks/use-grid-layout';
@@ -836,10 +837,11 @@ export function SpatialCanvas() {
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 liquid-glass flex items-center justify-between px-4 md:px-6 py-3 md:py-5">
         {/* Left: Brand */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="relative flex items-center gap-2 flex-shrink-0">
           <span className="font-display font-semibold tracking-[0.2em] uppercase text-foreground" style={{ fontSize: '11px', color: themeSettings.storeNameColor || undefined }}>
             {themeSettings.storeName}
           </span>
+          <DemoStoreLabel />
         </div>
 
         {/* Center: Category nav + gender symbols as one centered group */}
