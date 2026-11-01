@@ -12,8 +12,6 @@ export const DEMO_CHAT_MESSAGE =
 
 // The chat panel shows its own canned reply, so a toast there is just noise.
 const QUIET_TABLES = new Set(['conversations', 'chat_messages']);
-// Shopper chat images must reach the AI, so they stay real outside /admin.
-const SHOPPER_BUCKET = 'chat-uploads';
 
 type RealClient = NonNullable<typeof realClient>;
 
@@ -94,8 +92,7 @@ function storageBucket(bucket: string) {
   const real = realClient?.storage.from(bucket);
   return {
     upload: async (path: string, file: File, options?: Parameters<NonNullable<typeof real>['upload']>[2]) => {
-      const keepReal = bucket === SHOPPER_BUCKET && !isAdminPath();
-      if (real && (keepReal || !(await isDemoMode()))) return real.upload(path, file, options);
+      if (real && !(await isDemoMode())) return real.upload(path, file, options);
       demoUploads.set(`${bucket}/${path}`, URL.createObjectURL(file));
       announceDemoWrite();
       return { data: { path }, error: null };

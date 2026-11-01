@@ -9,6 +9,8 @@ import { useStyleKit } from '@/contexts/StyleKitContext';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { supabase } from '@/lib/demo/client';
 import { resolveStoreMerchantId } from '@/lib/store-merchant';
+import { uploadChatImage } from '@/lib/shopper-api';
+import { toast } from 'sonner';
 
 type Tab = 'cart' | 'assistant';
 
@@ -374,14 +376,10 @@ export function CartDrawer() {
     if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) return;
     setIsUploading(true);
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from('chat-uploads').upload(path, file);
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from('chat-uploads').getPublicUrl(path);
-      setPendingImage(publicUrl);
+      setPendingImage(await uploadChatImage(file));
     } catch (e) {
       console.error('Upload failed:', e);
+      toast.error(e instanceof Error ? e.message : "That photo couldn't be uploaded.");
     } finally {
       setIsUploading(false);
     }

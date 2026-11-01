@@ -164,12 +164,5 @@ describe('demo-aware client', () => {
       const { data: { session } } = await supabase.auth.getSession();
       expect(session).toBeNull();
     });
-
-    it('keeps shopper chat image uploads real so the assistant can read them', async () => {
-      const file = new File(['x'], 'x.png', { type: 'image/png' });
-      const { data } = await supabase.storage.from('chat-uploads').upload('a.png', file);
-      expect(data?.path).toBe('real');
-      expect(toast).not.toHaveBeenCalled();
-    });
   });
 });
