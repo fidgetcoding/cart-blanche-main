@@ -60,6 +60,7 @@ The use case: the owners of a real fashion brand explained the problem and gave 
 | Nov 1 | Leaves Lovable: a clone developed only in Claude Code, with readers bringing their own Supabase and AI key. Runs with no backend, any OpenAI-compatible provider, `SETUP.md` | `0fe3198`, `756571a`, `1dbc52d`, `99481a5` |
 | Nov 1 | Advisories, images, types and lint: no high or critical audit issues, real WebP files, chat functions type-check, lint errors from 116 to 0 | `920d7b1`, `1449e6a`, `c7c95bc`, `6af6d32` |
 | Nov 1 | Shopper signups and photos through rate limited functions, discount checks rate limited, merchant accounts invitation only | `fe19888`, `43b1f33`, `74cae19`, `6b31fea` |
+| Nov 1 | The SL template on phones, real product details kept, failed saves reported, Build a Set and the look book on the store's own products, CI | `d21bf32`, `7c074a2`, `9bf53e5`, `b901de1`, `9d2c5d4`, `8df52d2` |
 | Nov 1 | Real-store fixes: no sample catalogue on a real store, stylist on the store's own products, no invented orders, blank slugs. Phone admin, responses on Checkout and Connect Stripe, a details panel that stopped flapping | `cac1ec2`, `296d08e`, `f2af4e7`, `165ba35`, `ebd12fd`, `3c8b504`, `1444ecc` |
 
 History shape: February 495 commits, March 933, April 157, May 579. Three days hold more than half of it: March 2, February 18, May 2.
@@ -125,14 +126,17 @@ leaving Lovable → Claude Code only → bring your own Supabase and AI key → 
 | Spring | Template agent suite | 127 tests, still in the count below | Project hub note, `template-agent.test.ts` |
 | May 3 | Whole suite | 144 of 144 | Status note |
 | Nov 1, before the backend-free work | Vitest | 202 of 202 | Rerun while writing this |
-| Nov 1, tip `9eb1fb2` | Vitest, unit and component tests | 281 of 281 in 23 files: template agent 127, chat guards 31, shopper guards 18, pairing 16, demo store 14, the rest smaller | Run while writing this |
-| Nov 1, tip `9eb1fb2` | Lint, typecheck, build | Lint 0 errors, 45 warnings. `tsc` clean. Build passes | Run while writing this |
-| Nov 1, tip `9eb1fb2` | `npm audit --omit=dev` | No high or critical, 5 moderate | Run while writing this |
-| Nov 1, fresh clone of `192ef8e` | `npm ci`, lint, build, tests | All pass, 281 tests | Run while writing this |
+| Nov 1, tip `8df52d2` | Vitest, unit and component tests | 293 of 293 in 26 files: template agent 127, chat guards 31, shopper guards 18, pairing 18, demo store 14, the rest smaller | Run while writing this |
+| Nov 1, tip `8df52d2` | Lint, typecheck, build | Lint 0 errors, 52 warnings. `tsc` clean. Build passes | Run while writing this |
+| Nov 1, tip `8df52d2` | `npm audit --omit=dev` | No high or critical, 5 moderate | Run while writing this |
+| Nov 1, fresh clone of `8df52d2` | `npm ci`, lint, build, tests | All pass, 293 tests | Run while writing this |
+| Nov 1, `8df52d2` | GitHub Actions: `npm ci`, lint, typecheck, tests, build | Green | GitHub Actions |
 | Nov 1 | Real local Supabase stack | Showed every table failing with permission denied, fixed with explicit grants | `2f10bb2` |
 | Nov 1 | Security fixes on that stack, with real sign-in tokens and a fake AI provider | Storage ownership and limits, closed reads on merchants and discount codes, locked fee and Stripe columns, shopper functions and their limits, merchant signups closed, a real magic link through the local mail catcher, then signed-in writes confirmed in Postgres | Session scripts, not in this repo |
+| Nov 1 | Rate limits hit on that stack, where every caller shares one gateway IP | Stylist: the 21st request in a minute got a 429. Discount checks: the 21st in a minute got `rate_limited`. Signups and photos: the 6th in a minute got a 429. A store seeded at 300 wrong guesses an hour was blocked | Session scripts, not in this repo |
 | Nov 1 | Browser, on that stack and on the no-backend build | Storefront, all 11 admin routes, and a logged-out shopper's subscribe, waitlist, cart code, stylist and photo upload | Session scripts, not in this repo |
 | Nov 1 | `SETUP.md`, local path | Ran end to end from a fresh clone at `6243771` | Session notes |
+| Nov 1 | Product details migration, save failures, look book on real products | Embedded Postgres and unit tests | `9bf53e5`, `b901de1`, `9d2c5d4` |
 | Nov 1 | `deno check` on all 4 functions | Pass | Session notes, `c7c95bc` |
 | Nov 1 | 25 migrations on embedded Postgres with stubs | 42 role checks pass | Audit report |
 | Nov 1 | Edge functions, outbound stubbed | 16 `smartcart-chat`, 15 `smart-chat` checks pass | Audit report |
