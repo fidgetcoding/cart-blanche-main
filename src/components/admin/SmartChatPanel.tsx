@@ -6,6 +6,7 @@ import { DEMO_CHAT_MESSAGE, isDemoSession, supabase } from '@/lib/demo/client';
 import type { Json } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
 type ToolCall = { tool: string; args: Record<string, unknown>; result: unknown };
@@ -91,6 +92,7 @@ const PROMPTS_BY_ROUTE: Record<string, SuggestedPrompt[]> = {
 
 export function SmartChatPanel() {
   const location = useLocation();
+  const isMobile = useIsMobile();
   const currentRoute = useMemo(() => {
     const path = location.pathname.replace('/admin/', '').replace('/admin', '') || 'dashboard';
     if (path.startsWith('lab')) return 'lab';
@@ -421,7 +423,7 @@ export function SmartChatPanel() {
   const isNewChat = activeConversationId === null && messages.length === 0;
 
   return (
-    <div className="flex flex-shrink-0 flex-1 min-h-0" style={{ width: panelWidth }}>
+    <div className="flex flex-shrink-0 flex-1 min-h-0" style={{ width: isMobile ? '100%' : panelWidth }}>
       {/* Conversation history sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -647,7 +649,7 @@ export function SmartChatPanel() {
 
       {/* Resize handle */}
       <div
-        className="w-1 cursor-col-resize bg-border/30 hover:bg-accent/50 transition-colors flex-shrink-0"
+        className="hidden md:block w-1 cursor-col-resize bg-border/30 hover:bg-accent/50 transition-colors flex-shrink-0"
         onMouseDown={handleResizeStart}
       />
     </div>
