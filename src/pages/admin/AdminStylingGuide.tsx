@@ -281,7 +281,7 @@ export default function AdminStylingGuide() {
     const set = new Set<string>();
     catalog.forEach(p => { if (p.product_type) set.add(p.product_type.toUpperCase()); });
     return ['ALL', ...Array.from(set).sort()];
-  }, []);
+  }, [catalog]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, DemoProduct[]> = {};
@@ -294,7 +294,7 @@ export default function AdminStylingGuide() {
       groups[pt].push(p);
     });
     return groups;
-  }, [searchQuery, filterGroup]);
+  }, [catalog, searchQuery, filterGroup]);
 
   const selectedProduct = catalog.find(p => p.id === selectedProductId) ?? null;
   const currentPreset = presets.find(p => p.anchorProductId === selectedProductId);
