@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { isDemoSession, supabase } from '@/lib/demo/client';
 import { mergeInventoryRows, productImages, productUpdate } from '@/lib/inventory-rows';
+import { sortVariantsBySize } from '@/lib/variant-order';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 import { AlertTriangle, Check, X, Plus, Search, ChevronDown, ChevronRight, ChevronLeft, ChevronUp, Tag, ImageIcon, Video, Loader2, Pencil, Eye, EyeOff, GripVertical, Globe, Home, Save, Archive, Trash2, CheckSquare, Square } from 'lucide-react';
@@ -420,7 +421,7 @@ export default function AdminInventory() {
             imagesFull: withGridPhoto(productImages(p.images, p.image_details)),
             description: p.description || '',
             tags: p.tags || [p.category || ''].filter(Boolean),
-            variants: pvs.map(v => ({
+            variants: sortVariantsBySize(pvs).map(v => ({
               id: v.id,
               title: v.title,
               inventory_count: v.inventory_count ?? 0,

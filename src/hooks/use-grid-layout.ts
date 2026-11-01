@@ -5,6 +5,7 @@ import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import { DEMO_MERCHANT_ID } from '@/lib/demo/store';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { productImages } from '@/lib/inventory-rows';
+import { sortVariantsBySize } from '@/lib/variant-order';
 import type { DemoProduct, ProductImage, ProductType, Colorway } from '@/data/demo-data';
 
 const TILE_W = 220;
@@ -184,7 +185,7 @@ export function useGridLayout() {
               status: 'active' as const,
               grid_position: { x: 0, y: 0 },
               description: p.description || '',
-              variants: pvs.map(v => ({
+              variants: sortVariantsBySize(pvs).map(v => ({
                 id: v.id,
                 title: v.title,
                 options: v.options as Record<string, string> || {},
