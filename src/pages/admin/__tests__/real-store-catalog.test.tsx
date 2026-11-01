@@ -41,6 +41,12 @@ describe('the look book on a real store', () => {
     expect(screen.queryByText('Cloud Puffer Jacket')).toBeNull();
   });
 
+  it('lists a product that has no category yet', async () => {
+    hook.products = [{ ...real, product_type: '' }];
+    render(<RouterProvider router={createMemoryRouter([{ path: '/', element: <AdminStylingGuide /> }])} />);
+    await screen.findByText('Real Tee');
+  });
+
   it('lists them when they arrive after the page opens', async () => {
     hook.loading = true;
     hook.products = [{ ...real, id: 'sample', title: 'Cloud Puffer Jacket' }];

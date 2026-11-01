@@ -279,7 +279,8 @@ export default function AdminStylingGuide() {
 
   const productTypes = useMemo(() => {
     const set = new Set<string>();
-    catalog.forEach(p => { if (p.product_type) set.add(p.product_type.toUpperCase()); });
+    // A product with no category set still has to be listed, under OTHER.
+    catalog.forEach(p => set.add((p.product_type || 'OTHER').toUpperCase()));
     return ['ALL', ...Array.from(set).sort()];
   }, [catalog]);
 
