@@ -45,6 +45,16 @@ describe('pages for a real merchant', () => {
     await screen.findByText(/Sample numbers/);
   });
 
+  it('writes changes as money or counts, with the sign in front', async () => {
+    isDemoMode.mockResolvedValue(true);
+    const { container } = render(<MemoryRouter><AdminDashboard /></MemoryRouter>);
+    await screen.findByText('Dashboard');
+    const text = container.textContent ?? '';
+    expect(text).not.toMatch(/\$-/);
+    const ordersCard = screen.getByText('ORDERS').closest('div')!.parentElement!;
+    expect(ordersCard.textContent).not.toContain('$');
+  });
+
   it('leaves the label to the demo header in demo mode', async () => {
     isDemoMode.mockResolvedValue(true);
     render(<MemoryRouter><AdminDashboard /></MemoryRouter>);

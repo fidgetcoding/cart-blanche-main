@@ -5,12 +5,14 @@ import { type LucideIcon, TrendingUp, TrendingDown, ShoppingCart, Package, Dolla
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 function formatK(n: number) {
-  if (Math.abs(n) >= 1000) return '$' + (n / 1000).toFixed(1) + 'K';
-  return '$' + n.toLocaleString();
+  const sign = n < 0 ? '-' : '';
+  const amount = Math.abs(n);
+  if (amount >= 1000) return `${sign}$${(amount / 1000).toFixed(1)}K`;
+  return `${sign}$${amount.toLocaleString()}`;
 }
 
-function StatCard({ label, value, icon: Icon, change, changeLabel }: {
-  label: string; value: string; icon: LucideIcon; change?: number; changeLabel?: string;
+function StatCard({ label, value, icon: Icon, change, changeLabel, formatChange = formatK }: {
+  label: string; value: string; icon: LucideIcon; change?: number; changeLabel?: string; formatChange?: (n: number) => string;
 }) {
   const positive = (change ?? 0) >= 0;
   return (
@@ -24,7 +26,7 @@ function StatCard({ label, value, icon: Icon, change, changeLabel }: {
         <div className="flex items-center gap-1.5 mt-2">
           {positive ? <TrendingUp className="w-3 h-3 text-[hsl(var(--success))]" /> : <TrendingDown className="w-3 h-3 text-destructive" />}
           <span className={`text-xs font-display font-medium ${positive ? 'text-[hsl(var(--success))]' : 'text-destructive'}`}>
-            {positive ? '+' : ''}{typeof change === 'number' ? formatK(change) : change}
+            {positive ? '+' : ''}{formatChange(change)}
           </span>
           {changeLabel && <span className="text-xs text-muted-foreground">{changeLabel}</span>}
         </div>
@@ -97,7 +99,7 @@ export default function AdminDashboard() {
       {/* Top stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="TOTAL SALES" value={formatK(data.totalSales)} icon={DollarSign} change={data.salesChange} changeLabel={prevLabel} />
-        <StatCard label="ORDERS" value={String(data.totalOrders)} icon={ShoppingCart} change={data.ordersChange} changeLabel={prevLabel} />
+        <StatCard label="ORDERS" value={String(data.totalOrders)} icon={ShoppingCart} change={data.ordersChange} changeLabel={prevLabel} formatChange={n => n.toLocaleString()} />
         <StatCard label="NET PROFIT" value={formatK(data.netProfit)} icon={TrendingUp} change={data.profitChange} changeLabel={prevLabel} />
         <StatCard label="AVG ORDER" value={`$${data.avgOrderValue}`} icon={BarChart3} change={data.avgChange} changeLabel={prevLabel} />
       </div>
