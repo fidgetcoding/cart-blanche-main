@@ -1,11 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.96.0";
+import { checkMessages, pickProductFields } from "../_shared/chat-guards.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const MAX_MESSAGES = 50;
+const MAX_MESSAGE_CHARS = 10_000;
+const MAX_CONVERSATION_CHARS = 120_000;
+const MAX_TOKENS = 4_096;
+const USER_LIMIT_PER_HOUR = 60;
+const USER_LIMIT_PER_DAY = 300;
 
 // ─── Embedded demo catalog & mock orders (mirrors client-side mock-orders.ts) ───
 const DEMO_CATALOG = [
@@ -81,7 +89,7 @@ function generateMockOrders(): MockOrder[] {
     orders.push({
       id: `mock-${String(i + 1).padStart(4, '0')}`,
       order_number: `CB-${String(1001 + i).padStart(4, '0')}`,
-      customer_email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
+      customer_email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
       customer_name: `${firstName} ${lastName}`,
       items, subtotal, total: subtotal, status, created_at: createdAt,
     });
@@ -289,7 +297,7 @@ async function executeTool(
         current_values: Object.fromEntries(
           Object.keys(args.updates as object).map((k) => [k, current[k]])
         ),
-        new_values: args.updates,
+        new_values: pickProductFields(args.updates),
         product_title: current.title,
       };
     }
@@ -427,7 +435,7 @@ async function executeTool(
     case "query_inventory": {
       let query = supabaseAdmin
         .from("product_variants")
-        .select("id, title, sku, inventory_count, product_id, products(title)")
+        .select("id, title, sku, inventory_count, product_id, products!inner(title)")
         .eq("products.merchant_id", merchantId);
 
       if (args.product_id) query = query.eq("product_id", args.product_id);
@@ -520,9 +528,10 @@ serve(async (req) => {
       .single();
 
     const body = await req.json();
-    const { messages, confirm_action } = body;
+    const { confirm_action } = body;
 
     // Input validation
+    let messages: { role: string; content: string }[] = [];
     if (confirm_action) {
       if (typeof confirm_action !== "object" || !confirm_action.action) {
         return new Response(
@@ -530,23 +539,19 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-    } else if (!messages || !Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
-      return new Response(
-        JSON.stringify({ error: "Invalid messages: must be a non-empty array with at most 50 items." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Validate message content lengths
-    if (messages && Array.isArray(messages)) {
-      for (const msg of messages) {
-        if (typeof msg.content === "string" && msg.content.length > 10000) {
-          return new Response(
-            JSON.stringify({ error: "Message content too long." }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+    } else {
+      const checked = checkMessages(body.messages, {
+        maxMessages: MAX_MESSAGES,
+        maxContentChars: MAX_MESSAGE_CHARS,
+        maxTotalChars: MAX_CONVERSATION_CHARS,
+      });
+      if (!checked.ok) {
+        return new Response(
+          JSON.stringify({ error: checked.error }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
+      messages = checked.messages;
     }
 
     // Handle action confirmation
@@ -555,20 +560,40 @@ serve(async (req) => {
       let result;
 
       if (action === "update_product") {
+        const newValues = pickProductFields(actionArgs.new_values);
+        if (Object.keys(newValues).length === 0 || typeof actionArgs.product_id !== "string") {
+          return new Response(
+            JSON.stringify({ error: "No valid product changes." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
         const { error } = await supabaseAdmin
           .from("products")
-          .update(actionArgs.new_values)
+          .update(newValues)
           .eq("id", actionArgs.product_id)
           .eq("merchant_id", merchantId);
         if (error) throw error;
         result = { success: true, message: `Updated "${actionArgs.product_title}" successfully.` };
       } else if (action === "create_product") {
+        const product = pickProductFields(actionArgs.product);
+        if (typeof product.title !== "string" || !product.title.trim()) {
+          return new Response(
+            JSON.stringify({ error: "A product needs a title." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
         const { error } = await supabaseAdmin
           .from("products")
-          .insert({ ...actionArgs.product, merchant_id: merchantId });
+          .insert({ ...product, merchant_id: merchantId });
         if (error) throw error;
-        result = { success: true, message: `Created "${actionArgs.product.title}" successfully.` };
+        result = { success: true, message: `Created "${product.title}" successfully.` };
       } else if (action === "update_inventory") {
+        if (!Number.isInteger(actionArgs.new_count) || actionArgs.new_count < 0) {
+          return new Response(
+            JSON.stringify({ error: "Inventory count must be a whole number." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
         // Re-verify merchant ownership before updating
         const { data: variant } = await supabaseAdmin
           .from("product_variants")
@@ -586,11 +611,43 @@ serve(async (req) => {
           .eq("id", actionArgs.variant_id);
         if (error) throw error;
         result = { success: true, message: `Updated inventory for "${actionArgs.variant_title}" to ${actionArgs.new_count} units.` };
+      } else {
+        return new Response(
+          JSON.stringify({ error: "Unknown action." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Per-user AI quota. Any failure here refuses the request: an open limiter
+    // would leave the AI bill uncapped.
+    const quotas: [string, number, number][] = [
+      [`smart-chat:user-hour:${merchantId}`, USER_LIMIT_PER_HOUR, 3_600],
+      [`smart-chat:user-day:${merchantId}`, USER_LIMIT_PER_DAY, 86_400],
+    ];
+    for (const [bucket, limit, windowSeconds] of quotas) {
+      const { data: allowed, error: quotaError } = await supabaseAdmin.rpc("edge_rate_limit_hit", {
+        p_bucket: bucket,
+        p_limit: limit,
+        p_window_seconds: windowSeconds,
+      });
+      if (quotaError) {
+        console.error("Quota check failed:", quotaError);
+        return new Response(JSON.stringify({ error: "The assistant is unavailable right now. Please try again later." }), {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: "You've reached the assistant's usage limit. Please try again later." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Build system prompt
@@ -627,7 +684,7 @@ Guidelines:
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: systemPrompt }, ...messages],
         tools,
-        max_tokens: 8192,
+        max_tokens: MAX_TOKENS,
         stream: true,
       }),
     });
@@ -753,6 +810,7 @@ Guidelines:
             ...toolResults,
           ],
           tools,
+          max_tokens: MAX_TOKENS,
           stream: true,
         }),
       });

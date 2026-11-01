@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.96.0";
+import { checkMessages, clientIp } from "../_shared/chat-guards.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,8 +8,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// In-memory rate limiting store
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const MAX_BODY_CHARS = 256_000;
+const MAX_MESSAGES = 30;
+const MAX_MESSAGE_CHARS = 4_000;
+const MAX_CONVERSATION_CHARS = 30_000;
+const MAX_CATALOG_ITEMS = 200;
+const MAX_CART_ITEMS = 50;
+const MAX_TOKENS = 1_500;
+const IP_LIMIT_PER_MINUTE = 20;
+const IP_LIMIT_PER_DAY = 200;
+// Client IPs can be forged if the platform header is ever missing, so this caps total spend.
+const GLOBAL_LIMIT_PER_DAY = 2_000;
+const DAY_SECONDS = 86_400;
+
+function jsonResponse(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 // Tool definitions for structured output
 const tools = [
@@ -122,63 +141,70 @@ serve(async (req) => {
   }
 
   try {
-    // Simple in-memory rate limiting per IP
-    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const now = Date.now();
-    const windowMs = 60_000; // 1 minute
-    const maxRequests = 20;
-
-    if (!rateLimitMap.has(clientIP)) {
-      rateLimitMap.set(clientIP, { count: 1, resetAt: now + windowMs });
-    } else {
-      const entry = rateLimitMap.get(clientIP)!;
-      if (now > entry.resetAt) {
-        entry.count = 1;
-        entry.resetAt = now + windowMs;
-      } else {
-        entry.count++;
-        if (entry.count > maxRequests) {
-          return new Response(
-            JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      }
-    }
-
-    // Cleanup old entries periodically
-    if (rateLimitMap.size > 1000) {
-      for (const [key, val] of rateLimitMap) {
-        if (now > val.resetAt) rateLimitMap.delete(key);
-      }
-    }
-
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const body = await req.json();
-    const { messages, catalog, cart_items, mode, image_url } = body;
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase config missing");
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
-      return new Response(
-        JSON.stringify({ error: "Invalid messages: must be a non-empty array with at most 50 items." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const rawBody = await req.text();
+    if (rawBody.length > MAX_BODY_CHARS) {
+      return jsonResponse({ error: "Request too large." }, 413);
     }
 
-    // Validate message content length
-    for (const msg of messages) {
-      if (typeof msg.content === "string" && msg.content.length > 10000) {
-        return new Response(
-          JSON.stringify({ error: "Message content too long." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return jsonResponse({ error: "Invalid JSON." }, 400);
+    }
+    const { mode } = body;
+    const catalog = Array.isArray(body.catalog) ? body.catalog : [];
+    const cart_items = Array.isArray(body.cart_items) ? body.cart_items : [];
+
+    if (catalog.length > MAX_CATALOG_ITEMS || cart_items.length > MAX_CART_ITEMS) {
+      return jsonResponse({ error: "Request too large." }, 413);
+    }
+
+    const checked = checkMessages(body.messages, {
+      maxMessages: MAX_MESSAGES,
+      maxContentChars: MAX_MESSAGE_CHARS,
+      maxTotalChars: MAX_CONVERSATION_CHARS,
+      allowImagesFrom: SUPABASE_URL,
+    });
+    if (!checked.ok) {
+      return jsonResponse({ error: checked.error }, 400);
+    }
+    const { messages } = checked;
+
+    // Only valid requests reach the database. Any failure here refuses the
+    // request: an open limiter would leave the AI bill uncapped.
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const ip = clientIp(req.headers);
+    const limits: [string, number, number][] = [
+      [`smartcart:ip-minute:${ip}`, IP_LIMIT_PER_MINUTE, 60],
+      [`smartcart:ip-day:${ip}`, IP_LIMIT_PER_DAY, DAY_SECONDS],
+      ["smartcart:global-day", GLOBAL_LIMIT_PER_DAY, DAY_SECONDS],
+    ];
+    for (const [bucket, limit, windowSeconds] of limits) {
+      const { data: allowed, error: limitError } = await supabaseAdmin.rpc("edge_rate_limit_hit", {
+        p_bucket: bucket,
+        p_limit: limit,
+        p_window_seconds: windowSeconds,
+      });
+      if (limitError) {
+        console.error("Rate limit check failed:", limitError);
+        return jsonResponse({ error: "Chat is unavailable right now. Please try again later." }, 503);
+      }
+      if (!allowed) {
+        return jsonResponse({ error: "Rate limit exceeded. Please try again in a moment." }, 429);
       }
     }
 
     // Build catalog context string
     let catalogContext = "No catalog provided.";
-    if (catalog && Array.isArray(catalog)) {
+    if (catalog.length > 0) {
       catalogContext = catalog
         .map(
           (p: any) =>
@@ -189,7 +215,7 @@ serve(async (req) => {
 
     // Build cart context
     let cartContext = "Cart is empty.";
-    if (cart_items && Array.isArray(cart_items) && cart_items.length > 0) {
+    if (cart_items.length > 0) {
       cartContext = cart_items
         .map((i: any) => `- ID: ${i.productId} | "${i.title}" (${i.variantTitle}) x${i.quantity} — $${i.price * i.quantity}`)
         .join("\n");
@@ -236,8 +262,8 @@ ${mode === "proactive_remove" ? "The shopper just removed an item (possible pric
     const aiMessages: any[] = [{ role: "system", content: systemPrompt }];
     
     for (const msg of messages) {
-      if (msg.role === "user" && msg.image_url) {
-        // Multimodal message with image
+      if (msg.image_url) {
+        // Multimodal message with image; checkMessages limits these to user turns
         aiMessages.push({
           role: "user",
           content: [
@@ -263,6 +289,7 @@ ${mode === "proactive_remove" ? "The shopper just removed an item (possible pric
           model: "google/gemini-3-flash-preview",
           messages: aiMessages,
           tools,
+          max_tokens: MAX_TOKENS,
           stream: false,
         }),
       }
@@ -327,7 +354,7 @@ ${mode === "proactive_remove" ? "The shopper just removed an item (possible pric
     }
 
     // Calculate outfit total if present
-    if (outfit && catalog) {
+    if (outfit) {
       let total = 0;
       for (const item of outfit.items) {
         if (item.type === "external") continue;
