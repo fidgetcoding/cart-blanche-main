@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CartProvider } from '@/contexts/CartContext';
@@ -7,11 +7,13 @@ import { StyleKitProvider } from '@/contexts/StyleKitContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
 vi.mock('@/integrations/supabase/client', () => ({ supabase: null, isBackendConfigured: false }));
-vi.stubGlobal('IntersectionObserver', class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-});
+for (const observer of ['IntersectionObserver', 'ResizeObserver']) {
+  vi.stubGlobal(observer, class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  });
+}
 
 import { MaisonCanvas } from '../MaisonCanvas';
 
@@ -52,6 +54,14 @@ describe('MaisonCanvas header and grid', () => {
     await renderAt(390);
     expect(productGrid().style.gridTemplateColumns).toBe('repeat(2, 1fr)');
     expect(screen.queryByRole('button', { name: 'View by 3' })).toBeNull();
+  });
+
+  it('stacks the product photo above its details on a phone', async () => {
+    await renderAt(390);
+    fireEvent.click(screen.getAllByText('Stealth Trench')[0]);
+    const close = (await screen.findAllByRole('button')).find(button => button.className.includes('top-5 right-5'))!;
+    expect(close.parentElement!.className).toContain('flex-col');
+    expect(close.parentElement!.className).toContain('md:flex-row');
   });
 
   it('keeps the wider view on a laptop', async () => {

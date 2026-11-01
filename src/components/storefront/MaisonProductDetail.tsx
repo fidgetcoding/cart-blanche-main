@@ -395,7 +395,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-1 overflow-hidden relative"
+      className="flex flex-col md:flex-row flex-1 md:overflow-hidden relative"
       onClick={onClose}
     >
       {/* Close button — top-right corner */}
@@ -409,7 +409,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       {/* LEFT COLUMN: Single-image display with scroll-to-toggle */}
       <div
         ref={scrollContainerRef}
-        className="w-[55%] relative overflow-hidden flex items-center justify-center"
+        className="w-full md:w-[55%] h-[60vh] md:h-auto flex-shrink-0 relative overflow-hidden flex items-center justify-center"
         onClick={e => e.stopPropagation()}
       >
         {/* Image counter + up/down arrows — positioned along left edge */}
@@ -462,9 +462,9 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       </div>
 
       {/* RIGHT COLUMN: Info + carousel */}
-      <div className="w-[45%] overflow-hidden border-l border-border flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="w-full md:w-[45%] overflow-hidden border-t md:border-t-0 md:border-l border-border flex flex-col" onClick={e => e.stopPropagation()}>
         {/* Product info */}
-        <div className="px-10 py-8 flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+        <div className="px-5 md:px-10 py-8 flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
           {/* Category label */}
           <p
             className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground"
