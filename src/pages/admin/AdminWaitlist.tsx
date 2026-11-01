@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Mail, ArrowUpDown } from 'lucide-react';
 import { useProductWaitlist } from '@/hooks/use-product-waitlist';
 import { useGridLayout } from '@/hooks/use-grid-layout';
+import { supabase } from '@/lib/demo/client';
 import { WaitlistTable } from '@/components/admin/WaitlistTable';
 
 type StatusTab = 'all' | 'pending' | 'fulfilled' | 'cancelled';
@@ -24,12 +25,29 @@ export default function AdminWaitlist() {
   const [productFilter, setProductFilter] = useState<string>('all');
   const [sort, setSort] = useState<SortDir>('desc');
 
+  // The catalogue only has what's on sale, but a signup can be for a product that's
+  // since been hidden or archived.
+  const [offSaleTitles, setOffSaleTitles] = useState<Record<string, string>>({});
+  const signupProductIds = useMemo(() => [...new Set(signups.map(s => s.product_id))], [signups]);
+  useEffect(() => {
+    if (signupProductIds.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from('products').select('id, title').in('id', signupProductIds);
+      if (!cancelled && data) setOffSaleTitles(Object.fromEntries(data.map(p => [p.id, p.title])));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [signupProductIds]);
+
   const allProducts = getAllProductsUnfiltered();
   const productTitleById = useMemo(() => {
-    const map: Record<string, string> = {};
+    const map: Record<string, string> = { ...offSaleTitles };
     for (const p of allProducts) map[p.id] = p.title;
+    for (const id of signupProductIds) map[id] ??= 'Deleted product';
     return map;
-  }, [allProducts]);
+  }, [allProducts, offSaleTitles, signupProductIds]);
 
   const productsWithSignups = useMemo(() => {
     const ids = new Set(signups.map(s => s.product_id));
