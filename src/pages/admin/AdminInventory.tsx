@@ -571,19 +571,21 @@ export default function AdminInventory() {
         }
 
         for (const v of editingProduct.variants) {
-          if (v.id.startsWith('new-')) {
-            await supabase.from('product_variants').insert({
-              product_id: editingProduct.id,
-              title: v.title,
-              inventory_count: v.inventory_count,
-              colorway_id: v.colorway_id ?? null,
-            });
-          } else {
-            await supabase.from('product_variants').update({
-              title: v.title,
-              inventory_count: v.inventory_count,
-              colorway_id: v.colorway_id ?? null,
-            }).eq('id', v.id);
+          const { error: variantError } = v.id.startsWith('new-')
+            ? await supabase.from('product_variants').insert({
+                product_id: editingProduct.id,
+                title: v.title,
+                inventory_count: v.inventory_count,
+                colorway_id: v.colorway_id ?? null,
+              })
+            : await supabase.from('product_variants').update({
+                title: v.title,
+                inventory_count: v.inventory_count,
+                colorway_id: v.colorway_id ?? null,
+              }).eq('id', v.id);
+          if (variantError) {
+            toast.error("That product's sizes didn't save. Please try again.");
+            return;
           }
         }
         // New sizes now have real ids, and saving again mustn't add them a second time.
@@ -597,8 +599,12 @@ export default function AdminInventory() {
     if (!p.isDemo) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        await supabase.from('product_variants').delete().eq('product_id', p.id);
-        await supabase.from('products').delete().eq('id', p.id);
+        // Sizes go with the product, by foreign key.
+        const { error } = await supabase.from('products').delete().eq('id', p.id);
+        if (error) {
+          toast.error(`"${p.title}" didn't delete. Please try again.`);
+          return;
+        }
       }
     }
     setProducts(prev => prev.filter(pr => pr.id !== p.id));
@@ -615,24 +621,27 @@ export default function AdminInventory() {
     }
   }
 
+  // True once the database has the new status. Says so when it doesn't.
+  async function setRealStatus(p: ProductRow, status: ProductRow['status']) {
+    const { error } = await supabase.from('products').update({ status }).eq('id', p.id);
+    if (error) toast.error(`"${p.title}" didn't update. Please try again.`);
+    return !error;
+  }
+
   async function performArchive(p: ProductRow) {
+    if (!p.isDemo && !(await setRealStatus(p, 'archived'))) return;
     setProducts(prev => prev.map(pr => 
       pr.id === p.id ? { ...pr, status: 'archived' as const } : pr
     ));
-    if (!p.isDemo) {
-      await supabase.from('products').update({ status: 'archived' }).eq('id', p.id);
-    }
     if (expandedId === p.id) setExpandedId(null);
     setHasUnsavedChanges(true);
   }
 
   async function restoreProduct(p: ProductRow) {
+    if (!p.isDemo && !(await setRealStatus(p, 'active'))) return;
     setProducts(prev => prev.map(pr => 
       pr.id === p.id ? { ...pr, status: 'active' as const } : pr
     ));
-    if (!p.isDemo) {
-      await supabase.from('products').update({ status: 'active' }).eq('id', p.id);
-    }
     setHasUnsavedChanges(true);
   }
   // Batch selection logic
@@ -663,13 +672,12 @@ export default function AdminInventory() {
   }, [filtered]);
 
   async function batchArchive() {
-    setProducts(prev => prev.map(p => selectedIds.has(p.id) ? { ...p, status: 'archived' as const } : p));
+    const archived = new Set<string>();
     for (const id of selectedIds) {
       const p = products.find(pr => pr.id === id);
-      if (p && !p.isDemo) {
-        await supabase.from('products').update({ status: 'archived' }).eq('id', id);
-      }
+      if (p && (p.isDemo || await setRealStatus(p, 'archived'))) archived.add(id);
     }
+    setProducts(prev => prev.map(p => archived.has(p.id) ? { ...p, status: 'archived' as const } : p));
     setSelectedIds(new Set());
     setBatchConfirm(null);
     setHasUnsavedChanges(true);
@@ -735,6 +743,7 @@ export default function AdminInventory() {
         }, { onConflict: 'merchant_id,layout_type' });
       if (layoutError) {
         console.error('grid_layouts atomic save failed:', layoutError);
+        toast.error("Your changes didn't save. Please try again.");
         return;
       }
     }
@@ -795,8 +804,11 @@ export default function AdminInventory() {
     for (const id of pendingDeletes) {
       const p = products.find(pr => pr.id === id);
       if (p && !p.isDemo && session) {
-        await supabase.from('product_variants').delete().eq('product_id', id);
-        await supabase.from('products').delete().eq('id', id);
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) {
+          toast.error(`"${p.title}" didn't delete. Please try again.`);
+          return;
+        }
       }
     }
     // Remove from local state
@@ -817,20 +829,19 @@ export default function AdminInventory() {
 
   async function toggleProductVisibility(productId: string, currentStatus: string) {
     const newStatus = currentStatus === 'active' ? 'draft' : 'active';
+    const product = products.find(p => p.id === productId);
+    if (product && !product.isDemo && !(await setRealStatus(product, newStatus))) return;
     setProducts(prev => prev.map(p =>
       p.id === productId ? { ...p, status: newStatus as 'active' | 'draft' | 'archived' } : p
     ));
 
     // For demo products, persist via hiddenProductIds in grid_layouts
-    const product = products.find(p => p.id === productId);
     if (product?.isDemo) {
       const currentHidden = gridLayout?.hiddenProductIds || [];
       const updatedHidden = newStatus === 'draft'
         ? [...currentHidden, productId]
         : currentHidden.filter(id => id !== productId);
       await saveHiddenProductIds(updatedHidden);
-    } else if (product) {
-      await supabase.from('products').update({ status: newStatus }).eq('id', productId);
     }
     setHasUnsavedChanges(true);
   }
@@ -935,6 +946,7 @@ export default function AdminInventory() {
       setProductImagesFull(productId, next);
     } catch (e) {
       console.error('Image size replace failed:', e);
+      toast.error("That image didn't upload. Please try a smaller file.");
     }
   }, [products, setProductImagesFull]);
 
@@ -1011,6 +1023,7 @@ export default function AdminInventory() {
       setProductImagesFull(productId, next);
     } catch (e) {
       console.error('Image add failed:', e);
+      toast.error("That image didn't upload. Please try a smaller file.");
     }
   }, [products, setProductImagesFull]);
 
@@ -1113,6 +1126,7 @@ export default function AdminInventory() {
       }
     } catch (e) {
       console.error(`Upload ${type} failed:`, e);
+      toast.error(`That ${type} didn't upload. Please try a smaller file.`);
     } finally {
       if (type === 'image') { if (target === 'edit') setEditUploadingImage(false); else setUploadingImage(false); }
       else setUploadingVideo(false);
@@ -1155,7 +1169,7 @@ export default function AdminInventory() {
     if (!error && product) {
       const validVariants = addVariants.filter(v => v.title.trim());
       if (validVariants.length > 0) {
-        await supabase.from('product_variants').insert(
+        const { error: variantError } = await supabase.from('product_variants').insert(
           validVariants.map(v => ({
             product_id: product.id,
             title: v.title.trim(),
@@ -1163,6 +1177,7 @@ export default function AdminInventory() {
             colorway_id: v.colorway_id ?? null,
           }))
         );
+        if (variantError) toast.error("The product saved, but its sizes didn't. Please add them again.");
       }
     }
 
