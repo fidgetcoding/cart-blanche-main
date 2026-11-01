@@ -831,7 +831,17 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      validate_discount: {
+        Args: { p_merchant_id: string; p_code: string }
+        Returns: {
+          code: string
+          discount_type: string
+          discount_value: number
+          description: string | null
+          minimum_spend: number | null
+          status: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

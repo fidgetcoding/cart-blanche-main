@@ -8,6 +8,7 @@ import type { BudgetComparison, OutfitItem } from '@/contexts/SmartCartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { supabase } from '@/lib/demo/client';
+import { resolveStoreMerchantId } from '@/lib/store-merchant';
 
 type Tab = 'cart' | 'assistant';
 
@@ -215,43 +216,40 @@ function CartFooter({ subtotal, discount, discountAmount, total, applyDiscount, 
     setPromoError('');
     setPromoLoading(true);
 
-    const { data, error } = await supabase
-      .from('discount_codes')
-      .select('*')
-      .ilike('code', code)
-      .eq('is_active', true)
-      .maybeSingle();
+    const merchantId = await resolveStoreMerchantId();
+    const { data, error } = merchantId
+      ? await supabase.rpc('validate_discount', { p_merchant_id: merchantId, p_code: code })
+      : { data: null, error: null };
+    const match = data?.[0];
 
     setPromoLoading(false);
 
-    if (error || !data) {
+    if (error || !match || match.status === 'not_started') {
       setPromoError('Invalid discount code');
       return;
     }
 
-    // Check expiry
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    if (match.status === 'expired') {
       setPromoError('This code has expired');
       return;
     }
 
-    // Check max uses
-    if (data.max_uses && data.times_used >= data.max_uses) {
+    if (match.status === 'exhausted') {
       setPromoError('This code has been fully redeemed');
       return;
     }
 
     // Check minimum spend
-    if (data.minimum_spend && subtotal < data.minimum_spend) {
-      setPromoError(`Minimum spend of $${data.minimum_spend} required`);
+    if (match.minimum_spend && subtotal < match.minimum_spend) {
+      setPromoError(`Minimum spend of $${match.minimum_spend} required`);
       return;
     }
 
     applyDiscount({
-      code: data.code,
-      discount_type: data.discount_type,
-      discount_value: data.discount_value,
-      description: data.description,
+      code: match.code,
+      discount_type: match.discount_type,
+      discount_value: match.discount_value,
+      description: match.description,
     });
     setPromoInput('');
   };

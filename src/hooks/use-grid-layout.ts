@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/demo/client';
+import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import type { DemoProduct, ProductImage, Colorway } from '@/data/demo-data';
 
@@ -108,19 +109,22 @@ export function useGridLayout() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Wait for auth before fetching — RLS requires authenticated user
-        const { data: { user } } = await supabase.auth.getUser();
-
-        let query = supabase
-          .from('grid_layouts')
-          .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids, hidden_genders, demo_product_overrides')
-          .eq('layout_type', 'default');
-
-        if (user) {
-          query = query.eq('merchant_id', user.id);
+        // Only ever show one merchant's rows: the signed-in user's, or the store
+        // this deployment is configured for. Otherwise stick to the demo catalogue.
+        const merchantId = await resolveStoreMerchantId();
+        if (!merchantId) {
+          setLoading(false);
+          return;
         }
 
-        const { data: layoutData } = await query.limit(1).maybeSingle();
+        const { data: layoutData } = await supabase
+          .from('grid_layouts')
+          .select('product_order, category_order, hidden_tags, hidden_product_types, hidden_product_ids, hidden_genders, demo_product_overrides')
+          .eq('layout_type', 'default')
+          .eq('merchant_id', merchantId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (layoutData) {
           setLayout({
@@ -138,14 +142,18 @@ export function useGridLayout() {
         const { data: products } = await supabase
           .from('products')
           .select('*')
-          .eq('status', 'active');
+          .eq('merchant_id', merchantId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: true })
+          .order('id', { ascending: true });
 
         if (products && products.length > 0) {
           const productIds = products.map(p => p.id);
           const { data: variants } = await supabase
             .from('product_variants')
             .select('*')
-            .in('product_id', productIds);
+            .in('product_id', productIds)
+            .order('id', { ascending: true });
 
           const variantMap = new Map<string, any[]>();
           variants?.forEach(v => {

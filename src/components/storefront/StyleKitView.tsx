@@ -5,6 +5,7 @@ import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
 import { getSuggestedProducts, getFillProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { supabase } from '@/lib/demo/client';
+import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import type { DemoProduct } from '@/data/demo-data';
 import { splitSentences } from '@/lib/format-description';
 
@@ -619,12 +620,12 @@ export function StyleKitView() {
   // Load presets from DB
   useEffect(() => {
     async function loadPresets() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const merchantId = await resolveStoreMerchantId();
+      if (!merchantId) return;
       const { data } = await supabase
         .from('styling_guides')
         .select('rules')
-        .eq('merchant_id', user.id)
+        .eq('merchant_id', merchantId)
         .limit(1)
         .maybeSingle();
       if (data?.rules && (data.rules as any).version === 2) {

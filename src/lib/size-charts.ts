@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/demo/client';
+import { resolveStoreMerchantId } from '@/lib/store-merchant';
 
 export interface SizeChart {
   id?: string;
@@ -98,9 +99,13 @@ export function normalizeCategory(category?: string | null): string {
 /** Fetch a chart for a given category. Falls back to DEFAULT_CHARTS. */
 export async function fetchSizeChart(category: string): Promise<SizeChart> {
   const cat = normalizeCategory(category);
+  const merchantId = await resolveStoreMerchantId();
+  if (!merchantId) return DEFAULT_CHARTS[cat];
+
   const { data } = await supabase
     .from('size_charts')
     .select('*')
+    .eq('merchant_id', merchantId)
     .eq('category', cat)
     .limit(1)
     .maybeSingle();
