@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/demo/client';
+import { toast } from 'sonner';
 import { generateMockOrders } from '@/data/mock-orders';
 import {
   Search, ChevronDown, Truck, Package, CheckCircle, XCircle, Clock,
@@ -293,7 +294,11 @@ export default function AdminOrders() {
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('orders').update({ status }).eq('id', id);
+    const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+    if (error) {
+      toast.error("That status didn't save. Please try again.");
+      return;
+    }
     fetchOrders();
     if (selectedOrder?.id === id) setSelectedOrder(prev => prev ? { ...prev, status } : null);
   }

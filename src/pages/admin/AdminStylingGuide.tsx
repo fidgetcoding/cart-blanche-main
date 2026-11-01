@@ -372,13 +372,20 @@ export default function AdminStylingGuide() {
     const cleanedPresets = finalPresets.filter(p => p.pairs.length > 0 || p.extras.length > 0);
 
     const rules = { version: 2, presets: cleanedPresets, canvasLayout: finalLayout };
+    let failed = false;
     if (guideId) {
-      await supabase.from('styling_guides').update({ rules: rules as unknown as Json }).eq('id', guideId);
+      const { error } = await supabase.from('styling_guides').update({ rules: rules as unknown as Json }).eq('id', guideId);
+      failed = Boolean(error);
     } else {
-      const { data } = await supabase.from('styling_guides').insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as Json }).select('id').single();
+      const { data, error } = await supabase.from('styling_guides').insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as Json }).select('id').single();
       if (data) setGuideId(data.id);
+      failed = Boolean(error);
     }
     setSaving(false);
+    if (failed) {
+      toast({ title: "That didn't save", description: 'Your look book changes are still here. Please try again.', variant: 'destructive' });
+      return;
+    }
     markClean();
     if (!silent) {
       toast({ title: 'Saved', description: 'Your look book has been saved.' });

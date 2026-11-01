@@ -160,7 +160,8 @@ export async function upsertSizeChart(chart: SizeChart, merchantId: string): Pro
     headers: chart.headers,
     rows: chart.rows,
   };
-  await supabase
+  const { error } = await supabase
     .from('size_charts')
     .upsert(payload, { onConflict: 'merchant_id,category' });
+  if (error) throw new Error(error.message);
 }

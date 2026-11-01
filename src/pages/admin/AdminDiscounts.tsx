@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/demo/client';
+import { toast } from 'sonner';
 import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight, Tag, Percent, DollarSign, Truck } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 
@@ -111,25 +112,29 @@ export default function AdminDiscounts() {
       is_active: formActive,
     };
 
-    if (editCode) {
-      await supabase.from('discount_codes').update(payload).eq('id', editCode.id);
-    } else {
-      await supabase.from('discount_codes').insert(payload);
-    }
+    const { error } = editCode
+      ? await supabase.from('discount_codes').update(payload).eq('id', editCode.id)
+      : await supabase.from('discount_codes').insert(payload);
 
     setSaving(false);
+    if (error) {
+      toast.error(error.code === '23505' ? `You already have a code called ${payload.code}.` : "That code didn't save. Please try again.");
+      return;
+    }
     setShowForm(false);
     fetchCodes();
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this discount code? This cannot be undone.')) return;
-    await supabase.from('discount_codes').delete().eq('id', id);
+    const { error } = await supabase.from('discount_codes').delete().eq('id', id);
+    if (error) toast.error("That code didn't delete. Please try again.");
     fetchCodes();
   }
 
   async function handleToggleActive(dc: DiscountCode) {
-    await supabase.from('discount_codes').update({ is_active: !dc.is_active }).eq('id', dc.id);
+    const { error } = await supabase.from('discount_codes').update({ is_active: !dc.is_active }).eq('id', dc.id);
+    if (error) toast.error("That change didn't save. Please try again.");
     fetchCodes();
   }
 
