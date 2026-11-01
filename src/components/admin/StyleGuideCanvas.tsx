@@ -21,7 +21,7 @@ import {
   BaseEdge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
+import { getImageUrl } from '@/data/demo-data';
 import type { DemoProduct } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { X, ChevronUp, ChevronDown, Save, Plus, Trash2 } from 'lucide-react';
@@ -59,6 +59,8 @@ export interface GuideSaveOverride {
 }
 
 interface StyleGuideCanvasProps {
+  /** What the store sells. Mounted once it's loaded, so it's stable for this canvas. */
+  catalog: DemoProduct[];
   presets: ProductPreset[];
   onPresetsChange: (presets: ProductPreset[]) => void;
   canvasLayout: CanvasLayout | null;
@@ -265,6 +267,7 @@ function edgesToPresets(edges: Edge[]): ProductPreset[] {
 /* ── Inner component (needs ReactFlow context) ── */
 
 const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanvasProps>(({
+  catalog,
   presets,
   onPresetsChange,
   canvasLayout,
@@ -290,7 +293,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     if (!canvasLayout?.nodeIds || !canvasLayout.positions) return [];
     return canvasLayout.nodeIds
       .map(id => {
-        const product = DEMO_PRODUCTS.find(p => p.id === id);
+        const product = catalog.find(p => p.id === id);
         if (!product) return null;
         return {
           id: product.id,
@@ -422,7 +425,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         let anchorY = currentY;
 
         if (needsAnchor) {
-          const product = DEMO_PRODUCTS.find(pr => pr.id === anchorId);
+          const product = catalog.find(pr => pr.id === anchorId);
           if (product) {
             newNodes.push({
               id: product.id, type: 'product',
@@ -445,7 +448,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
             }
           }
           newPairIds.forEach((pairedId, i) => {
-            const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
+            const product = catalog.find(pr => pr.id === pairedId);
             if (product) {
               newNodes.push({
                 id: product.id, type: 'product',
@@ -457,7 +460,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
           });
         } else {
           newPairIds.forEach((pairedId, i) => {
-            const product = DEMO_PRODUCTS.find(pr => pr.id === pairedId);
+            const product = catalog.find(pr => pr.id === pairedId);
             if (product) {
               newNodes.push({
                 id: product.id, type: 'product',
@@ -470,7 +473,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         }
 
         newExtraIds.forEach((extraId, i) => {
-          const product = DEMO_PRODUCTS.find(pr => pr.id === extraId);
+          const product = catalog.find(pr => pr.id === extraId);
           if (product) {
             newNodes.push({
               id: product.id, type: 'product',
@@ -487,7 +490,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
       missingIds.forEach(id => {
         if (placed.has(id)) return;
-        const product = DEMO_PRODUCTS.find(pr => pr.id === id);
+        const product = catalog.find(pr => pr.id === id);
         if (!product) return;
         newNodes.push({
           id: product.id, type: 'product',
@@ -598,7 +601,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       });
 
       if (pendingSourceId) {
-        const sourceProduct = DEMO_PRODUCTS.find(p => p.id === pendingSourceId);
+        const sourceProduct = catalog.find(p => p.id === pendingSourceId);
         if (sourceProduct) {
           const sourceZone = getBodyZone(sourceProduct);
           const targetZone = getBodyZone(product);
@@ -650,8 +653,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       return;
     }
 
-    const sourceProduct = DEMO_PRODUCTS.find(p => p.id === connection.source);
-    const targetProduct = DEMO_PRODUCTS.find(p => p.id === connection.target);
+    const sourceProduct = catalog.find(p => p.id === connection.source);
+    const targetProduct = catalog.find(p => p.id === connection.target);
     if (!sourceProduct || !targetProduct) return;
 
     const sourceZone = getBodyZone(sourceProduct);
@@ -708,8 +711,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       // Dropped on an existing node — find its ID and create connection
       const targetNodeId = nodeElement.getAttribute('data-id');
       if (targetNodeId && targetNodeId !== sourceId && targetNodeId !== BLANK_NODE_ID) {
-        const sourceProduct = DEMO_PRODUCTS.find(p => p.id === sourceId);
-        const targetProduct = DEMO_PRODUCTS.find(p => p.id === targetNodeId);
+        const sourceProduct = catalog.find(p => p.id === sourceId);
+        const targetProduct = catalog.find(p => p.id === targetNodeId);
         if (sourceProduct && targetProduct) {
           const sourceZone = getBodyZone(sourceProduct);
           const targetZone = getBodyZone(targetProduct);
@@ -799,7 +802,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     event.preventDefault();
     const productId = event.dataTransfer.getData('application/product-id');
     if (!productId) return;
-    const product = DEMO_PRODUCTS.find(p => p.id === productId);
+    const product = catalog.find(p => p.id === productId);
     if (!product) return;
     // Don't add duplicates
     if (nodes.some(n => n.id === productId)) return;
@@ -1017,7 +1020,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   }), [nodes, setNodes, setCenter, removeNodeFromCanvas, fillBlankNode, hasBlankNode]);
 
   // Sidebar helpers
-  const selectedProduct = selectedNodeId ? DEMO_PRODUCTS.find(p => p.id === selectedNodeId) : null;
+  const selectedProduct = selectedNodeId ? catalog.find(p => p.id === selectedNodeId) : null;
   const selectedPreset = selectedNodeId 
     ? (presets.find(p => p.anchorProductId === selectedNodeId) 
        ?? edgesToPresets(edges).find(p => p.anchorProductId === selectedNodeId))
@@ -1060,7 +1063,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     const ids = new Set<string>();
     nodes.forEach(n => {
       if (n.id === BLANK_NODE_ID) { ids.add(n.id); return; }
-      const product = DEMO_PRODUCTS.find(p => p.id === n.id);
+      const product = catalog.find(p => p.id === n.id);
       if (product && product.category.toUpperCase() === matchFilter.toUpperCase()) {
         ids.add(n.id);
       }
@@ -1270,7 +1273,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
                     ) : (
                       <div className="flex flex-col gap-1">
                         {(selectedPreset?.pairs ?? []).map((id, i) => {
-                          const p = DEMO_PRODUCTS.find(x => x.id === id);
+                          const p = catalog.find(x => x.id === id);
                           if (!p) return null;
                           return (
                             <div key={id} className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-foreground/5">
@@ -1296,7 +1299,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
                     ) : (
                       <div className="flex flex-col gap-1">
                         {(selectedPreset?.extras ?? []).map((id, i) => {
-                          const p = DEMO_PRODUCTS.find(x => x.id === id);
+                          const p = catalog.find(x => x.id === id);
                           if (!p) return null;
                           return (
                             <div key={id} className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-foreground/5">

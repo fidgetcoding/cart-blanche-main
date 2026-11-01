@@ -1,12 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check } from 'lucide-react';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
 import { getSuggestedProducts, getFillProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { supabase } from '@/lib/demo/client';
 import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import type { DemoProduct } from '@/data/demo-data';
+import { useGridLayout } from '@/hooks/use-grid-layout';
 import { splitSentences } from '@/lib/format-description';
 
 function CarouselCard({
@@ -600,6 +601,8 @@ function AnchorPanel({
 }
 
 export function StyleKitView() {
+  const { getOrderedProducts } = useGridLayout();
+  const catalog = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
   const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, replaceInLook, lookItems, initialAnchorSize, activeGenders } = useStyleKit();
   const { items: cartItems, addItem } = useCart();
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);
@@ -673,16 +676,8 @@ export function StyleKitView() {
   const isCounterparts = mode === 'counterparts';
   const splitDirection = isCounterparts ? 'horizontal' : 'vertical';
 
-  // [DEBUG-CHIP] temporary diagnostic logging — remove after verifying
-  console.log('[DEBUG-CHIP] StyleKitView getSuggestedProducts called', {
-    anchorTitle: anchorProduct?.title,
-    anchorGender: anchorProduct?.gender,
-    mode,
-    activeGenders,
-    activeGendersIsArray: Array.isArray(activeGenders),
-    activeGendersLength: activeGenders?.length,
-  });
   const suggestions = getSuggestedProducts({
+    catalog,
     anchor: anchorProduct,
     mode,
     cartProductIds: cartItems.map((i) => i.productId),
@@ -690,8 +685,6 @@ export function StyleKitView() {
     presets,
     activeGenders,
   });
-  console.log('[DEBUG-CHIP] StyleKitView suggestions count:', suggestions.length,
-    'first 5:', suggestions.slice(0, 5).map(p => `${p.title} (${p.gender})`));
 
   const cartProductIdsForFill = cartItems.map(i => i.productId);
   const lookProductIdsForFill = lookItems.map(p => p.id);
@@ -700,6 +693,7 @@ export function StyleKitView() {
   const topLaneProducts = topLaneSuggestions.length > 0
     ? topLaneSuggestions
     : getFillProducts({
+        catalog,
         anchor: anchorProduct,
         cartProductIds: cartProductIdsForFill,
         lookProductIds: lookProductIdsForFill,
@@ -711,6 +705,7 @@ export function StyleKitView() {
   const bottomLaneProducts = bottomLaneSuggestions.length > 0
     ? bottomLaneSuggestions
     : getFillProducts({
+        catalog,
         anchor: anchorProduct,
         cartProductIds: cartProductIdsForFill,
         lookProductIds: lookProductIdsForFill,
@@ -721,6 +716,7 @@ export function StyleKitView() {
   const extrasLaneProducts = suggestions.length > 0
     ? suggestions
     : getFillProducts({
+        catalog,
         anchor: anchorProduct,
         cartProductIds: cartProductIdsForFill,
         lookProductIds: lookProductIdsForFill,

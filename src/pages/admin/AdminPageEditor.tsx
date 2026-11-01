@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
-import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
+import { getImageUrl, type DemoProduct } from '@/data/demo-data';
 import { GripVertical, Save, RotateCcw, Plus, Loader2, Pencil, Check, Eye, EyeOff, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 
@@ -20,8 +20,8 @@ interface GridProduct {
   images: string[];
 }
 
-function buildGridProducts(): GridProduct[] {
-  return DEMO_PRODUCTS.map(p => ({
+function toGridProducts(products: DemoProduct[]): GridProduct[] {
+  return products.map(p => ({
     id: p.id,
     title: p.title,
     price: p.price,
@@ -64,7 +64,7 @@ function getGridPos(index: number) {
 }
 
 export default function AdminPageEditor() {
-  const { loading, layout: gridLayout, saveLayout: saveToSupabase, saveHiddenTags, resetLayout, getOrderedProducts, getOrderedCategories } = useGridLayout();
+  const { loading, layout: gridLayout, saveLayout: saveToSupabase, saveHiddenTags, resetLayout, getOrderedProducts, getOrderedCategories, getAllProductsUnfiltered } = useGridLayout();
   const [tagEditMode, setTagEditMode] = useState(false);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
   const [products, setProducts] = useState<GridProduct[]>([]);
@@ -78,14 +78,7 @@ export default function AdminPageEditor() {
   useEffect(() => {
     if (!loading && !initialized) {
       const ordered = getOrderedProducts();
-      setProducts(ordered.map(p => ({
-        id: p.id,
-        title: p.title,
-        price: p.price,
-        compare_at_price: p.compare_at_price,
-        category: p.category,
-        images: p.images.map(img => typeof img === 'string' ? img : getImageUrl(img, 'thumb')),
-      })));
+      setProducts(toGridProducts(ordered));
       const cats = getOrderedCategories();
       setCategories(cats.map(c => c.toLowerCase()));
       setInitialized(true);
@@ -291,8 +284,10 @@ export default function AdminPageEditor() {
     const success = await resetLayout();
     setSaving(false);
     if (success) {
-      setProducts(buildGridProducts());
-      const cats = new Set(DEMO_PRODUCTS.map(p => p.category));
+      // The store's own products, in their default order now the layout is gone.
+      const storeProducts = getAllProductsUnfiltered();
+      setProducts(toGridProducts(storeProducts));
+      const cats = new Set(storeProducts.map(p => p.category));
       setCategories(['all', ...Array.from(cats)]);
       setHasChanges(false);
     }

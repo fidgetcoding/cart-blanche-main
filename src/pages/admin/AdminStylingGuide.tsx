@@ -3,7 +3,7 @@ import { toast } from '@/hooks/use-toast';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { supabase } from '@/lib/demo/client';
 import { Save, Plus, X, GripVertical, Search, Pencil, Check } from 'lucide-react';
-import { DEMO_PRODUCTS, getImageUrl } from '@/data/demo-data';
+import { getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import type { DemoProduct } from '@/data/demo-data';
@@ -62,7 +62,9 @@ function PresetList({
   onReorder,
   anchorZone,
   listType,
+  catalog,
 }: {
+  catalog: DemoProduct[];
   label: string;
   description: string;
   items: DemoProduct[];
@@ -125,7 +127,7 @@ function PresetList({
       onDrop={(e) => {
         const productId = e.dataTransfer.getData('application/product-id');
         if (productId && dragIdx === null) {
-          const product = DEMO_PRODUCTS.find(p => p.id === productId);
+          const product = catalog.find(p => p.id === productId);
           if (!product) { setDropHover(false); return; }
 
           const productZone = getBodyZone(product);
@@ -241,6 +243,8 @@ function PresetList({
 }
 
 export default function AdminStylingGuide() {
+  const { loading: catalogLoading, getAllProductsUnfiltered, getOrderedCategories } = useGridLayout();
+  const catalog = useMemo(() => getAllProductsUnfiltered(), [getAllProductsUnfiltered]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [guideId, setGuideId] = useState<string | null>(null);
@@ -256,7 +260,6 @@ export default function AdminStylingGuide() {
   const [editMode, setEditMode] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [matchFilter, setMatchFilter] = useState<string>('ALL');
-  const { getOrderedCategories } = useGridLayout();
   const storefrontCategories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [listDragHover, setListDragHover] = useState(false);
@@ -276,14 +279,14 @@ export default function AdminStylingGuide() {
 
   const productTypes = useMemo(() => {
     const set = new Set<string>();
-    DEMO_PRODUCTS.forEach(p => { if (p.product_type) set.add(p.product_type.toUpperCase()); });
+    catalog.forEach(p => { if (p.product_type) set.add(p.product_type.toUpperCase()); });
     return ['ALL', ...Array.from(set).sort()];
   }, []);
 
   const grouped = useMemo(() => {
     const groups: Record<string, DemoProduct[]> = {};
     const q = searchQuery.toLowerCase();
-    DEMO_PRODUCTS.forEach(p => {
+    catalog.forEach(p => {
       if (q && !p.title.toLowerCase().includes(q)) return;
       const pt = (p.product_type || 'OTHER').toUpperCase();
       if (filterGroup !== 'ALL' && pt !== filterGroup) return;
@@ -293,7 +296,7 @@ export default function AdminStylingGuide() {
     return groups;
   }, [searchQuery, filterGroup]);
 
-  const selectedProduct = DEMO_PRODUCTS.find(p => p.id === selectedProductId) ?? null;
+  const selectedProduct = catalog.find(p => p.id === selectedProductId) ?? null;
   const currentPreset = presets.find(p => p.anchorProductId === selectedProductId);
   const configuredAnchorIds = useMemo(() => {
     return new Set(presets.filter(p => p.pairs.length > 0 || p.extras.length > 0).map(p => p.anchorProductId));
@@ -476,11 +479,11 @@ export default function AdminStylingGuide() {
     updatePreset(selectedProductId, field, current);
   };
 
-  const pairsProducts = (currentPreset?.pairs ?? []).map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
-  const extrasProducts = (currentPreset?.extras ?? []).map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
+  const pairsProducts = (currentPreset?.pairs ?? []).map(id => catalog.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
+  const extrasProducts = (currentPreset?.extras ?? []).map(id => catalog.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
 
   const anchorZone = selectedProduct ? getBodyZone(selectedProduct) : null;
-  const pairsAvailable = DEMO_PRODUCTS.filter(p => {
+  const pairsAvailable = catalog.filter(p => {
     if (p.id === selectedProductId) return false;
     if (!anchorZone) return true;
     const z = getBodyZone(p);
@@ -490,7 +493,7 @@ export default function AdminStylingGuide() {
     if (anchorZone === 'bottom') return z === 'top';
     return true;
   });
-  const extrasAvailable = DEMO_PRODUCTS.filter(p => {
+  const extrasAvailable = catalog.filter(p => {
     if (p.id === selectedProductId) return false;
     if (!anchorZone) return true;
     const z = getBodyZone(p);
@@ -517,7 +520,7 @@ export default function AdminStylingGuide() {
       }
       return;
     }
-    const product = DEMO_PRODUCTS.find(p => p.id === productId);
+    const product = catalog.find(p => p.id === productId);
     if (!product) return;
     if (blankNodeActive) {
       canvasRef.current?.fillBlankNode(product);
@@ -543,7 +546,7 @@ export default function AdminStylingGuide() {
     return Array.from(presetsMap.values());
   }, [presets, canvasNodeIds]);
 
-  if (loading) {
+  if (loading || catalogLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
         <span className="font-display text-muted-foreground tracking-widest animate-pulse text-sm">LOADING...</span>
@@ -571,7 +574,7 @@ export default function AdminStylingGuide() {
               onClick={() => {
                 setActiveView('canvas');
                 if (selectedProductId && activeView === 'list') {
-                  const product = DEMO_PRODUCTS.find(p => p.id === selectedProductId);
+                  const product = catalog.find(p => p.id === selectedProductId);
                   if (product) {
                     setTimeout(() => {
                       if (!canvasNodeIds.has(selectedProductId)) {
@@ -772,6 +775,7 @@ export default function AdminStylingGuide() {
                   });
                   markDirty();
                 }}
+                catalog={catalog}
                 canvasLayout={canvasLayout}
                 onCanvasLayoutChange={(l) => { setCanvasLayout(l); markDirty(); }}
                 onSave={saveGuideSilent}
@@ -821,7 +825,7 @@ export default function AdminStylingGuide() {
                       <div className="space-y-3" ref={listContainerRef}>
                         {allPresets.filter(preset => {
                           if (matchFilter === 'ALL') return true;
-                          const p = DEMO_PRODUCTS.find(pr => pr.id === preset.anchorProductId);
+                          const p = catalog.find(pr => pr.id === preset.anchorProductId);
                           return p ? p.category.toUpperCase() === matchFilter.toUpperCase() : false;
                         }).filter(preset => {
                           if (matchTypeFilter === 'all') return true;
@@ -829,14 +833,14 @@ export default function AdminStylingGuide() {
                           if (matchTypeFilter === 'extras') return preset.extras.length > 0;
                           return true;
                         }).map((preset, presetIndex) => {
-                          const product = DEMO_PRODUCTS.find(p => p.id === preset.anchorProductId);
+                          const product = catalog.find(p => p.id === preset.anchorProductId);
                           if (!product) return null;
                           const isExpanded = expandedProductId === preset.anchorProductId;
-                          const presetPairs = preset.pairs.map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
-                          const presetExtras = preset.extras.map(id => DEMO_PRODUCTS.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
+                          const presetPairs = preset.pairs.map(id => catalog.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
+                          const presetExtras = preset.extras.map(id => catalog.find(p => p.id === id)).filter(Boolean) as DemoProduct[];
                           const zone = getBodyZone(product);
-                          const pAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; const z = getBodyZone(p); if (z === 'accessory' || zone === 'accessory') return true; if (zone === 'top') return z === 'bottom'; if (zone === 'bottom') return z === 'top'; return true; });
-                          const eAvail = DEMO_PRODUCTS.filter(p => { if (p.id === preset.anchorProductId) return false; const z = getBodyZone(p); if (z === 'accessory' || zone === 'accessory') return false; return z === zone; });
+                          const pAvail = catalog.filter(p => { if (p.id === preset.anchorProductId) return false; const z = getBodyZone(p); if (z === 'accessory' || zone === 'accessory') return true; if (zone === 'top') return z === 'bottom'; if (zone === 'bottom') return z === 'top'; return true; });
+                          const eAvail = catalog.filter(p => { if (p.id === preset.anchorProductId) return false; const z = getBodyZone(p); if (z === 'accessory' || zone === 'accessory') return false; return z === zone; });
 
                           return (
                             <div
@@ -871,7 +875,7 @@ export default function AdminStylingGuide() {
                                           // then splice back into the unfiltered array.
                                           const filteredFromPrev = prev.filter(preset => {
                                             if (matchFilter === 'ALL') return true;
-                                            const p = DEMO_PRODUCTS.find(pr => pr.id === preset.anchorProductId);
+                                            const p = catalog.find(pr => pr.id === preset.anchorProductId);
                                             return p ? p.category.toUpperCase() === matchFilter.toUpperCase() : false;
                                           }).filter(preset => {
                                             if (matchTypeFilter === 'all') return true;
@@ -954,7 +958,7 @@ export default function AdminStylingGuide() {
                                 <div className="px-3 pb-3 space-y-3 border-t border-foreground/5">
                                   {(matchTypeFilter === 'all' || matchTypeFilter === 'pairs') && (
                                     <div className="liquid-glass rounded-lg p-3 mt-3">
-                                      <PresetList label="PAIRS" description="When building pairs, suggest these first:" items={presetPairs} availableProducts={pAvail}
+                                      <PresetList catalog={catalog} label="PAIRS" description="When building pairs, suggest these first:" items={presetPairs} availableProducts={pAvail}
                                         anchorZone={zone} listType="pairs"
                                         onAdd={(p) => addToPreset('pairs', p)}
                                         onRemove={(id) => removeFromPreset('pairs', id)}
@@ -963,7 +967,7 @@ export default function AdminStylingGuide() {
                                   )}
                                   {(matchTypeFilter === 'all' || matchTypeFilter === 'extras') && (
                                     <div className="liquid-glass rounded-lg p-3">
-                                      <PresetList label="EXTRAS" description="When building extras, suggest these first:" items={presetExtras} availableProducts={eAvail}
+                                      <PresetList catalog={catalog} label="EXTRAS" description="When building extras, suggest these first:" items={presetExtras} availableProducts={eAvail}
                                         anchorZone={zone} listType="extras"
                                         onAdd={(p) => addToPreset('extras', p)}
                                         onRemove={(id) => removeFromPreset('extras', id)}

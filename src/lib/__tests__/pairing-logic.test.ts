@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getSuggestedProducts, getBodyZone, type ProductPreset } from '../pairing-logic';
-import { DEMO_PRODUCTS } from '@/data/demo-data';
+import { getFillProducts, getSuggestedProducts, getBodyZone, type ProductPreset } from '../pairing-logic';
+import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
 
 const findProduct = (id: string) => DEMO_PRODUCTS.find(p => p.id === id)!;
 
@@ -171,5 +171,34 @@ describe('getSuggestedProducts — preset integration', () => {
       mode: 'counterparts',
     });
     expect(withPresets.map(p => p.id)).toEqual(without.map(p => p.id));
+  });
+});
+
+describe('pairing with a store catalogue', () => {
+  const product = (id: string, category: string, type: DemoProduct['product_type']): DemoProduct => ({
+    id,
+    title: id,
+    price: 10,
+    images: [],
+    category,
+    product_type: type,
+    gender: 'unisex',
+    status: 'active',
+    grid_position: { x: 0, y: 0 },
+    description: '',
+    variants: [],
+  });
+  const top = product('real-top', 'essentials', 'shirt');
+  const pants = product('real-pants', 'essentials', 'pants');
+  const catalog = [top, pants];
+
+  it('suggests only what the store sells', () => {
+    const ids = getSuggestedProducts({ anchor: top, mode: 'counterparts', catalog }).map(p => p.id);
+    expect(ids).toEqual(['real-pants']);
+  });
+
+  it('fills a look only from what the store sells', () => {
+    const ids = getFillProducts({ anchor: top, cartProductIds: [], lookProductIds: [], catalog }).map(p => p.id);
+    expect(ids).toEqual(['real-pants']);
   });
 });

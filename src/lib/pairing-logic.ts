@@ -141,6 +141,8 @@ interface PairingOptions {
   lookProductIds?: string[];
   presets?: ProductPreset[];
   activeGenders?: string[];
+  /** What the store sells. Defaults to the sample catalogue. */
+  catalog?: DemoProduct[];
 }
 
 export function getSuggestedProducts({
@@ -150,6 +152,7 @@ export function getSuggestedProducts({
   lookProductIds = [],
   presets = [],
   activeGenders = [],
+  catalog = DEMO_PRODUCTS,
 }: PairingOptions): DemoProduct[] {
   const excludeIds = new Set([anchor.id, ...cartProductIds, ...lookProductIds]);
   const anchorZone = getBodyZone(anchor);
@@ -161,12 +164,12 @@ export function getSuggestedProducts({
 
   const presetProducts = presetIds
     .filter(id => !excludeIds.has(id))
-    .map(id => DEMO_PRODUCTS.find(p => p.id === id))
+    .map(id => catalog.find(p => p.id === id))
     .filter((p): p is DemoProduct => Boolean(p))
     .filter(p => isGenderCompatible(anchor, p, activeGenders))
     .filter(p => !isRegisterIncompatible(anchor, p));
 
-  let candidates = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id));
+  let candidates = catalog.filter(p => !excludeIds.has(p.id));
 
   candidates = candidates.filter(p => isGenderCompatible(anchor, p, activeGenders));
   candidates = candidates.filter(p => !isRegisterIncompatible(anchor, p));
@@ -210,7 +213,7 @@ export function getSuggestedProducts({
 
   if (result.length === 0) {
     const fallbackExclude = new Set([anchor.id, ...cartProductIds]);
-    let fallback = DEMO_PRODUCTS.filter(p => !fallbackExclude.has(p.id));
+    let fallback = catalog.filter(p => !fallbackExclude.has(p.id));
 
     if (mode === 'counterparts') {
       if (anchorZone === 'top') {
@@ -239,8 +242,9 @@ export function getFillProducts(opts: {
   activeGenders?: string[];
   zone?: 'top' | 'bottom';
   limit?: number;
+  catalog?: DemoProduct[];
 }): DemoProduct[] {
-  const { anchor, cartProductIds, lookProductIds, activeGenders, zone, limit = 12 } = opts;
+  const { anchor, cartProductIds, lookProductIds, activeGenders, zone, limit = 12, catalog = DEMO_PRODUCTS } = opts;
   const excludeIds = new Set<string>([anchor.id, ...cartProductIds, ...lookProductIds]);
 
   const matchesZone = (p: DemoProduct): boolean => {
@@ -262,7 +266,7 @@ export function getFillProducts(opts: {
     return [...sameCategory, ...sameType, ...rest];
   };
 
-  const base = DEMO_PRODUCTS.filter(p => !excludeIds.has(p.id) && p.status === 'active');
+  const base = catalog.filter(p => !excludeIds.has(p.id) && p.status === 'active');
 
   const tier1 = base
     .filter(matchesZone)
