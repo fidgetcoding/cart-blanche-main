@@ -19,9 +19,9 @@
 ## What works today
 
 - Storefront with two templates, product detail, sizes, Build a Set, cart, discount rules, subscribe popup, all on bundled data.
-- The admin works logged out on sample data, with no backend configured.
-- 281 tests pass at `9eb1fb2`. `npm ci`, the build and the tests pass from a fresh clone. Lint has 0 errors and 45 warnings, and `npm audit` shows no high or critical issues.
-- Security work on November 1: merchant accounts are invitation only, and discount checks, shopper signups and shopper photos are rate limited. The first batch passed role checks on a throwaway Postgres and edge function checks with outbound calls stubbed. The limits added after that have unit tests.
+- All 11 admin routes work logged out on sample data, with no backend configured.
+- From a fresh clone of `192ef8e`, `npm ci` works, 281 unit and component tests pass, lint has 0 errors and 45 warnings, and the build passes. `npm audit` shows no high or critical issues.
+- Security work on November 1: merchant accounts are invitation only, shoppers can't write to the database or storage directly, and discount checks, signups and photos are rate limited. Those fixes were checked on a real local Supabase stack with real sign-in tokens and a fake AI provider, and a real magic link landed through the local mail catcher.
 
 ## Where it went
 

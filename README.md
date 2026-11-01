@@ -45,7 +45,7 @@ Open http://127.0.0.1:8080, then:
 2. **Run the store.** Go to `/admin`. No login. Change inventory, edit a size chart, create a discount, fulfil a waitlist entry. Nothing is saved, on purpose.
 3. **Look at the templates.** `/admin/lab` has the two storefront looks, YZ and SL.
 
-Checked on 2026-11-01 at `9eb1fb2`: 281 tests pass, lint has 0 errors and 45 warnings, the build passes, and `npm audit` shows no high or critical issues. `npm ci`, the build and the tests also passed from a fresh clone of `366ec96`.
+Checked on 2026-11-01 from a fresh clone of `192ef8e`: `npm ci` works, 281 unit and component tests pass, lint has 0 errors and 45 warnings, and the build passes. `npm audit` shows no high or critical issues.
 
 ### Want the real thing?
 
@@ -56,8 +56,9 @@ I'm not hosting a database for anyone. For real accounts and saved data you conn
 - **SmartShop:** a spatial storefront with two templates, zoom, drag, swipe, peeks at the next item, and sizes and colorways on the product.
 - **Build a Set:** complete-the-look pairing, driven by a pairing graph you edit on a node canvas (the Look Book).
 - **Smart Portal:** dashboard, inventory, products, orders, size charts, discounts, subscribers with CSV export, per-size waitlists, store settings.
-- **AI stylist and AI store manager:** the stylist recommends products from the store and the manager proposes changes you confirm. Both need your own Supabase and AI key, and work with any OpenAI-compatible provider.
+- **AI stylist and AI store manager:** the stylist recommends products from the store and the manager proposes changes you confirm. Both need your own Supabase and AI key, and they're built to talk to any OpenAI-compatible API.
 - **Demo mode:** with no backend configured, the storefront and every admin page run on sample data and never touch a database.
+- **Locked down:** merchant accounts are invitation only, shoppers can't write to the database or storage directly, and discount checks, signups and photos are rate limited. Those fixes were checked on a real local Supabase stack with a fake AI provider.
 
 ## License
 
