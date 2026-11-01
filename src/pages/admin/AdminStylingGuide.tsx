@@ -6,6 +6,7 @@ import { Save, Plus, X, GripVertical, Search, Pencil, Check } from 'lucide-react
 import { getImageUrl } from '@/data/demo-data';
 import { getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
 import { useGridLayout } from '@/hooks/use-grid-layout';
+import { DEMO_MERCHANT_ID } from '@/lib/demo/store';
 import type { DemoProduct } from '@/data/demo-data';
 import type { CanvasLayout, GuideSaveOverride, StyleGuideCanvasHandle } from '@/components/admin/StyleGuideCanvas';
 import type { Json } from '@/integrations/supabase/types';
@@ -347,7 +348,9 @@ export default function AdminStylingGuide() {
       .limit(1)
       .maybeSingle();
 
-    const rules = data ? (data.rules as unknown as typeof DEFAULT_CANVAS_RULES) : DEFAULT_CANVAS_RULES;
+    // The starter look book pairs sample products, so it's only for the demo.
+    const starter = user.id === DEMO_MERCHANT_ID ? DEFAULT_CANVAS_RULES : null;
+    const rules = data ? (data.rules as unknown as typeof DEFAULT_CANVAS_RULES) : starter;
     if (data) setGuideId(data.id);
 
     if (rules?.version === 2 && Array.isArray(rules.presets)) {

@@ -41,6 +41,14 @@ describe('the look book on a real store', () => {
     expect(screen.queryByText('Cloud Puffer Jacket')).toBeNull();
   });
 
+  it('starts empty instead of with the sample pairings', async () => {
+    hook.products = [{ ...real, id: 'p2', title: 'Same Id As A Sample' }];
+    render(<RouterProvider router={createMemoryRouter([{ path: '/', element: <AdminStylingGuide /> }])} />);
+    await screen.findByText('Same Id As A Sample');
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+    expect(screen.getAllByText('Same Id As A Sample')).toHaveLength(1);
+  });
+
   it('lists a product that has no category yet', async () => {
     hook.products = [{ ...real, product_type: '' }];
     render(<RouterProvider router={createMemoryRouter([{ path: '/', element: <AdminStylingGuide /> }])} />);
