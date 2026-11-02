@@ -45,7 +45,7 @@ Open http://127.0.0.1:8080, then:
 2. **Run the store.** Go to `/admin`. No login. Change inventory, edit a size chart, create a discount, fulfil a waitlist entry. Nothing is saved, on purpose.
 3. **Look at the templates.** `/admin/lab` has the two storefront looks, YZ and SL.
 
-Checked on 2026-11-01 from a fresh clone of `8df52d2`: `npm ci` works, 293 unit and component tests pass, lint has 0 errors and 52 warnings, `tsc` is clean and the build passes. `npm audit` shows no high or critical issues. GitHub Actions runs the same checks on every push.
+Checked on 2026-11-02 from a fresh clone of `34b5c43`: `npm ci` works, 323 unit and component tests pass, lint has 0 errors and 50 warnings, `tsc` is clean and the build passes. `npm audit` shows no high or critical issues. GitHub Actions runs the same checks on every push.
 
 ### Want the real thing?
 

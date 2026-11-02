@@ -131,6 +131,8 @@ leaving Lovable → Claude Code only → bring your own Supabase and AI key → 
 | Nov 1, tip `8df52d2` | `npm audit --omit=dev` | No high or critical, 5 moderate | Run while writing this |
 | Nov 1, fresh clone of `8df52d2` | `npm ci`, lint, build, tests | All pass, 293 tests | Run while writing this |
 | Nov 1, `8df52d2` | GitHub Actions: `npm ci`, lint, typecheck, tests, build | Green | GitHub Actions |
+| Nov 2, fresh clone of `34b5c43` | `npm ci`, lint, `tsc`, tests, build | 323 of 323 in 33 files. Lint 0 errors, 50 warnings. `tsc` clean. Build passes. `npm audit --omit=dev`: no high or critical, 5 moderate | Run while writing this |
+| Nov 1, `34b5c43` | All 31 migrations from a clean reset on a real local stack, then a merchant's flows and a button sweep in a browser | 13 fixes, `a469ade` to `34b5c43` | Session scripts, not in this repo |
 | Nov 1 | Real local Supabase stack | Showed every table failing with permission denied, fixed with explicit grants | `2f10bb2` |
 | Nov 1 | Security fixes on that stack, with real sign-in tokens and a fake AI provider | Storage ownership and limits, closed reads on merchants and discount codes, locked fee and Stripe columns, shopper functions and their limits, merchant signups closed, a real magic link through the local mail catcher, then signed-in writes confirmed in Postgres | Session scripts, not in this repo |
 | Nov 1 | Rate limits hit on that stack, where every caller shares one gateway IP | Stylist: the 21st request in a minute got a 429. Discount checks: the 21st in a minute got `rate_limited`. Signups and photos: the 6th in a minute got a 429. A store seeded at 300 wrong guesses an hour was blocked | Session scripts, not in this repo |

@@ -20,7 +20,7 @@
 
 - Storefront with two templates, product detail, sizes, Build a Set, cart, discount rules, subscribe popup, all on bundled data.
 - All 11 admin routes work logged out on sample data, with no backend configured.
-- From a fresh clone of `8df52d2`, `npm ci` works, 293 unit and component tests pass, lint has 0 errors and 52 warnings, `tsc` is clean and the build passes. `npm audit` shows no high or critical issues. GitHub Actions runs the same checks on every push.
+- From a fresh clone of `34b5c43`, `npm ci` works, 323 unit and component tests pass, lint has 0 errors and 50 warnings, `tsc` is clean and the build passes. `npm audit` shows no high or critical issues. GitHub Actions runs the same checks on every push.
 - Security work on November 1: merchant accounts are invitation only, shoppers can't write to the database or storage directly, and discount checks, signups and photos are rate limited. Those fixes were checked on a real local Supabase stack with real sign-in tokens and a fake AI provider. The per-minute limits were actually hit there, and a real magic link landed through the local mail catcher.
 
 ## Where it went
