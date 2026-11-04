@@ -119,6 +119,11 @@ export function ThemeProvider({ children, storageKey, defaults }: { children: Re
     linkRef.current.href = url;
   }, [settings.displayFont, settings.bodyFont, settings.numeralFont]);
 
+  useEffect(() => () => {
+    linkRef.current?.remove();
+    linkRef.current = null;
+  }, []);
+
   // Update CSS custom properties
   useEffect(() => {
     const root = document.documentElement.style;

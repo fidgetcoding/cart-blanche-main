@@ -9,21 +9,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 // Storefront: eagerly loaded (customer-facing, must be instant)
 import Index from "./pages/Index";
 
-// Admin sub-pages: eagerly imported so tab switching is instant
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminDiscounts from './pages/admin/AdminDiscounts';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminWaitlist from './pages/admin/AdminWaitlist';
-import AdminSubscribers from './pages/admin/AdminSubscribers';
-import AdminInventory from './pages/admin/AdminInventory';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminPageEditor from './pages/admin/AdminPageEditor';
-import AdminStylingGuide from './pages/admin/AdminStylingGuide';
-import AdminSizeCharts from './pages/admin/AdminSizeCharts';
-import LabIndex from './pages/admin/lab/LabIndex';
-
-// Only lazy-load completely separate sections (different entry points)
+// Merchant routes load on navigation, keeping charts and editors out of the shop entry.
+// Route-level lazy loading also keeps the current screen visible during navigation.
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const YzTemplate = lazy(() => import('./pages/admin/lab/YZTemplate'));
 const SlTemplate = lazy(() => import('./pages/admin/lab/SlTemplate'));
@@ -38,19 +25,19 @@ const router = createBrowserRouter([
   { path: "/admin/lab/sl", element: <Suspense fallback={null}><SlTemplate /></Suspense> },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    lazy: async () => ({ Component: (await import("./pages/admin/AdminLayout")).default }),
     children: [
-      { index: true, element: <AdminDashboard /> },
-      { path: "discounts", element: <AdminDiscounts /> },
-      { path: "size-charts", element: <AdminSizeCharts /> },
-      { path: "grid", element: <AdminPageEditor /> },
-      { path: "orders", element: <AdminOrders /> },
-      { path: "waitlist", element: <AdminWaitlist /> },
-      { path: "subscribers", element: <AdminSubscribers /> },
-      { path: "inventory", element: <AdminInventory /> },
-      { path: "styling-guide", element: <AdminStylingGuide /> },
-      { path: "settings", element: <AdminSettings /> },
-      { path: "lab", element: <LabIndex /> },
+      { index: true, lazy: async () => ({ Component: (await import("./pages/admin/AdminDashboard")).default }) },
+      { path: "discounts", lazy: async () => ({ Component: (await import("./pages/admin/AdminDiscounts")).default }) },
+      { path: "size-charts", lazy: async () => ({ Component: (await import("./pages/admin/AdminSizeCharts")).default }) },
+      { path: "grid", lazy: async () => ({ Component: (await import("./pages/admin/AdminPageEditor")).default }) },
+      { path: "orders", lazy: async () => ({ Component: (await import("./pages/admin/AdminOrders")).default }) },
+      { path: "waitlist", lazy: async () => ({ Component: (await import("./pages/admin/AdminWaitlist")).default }) },
+      { path: "subscribers", lazy: async () => ({ Component: (await import("./pages/admin/AdminSubscribers")).default }) },
+      { path: "inventory", lazy: async () => ({ Component: (await import("./pages/admin/AdminInventory")).default }) },
+      { path: "styling-guide", lazy: async () => ({ Component: (await import("./pages/admin/AdminStylingGuide")).default }) },
+      { path: "settings", lazy: async () => ({ Component: (await import("./pages/admin/AdminSettings")).default }) },
+      { path: "lab", lazy: async () => ({ Component: (await import("./pages/admin/lab/LabIndex")).default }) },
     ],
   },
   { path: "*", element: <Suspense fallback={null}><NotFound /></Suspense> },

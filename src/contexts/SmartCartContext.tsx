@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { isBackendConfigured } from '@/integrations/supabase/client';
@@ -96,11 +96,28 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
   const storeProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
 
   const clearUnread = useCallback(() => setHasUnread(false), []);
-  const clearChat = useCallback(() => setMessages([]), []);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  const appendMessage = useCallback((message: ChatMessage) => {
+    messagesRef.current = [...messagesRef.current, message];
+    setMessages(messagesRef.current);
+  }, []);
+  const cancelRequest = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }, []);
+  useEffect(() => cancelRequest, [cancelRequest]);
+  const clearChat = useCallback(() => {
+    cancelRequest();
+    messagesRef.current = [];
+    setMessages([]);
+    setIsLoading(false);
+    setHasUnread(false);
+  }, [cancelRequest]);
 
   const callAI = useCallback(async (
     userMessages: { role: string; content: string; image_url?: string }[],
     cartItems: CartItem[],
+    signal: AbortSignal,
     mode?: string
   ): Promise<ChatMessage | null> => {
     if (!isBackendConfigured) {
@@ -108,15 +125,12 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({
           messages: userMessages,
@@ -124,7 +138,7 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
           cart_items: cartItems,
           mode: mode || undefined,
         }),
-        signal: controller.signal,
+        signal,
       });
 
       if (!resp.ok) {
@@ -160,6 +174,31 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [storeProducts]);
 
+  // Only the current request may append a reply or release the loading state.
+  const requestReply = useCallback(async (
+    history: { role: string; content: string; image_url?: string }[],
+    cartItems: CartItem[],
+    mode?: string,
+  ) => {
+    cancelRequest();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setIsLoading(true);
+    try {
+      const response = await callAI(history, cartItems, controller.signal, mode);
+      if (abortRef.current !== controller || controller.signal.aborted) return;
+      if (response) {
+        appendMessage(response);
+        if (mode) setHasUnread(true);
+      }
+    } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setIsLoading(false);
+      }
+    }
+  }, [appendMessage, callAI, cancelRequest]);
+
   const sendMessage = useCallback(async (text: string, cartItems: CartItem[], imageUrl?: string) => {
     const userMsg: ChatMessage = {
       id: generateId(),
@@ -169,29 +208,24 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
       timestamp: Date.now(),
     };
 
-    setMessages(prev => [...prev, userMsg]);
-    setIsLoading(true);
+    appendMessage(userMsg);
 
     // The function caps conversation size, so only send the recent turns.
-    const history = [...messages, userMsg].slice(-MAX_HISTORY_MESSAGES).map(m => ({
+    const history = messagesRef.current.slice(-MAX_HISTORY_MESSAGES).map(m => ({
       role: m.role,
       content: m.content,
       ...(m.image_url ? { image_url: m.image_url } : {}),
     }));
 
-    const response = await callAI(history, cartItems);
-    if (response) {
-      setMessages(prev => [...prev, response]);
-    }
-    setIsLoading(false);
-  }, [messages, callAI]);
+    await requestReply(history, cartItems);
+  }, [appendMessage, requestReply]);
 
   const triggerProactive = useCallback(async (
     mode: 'proactive_add' | 'proactive_review' | 'proactive_remove',
     cartItems: CartItem[],
     context?: string
   ) => {
-    if (isLoading || !isBackendConfigured) return;
+    if (abortRef.current || !isBackendConfigured) return;
 
     const proactivePrompt = context
       ? `[System: ${context}]`
@@ -201,19 +235,12 @@ export function SmartCartProvider({ children }: { children: React.ReactNode }) {
           ? '[System: Shopper is reviewing their cart. Suggest completing the look if appropriate.]'
           : '[System: Shopper just removed an item. Suggest alternatives at different price points.]';
 
-    setIsLoading(true);
-    const response = await callAI(
+    await requestReply(
       [{ role: 'user', content: proactivePrompt }],
       cartItems,
       mode
     );
-
-    if (response) {
-      setMessages(prev => [...prev, response]);
-      setHasUnread(true);
-    }
-    setIsLoading(false);
-  }, [isLoading, callAI]);
+  }, [requestReply]);
 
   return (
     <SmartCartContext.Provider value={{ messages, isLoading, hasUnread, clearUnread, sendMessage, triggerProactive, clearChat, storeProducts }}>

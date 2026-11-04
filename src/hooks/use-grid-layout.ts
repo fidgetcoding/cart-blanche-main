@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/demo/client';
 import type { Json } from '@/integrations/supabase/types';
 import { resolveStoreMerchantId } from '@/lib/store-merchant';
@@ -94,8 +94,17 @@ function broadcastLayoutChange(layout: GridLayout) {
   window.dispatchEvent(new CustomEvent(LAYOUT_CHANGE_EVENT, { detail: layout }));
 }
 
+// Serialize writes from every mounted editor for a merchant. Each operation
+// merges against the latest broadcast snapshot rather than its render closure.
+const pendingWrites = new Map<string, Promise<boolean>>();
+
 export function useGridLayout() {
   const [layout, setLayout] = useState<GridLayout | null>(null);
+  const layoutRef = useRef<GridLayout | null>(null);
+  const applyLayout = useCallback((next: GridLayout) => {
+    layoutRef.current = next;
+    setLayout(next);
+  }, []);
   const [dbProducts, setDbProducts] = useState<DemoProduct[]>([]);
   const [loading, setLoading] = useState(true);
   // A real store only ever sells its own products, even before it has any.
@@ -105,11 +114,11 @@ export function useGridLayout() {
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<GridLayout>).detail;
-      setLayout(detail);
+      applyLayout(detail);
     };
     window.addEventListener(LAYOUT_CHANGE_EVENT, handler);
     return () => window.removeEventListener(LAYOUT_CHANGE_EVENT, handler);
-  }, []);
+  }, [applyLayout]);
 
   // Fetch saved layout and DB products on mount
   useEffect(() => {
@@ -134,7 +143,7 @@ export function useGridLayout() {
           .maybeSingle();
 
         if (layoutData) {
-          setLayout({
+          applyLayout({
             productOrder: (layoutData.product_order as string[])?.length > 0 ? (layoutData.product_order as string[]) : [],
             categoryOrder: (layoutData.category_order as string[])?.length > 0 ? (layoutData.category_order as string[]) : [],
             hiddenTags: (layoutData.hidden_tags as string[]) || [],
@@ -202,7 +211,7 @@ export function useGridLayout() {
       setLoading(false);
     }
     fetchData();
-  }, []);
+  }, [applyLayout]);
 
   // Merge demo + DB products. Apply per-merchant demo overrides on top
   // of canonical demo data.
@@ -236,193 +245,59 @@ export function useGridLayout() {
     return [...mergedDemos, ...dbProducts];
   }, [dbProducts, layout, hideSamples]);
 
-  // Save layout to Supabase (requires auth)
-  const saveLayout = useCallback(async (productOrder: string[], categoryOrder: string[]) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const current = layout || EMPTY_LAYOUT;
-    const { error } = await supabase
-      .from('grid_layouts')
-      .upsert({
-        merchant_id: user.id,
-        layout_type: 'default',
-        product_order: productOrder,
-        category_order: categoryOrder,
-        hidden_tags: current.hiddenTags,
-        hidden_product_types: current.hiddenProductTypes,
-        hidden_product_ids: current.hiddenProductIds,
-        hidden_genders: current.hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides as unknown as Json,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
-
-    if (!error) {
-      const updated: GridLayout = { ...current, productOrder, categoryOrder };
-      setLayout(updated);
-      broadcastLayoutChange(updated);
+  const persistLayout = useCallback(async (change: (current: GridLayout) => GridLayout) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      const previous = pendingWrites.get(user.id) ?? Promise.resolve(true);
+      const pending = previous.then(async () => {
+        const updated = change(layoutRef.current || EMPTY_LAYOUT);
+        const { error } = await supabase.from('grid_layouts').upsert({
+          merchant_id: user.id,
+          layout_type: 'default',
+          product_order: updated.productOrder,
+          category_order: updated.categoryOrder,
+          hidden_tags: updated.hiddenTags,
+          hidden_product_types: updated.hiddenProductTypes,
+          hidden_product_ids: updated.hiddenProductIds,
+          hidden_genders: updated.hiddenGenders,
+          demo_product_overrides: updated.demoProductOverrides as unknown as Json,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'merchant_id,layout_type' });
+        if (error) return false;
+        applyLayout(updated);
+        broadcastLayoutChange(updated);
+        return true;
+      }).catch(() => false);
+      pendingWrites.set(user.id, pending);
+      try {
+        return await pending;
+      } finally {
+        if (pendingWrites.get(user.id) === pending) pendingWrites.delete(user.id);
+      }
+    } catch {
+      return false;
     }
-    return !error;
-  }, [layout]);
+  }, [applyLayout]);
 
-  // Save hidden tags
-  const saveHiddenTags = useCallback(async (hiddenTags: string[]) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
+  const saveLayout = useCallback((productOrder: string[], categoryOrder: string[]) =>
+    persistLayout(current => ({ ...current, productOrder, categoryOrder })), [persistLayout]);
+  const saveHiddenTags = useCallback((hiddenTags: string[]) =>
+    persistLayout(current => ({ ...current, hiddenTags })), [persistLayout]);
+  const saveHiddenProductTypes = useCallback((hiddenProductTypes: string[]) =>
+    persistLayout(current => ({ ...current, hiddenProductTypes })), [persistLayout]);
+  const saveHiddenProductIds = useCallback((hiddenProductIds: string[]) =>
+    persistLayout(current => ({ ...current, hiddenProductIds })), [persistLayout]);
+  const saveHiddenGenders = useCallback((hiddenGenders: string[]) =>
+    persistLayout(current => ({ ...current, hiddenGenders })), [persistLayout]);
 
-    const current = layout || EMPTY_LAYOUT;
-    const { error } = await supabase
-      .from('grid_layouts')
-      .upsert({
-        merchant_id: user.id,
-        layout_type: 'default',
-        product_order: current.productOrder,
-        category_order: current.categoryOrder,
-        hidden_tags: hiddenTags,
-        hidden_product_types: current.hiddenProductTypes,
-        hidden_product_ids: current.hiddenProductIds,
-        hidden_genders: current.hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides as unknown as Json,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
-
-    if (!error) {
-      const updated: GridLayout = { ...current, hiddenTags };
-      setLayout(updated);
-      broadcastLayoutChange(updated);
-    }
-    return !error;
-  }, [layout]);
-
-  // Save hidden product types
-  const saveHiddenProductTypes = useCallback(async (hiddenProductTypes: string[]) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const current = layout || EMPTY_LAYOUT;
-    const { error } = await supabase
-      .from('grid_layouts')
-      .upsert({
-        merchant_id: user.id,
-        layout_type: 'default',
-        product_order: current.productOrder,
-        category_order: current.categoryOrder,
-        hidden_tags: current.hiddenTags,
-        hidden_product_types: hiddenProductTypes,
-        hidden_product_ids: current.hiddenProductIds,
-        hidden_genders: current.hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides as unknown as Json,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
-
-    if (!error) {
-      const updated: GridLayout = { ...current, hiddenProductTypes };
-      setLayout(updated);
-      broadcastLayoutChange(updated);
-    }
-    return !error;
-  }, [layout]);
-
-  // Save hidden product IDs
-  const saveHiddenProductIds = useCallback(async (hiddenProductIds: string[]) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const current = layout || EMPTY_LAYOUT;
-    const { error } = await supabase
-      .from('grid_layouts')
-      .upsert({
-        merchant_id: user.id,
-        layout_type: 'default',
-        product_order: current.productOrder,
-        category_order: current.categoryOrder,
-        hidden_tags: current.hiddenTags,
-        hidden_product_types: current.hiddenProductTypes,
-        hidden_product_ids: hiddenProductIds,
-        hidden_genders: current.hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides as unknown as Json,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
-
-    if (!error) {
-      const updated: GridLayout = { ...current, hiddenProductIds };
-      setLayout(updated);
-      broadcastLayoutChange(updated);
-    }
-    return !error;
-  }, [layout]);
-
-  // Save hidden genders
-  const saveHiddenGenders = useCallback(async (hiddenGenders: string[]) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const current = layout || EMPTY_LAYOUT;
-    const { error } = await supabase
-      .from('grid_layouts')
-      .upsert({
-        merchant_id: user.id,
-        layout_type: 'default',
-        product_order: current.productOrder,
-        category_order: current.categoryOrder,
-        hidden_tags: current.hiddenTags,
-        hidden_product_types: current.hiddenProductTypes,
-        hidden_product_ids: current.hiddenProductIds,
-        hidden_genders: hiddenGenders,
-        demo_product_overrides: current.demoProductOverrides as unknown as Json,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
-
-    if (!error) {
-      const updated: GridLayout = { ...current, hiddenGenders };
-      setLayout(updated);
-      broadcastLayoutChange(updated);
-    }
-    return !error;
-  }, [layout]);
-
-  /**
-   * Save (merge) an override for a single demo product. Pass `null` as
-   * the override to delete the override entirely (revert to canonical).
-   */
-  const saveDemoProductOverride = useCallback(async (
-    productId: string,
-    override: DemoProductOverride | null
-  ) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const current = layout || EMPTY_LAYOUT;
-    const nextOverrides: DemoProductOverrides = { ...current.demoProductOverrides };
-    if (override === null) {
-      delete nextOverrides[productId];
-    } else {
-      // Shallow merge with any existing override for this product.
-      nextOverrides[productId] = { ...(nextOverrides[productId] || {}), ...override };
-    }
-
-    const { error } = await supabase
-      .from('grid_layouts')
-      .upsert({
-        merchant_id: user.id,
-        layout_type: 'default',
-        product_order: current.productOrder,
-        category_order: current.categoryOrder,
-        hidden_tags: current.hiddenTags,
-        hidden_product_types: current.hiddenProductTypes,
-        hidden_product_ids: current.hiddenProductIds,
-        hidden_genders: current.hiddenGenders,
-        demo_product_overrides: nextOverrides as unknown as Json,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
-
-    if (!error) {
-      const updated: GridLayout = { ...current, demoProductOverrides: nextOverrides };
-      setLayout(updated);
-      broadcastLayoutChange(updated);
-    }
-    return !error;
-  }, [layout]);
+  const saveDemoProductOverride = useCallback((productId: string, override: DemoProductOverride | null) =>
+    persistLayout(current => {
+      const nextOverrides = { ...current.demoProductOverrides };
+      if (override === null) delete nextOverrides[productId];
+      else nextOverrides[productId] = { ...nextOverrides[productId], ...override };
+      return { ...current, demoProductOverrides: nextOverrides };
+    }), [persistLayout]);
 
   // Get products in saved order, excluding hidden product IDs
   const getOrderedProducts = useCallback((): DemoProduct[] => {
@@ -430,7 +305,7 @@ export function useGridLayout() {
     const hiddenIds = new Set(layout?.hiddenProductIds || []);
 
     // Filter out hidden products
-    const visible = all.filter(p => !hiddenIds.has(p.id));
+    const visible = all.filter(p => p.status === 'active' && !hiddenIds.has(p.id));
 
     if (!layout || layout.productOrder.length === 0) {
       return visible.map((p, i) => ({
@@ -503,31 +378,8 @@ export function useGridLayout() {
     return [...savedCats, ...missing].filter(c => !hidden.has(c));
   }, [layout, allProducts]);
 
-  // Reset layout
-  const resetLayout = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const { error } = await supabase
-      .from('grid_layouts')
-      .upsert({
-        merchant_id: user.id,
-        layout_type: 'default',
-        product_order: [],
-        category_order: [],
-        hidden_tags: [],
-        hidden_product_types: [],
-        hidden_product_ids: [],
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'merchant_id,layout_type' });
-
-    if (!error) {
-      const updated: GridLayout = { ...EMPTY_LAYOUT };
-      setLayout(updated);
-      broadcastLayoutChange(updated);
-    }
-    return !error;
-  }, []);
+  const resetLayout = useCallback(() =>
+    persistLayout(() => ({ ...EMPTY_LAYOUT })), [persistLayout]);
 
   return { layout, loading, saveLayout, saveHiddenTags, saveHiddenProductTypes, saveHiddenProductIds, saveHiddenGenders, saveDemoProductOverride, resetLayout, getOrderedProducts, getOrderedCategories, getAllProductsUnfiltered };
 }

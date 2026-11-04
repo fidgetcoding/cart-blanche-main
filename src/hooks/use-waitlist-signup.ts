@@ -66,6 +66,9 @@ export function useWaitlistSignup() {
 
       toast.success("You're on the list — we'll email you when this is back in stock.");
       return { ok: true, duplicate: false };
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+      return { ok: false, duplicate: false };
     } finally {
       setSubmitting(false);
     }

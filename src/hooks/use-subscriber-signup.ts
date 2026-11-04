@@ -57,6 +57,8 @@ export function useSubscriberSignup() {
       }
 
       return { ok: true, duplicate: false, welcomeCode: WELCOME_CODE };
+    } catch {
+      return { ok: false, duplicate: false, welcomeCode: null };
     } finally {
       setSubmitting(false);
     }

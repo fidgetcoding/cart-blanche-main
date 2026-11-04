@@ -75,3 +75,15 @@ describe('shopper signups', () => {
     expect(submitStoreSignup).not.toHaveBeenCalled();
   });
 });
+
+it('turns transport exceptions into retryable signup failures', async () => {
+  getUser.mockRejectedValue(new Error('offline'));
+  const subscriber = renderHook(() => useSubscriberSignup());
+  const waitlist = renderHook(() => useWaitlistSignup());
+  await act(async () => {
+    await expect(subscriber.result.current.submit('a@example.com')).resolves.toEqual({ ok: false, duplicate: false, welcomeCode: null });
+    await expect(waitlist.result.current.submit({ productId: 'p1', email: 'a@example.com', name: 'Ann' })).resolves.toEqual({ ok: false, duplicate: false });
+  });
+  expect(subscriber.result.current.submitting).toBe(false);
+  expect(waitlist.result.current.submitting).toBe(false);
+});

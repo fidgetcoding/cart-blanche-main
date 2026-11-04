@@ -229,32 +229,32 @@ export function SmartChatPanel() {
   const sendMessage = async (text: string) => {
     if ((!text.trim() && attachments.length === 0) || isLoading) return;
 
-    // Create conversation if needed
-    let convId = activeConversationId;
-    if (!convId) {
-      convId = await createConversation(text.trim());
-    }
-
-    const userMsg: ChatMessage = {
-      role: 'user',
-      content: text.trim(),
-      attachments: attachments.length > 0 ? [...attachments] : undefined,
-    };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setAttachments([]);
     setIsLoading(true);
-    saveMessage(userMsg, convId);
-
-    const history = [...messages, userMsg]
-      .filter(m => m.role !== 'system')
-      .slice(-30)
-      .map(m => ({ role: m.role, content: m.content }));
-
-    let assistantContent = '';
-    let toolCalls: ToolCall[] = [];
-
     try {
+      // Create conversation if needed
+      let convId = activeConversationId;
+      if (!convId) {
+        convId = await createConversation(text.trim());
+      }
+
+      const userMsg: ChatMessage = {
+        role: 'user',
+        content: text.trim(),
+        attachments: attachments.length > 0 ? [...attachments] : undefined,
+      };
+      setMessages(prev => [...prev, userMsg]);
+      setInput('');
+      setAttachments([]);
+      saveMessage(userMsg, convId);
+
+      const history = [...messages, userMsg]
+        .filter(m => m.role !== 'system')
+        .slice(-30)
+        .map(m => ({ role: m.role, content: m.content }));
+
+      let assistantContent = '';
+      let toolCalls: ToolCall[] = [];
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 

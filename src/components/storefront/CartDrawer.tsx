@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 
 type Tab = 'cart' | 'assistant';
 
+const formatAmount = (amount: number) => amount.toLocaleString('en-US', { maximumFractionDigits: 2 });
+
 function ProductCard({ productId, reason, onAddToCart }: {
   productId: string;
   reason: string;
@@ -51,7 +53,7 @@ function OutfitCard({ outfit, onAddAll, onAddToCart }: {
 }) {
   const { storeProducts } = useSmartCart();
   const storeItems = outfit.items.filter(i => i.type !== 'external');
-  
+
   return (
     <div className="rounded-lg border border-border/50 overflow-hidden bg-secondary/30">
       <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
@@ -212,54 +214,64 @@ export function CartFooter({ subtotal, discount, discountAmount, total, applyDis
   const [promoInput, setPromoInput] = useState('');
   const [promoError, setPromoError] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
+  const promoPending = useRef(false);
+  const subtotalRef = useRef(subtotal);
+  subtotalRef.current = subtotal;
 
   const handleApplyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
-    if (!code) return;
+    if (!code || promoPending.current) return;
+    promoPending.current = true;
     setPromoError('');
     setPromoLoading(true);
 
-    const merchantId = await resolveStoreMerchantId();
-    const { data, error } = merchantId
-      ? await supabase.rpc('validate_discount', { p_merchant_id: merchantId, p_code: code })
-      : { data: null, error: null };
-    const match = data?.[0];
+    try {
+      const merchantId = await resolveStoreMerchantId();
+      const { data, error } = merchantId
+        ? await supabase.rpc('validate_discount', { p_merchant_id: merchantId, p_code: code })
+        : { data: null, error: null };
+      const match = data?.[0];
 
-    setPromoLoading(false);
+      if (match?.status === 'rate_limited') {
+        setPromoError('Too many tries. Please wait a minute.');
+        return;
+      }
 
-    if (match?.status === 'rate_limited') {
-      setPromoError('Too many tries. Please wait a minute.');
-      return;
+      if (error || !match || match.status === 'not_started') {
+        setPromoError('Invalid discount code');
+        return;
+      }
+
+      if (match.status === 'expired') {
+        setPromoError('This code has expired');
+        return;
+      }
+
+      if (match.status === 'exhausted') {
+        setPromoError('This code has been fully redeemed');
+        return;
+      }
+
+      // Check minimum spend
+      if (match.minimum_spend && subtotalRef.current < match.minimum_spend) {
+        setPromoError(`Minimum spend of $${match.minimum_spend} required`);
+        return;
+      }
+
+      applyDiscount({
+        code: match.code,
+        discount_type: match.discount_type,
+        discount_value: match.discount_value,
+        description: match.description,
+        minimum_spend: match.minimum_spend,
+      });
+      setPromoInput('');
+    } catch {
+      setPromoError("Couldn't check that code. Please try again.");
+    } finally {
+      promoPending.current = false;
+      setPromoLoading(false);
     }
-
-    if (error || !match || match.status === 'not_started') {
-      setPromoError('Invalid discount code');
-      return;
-    }
-
-    if (match.status === 'expired') {
-      setPromoError('This code has expired');
-      return;
-    }
-
-    if (match.status === 'exhausted') {
-      setPromoError('This code has been fully redeemed');
-      return;
-    }
-
-    // Check minimum spend
-    if (match.minimum_spend && subtotal < match.minimum_spend) {
-      setPromoError(`Minimum spend of $${match.minimum_spend} required`);
-      return;
-    }
-
-    applyDiscount({
-      code: match.code,
-      discount_type: match.discount_type,
-      discount_value: match.discount_value,
-      description: match.description,
-    });
-    setPromoInput('');
   };
 
   return (
@@ -309,17 +321,17 @@ export function CartFooter({ subtotal, discount, discountAmount, total, applyDis
       <div className="space-y-1.5">
         <div className="flex justify-between font-display">
           <span className="text-muted-foreground tracking-wide text-xs">SUBTOTAL</span>
-          <span className="text-sm">${subtotal.toFixed(0)}</span>
+          <span className="text-sm">${formatAmount(subtotal)}</span>
         </div>
         {discountAmount > 0 && (
           <div className="flex justify-between font-display">
             <span className="text-success tracking-wide text-xs">DISCOUNT</span>
-            <span className="text-sm text-success">-${discountAmount.toFixed(0)}</span>
+            <span className="text-sm text-success">-${formatAmount(discountAmount)}</span>
           </div>
         )}
         <div className="flex justify-between font-display pt-1 border-t border-border/30">
           <span className="text-foreground tracking-wide text-xs font-semibold">TOTAL</span>
-          <span className="text-base font-semibold">${total.toFixed(0)}</span>
+          <span className="text-base font-semibold">${formatAmount(total)}</span>
         </div>
       </div>
       <button onClick={() => toast("Checkout isn't connected yet, so nothing was charged.")} className="w-full py-2.5 bg-primary text-primary-foreground font-display font-semibold tracking-wider text-xs rounded-lg hover:opacity-90 transition-opacity">
@@ -400,19 +412,24 @@ export function CartDrawer() {
     setPendingImage(null);
   };
 
-  const handleAddToCart = (productId: string) => {
+  const handleAddToCart = (productId: string, variantId?: string) => {
     const product = storeProducts.find(p => p.id === productId);
     if (!product) return;
-    const v = product.variants.find(v => v.inventory_count > 0) || product.variants[0];
+    const v = product.variants.find(v => v.inventory_count > 0 && (!variantId || v.id === variantId));
+    if (!v) {
+      toast.error('This item is out of stock.');
+      return;
+    }
     if (v) {
+      const colorway = product.colorways?.find(c => c.id === v.colorway_id) ?? product.colorways?.[0];
       addItem({
         productId: product.id,
         variantId: v.id,
         title: product.title,
         variantTitle: v.title,
         price: v.price ?? product.price,
-        colorwayId: product.colorways?.[0]?.id,
-        colorwayName: product.colorways?.[0]?.name,
+        colorwayId: colorway?.id,
+        colorwayName: colorway?.name,
       });
     }
   };
@@ -424,26 +441,42 @@ export function CartDrawer() {
     }
   };
 
-  const handleSwapAll = (comparison: BudgetComparison) => {
-    for (const swap of comparison.swaps) {
-      // Remove old, add new
-      const oldProduct = storeProducts.find(p => p.id === swap.original_product_id);
-      if (oldProduct) {
-        const oldVariant = oldProduct.variants[0];
-        if (oldVariant) removeItem(oldProduct.id, oldVariant.id);
+  const applySwaps = (swaps: { original_product_id: string; suggested_product_id: string }[]) => {
+    const originals = new Set<string>();
+    const additions = new Map<string, { productId: string; variantId: string; quantity: number }>();
+    for (const swap of swaps) {
+      if (originals.has(swap.original_product_id) || swap.original_product_id === swap.suggested_product_id) continue;
+      const lines = items.filter(item => item.productId === swap.original_product_id);
+      if (!lines.length) continue;
+      const product = storeProducts.find(p => p.id === swap.suggested_product_id);
+      const available = product?.variants.filter(v => v.inventory_count > 0) ?? [];
+      if (!available.length) {
+        toast.error('That replacement is unavailable. Your original items are still in the cart.');
+        continue;
       }
-      handleAddToCart(swap.suggested_product_id);
+      originals.add(swap.original_product_id);
+      for (const line of lines) {
+        const variant = available.find(v => v.title === line.variantTitle) ?? available[0];
+        const key = JSON.stringify([product!.id, variant.id]);
+        const quantity = (additions.get(key)?.quantity ?? 0) + line.quantity;
+        additions.set(key, { productId: product!.id, variantId: variant.id, quantity });
+      }
+    }
+    // Remove actual cart variants only after replacement availability is known.
+    for (const line of items) {
+      if (originals.has(line.productId)) removeItem(line.productId, line.variantId);
+    }
+    for (const replacement of additions.values()) {
+      const existing = items.find(item => !originals.has(item.productId)
+        && item.productId === replacement.productId && item.variantId === replacement.variantId);
+      handleAddToCart(replacement.productId, replacement.variantId);
+      updateQuantity(replacement.productId, replacement.variantId, (existing?.quantity ?? 0) + replacement.quantity);
     }
   };
 
-  const handleSwapOne = (originalProductId: string, suggestedProductId: string) => {
-    const oldProduct = storeProducts.find(p => p.id === originalProductId);
-    if (oldProduct) {
-      const oldVariant = oldProduct.variants[0];
-      if (oldVariant) removeItem(oldProduct.id, oldVariant.id);
-    }
-    handleAddToCart(suggestedProductId);
-  };
+  const handleSwapAll = (comparison: BudgetComparison) => applySwaps(comparison.swaps);
+  const handleSwapOne = (originalProductId: string, suggestedProductId: string) =>
+    applySwaps([{ original_product_id: originalProductId, suggested_product_id: suggestedProductId }]);
 
   const handleAskAbout = (productTitle: string) => {
     setActiveTab('assistant');
@@ -590,7 +623,7 @@ export function CartDrawer() {
                                     <Plus className="w-2.5 h-2.5" />
                                   </button>
                                 </div>
-                                <span className="font-display text-xs">${(item.price * item.quantity).toFixed(0)}</span>
+                                <span className="font-display text-xs">${formatAmount(item.price * item.quantity)}</span>
                               </div>
                             </div>
                             <button

@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { DEMO_MERCHANT_ID } from '@/lib/demo/store';
@@ -71,4 +71,20 @@ describe('which products a store shows', () => {
   it('shows the samples with no store at all', async () => {
     expect(await productsFor(null, [])).toHaveLength(DEMO_PRODUCTS.length);
   });
+});
+
+
+it('keeps draft and archived demo products in admin but out of the shop', async () => {
+  resolveStoreMerchantId.mockResolvedValue(DEMO_MERCHANT_ID);
+  rows.products = [];
+  const { result } = renderHook(() => useGridLayout());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  const [draft, archived] = DEMO_PRODUCTS;
+  act(() => window.dispatchEvent(new CustomEvent('grid-layout-changed', { detail: {
+    productOrder: [], categoryOrder: [], hiddenTags: [], hiddenProductTypes: [], hiddenProductIds: [], hiddenGenders: [],
+    demoProductOverrides: { [draft.id]: { status: 'draft' }, [archived.id]: { status: 'archived' } },
+  } })));
+  expect(result.current.getAllProductsUnfiltered().map(p => p.id)).toContain(draft.id);
+  expect(result.current.getOrderedProducts().map(p => p.id)).not.toContain(draft.id);
+  expect(result.current.getOrderedProducts().map(p => p.id)).not.toContain(archived.id);
 });
