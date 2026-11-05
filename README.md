@@ -4,9 +4,9 @@
 
 **An online store you explore like a feed, and a back office one person can actually run.**
 
-## ▶ [Try it live, no login: cart-blanche-main.vercel.app/demo](https://cart-blanche-main.vercel.app/demo)
+## ▶ [Try it live, no login: cartblanche.io/demo](https://cartblanche.io/demo)
 
-The store portal is at [/demo/admin](https://cart-blanche-main.vercel.app/demo/admin), on sample data. The live copy has no AI key, so the store manager gives a canned reply and the stylist says it isn't set up.
+The store portal is at [/demo/admin](https://cartblanche.io/demo/admin), on sample data. The live copy has no AI key, so the store manager gives a canned reply and the stylist says it isn't set up.
 
 **Want the real story?** [ESSENCE.md](ESSENCE.md) is the one-pager. [EVOLUTION.md](EVOLUTION.md) is how it went from a doc to a working prototype.
 

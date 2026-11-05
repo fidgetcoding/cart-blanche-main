@@ -1,6 +1,6 @@
 # Cart Blanche, on one page
 
-**Try it live, no login: <https://cart-blanche-main.vercel.app/demo>** (store portal at [/demo/admin](https://cart-blanche-main.vercel.app/demo/admin))
+**Try it live, no login: <https://cartblanche.io/demo>** (store portal at [/demo/admin](https://cartblanche.io/demo/admin))
 
 **What it is.** A storefront you explore spatially instead of scrolling a template, plus the merchant portal behind it. A React and Supabase prototype, MIT, that runs on a demo catalogue with no login. For real accounts and the AI chat, you bring your own Supabase project and AI key.
 
