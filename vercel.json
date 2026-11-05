@@ -1,12 +1,15 @@
 {
   "redirects": [
-    { "source": "/", "has": [{ "type": "host", "value": "www.cartblanche.io" }], "destination": "https://cartblanche.io/demo", "permanent": false },
+    { "source": "/", "has": [{ "type": "host", "value": "www.cartblanche.io" }], "destination": "https://cartblanche.io/", "permanent": true },
     { "source": "/admin/:path*", "has": [{ "type": "host", "value": "www.cartblanche.io" }], "destination": "https://cartblanche.io/demo/admin/:path*", "permanent": true },
     { "source": "/:path*", "has": [{ "type": "host", "value": "www.cartblanche.io" }], "destination": "https://cartblanche.io/:path*", "permanent": true },
-    { "source": "/", "destination": "/demo", "permanent": false },
     { "source": "/admin", "destination": "/demo/admin", "permanent": true },
     { "source": "/admin/:path*", "destination": "/demo/admin/:path*", "permanent": true },
     { "source": "/auth", "destination": "/demo/auth", "permanent": true }
   ],
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/demo", "destination": "/demo/index.html" },
+    { "source": "/demo/:path*", "destination": "/demo/index.html" },
+    { "source": "/(.*)", "destination": "/demo/index.html" }
+  ]
 }
