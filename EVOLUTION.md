@@ -125,7 +125,7 @@ History shape: February 495 commits, March 933, April 157, May 579, November 67.
 - **Wanted next:** its own address.
 
 ### Round 9: its own address (November 5)
-- **Built:** the store and portal moved under `/demo`, set from one constant (`src/lib/base-path.ts`). The root redirects to `/demo` for now, kept free for a landing page, and old `/admin` and `/auth` links forward to the same page under `/demo`. cartblanche.io points at it.
+- **Built:** the store and portal moved under `/demo`, set from one constant (`src/lib/base-path.ts`). The root redirects to `/demo` for now, kept free for a landing page, and old `/admin` and `/auth` links forward to the same page under `/demo` (`0d9443c`). cartblanche.io points at it, and the README and ESSENCE links went to cartblanche.io/demo and /demo/admin (`abe30ee`).
 - **Tested:** 347 tests and 48 browser checks, including the root and old `/admin` redirects (`0d9443c`). CI green on every push since.
 - **Broke:** `www` took two redirects to reach the store.
 - **Fixed:** one hop now (`97f1d36`).
