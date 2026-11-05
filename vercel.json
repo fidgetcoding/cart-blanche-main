@@ -1,3 +1,10 @@
 {
+  "redirects": [
+    { "source": "/:path*", "has": [{ "type": "host", "value": "www.cartblanche.io" }], "destination": "https://cartblanche.io/:path*", "permanent": true },
+    { "source": "/", "destination": "/demo", "permanent": false },
+    { "source": "/admin", "destination": "/demo/admin", "permanent": true },
+    { "source": "/admin/:path*", "destination": "/demo/admin/:path*", "permanent": true },
+    { "source": "/auth", "destination": "/demo/auth", "permanent": true }
+  ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

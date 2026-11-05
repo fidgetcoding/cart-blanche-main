@@ -5,6 +5,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { supabase as realClient } from '@/integrations/supabase/client';
 import { DEMO_MERCHANT_ID, isWriteQuery, runDemoQuery, runDemoRpc, type QueryOp } from './store';
+import { appPath } from '@/lib/base-path';
 
 export const DEMO_TOAST = "Demo mode: changes aren't saved";
 export const DEMO_CHAT_MESSAGE =
@@ -30,7 +31,7 @@ const DEMO_USER = { id: DEMO_MERCHANT_ID, email: 'demo@example.com', aud: 'demo'
 const DEMO_SESSION = { access_token: 'demo', token_type: 'bearer', user: DEMO_USER } as unknown as Session;
 
 function isAdminPath(): boolean {
-  return window.location.pathname.startsWith('/admin');
+  return window.location.pathname.startsWith(appPath('/admin'));
 }
 
 /**

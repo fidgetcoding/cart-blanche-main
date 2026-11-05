@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
+import { appPath } from '@/lib/base-path';
 
 // What Supabase answers when an email has no account and signups are closed.
 const NO_ACCOUNT_CODES = ['otp_disabled', 'signup_disabled'];
@@ -59,7 +60,7 @@ function AuthForm({ client }: { client: NonNullable<typeof supabase> }) {
 
     const { error } = await client.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/admin` },
+      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}${appPath('/admin')}` },
     });
     // Unknown emails get the same answer, so this can't reveal who has an account.
     if (error && !NO_ACCOUNT_CODES.includes(error.code ?? '')) setError(error.message);

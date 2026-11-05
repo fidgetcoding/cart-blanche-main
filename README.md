@@ -4,9 +4,9 @@
 
 **An online store you explore like a feed, and a back office one person can actually run.**
 
-## ▶ [Try it live, no login: cart-blanche-main.vercel.app](https://cart-blanche-main.vercel.app)
+## ▶ [Try it live, no login: cart-blanche-main.vercel.app/demo](https://cart-blanche-main.vercel.app/demo)
 
-The store portal is at [/admin](https://cart-blanche-main.vercel.app/admin), on sample data. The live copy has no AI key, so the store manager gives a canned reply and the stylist says it isn't set up.
+The store portal is at [/demo/admin](https://cart-blanche-main.vercel.app/demo/admin), on sample data. The live copy has no AI key, so the store manager gives a canned reply and the stylist says it isn't set up.
 
 **Want the real story?** [ESSENCE.md](ESSENCE.md) is the one-pager. [EVOLUTION.md](EVOLUTION.md) is how it went from a doc to a working prototype.
 
@@ -39,13 +39,13 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:8080, then:
+Open http://127.0.0.1:8080/demo, then:
 
 1. **Shop.** Scroll or pinch to zoom the grid, drag to pan, swipe for the next page, click a product. Add it to your cart. `SPRING20` works over $150.
-2. **Run the store.** Go to `/admin`. No login. Change inventory, edit a size chart, create a discount, fulfil a waitlist entry. Nothing is saved, on purpose.
-3. **Look at the templates.** `/admin/lab` has the two storefront looks, YZ and SL.
+2. **Run the store.** Go to `/demo/admin`. No login. Change inventory, edit a size chart, create a discount, fulfil a waitlist entry. Nothing is saved, on purpose.
+3. **Look at the templates.** `/demo/admin/lab` has the two storefront looks, YZ and SL.
 
-Checked on 2026-11-02 from a fresh clone of `34b5c43`: `npm ci` works, 323 unit and component tests pass, lint has 0 errors and 50 warnings, `tsc` is clean and the build passes. `npm audit` shows no high or critical issues. GitHub Actions runs the same checks on every push.
+Checked on 2026-11-05 on `main`: `npm ci` works, 347 unit and component tests pass, lint has 0 errors and 0 warnings, `tsc` is clean and the build passes with no warnings. `npm audit` reports 0 vulnerabilities. GitHub Actions runs the same checks on every push.
 
 ### Want the real thing?
 

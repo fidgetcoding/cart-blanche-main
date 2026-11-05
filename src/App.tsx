@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeProvider";
+import { APP_BASENAME } from "@/lib/base-path";
 
 // Storefront: eagerly loaded (customer-facing, must be instant)
 import Index from "./pages/Index";
@@ -17,6 +18,12 @@ const SlTemplate = lazy(() => import('./pages/admin/lab/SlTemplate'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient();
+
+// Old links (/, /admin, /auth) open the same page under /demo.
+if (!window.location.pathname.startsWith(APP_BASENAME)) {
+  const { pathname, search, hash } = window.location;
+  window.history.replaceState(null, "", APP_BASENAME + (pathname === "/" ? "" : pathname) + search + hash);
+}
 
 const router = createBrowserRouter([
   { path: "/", element: <Index /> },
@@ -43,7 +50,7 @@ const router = createBrowserRouter([
     ],
   },
   { path: "*", element: <Suspense fallback={null}><NotFound /></Suspense> },
-]);
+], { basename: APP_BASENAME });
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

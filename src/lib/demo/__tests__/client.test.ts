@@ -44,7 +44,7 @@ describe('demo-aware client', () => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
     resetDemoStore();
-    setPath('/admin');
+    setPath('/demo/admin');
     realAuth.getSession.mockResolvedValue({ data: { session: null }, error: null });
     realStorageFrom.mockReturnValue({ upload: vi.fn().mockResolvedValue({ data: { path: 'real' }, error: null }), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://real/x' } })) });
     URL.createObjectURL = vi.fn(() => 'blob:demo');
@@ -144,7 +144,7 @@ describe('demo-aware client', () => {
   });
 
   describe('anonymous on the storefront', () => {
-    beforeEach(() => setPath('/'));
+    beforeEach(() => setPath('/demo'));
 
     it('uses demo data and stays quiet when no store merchant is configured', async () => {
       const { data: { user } } = await supabase.auth.getUser();

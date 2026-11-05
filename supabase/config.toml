@@ -5,7 +5,7 @@ project_id = "cart-blanche"
 # Merchant accounts are by invitation, so a stranger can't create one.
 enable_signup = false
 site_url = "http://127.0.0.1:8080"
-additional_redirect_urls = ["http://127.0.0.1:8080/admin", "http://localhost:8080/admin"]
+additional_redirect_urls = ["http://127.0.0.1:8080/demo/admin", "http://localhost:8080/demo/admin"]
 
 # Log collection needs direct access to the Docker socket, which breaks on Colima
 # and similar setups, and nothing here uses it.

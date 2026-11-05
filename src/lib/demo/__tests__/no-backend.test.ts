@@ -19,7 +19,7 @@ async function loadWithEnv(url: string, key: string, merchant = '') {
 describe('with no backend configured', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.history.pushState({}, '', '/');
+    window.history.pushState({}, '', '/demo');
   });
 
   it.each([
@@ -34,7 +34,7 @@ describe('with no backend configured', () => {
   });
 
   it('runs the storefront and admin on demo data', async () => {
-    for (const path of ['/', '/admin']) {
+    for (const path of ['/demo', '/demo/admin']) {
       window.history.pushState({}, '', path);
       const { demo } = await loadWithEnv('', '');
       expect(await demo.isDemoMode()).toBe(true);
