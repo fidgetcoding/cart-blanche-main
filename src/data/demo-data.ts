@@ -90,13 +90,24 @@ export interface DemoHotzone {
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
 
+// About one product (or colourway) in three has one size sold out, so the demo shows the size
+// waitlist. A hash of the id picks which, so the same sizes are sold out on every visit.
+function soldOutSize(key: string): string | null {
+  let h = 0;
+  for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h % 3 === 0 ? SIZES[(h >>> 2) % SIZES.length] : null;
+}
+
+const stock = (key: string, size: string) =>
+  soldOutSize(key) === size ? 0 : Math.floor(Math.random() * 20) + 1;
+
 function makeVariants(prefix: string, colorwayIds?: string[]): DemoVariant[] {
   if (!colorwayIds || colorwayIds.length === 0) {
     return SIZES.map(s => ({
       id: `${prefix}-${s.toLowerCase()}`,
       title: s,
       options: { size: s },
-      inventory_count: Math.floor(Math.random() * 20) + 1,
+      inventory_count: stock(prefix, s),
     }));
   }
   return colorwayIds.flatMap(cwId =>
@@ -104,7 +115,7 @@ function makeVariants(prefix: string, colorwayIds?: string[]): DemoVariant[] {
       id: `${prefix}-${cwId}-${s.toLowerCase()}`,
       title: s,
       options: { size: s },
-      inventory_count: Math.floor(Math.random() * 20) + 1,
+      inventory_count: stock(`${prefix}-${cwId}`, s),
       colorway_id: cwId,
     }))
   );

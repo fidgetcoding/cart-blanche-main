@@ -303,5 +303,24 @@ describe('ProductView', () => {
     fireEvent.click(bars[1]);
     expect(activePhoto()).toBe(1);
   });
-});
 
+  it('picks a size when the pointer rests on it, never while it sweeps past', () => {
+    vi.useFakeTimers();
+    render(view(0));
+    fireEvent.click(screen.getAllByRole('button').find(button => button.querySelector('svg.lucide-plus'))!);
+    const sizes = screen.getAllByRole('button').filter(button => /^(XS|S|M|L|XL)$/.test(button.textContent ?? ''));
+    const picked = () => sizes.filter(button => button.className.includes('bg-foreground text-background')).map(button => button.textContent);
+    const before = picked();
+    for (const size of sizes) {
+      fireEvent.mouseEnter(size);
+      act(() => { vi.advanceTimersByTime(30); });
+      fireEvent.mouseLeave(size);
+    }
+    act(() => { vi.advanceTimersByTime(500); });
+    expect(picked()).toEqual(before);
+    fireEvent.mouseEnter(sizes[1]);
+    act(() => { vi.advanceTimersByTime(200); });
+    expect(picked()).toEqual([sizes[1].textContent]);
+    vi.useRealTimers();
+  });
+});

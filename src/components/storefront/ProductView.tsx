@@ -179,6 +179,7 @@ function fadeMaskFor(direction: 'left' | 'right' | 'top' | 'bottom', edgeFade: P
 
 // A pause between wheel events longer than this starts a new swipe.
 const WHEEL_QUIET_MS = 250;
+const SIZE_HOVER_REST_MS = 120; // How long the pointer rests on a size before hover picks it.
 
 // Wheel, key and touch input steps the view only when it comes from the view itself or the page
 // beneath it. Input from a layer on top (the cart drawer, a popup) or typed into a text field is
@@ -246,6 +247,10 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
   const lastWheelAt = useRef(Number.NEGATIVE_INFINITY);
   const colorwayWheelLockRef = useRef(false);
   const colorwayTouchStartY = useRef<number | null>(null);
+  // Sizes lock on hover, but only once the pointer rests on one, so sweeping across the row on the
+  // way to another button doesn't pick (and remember) whatever size it passed last.
+  const sizeHoverTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(sizeHoverTimer.current), []);
 
   // Release initial cooldown after mount
   useEffect(() => {
@@ -1035,7 +1040,11 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
                               return (
                               <button
                                 key={v.id}
-                                onMouseEnter={lockSize}
+                                onMouseEnter={() => {
+                                  window.clearTimeout(sizeHoverTimer.current);
+                                  sizeHoverTimer.current = window.setTimeout(lockSize, SIZE_HOVER_REST_MS);
+                                }}
+                                onMouseLeave={() => window.clearTimeout(sizeHoverTimer.current)}
                                 onFocus={lockSize}
                                 onClick={lockSize}
                                 className={`h-9 px-4 text-sm font-display rounded-md border transition-all flex items-center justify-center [@media(max-height:760px)]:px-3 ${
