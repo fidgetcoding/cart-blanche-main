@@ -1,5 +1,7 @@
 {
   "redirects": [
+    { "source": "/", "has": [{ "type": "host", "value": "www.cartblanche.io" }], "destination": "https://cartblanche.io/demo", "permanent": false },
+    { "source": "/admin/:path*", "has": [{ "type": "host", "value": "www.cartblanche.io" }], "destination": "https://cartblanche.io/demo/admin/:path*", "permanent": true },
     { "source": "/:path*", "has": [{ "type": "host", "value": "www.cartblanche.io" }], "destination": "https://cartblanche.io/:path*", "permanent": true },
     { "source": "/", "destination": "/demo", "permanent": false },
     { "source": "/admin", "destination": "/demo/admin", "permanent": true },
