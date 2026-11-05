@@ -244,14 +244,19 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
       .map((p, i) => ({ p, i }))
       .filter(({ p }) => activeCategory === 'ALL' || p.category.toUpperCase() === activeCategory)
       .map(({ i }) => i),
-    [activeCategory]
+    [DEMO_PRODUCTS, activeCategory]
   );
   const posInFiltered = visibleIndices.indexOf(productIndex) + 1;
 
   // Reset variant selection when product changes & preload alternate images.
   // If the shopper has already locked a size for this garment group (top vs bottom),
   // pre-select the matching variant on the next product in that group.
+  // Keyed on productIndex alone (product read via ref) so a refreshed product
+  // object at the same index doesn't wipe the shopper's selections.
+  const productRef = useRef(product);
+  productRef.current = product;
   useEffect(() => {
+    const product = productRef.current;
     const group = getSizeGroup(product?.product_type);
     const remembered = group ? rememberedSizeByGroup.get(group) : undefined;
     const match = remembered
@@ -265,19 +270,21 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
     setExpandDetails(false);
     setActiveImage(0);
     setColorwayPage(0);
-    setSelectedColorwayId(
-      product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
-    );
+    const firstColorwayId =
+      product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null;
+    setSelectedColorwayId(firstColorwayId);
     // Preload worn/alternate images for the SELECTED colorway in
     // background. Only the currently-displayed images need preloading;
     // images for other colorways will load when their swatch is selected.
-    if (displayImages && displayImages.length > 0) {
-      displayImages.forEach((src, i) => {
+    // Filter by the colorway being selected here, not the previous
+    // product's selection still held in state this render.
+    product.images
+      .filter(img => !img.colorway_id || img.colorway_id === firstColorwayId)
+      .forEach((src, i) => {
         if (i === 0) return; // already visible
         const img = new Image();
         img.src = src.medium;
       });
-    }
   }, [productIndex]);
 
   // Preserve image index when colorway changes. If the new
@@ -327,12 +334,12 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
         img.src = neighbor.images[0].medium;
       }
     });
-  }, [productIndex, activeCategory]);
+  }, [productIndex, DEMO_PRODUCTS, activeCategory]);
 
   const navigate = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
     const newIndex = getWrappingNeighbor(productIndex, direction, DEMO_PRODUCTS, activeCategory);
     onNavigate(newIndex);
-  }, [productIndex, onNavigate, activeCategory]);
+  }, [productIndex, DEMO_PRODUCTS, onNavigate, activeCategory]);
 
   // Scroll wheel navigation (strict one-per-swipe)
   // Zone rule: horizontal swipes INSIDE the product image card cycle that
@@ -376,7 +383,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
     } else {
       navigate(e.deltaY > 0 ? 'down' : 'up');
     }
-  }, [navigate, product]);
+  }, [navigate, displayImages.length]);
 
   useEffect(() => {
     const el = document.body;

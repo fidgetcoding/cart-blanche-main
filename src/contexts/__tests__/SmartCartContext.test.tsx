@@ -8,7 +8,8 @@ vi.mock('@/hooks/use-grid-layout', () => ({
   }),
 }));
 
-import { SmartCartProvider, useSmartCart } from '../SmartCartContext';
+import { useSmartCart } from '../SmartCartContext';
+import { SmartCartProvider } from '../SmartCartProvider';
 
 const fetchMock = vi.fn();
 

@@ -257,7 +257,7 @@ export default function AdminPageEditor() {
         break;
       }
     }
-  }, [catDragIdx]);
+  }, [catDragIdx, liveCats.length]);
 
   const handleCatPointerUp = useCallback(() => {
     if (catDragIdx === null) return;

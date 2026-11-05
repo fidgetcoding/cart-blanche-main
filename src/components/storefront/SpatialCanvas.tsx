@@ -26,6 +26,7 @@ const ZOOM_SENSITIVITY = 0.004;
 const PINCH_ZOOM_SENSITIVITY = 0.012;
 const COLS = 5;
 const ITEMS_PER_PAGE = 20;
+const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
 
 export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -117,7 +118,6 @@ export function SpatialCanvas() {
 
   const [peekingAll, setPeekingAll] = useState(false);
 
-  const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
   const CANVAS_H = Math.max(1, Math.ceil(DEMO_PRODUCTS.length / COLS)) * (TILE_H + TILE_GAP) - TILE_GAP;
 
   // Keep canvas dimensions in refs for the animation loop
@@ -192,11 +192,14 @@ export function SpatialCanvas() {
     el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
   }, []);
 
-  // Calculate initial scale to fit everything, and center
+  // Calculate initial scale to fit everything, and center.
+  // Runs on mount and breakpoint changes only; reads visibleH via ref so a
+  // page/category change doesn't snap over fitToVisibleProducts' animation.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
+    const visibleH = visibleHRef.current;
     const padX = isMobile ? 20 : 120;
     const headerPad = isMobile ? 90 : 120;
     const bottomPad = isMobile ? 80 : 60;
@@ -376,10 +379,13 @@ export function SpatialCanvas() {
     applyTransform();
   }, [fitToVisibleProducts, applyTransform]);
 
-  // Re-fit when page or category changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Re-fit when page or category changes. Called via ref: fitToVisibleProducts
+  // is rebuilt whenever peekingAll flips, and re-fitting then would cancel the
+  // zoom-out peek it just started.
+  const fitToVisibleProductsRef = useRef(fitToVisibleProducts);
+  fitToVisibleProductsRef.current = fitToVisibleProducts;
   useEffect(() => {
-    fitToVisibleProducts();
+    fitToVisibleProductsRef.current();
   }, [currentPage, activeCategory]);
 
   // Find the product index under a given screen coordinate
@@ -504,7 +510,7 @@ export function SpatialCanvas() {
     return () => {
       container.removeEventListener('wheel', onWheel);
     };
-  }, [getProductAtCursor, activeCategory, startAnimation, totalPages]);
+  }, [getProductAtCursor, activeCategory, startAnimation, totalPages, peekingAll]);
 
   // Touch gestures (pan + pinch-to-zoom)
   useEffect(() => {
@@ -816,7 +822,7 @@ export function SpatialCanvas() {
     }
     if (e.key === '=' || e.key === '+') setScaleSmooth(Math.min(MAX_SCALE, targetTransformRef.current.scale * 1.15));
     if (e.key === '-') setScaleSmooth(Math.max(minScaleRef.current, targetTransformRef.current.scale * 0.85));
-  }, [focusedIndex, selectedIndex, setScaleSmooth, isMobile, activeCategory, displayPositions, fitToVisibleProducts]);
+  }, [focusedIndex, selectedIndex, setScaleSmooth, activeCategory, DEMO_PRODUCTS, displayPositions, fitToVisibleProducts, snapToFitVisible]);
 
   // Pan to focused product when zoomed in
   useEffect(() => {
@@ -833,7 +839,7 @@ export function SpatialCanvas() {
 
     targetTransformRef.current.x = rect.width / 2 - (pos.x + 110) * s;
     targetTransformRef.current.y = rect.height / 2 - (pos.y + 140) * s;
-  }, [focusedIndex, displayPositions]);
+  }, [focusedIndex, DEMO_PRODUCTS, displayPositions, CANVAS_H]);
 
   const compactHeader = isNarrowHeader;
 

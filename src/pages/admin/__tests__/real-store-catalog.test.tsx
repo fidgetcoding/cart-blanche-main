@@ -22,7 +22,7 @@ vi.mock('@/hooks/use-grid-layout', () => ({
   }),
 }));
 vi.mock('@/lib/demo/client', () => {
-  const chain = { select: () => chain, eq: () => chain, limit: () => chain, maybeSingle: async () => ({ data: null }) };
+  const chain = { select: () => chain, eq: () => chain, order: () => chain, limit: () => chain, maybeSingle: async () => ({ data: null }) };
   return { supabase: { auth: { getUser: async () => ({ data: { user: { id: 'm' } } }) }, from: () => chain } };
 });
 

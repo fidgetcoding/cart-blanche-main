@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CartProvider } from '@/contexts/CartContext';
-import { SmartCartProvider } from '@/contexts/SmartCartContext';
-import { StyleKitProvider } from '@/contexts/StyleKitContext';
-import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { CartProvider } from '@/contexts/CartProvider';
+import { SmartCartProvider } from '@/contexts/SmartCartProvider';
+import { StyleKitProvider } from '@/contexts/StyleKitProvider';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { SpatialCanvas } from '@/components/storefront/SpatialCanvas';
 import { MaisonCanvas } from '@/components/storefront/MaisonCanvas';
 import { StyleKitView } from '@/components/storefront/StyleKitView';

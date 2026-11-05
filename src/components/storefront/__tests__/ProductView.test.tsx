@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { CartProvider } from '@/contexts/CartContext';
-import { StyleKitProvider } from '@/contexts/StyleKitContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { CartProvider } from '@/contexts/CartProvider';
+import { StyleKitProvider } from '@/contexts/StyleKitProvider';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 import { ProductView } from '../ProductView';
 

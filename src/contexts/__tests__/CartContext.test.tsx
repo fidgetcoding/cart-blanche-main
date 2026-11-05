@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { CartProvider, useCart } from '../CartContext';
+import { useCart } from '../CartContext';
+import { CartProvider } from '../CartProvider';
 
 const item = { productId: 'tee', variantId: 'medium', title: 'Tee', variantTitle: 'M', price: 19.95 };
 const mount = () => renderHook(() => useCart(), { wrapper: CartProvider });

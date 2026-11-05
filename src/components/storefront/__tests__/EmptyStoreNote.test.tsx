@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import { CartProvider } from '@/contexts/CartContext';
-import { SmartCartProvider } from '@/contexts/SmartCartContext';
-import { StyleKitProvider } from '@/contexts/StyleKitContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { CartProvider } from '@/contexts/CartProvider';
+import { SmartCartProvider } from '@/contexts/SmartCartProvider';
+import { StyleKitProvider } from '@/contexts/StyleKitProvider';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
 
 vi.mock('@/hooks/use-grid-layout', () => ({
   useGridLayout: () => ({

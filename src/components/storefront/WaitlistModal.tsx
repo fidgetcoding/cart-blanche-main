@@ -16,7 +16,7 @@ interface WaitlistModalProps {
 
 // Shared neutral preference palette — no per-product color data exists,
 // so we offer common shopper preferences.
-export const WAITLIST_COLOR_OPTIONS = [
+const WAITLIST_COLOR_OPTIONS = [
   'Black',
   'White',
   'Cream',

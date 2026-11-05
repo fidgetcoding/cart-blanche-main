@@ -643,24 +643,43 @@ export function StyleKitView() {
     loadPresets();
   }, []);
 
-  // Initialize sizes based on anchor's zone
+  // Set by the remove-anchor handlers right before they promote the remaining
+  // product to anchor, so the effects below leave that product's size alone.
+  const promotedAnchorIdRef = useRef<string | null>(null);
+
+  // Reset top size when a different top takes the slot (or it empties), so a
+  // size picked for one product never carries over to its replacement. A
+  // promoted anchor was already in the look and keeps the size it showed.
   useEffect(() => {
-    if (anchorProduct) {
+    const id = topProduct?.id;
+    if (id && id === promotedAnchorIdRef.current) return;
+    setTopSize(null);
+  }, [topProduct?.id]);
+
+  // Reset bottom size when a different bottom takes the slot (or it empties)
+  useEffect(() => {
+    const id = bottomProduct?.id;
+    if (id && id === promotedAnchorIdRef.current) return;
+    setBottomSize(null);
+  }, [bottomProduct?.id]);
+
+  // Seed the anchor's slot with initialAnchorSize when a look opens, but not
+  // when a promoted product becomes anchor. Declared after the slot resets on
+  // purpose: effects run in order, so when the look opens the anchor's
+  // initialAnchorSize lands after its slot was cleared. Anchor read via ref so
+  // a refreshed anchor object with the same id keeps the shopper's size.
+  const anchorProductRef = useRef(anchorProduct);
+  anchorProductRef.current = anchorProduct;
+  useEffect(() => {
+    const anchorProduct = anchorProductRef.current;
+    const promoted = !!anchorProduct && anchorProduct.id === promotedAnchorIdRef.current;
+    promotedAnchorIdRef.current = null;
+    if (anchorProduct && !promoted) {
       const zone = getBodyZone(anchorProduct);
       if (zone === 'top') setTopSize(initialAnchorSize ?? null);
       else setBottomSize(initialAnchorSize ?? null);
     }
   }, [anchorProduct?.id, initialAnchorSize]);
-
-  // Reset top size when top product changes
-  useEffect(() => {
-    if (!topProduct) setTopSize(null);
-  }, [topProduct?.id]);
-
-  // Reset bottom size when bottom product changes
-  useEffect(() => {
-    if (!bottomProduct) setBottomSize(null);
-  }, [bottomProduct?.id]);
 
   // Close on Escape
   useEffect(() => {
@@ -734,7 +753,10 @@ export function StyleKitView() {
     // If removing the anchor, promote remaining product
     if (productId === anchorProduct.id) {
       const remaining = lookItems.find(p => p.id !== productId);
-      if (remaining) changeAnchor(remaining);
+      if (remaining) {
+        promotedAnchorIdRef.current = remaining.id;
+        changeAnchor(remaining);
+      }
     }
   };
 
@@ -778,6 +800,7 @@ export function StyleKitView() {
   const handleRemoveAnchorExtras = () => {
     if (pairedProduct) {
       removeFromLook(anchorProduct.id);
+      promotedAnchorIdRef.current = pairedProduct.id;
       changeAnchor(pairedProduct);
       setCarouselSide('left');
     }

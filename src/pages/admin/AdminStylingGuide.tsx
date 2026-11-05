@@ -243,12 +243,32 @@ function PresetList({
   );
 }
 
+const DEFAULT_CANVAS_RULES = {
+  version: 2,
+  presets: [
+    { anchorProductId: 'p2', pairs: ['p25'], extras: [] },
+    { anchorProductId: 'p25', pairs: ['p2', 'p12'], extras: [] },
+    { anchorProductId: 'p12', pairs: ['p25'], extras: [] },
+    { anchorProductId: 'p8', pairs: [], extras: ['p7'] },
+    { anchorProductId: 'p7', pairs: [], extras: ['p8'] },
+  ],
+  canvasLayout: {
+    nodeIds: ['p2', 'p25', 'p12', 'p7', 'p8'],
+    positions: {
+      p2: { x: -98.85, y: 224.81 },
+      p25: { x: 100, y: 215 },
+      p12: { x: 317.19, y: 201.16 },
+      p7: { x: -36.76, y: 514.08 },
+      p8: { x: 270.47, y: 524.32 },
+    },
+  },
+};
+
 export default function AdminStylingGuide() {
   const { loading: catalogLoading, getAllProductsUnfiltered, getOrderedCategories } = useGridLayout();
   const catalog = useMemo(() => getAllProductsUnfiltered(), [getAllProductsUnfiltered]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [guideId, setGuideId] = useState<string | null>(null);
   const [presets, setPresets] = useState<ProductPreset[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
@@ -277,6 +297,12 @@ export default function AdminStylingGuide() {
   const canvasLayoutRef = useRef<CanvasLayout | null>(null);
   useEffect(() => { presetsRef.current = presets; }, [presets]);
   useEffect(() => { canvasLayoutRef.current = canvasLayout; }, [canvasLayout]);
+
+  // The guide row's id, read at save time for the same reason: a save the
+  // timer scheduled before the row existed must update it, not insert another.
+  // guideInsertRef is the first save's insert while it's in flight.
+  const guideIdRef = useRef<string | null>(null);
+  const guideInsertRef = useRef<Promise<boolean> | null>(null);
 
   const productTypes = useMemo(() => {
     const set = new Set<string>();
@@ -315,43 +341,22 @@ export default function AdminStylingGuide() {
     return ids;
   }, [presets, canvasNodeIds]);
 
-  useEffect(() => { loadGuide(); }, []);
-
-  const DEFAULT_CANVAS_RULES = {
-    version: 2,
-    presets: [
-      { anchorProductId: 'p2', pairs: ['p25'], extras: [] },
-      { anchorProductId: 'p25', pairs: ['p2', 'p12'], extras: [] },
-      { anchorProductId: 'p12', pairs: ['p25'], extras: [] },
-      { anchorProductId: 'p8', pairs: [], extras: ['p7'] },
-      { anchorProductId: 'p7', pairs: [], extras: ['p8'] },
-    ],
-    canvasLayout: {
-      nodeIds: ['p2', 'p25', 'p12', 'p7', 'p8'],
-      positions: {
-        p2: { x: -98.85, y: 224.81 },
-        p25: { x: 100, y: 215 },
-        p12: { x: 317.19, y: 201.16 },
-        p7: { x: -36.76, y: 514.08 },
-        p8: { x: 270.47, y: 524.32 },
-      },
-    },
-  };
-
-  const loadGuide = async () => {
+  const loadGuide = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from('styling_guides')
       .select('*')
       .eq('merchant_id', user.id)
+      // Newest first, so an older duplicate row is never the one loaded.
+      .order('updated_at', { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle();
 
     // The starter look book pairs sample products, so it's only for the demo.
     const starter = user.id === DEMO_MERCHANT_ID ? DEFAULT_CANVAS_RULES : null;
     const rules = data ? (data.rules as unknown as typeof DEFAULT_CANVAS_RULES) : starter;
-    if (data) setGuideId(data.id);
+    if (data) guideIdRef.current = data.id;
 
     if (rules?.version === 2 && Array.isArray(rules.presets)) {
       setPresets(normalizeBidirectional(rules.presets));
@@ -362,9 +367,11 @@ export default function AdminStylingGuide() {
       }
     }
     setLoading(false);
-  };
+  }, []);
 
-  const saveGuide = async (
+  useEffect(() => { loadGuide(); }, [loadGuide]);
+
+  const saveGuide = useCallback(async (
     silent = false,
     override?: GuideSaveOverride,
   ) => {
@@ -380,13 +387,27 @@ export default function AdminStylingGuide() {
 
     const rules = { version: 2, presets: cleanedPresets, canvasLayout: finalLayout };
     let failed = false;
+    // A save that lands while the first insert is in flight waits for it, then
+    // updates that row. If the insert failed, this save inserts instead.
+    while (!guideIdRef.current && guideInsertRef.current) {
+      await guideInsertRef.current.catch(() => true);
+    }
+    const guideId = guideIdRef.current;
     if (guideId) {
       const { error } = await supabase.from('styling_guides').update({ rules: rules as unknown as Json }).eq('id', guideId);
       failed = Boolean(error);
     } else {
-      const { data, error } = await supabase.from('styling_guides').insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as Json }).select('id').single();
-      if (data) setGuideId(data.id);
-      failed = Boolean(error);
+      const insert = (async () => {
+        try {
+          const { data, error } = await supabase.from('styling_guides').insert({ merchant_id: user.id, name: 'Default Guide', rules: rules as unknown as Json }).select('id').single();
+          if (data) guideIdRef.current = data.id;
+          return Boolean(error);
+        } finally {
+          guideInsertRef.current = null;
+        }
+      })();
+      guideInsertRef.current = insert;
+      failed = await insert;
     }
     setSaving(false);
     if (failed) {
@@ -397,15 +418,15 @@ export default function AdminStylingGuide() {
     if (!silent) {
       toast({ title: 'Saved', description: 'Your look book has been saved.' });
     }
-  };
+  }, [markClean]);
 
   const saveGuideSilent = useCallback(
     (override?: GuideSaveOverride) => saveGuide(true, override),
-    [guideId],
+    [saveGuide],
   );
   const saveGuideManual = useCallback(
     (override?: GuideSaveOverride) => saveGuide(false, override),
-    [guideId],
+    [saveGuide],
   );
 
   const updatePreset = (anchorId: string, field: 'pairs' | 'extras', ids: string[]) => {

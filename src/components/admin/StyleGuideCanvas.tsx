@@ -288,8 +288,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   // Track whether we're the source of a preset change (avoid circular sync)
   const isInternalChangeRef = useRef(false);
 
-  // Initialize from saved layout
-  const initialNodes: Node[] = useMemo(() => {
+  // Initialize from saved layout (mount-time snapshot; later changes flow through node state)
+  const [initialNodes] = useState<Node[]>(() => {
     if (!canvasLayout?.nodeIds || !canvasLayout.positions) return [];
     return canvasLayout.nodeIds
       .map(id => {
@@ -303,12 +303,12 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         };
       })
       .filter(Boolean) as Node[];
-  }, []);
+  });
 
-  const initialEdges = useMemo(() => {
+  const [initialEdges] = useState<Edge[]>(() => {
     const nodeIdSet = new Set(canvasLayout?.nodeIds ?? []);
     return presetsToEdges(presets).filter(e => nodeIdSet.has(e.source) && nodeIdSet.has(e.target));
-  }, []);
+  });
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -317,6 +317,18 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
   // Ref to always read latest nodes in debounced callbacks
   const nodesRef = useRef(nodes);
   useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+
+  // Parent callbacks may be inline arrows (new identity every render). Read them through
+  // refs so the save/sync callbacks stay stable — otherwise the onDelete injection below
+  // re-runs on every parent render and the canvas and parent re-render each other forever.
+  const onPresetsChangeRef = useRef(onPresetsChange);
+  const onCanvasLayoutChangeRef = useRef(onCanvasLayoutChange);
+  const onSaveRef = useRef(onSave);
+  useEffect(() => {
+    onPresetsChangeRef.current = onPresetsChange;
+    onCanvasLayoutChangeRef.current = onCanvasLayoutChange;
+    onSaveRef.current = onSave;
+  }, [onPresetsChange, onCanvasLayoutChange, onSave]);
 
   // Debounced auto-save for canvas layout changes
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -332,13 +344,18 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
         nodeIds.push(n.id);
       });
       const newLayout = { positions: posMap, nodeIds };
-      onCanvasLayoutChange(newLayout);
-      onSave({ canvasLayout: newLayout });
+      onCanvasLayoutChangeRef.current(newLayout);
+      onSaveRef.current({ canvasLayout: newLayout });
     }, 800);
-  }, [onCanvasLayoutChange, onSave]);
+  }, []);
 
   useEffect(() => {
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, []);
+
+  const syncPresetsFromEdges = useCallback((currentEdges: Edge[]) => {
+    isInternalChangeRef.current = true;
+    onPresetsChangeRef.current(edgesToPresets(currentEdges));
   }, []);
 
   // Keep onDelete callback fresh on all nodes
@@ -355,7 +372,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     });
     if (selectedNodeId === nodeId) setSelectedNodeId(null);
     saveLayoutDebounced();
-  }, [selectedNodeId, saveLayoutDebounced]);
+  }, [selectedNodeId, saveLayoutDebounced, syncPresetsFromEdges, onBlankNodeChange, setNodes, setEdges]);
 
   // Inject onDelete into node data
   useEffect(() => {
@@ -363,7 +380,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       ...n,
       data: { ...n.data, onDelete: removeNodeFromCanvas },
     })));
-  }, [removeNodeFromCanvas]);
+  }, [removeNodeFromCanvas, setNodes]);
 
   // Sync node IDs to parent (exclude blank node)
   useEffect(() => {
@@ -372,10 +389,22 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onCanvasNodeIdsChange(ids);
   }, [nodes, onCanvasNodeIdsChange]);
 
-  const syncPresetsFromEdges = useCallback((currentEdges: Edge[]) => {
-    isInternalChangeRef.current = true;
-    onPresetsChange(edgesToPresets(currentEdges));
-  }, [onPresetsChange]);
+  const rebuildEdgesFromPresets = useCallback((currentNodes?: Node[]) => {
+    const nodesForEdges = currentNodes ?? nodes;
+    const nodeIds = new Set(nodesForEdges.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
+    const newPresetEdges = presetsToEdges(presets).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+    setEdges(eds => {
+      const pendingEdges = eds.filter(e => e.data?.type === 'pending' || e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID);
+      return [...newPresetEdges, ...pendingEdges];
+    });
+  }, [nodes, presets, setEdges]);
+
+  // Latest values for the preset sync below, which must run once per presets
+  // change (isInternalChangeRef handshake), not on every drag or selection.
+  const presetSyncRef = useRef({ catalog, removeNodeFromCanvas, rebuildEdgesFromPresets });
+  useEffect(() => {
+    presetSyncRef.current = { catalog, removeNodeFromCanvas, rebuildEdgesFromPresets };
+  }, [catalog, removeNodeFromCanvas, rebuildEdgesFromPresets]);
 
   // Sync external preset changes (from list view) into canvas edges + auto-create missing nodes
   useEffect(() => {
@@ -383,6 +412,8 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       isInternalChangeRef.current = false;
       return;
     }
+    const nodes = nodesRef.current;
+    const { catalog, removeNodeFromCanvas, rebuildEdgesFromPresets } = presetSyncRef.current;
 
     // Collect all product IDs referenced in presets
     const presetProductIds = new Set<string>();
@@ -521,17 +552,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
 
     // No missing nodes — rebuild edges immediately
     rebuildEdgesFromPresets();
-  }, [presets]);
-
-  const rebuildEdgesFromPresets = useCallback((currentNodes?: Node[]) => {
-    const nodesForEdges = currentNodes ?? nodes;
-    const nodeIds = new Set(nodesForEdges.filter(n => n.id !== BLANK_NODE_ID).map(n => n.id));
-    const newPresetEdges = presetsToEdges(presets).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
-    setEdges(eds => {
-      const pendingEdges = eds.filter(e => e.data?.type === 'pending' || e.source === BLANK_NODE_ID || e.target === BLANK_NODE_ID);
-      return [...newPresetEdges, ...pendingEdges];
-    });
-  }, [nodes, presets, setEdges]);
+  }, [presets, setNodes, setEdges]);
 
   const hasBlankNode = useCallback(() => {
     return nodes.some(n => n.id === BLANK_NODE_ID);
@@ -630,7 +651,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     onBlankNodeChange(false);
     setSelectedNodeId(product.id);
     saveLayoutDebounced();
-  }, [nodes, setNodes, setEdges, syncPresetsFromEdges, removeNodeFromCanvas, onBlankNodeChange, saveLayoutDebounced]);
+  }, [nodes, catalog, setNodes, setEdges, syncPresetsFromEdges, removeNodeFromCanvas, onBlankNodeChange, saveLayoutDebounced]);
 
   // Auto-detect pairs vs extras from body zone
   const onConnect = useCallback((connection: Connection) => {
@@ -691,7 +712,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       return newEdges;
     });
     saveLayoutDebounced();
-  }, [setEdges, syncPresetsFromEdges, saveLayoutDebounced]);
+  }, [catalog, setEdges, syncPresetsFromEdges, saveLayoutDebounced]);
 
   // Drag-to-empty: create blank node at drop position
   const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, connectionState: FinalConnectionState) => {
@@ -753,7 +774,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     // Dropped on empty space — create blank node
     const position = screenToFlowPosition({ x: clientX, y: clientY });
     createBlankNode(position, sourceId);
-  }, [screenToFlowPosition, createBlankNode, setEdges, syncPresetsFromEdges]);
+  }, [catalog, screenToFlowPosition, createBlankNode, setEdges, syncPresetsFromEdges]);
 
   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
     const removals = changes.filter(c => c.type === 'remove');
@@ -828,7 +849,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     setNodes(nds => [...nds, newNode]);
     setSelectedNodeId(product.id);
     saveLayoutDebounced();
-  }, [screenToFlowPosition, nodes, setNodes, removeNodeFromCanvas, fillBlankNode, saveLayoutDebounced]);
+  }, [catalog, screenToFlowPosition, nodes, setNodes, removeNodeFromCanvas, fillBlankNode, saveLayoutDebounced]);
 
   const handleSave = useCallback(() => {
     const posMap: Record<string, { x: number; y: number }> = {};
@@ -945,7 +966,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     })));
     setTimeout(() => fitView({ duration: 400, padding: selectedNodeId ? 1.2 : 0.7 }), 50);
     saveLayoutDebounced();
-  }, [nodes, edges, setNodes, fitView, saveLayoutDebounced]);
+  }, [nodes, edges, selectedNodeId, setNodes, fitView, saveLayoutDebounced]);
 
   // Hotkeys
   useEffect(() => {
@@ -979,7 +1000,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [createBlankNode, fitView, hasBlankNode, removeNodeFromCanvas, handleSave, autoArrangeNodes]);
+  }, [selectedNodeId, createBlankNode, fitView, hasBlankNode, removeNodeFromCanvas, handleSave, autoArrangeNodes]);
 
   // Imperative handle for parent
   useImperativeHandle(ref, () => ({
@@ -1017,7 +1038,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
     },
     fillBlankNode,
     hasBlankNode,
-  }), [nodes, setNodes, setCenter, removeNodeFromCanvas, fillBlankNode, hasBlankNode]);
+  }), [nodes, setNodes, setCenter, screenToFlowPosition, removeNodeFromCanvas, fillBlankNode, hasBlankNode, saveLayoutDebounced]);
 
   // Sidebar helpers
   const selectedProduct = selectedNodeId ? catalog.find(p => p.id === selectedNodeId) : null;
@@ -1069,7 +1090,7 @@ const StyleGuideCanvasInner = forwardRef<StyleGuideCanvasHandle, StyleGuideCanva
       }
     });
     return ids;
-  }, [nodes, matchFilter]);
+  }, [nodes, catalog, matchFilter]);
 
   const visibleEdges = useMemo(() => {
     let result = edges;

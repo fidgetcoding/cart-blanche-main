@@ -148,7 +148,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
 
   // Reset on product change
   useEffect(() => {
-    if (!product) return;
+    if (!product?.id) return;
     setSelectedVariant(null);
     setCurrentVisibleImage(0);
   }, [product?.id]);
@@ -285,7 +285,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       el.removeEventListener('wheel', onWheelWithSnap);
       if (wheelTimer) clearTimeout(wheelTimer);
     };
-  }, [images.length, snapTo]);
+  }, [images.length, snapTo, containerHeight]);
 
   // Mouse drag handlers
   useEffect(() => {
@@ -339,7 +339,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [images.length, snapTo]);
+  }, [images.length, snapTo, containerHeight]);
 
   // Compute which images to render (virtual strip with wrapping)
   const h = containerHeight || 600;

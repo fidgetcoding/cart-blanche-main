@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeProvider";
 
 // Storefront: eagerly loaded (customer-facing, must be instant)
 import Index from "./pages/Index";
@@ -25,6 +25,8 @@ const router = createBrowserRouter([
   { path: "/admin/lab/sl", element: <Suspense fallback={null}><SlTemplate /></Suspense> },
   {
     path: "/admin",
+    // Blank while the merchant chunk loads on a direct visit, as before.
+    HydrateFallback: () => null,
     lazy: async () => ({ Component: (await import("./pages/admin/AdminLayout")).default }),
     children: [
       { index: true, lazy: async () => ({ Component: (await import("./pages/admin/AdminDashboard")).default }) },

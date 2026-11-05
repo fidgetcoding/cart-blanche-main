@@ -163,6 +163,8 @@ function getTagTextColor(tag: string) {
   return getTagColorObj(tag).text;
 }
 
+const DEFAULT_GENDERS = ['men', 'women', 'unisex'];
+
 export default function AdminInventory() {
   const { layout: gridLayout, saveHiddenTags, saveHiddenProductIds, saveHiddenGenders, saveDemoProductOverride, saveLayout, getAllProductsUnfiltered } = useGridLayout();
   const { forProduct: getWaitlistForProduct, countFor: countWaitlistFor, markFulfilled: markWaitlistFulfilled, deleteSignup: deleteWaitlistSignup } = useProductWaitlist();
@@ -275,7 +277,6 @@ export default function AdminInventory() {
   }, [gridLayout]);
 
   // Gender management — persisted to grid_layouts.hidden_genders (Phase 2C).
-  const DEFAULT_GENDERS = ['men', 'women', 'unisex'];
   const [hiddenGenders, setHiddenGenders] = useState<string[]>([]);
   const [genderEditMode, setGenderEditMode] = useState(false);
 
@@ -313,16 +314,20 @@ export default function AdminInventory() {
   // Initialize products from hook's ordered list
   const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => { fetchInventory(); }, []);
+  // The mount fetch goes through a ref so it runs once: fetchInventory is new
+  // every render, and refetching on each layout save would wipe unsaved edits.
+  const fetchInventoryRef = useRef(fetchInventory);
+  fetchInventoryRef.current = fetchInventory;
+  useEffect(() => { fetchInventoryRef.current(); }, []);
 
-  // Re-initialize when gridLayout loads to apply saved order
+  // Re-initialize once gridLayout loads to apply saved order. Watching loading
+  // too covers a layout that arrives while the mount fetch is still in flight.
   useEffect(() => {
     if (gridLayout && !initialized && !loading) {
-      fetchInventory();
+      fetchInventoryRef.current();
       setInitialized(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gridLayout]);
+  }, [gridLayout, initialized, loading]);
 
   // Keep liveProducts synced when not dragging
   useEffect(() => {
@@ -924,7 +929,7 @@ export default function AdminInventory() {
     } else {
       setHasUnsavedChanges(true);
     }
-  }, [products, saveDemoProductOverride]);
+  }, [products, queueDemoOverride]);
 
   const replaceImageSize = useCallback(async (
     productId: string,
@@ -1078,7 +1083,7 @@ export default function AdminInventory() {
     setInlineColorName('');
     setInlineColorHex('#000000');
     setTagPopoverOpenFor(null);
-  }, [products, saveDemoProductOverride]);
+  }, [products, queueDemoOverride]);
 
   // Reset inline new-color form whenever the tag popover closes.
   useEffect(() => {
