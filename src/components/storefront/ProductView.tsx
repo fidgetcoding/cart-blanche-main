@@ -159,6 +159,9 @@ function fadeMaskFor(direction: 'left' | 'right' | 'top' | 'bottom', edgeFade: P
   return `linear-gradient(${dir}, transparent 0%, black ${stop}%)`;
 }
 
+// Silence after the last wheel event that ends a swipe, momentum included.
+const WHEEL_QUIET_MS = 250;
+
 const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function ProductViewContent({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders }, _ref) {
   const DEMO_PRODUCTS = products;
   const CATEGORIES = categories;
@@ -204,6 +207,17 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(true);
+  // One step per wheel gesture. A trackpad keeps sending wheel events for a second or
+  // more after the fingers lift, so a fixed cooldown let that tail fire extra steps.
+  // The lock holds until the wheel has gone quiet.
+  const wheelGestureLock = useRef(false);
+  const wheelQuietTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdWheelLock = useCallback(() => {
+    wheelGestureLock.current = true;
+    if (wheelQuietTimer.current) clearTimeout(wheelQuietTimer.current);
+    wheelQuietTimer.current = setTimeout(() => { wheelGestureLock.current = false; }, WHEEL_QUIET_MS);
+  }, []);
+  useEffect(() => () => { if (wheelQuietTimer.current) clearTimeout(wheelQuietTimer.current); }, []);
   const colorwayWheelLockRef = useRef(false);
   const colorwayTouchStartY = useRef<number | null>(null);
 
@@ -348,6 +362,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     if (scrollCooldown.current) return;
+    if (wheelGestureLock.current) { holdWheelLock(); return; }
     const absX = Math.abs(e.deltaX);
     const absY = Math.abs(e.deltaY);
     if (absX < 15 && absY < 15) return;
@@ -359,8 +374,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
 
     // Horizontal swipe inside image card → cycle photos (wrap around)
     if (insideImage && isHorizontal && imageCount > 1) {
-      scrollCooldown.current = true;
-      setTimeout(() => { scrollCooldown.current = false; }, 800);
+      holdWheelLock();
       setActiveImage(prev =>
         e.deltaX > 0
           ? (prev + 1) % imageCount
@@ -376,14 +390,13 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
     }
 
     // All other cases: existing product-navigation behavior.
-    scrollCooldown.current = true;
-    setTimeout(() => { scrollCooldown.current = false; }, 800);
+    holdWheelLock();
     if (absX > absY) {
       navigate(e.deltaX > 0 ? 'right' : 'left');
     } else {
       navigate(e.deltaY > 0 ? 'down' : 'up');
     }
-  }, [navigate, displayImages.length]);
+  }, [navigate, displayImages.length, holdWheelLock]);
 
   useEffect(() => {
     const el = document.body;
@@ -726,27 +739,30 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
 
         {/* Navigation arrows — positioned just outside the centered product image */}
         <button
-          onMouseEnter={() => navigate('left')}
+          onClick={() => navigate('left')}
+          aria-label="Previous product"
           className="absolute top-1/2 -translate-y-1/2 z-40 p-1 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
           style={{ right: 'calc(50% + min(16rem, 26vh) + 0.5rem)' }}
         >
           <ChevronLeft className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
         <button
-          onMouseEnter={() => navigate('right')}
+          onClick={() => navigate('right')}
+          aria-label="Next product"
           className="absolute top-1/2 -translate-y-1/2 z-40 p-1 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
           style={{ left: 'calc(50% + min(16rem, 26vh) + 0.5rem)' }}
         >
           <ChevronRight className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
         <button
-          onMouseEnter={() => navigate('up')}
+          onClick={() => navigate('up')}
+          aria-label="Product above"
           className="absolute top-14 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
         >
           <ChevronUp className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
         <button
-          onMouseEnter={() => navigate('down')}
+          onClick={() => navigate('down')}
           className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 p-3 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
           aria-label="More details"
         >

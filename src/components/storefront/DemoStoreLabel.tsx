@@ -26,7 +26,7 @@ export function DemoStoreLabel() {
       className="absolute left-0 top-full whitespace-nowrap font-display uppercase text-muted-foreground pointer-events-none"
       style={{ fontSize: '8px', letterSpacing: '0.2em', lineHeight: 1 }}
     >
-      Demo Storefront
+      Demo
     </span>
   );
 }

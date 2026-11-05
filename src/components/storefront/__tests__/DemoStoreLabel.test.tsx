@@ -12,14 +12,14 @@ describe('DemoStoreLabel', () => {
   it('marks a demo store', async () => {
     isDemoMode.mockResolvedValue(true);
     render(<DemoStoreLabel />);
-    const label = await screen.findByText('Demo Storefront');
+    const label = await screen.findByText('Demo');
     expect(label.className).toContain('uppercase');
   });
 
   it('takes no space in the header, so it cannot push anything', async () => {
     isDemoMode.mockResolvedValue(true);
     render(<DemoStoreLabel />);
-    const label = await screen.findByText('Demo Storefront');
+    const label = await screen.findByText('Demo');
     expect(label.className).toContain('absolute');
     expect(label.className).toContain('whitespace-nowrap');
   });
@@ -29,6 +29,6 @@ describe('DemoStoreLabel', () => {
     render(<DemoStoreLabel />);
     await waitFor(() => expect(isDemoMode).toHaveBeenCalled());
     await new Promise(resolve => setTimeout(resolve, 0));
-    expect(screen.queryByText('Demo Storefront')).toBeNull();
+    expect(screen.queryByText('Demo')).toBeNull();
   });
 });

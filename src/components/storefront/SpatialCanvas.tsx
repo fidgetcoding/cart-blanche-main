@@ -28,6 +28,9 @@ const COLS = 5;
 const ITEMS_PER_PAGE = 20;
 const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
 
+// Silence after the last wheel event that ends a page swipe, momentum included.
+const PAGE_WHEEL_QUIET_MS = 250;
+
 export function SpatialCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -46,8 +49,16 @@ export function SpatialCanvas() {
 
   // Pagination: filter by Navigation Tag first, then paginate
   const [currentPage, setCurrentPage] = useState(0);
-  const pageSwipeRef = useRef<number>(0);
-  const arrowHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // One page per wheel swipe. A trackpad keeps sending wheel events for a second or more
+  // after the fingers lift, so the lock holds until the wheel has gone quiet.
+  const pageWheelLockRef = useRef(false);
+  const pageWheelQuietRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdPageWheelLock = useCallback(() => {
+    pageWheelLockRef.current = true;
+    if (pageWheelQuietRef.current) clearTimeout(pageWheelQuietRef.current);
+    pageWheelQuietRef.current = setTimeout(() => { pageWheelLockRef.current = false; }, PAGE_WHEEL_QUIET_MS);
+  }, []);
+  useEffect(() => () => { if (pageWheelQuietRef.current) clearTimeout(pageWheelQuietRef.current); }, []);
 
   const [activeCategory, setActiveCategory] = useState('ALL');
   const activeCategoryRef = useRef('ALL');
@@ -414,6 +425,9 @@ export function SpatialCanvas() {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       setFooterIntroVisible(false);
+      // Finish a page swipe before anything else reads the wheel, so its momentum tail
+      // can't flip another page or zoom into the tiles that slid under the cursor.
+      if (pageWheelLockRef.current) { holdPageWheelLock(); return; }
       
       const target = targetTransformRef.current;
 
@@ -425,17 +439,14 @@ export function SpatialCanvas() {
           const absX = Math.abs(e.deltaX);
           const absY = Math.abs(e.deltaY);
           if (absX > absY && absX > 15) {
-            const now = Date.now();
-            if (now - pageSwipeRef.current > 400) {
-              pageSwipeRef.current = now;
-              setCurrentPage(prev => {
-                if (e.deltaX > 0) {
-                  return prev >= totalPages - 1 ? 0 : prev + 1;
-                } else {
-                  return prev <= 0 ? totalPages - 1 : prev - 1;
-                }
-              });
-            }
+            holdPageWheelLock();
+            setCurrentPage(prev => {
+              if (e.deltaX > 0) {
+                return prev >= totalPages - 1 ? 0 : prev + 1;
+              } else {
+                return prev <= 0 ? totalPages - 1 : prev - 1;
+              }
+            });
             return;
           }
         }
@@ -510,7 +521,7 @@ export function SpatialCanvas() {
     return () => {
       container.removeEventListener('wheel', onWheel);
     };
-  }, [getProductAtCursor, activeCategory, startAnimation, totalPages, peekingAll]);
+  }, [getProductAtCursor, activeCategory, startAnimation, totalPages, peekingAll, holdPageWheelLock]);
 
   // Touch gestures (pan + pinch-to-zoom)
   useEffect(() => {
@@ -998,17 +1009,10 @@ export function SpatialCanvas() {
           {/* Left arrow — previous page */}
           <div
             className="absolute left-0 top-16 bottom-16 w-24 z-30 flex items-center justify-center cursor-pointer group"
-            onMouseEnter={() => {
-              arrowHoverTimerRef.current = setTimeout(() => {
-                setCurrentPage(prev => prev <= 0 ? totalPages - 1 : prev - 1);
-              }, 200);
-            }}
-            onMouseLeave={() => {
-              if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
-            }}
+            role="button"
+            aria-label="Previous page"
             onClick={(e) => {
               e.stopPropagation();
-              if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
               setCurrentPage(prev => prev <= 0 ? totalPages - 1 : prev - 1);
             }}
           >
@@ -1018,17 +1022,10 @@ export function SpatialCanvas() {
           {/* Right arrow — next page */}
           <div
             className="absolute right-0 top-16 bottom-16 w-24 z-30 flex items-center justify-center cursor-pointer group"
-            onMouseEnter={() => {
-              arrowHoverTimerRef.current = setTimeout(() => {
-                setCurrentPage(prev => prev >= totalPages - 1 ? 0 : prev + 1);
-              }, 200);
-            }}
-            onMouseLeave={() => {
-              if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
-            }}
+            role="button"
+            aria-label="Next page"
             onClick={(e) => {
               e.stopPropagation();
-              if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
               setCurrentPage(prev => prev >= totalPages - 1 ? 0 : prev + 1);
             }}
           >
