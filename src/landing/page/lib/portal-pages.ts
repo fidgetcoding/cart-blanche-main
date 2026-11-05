@@ -1,4 +1,4 @@
-// The real portal pages the Smart Portal chapter shows. They load on their own chunks so the
+// The real portal pages the SmartPortal chapter shows. They load on their own chunks so the
 // landing's first paint doesn't wait on the dashboard charts; preloadPortalPages fetches them
 // once the page is idle, well before a visitor scrolls that far.
 export const portalPageImports = {

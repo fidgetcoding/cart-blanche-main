@@ -175,14 +175,18 @@ export function Drawer({ step, t, thumb = false }: { step: number; t: number; th
   } else {
     body = (
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex-1 overflow-hidden p-4 flex flex-col justify-end gap-3">
-          {msgs.map(({ m, anim }) => <Bubble key={m.id} m={m} anim={anim} />)}
-          {thinking && (
-            <div className="flex justify-start"><div className="flex items-center gap-2 px-3 py-2">
-              <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground font-display tracking-wider">THINKING...</span>
-            </div></div>
-          )}
+        {/* The messages sit on the bottom, as in the drawer, held there by a transform: a new message lifts the
+            earlier ones without moving their layout boxes, so the story's scroll never logs a layout shift. */}
+        <div className="flex-1 relative overflow-hidden">
+          <div className="absolute inset-x-0 top-full -translate-y-full p-4 flex flex-col gap-3">
+            {msgs.map(({ m, anim }) => <Bubble key={m.id} m={m} anim={anim} />)}
+            {thinking && (
+              <div className="flex justify-start"><div className="flex items-center gap-2 px-3 py-2">
+                <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground font-display tracking-wider">THINKING...</span>
+              </div></div>
+            )}
+          </div>
         </div>
         <div className="relative z-10 border-t border-white/[0.06] p-3">
           <div className="flex items-center gap-2 bg-white/[0.04] rounded-lg px-3 py-2">

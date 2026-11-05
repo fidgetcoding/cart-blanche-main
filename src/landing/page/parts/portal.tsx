@@ -1,7 +1,7 @@
-// Smart Portal, AI Manager and Template Lab chapter UI. The frame is AdminLayout.tsx (brand header,
+// SmartPortal, AI Manager and Template Lab chapter UI. The frame is AdminLayout.tsx (brand header,
 // SmartChatPanel column, tab header, page). Dashboard, Orders, Waitlist, Subscribers, Discounts and
 // Size Charts are the real page components; the chat column copies SmartChatPanel.tsx markup.
-import { lazy, Suspense, type ReactNode } from 'react';
+import { Component, lazy, memo, Suspense, useCallback, useLayoutEffect, useState, type ReactNode } from 'react';
 import {
   LayoutDashboard, Warehouse, Grid3X3, ShoppingCart, Mail, Users, Tag, Ruler, Layers, FlaskConical, Settings, Store,
   Sparkles, BarChart3, Package, ImagePlus, Send, PanelLeft, Check, XCircle, type LucideIcon,
@@ -144,18 +144,43 @@ function ChatColumn({ route, chat, typed, title }: { route: Route; chat?: ReactN
   );
 }
 
-/** One portal page, mounted only around when it shows. */
-function Page({ on, children, thumb }: { on: boolean; children: ReactNode; thumb: boolean }) {
-  const mounted = useLatch(on);
-  return <Layer on={on} thumb={thumb} className="overflow-hidden"><Suspense fallback={null}>{mounted && children}</Suspense></Layer>;
+/** A page that fails (its chunk didn't load) leaves its panel empty instead of taking the landing down. */
+class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() { return this.state.failed ? null : this.props.children; }
 }
 
-const AdminDashboard = lazy(portalPageImports.dashboard);
-const AdminOrders = lazy(portalPageImports.orders);
-const AdminWaitlist = lazy(portalPageImports.waitlist);
-const AdminSubscribers = lazy(portalPageImports.subscribers);
-const AdminDiscounts = lazy(portalPageImports.discounts);
-const AdminSizeCharts = lazy(portalPageImports.sizeCharts);
+/** Mounts with its page, so the page's layer knows the page has arrived. */
+function Arrived({ onArrive }: { onArrive: () => void }) {
+  useLayoutEffect(onArrive, [onArrive]);
+  return null;
+}
+
+/**
+ * One portal page, mounted only around when it shows. Its layer fades in once the page has arrived: a page
+ * whose chunk is still loading (a slow network, a visitor who scrolled straight here) fades in when it lands
+ * instead of popping into an empty panel. A page that's ready arrives in the same frame, so nothing changes.
+ */
+function Page({ on, children, thumb }: { on: boolean; children: ReactNode; thumb: boolean }) {
+  const mounted = useLatch(on);
+  const [arrived, setArrived] = useState(false);
+  const arrive = useCallback(() => setArrived(true), []);
+  return (
+    <Layer on={on && arrived} thumb={thumb} className="overflow-hidden">
+      <PageBoundary><Suspense fallback={null}>{mounted && <>{children}<Arrived onArrive={arrive} /></>}</Suspense></PageBoundary>
+    </Layer>
+  );
+}
+
+// The real pages take no props and are heavy (the Dashboard's charts, the Orders table), so they're memoised:
+// the story re-renders its frame as it scrolls, and that never needs to reach them.
+const AdminDashboard = memo(lazy(portalPageImports.dashboard));
+const AdminOrders = memo(lazy(portalPageImports.orders));
+const AdminWaitlist = memo(lazy(portalPageImports.waitlist));
+const AdminSubscribers = memo(lazy(portalPageImports.subscribers));
+const AdminDiscounts = memo(lazy(portalPageImports.discounts));
+const AdminSizeCharts = memo(lazy(portalPageImports.sizeCharts));
 
 const PAGES: Partial<Record<Route, (t: number, thumb: boolean) => ReactNode>> = {
   dashboard: () => <AdminDashboard />,
@@ -209,7 +234,7 @@ export function PortalFrame({ route, pages, t = 0, chat, typed, chatTitle, thumb
 const CYCLE: Route[] = ['orders', 'waitlist', 'subscribers', 'discounts', 'size-charts'];
 const PORTAL_PAGES: Route[] = ['dashboard', 'inventory', ...CYCLE, 'grid'];
 
-/** Smart Portal, four beats: 0 dashboard · 1 inventory by colourway · 2 orders to size charts · 3 Grid Editor. */
+/** SmartPortal, four beats: 0 dashboard · 1 inventory by colourway · 2 orders to size charts · 3 Grid Editor. */
 export function PortalVisual({ step, t, thumb = false, compact = false, framed = true }: { step: number; t: number; thumb?: boolean; compact?: boolean; framed?: boolean }) {
   const route: Route = step === 0 ? 'dashboard' : step === 1 ? 'inventory' : step === 2 ? CYCLE[Math.min(4, Math.floor(t * 5))] : 'grid';
   if (compact) return <PortalFrame route={route} pages={PORTAL_PAGES} t={step === 3 ? t : 0} thumb={thumb} compact="page" />;
@@ -224,8 +249,11 @@ const ROUTE_CYCLE: Route[] = ['dashboard', 'inventory', 'grid', 'discounts'];
 const ASKS = ['Suggest prices for my catalog', 'Write descriptions for products missing one', 'Which variants need restocking?'];
 
 /** AI Manager, three beats: 0 knows the page you're on · 1 ask it anything · 2 a change waits for Confirm. */
+// The month the manager quotes, from the Dashboard's own mock orders. Worked out once, not on every scroll frame.
+let month: ReturnType<typeof getDashboardDataForRange> | null = null;
+
 export function ManagerVisual({ step, t, thumb = false, compact = false, framed = true }: { step: number; t: number; thumb?: boolean; compact?: boolean; framed?: boolean }) {
-  const d = getDashboardDataForRange('1M');
+  const d = (month ??= getDashboardDataForRange('1M'));
   const sales = d.totalSales >= 1000 ? `$${(d.totalSales / 1000).toFixed(1)}K` : `$${d.totalSales}`;
   let route: Route = 'dashboard', chat: ReactNode = undefined, typed: string | undefined, title: string | undefined;
   if (step === 0) route = ROUTE_CYCLE[Math.min(3, Math.floor(t * 4))];

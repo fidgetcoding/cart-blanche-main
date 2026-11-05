@@ -1,4 +1,4 @@
-// Smart Portal pages rebuilt where the real page needs clicks to reach the state shown:
+// SmartPortal pages rebuilt where the real page needs clicks to reach the state shown:
 // Inventory with a SIZES × COLORS matrix open (AdminInventory.tsx), the Grid Editor mid drag
 // (AdminPageEditor.tsx) and the Template Lab cards (lab/LabIndex.tsx). Classes copied verbatim.
 import { Save, Search, Plus, ChevronDown, ChevronRight, Square, GripVertical, Eye, Archive, X, AlertTriangle, RotateCcw, Pencil, FlaskConical } from 'lucide-react';
@@ -158,8 +158,10 @@ export function GridEditorPage({ t, from = 9, to = 1, thumb = false }: { t: numb
               const isDrag = idx === from && dragging;
               const pos = isDrag ? dragPos : gpos(slotOf(idx));
               return (
-                <div key={p.id} className={`absolute rounded-xl border select-none ${isDrag ? 'z-50 scale-105 shadow-2xl ring-2 ring-primary/50' : 'z-10'}`}
-                  style={{ left: pos.x, top: pos.y, width: GTW, height: GTH, transition: thumb || isDrag ? 'none' : 'left 300ms ease-out, top 300ms ease-out' }}>
+                // Moved by transform, not left/top: no layout per frame and no layout shift. The dragged tile eases
+                // between the scroll's steps instead of jumping them.
+                <div key={p.id} className={`absolute left-0 top-0 rounded-xl border select-none ${isDrag ? 'z-50 shadow-2xl ring-2 ring-primary/50' : 'z-10'}`}
+                  style={{ width: GTW, height: GTH, transform: `translate(${pos.x}px, ${pos.y}px)${isDrag ? ' scale(1.05)' : ''}`, transition: thumb ? 'none' : isDrag ? 'transform 150ms linear' : 'transform 300ms ease-out' }}>
                   <div className={`liquid-glass rounded-xl w-full h-full flex flex-col p-3 overflow-hidden ${isDrag ? 'opacity-90' : ''}`}>
                     <div className="flex items-center justify-between mb-2">
                       <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40" />

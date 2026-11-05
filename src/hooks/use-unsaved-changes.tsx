@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 import { useBlocker } from 'react-router-dom';
 
 /**
@@ -19,6 +19,20 @@ export function useUnsavedChanges() {
 
   // Block in-app navigation
   const blocker = useBlocker(isDirty);
+  const titleId = useId();
+
+  // Escape means stay, like the STAY button. It's caught first and stopped there, so a dialog
+  // under this one (the discount form closes on Escape too) isn't dismissed by the same press.
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      blocker.reset();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [blocker]);
 
   // Block browser tab close / refresh
   useEffect(() => {
@@ -32,8 +46,8 @@ export function useUnsavedChanges() {
     if (blocker.state !== 'blocked') return null;
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="liquid-glass rounded-xl p-6 max-w-sm w-full mx-4 space-y-4 border border-foreground/10">
-          <h3 className="font-display text-sm tracking-wider font-bold">UNSAVED CHANGES</h3>
+        <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="liquid-glass rounded-xl p-6 max-w-sm w-full mx-4 space-y-4 border border-foreground/10">
+          <h3 id={titleId} className="font-display text-sm tracking-wider font-bold">UNSAVED CHANGES</h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
             You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
           </p>

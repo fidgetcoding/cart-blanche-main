@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import "../index.css";
+import "./landing.css";
 import { initAnalytics } from "./analytics";
 import Landing from "./Landing";
 import { preloadPortalPages } from "./page/lib/portal-pages";

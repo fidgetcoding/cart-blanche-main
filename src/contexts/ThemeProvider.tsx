@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ThemeContext, DEFAULT_SETTINGS, DEFAULT_STORAGE_KEY, type ThemeSettings } from './ThemeContext';
+import { googleFontsUrl, PAGE_FONT_FAMILIES } from '@/lib/theme-fonts';
 
 function loadSaved(key: string = DEFAULT_STORAGE_KEY): ThemeSettings | null {
   try {
@@ -9,16 +10,6 @@ function loadSaved(key: string = DEFAULT_STORAGE_KEY): ThemeSettings | null {
     // Storage blocked or saved value corrupt: fall back to the defaults.
   }
   return null;
-}
-
-// Build a Google Fonts URL for the given families
-function buildGoogleFontsUrl(families: string[]): string {
-  const unique = [...new Set(families)].filter(f => f && f !== 'system-ui');
-  if (unique.length === 0) return '';
-  const params = unique
-    .map(f => `family=${f.replace(/ /g, '+')}:wght@300;400;500;600;700`)
-    .join('&');
-  return `https://fonts.googleapis.com/css2?${params}&display=swap`;
 }
 
 export function ThemeProvider({ children, storageKey, defaults }: { children: React.ReactNode; storageKey?: string; defaults?: Partial<ThemeSettings> }) {
@@ -43,10 +34,16 @@ export function ThemeProvider({ children, storageKey, defaults }: { children: Re
     setSettings({ ...savedSnapshot });
   }, [savedSnapshot]);
 
-  // Inject/update Google Fonts link
+  // The default fonts are served from our own origin (index.css) and preloaded in the page's head.
+  // A font the theme changes to (in the Template Lab, say) loads here from Google, at runtime.
   useEffect(() => {
-    const url = buildGoogleFontsUrl([settings.displayFont, settings.bodyFont, settings.numeralFont]);
-    if (!url) return;
+    const url = googleFontsUrl([settings.displayFont, settings.bodyFont, settings.numeralFont]
+      .filter(f => !PAGE_FONT_FAMILIES.includes(f)));
+    if (!url) {
+      linkRef.current?.remove();
+      linkRef.current = null;
+      return;
+    }
 
     if (!linkRef.current) {
       const link = document.createElement('link');
@@ -81,7 +78,7 @@ export function ThemeProvider({ children, storageKey, defaults }: { children: Re
     // stays dark regardless of storefront theme.
   }, [settings]);
 
-  // Document root always renders in dark mode — Smart Portal /
+  // Document root always renders in dark mode — SmartPortal /
   // admin chrome are dark by design. Storefront and Lab preview
   // override this via container-scoped classes.
   useEffect(() => {

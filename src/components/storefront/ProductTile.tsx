@@ -12,18 +12,20 @@ interface ProductTileProps {
   onClick: () => void;
   onHoverStart: () => void;
   onHoverEnd: () => void;
-  onQuickAdd: (e: React.MouseEvent) => void;
-  onQuickStyleKit: (e: React.MouseEvent) => void;
+  onQuickAdd?: (e: React.MouseEvent) => void;
+  onQuickStyleKit?: (e: React.MouseEvent) => void;
   positionOverride?: { x: number; y: number };
+  /** The Quick Add and Style Kit buttons on hover. The store shows them; the landing turns them off. */
+  actions?: boolean;
 }
 
 export const ProductTile = memo(function ProductTile({
-  product, scale, isFocused, isHovered, dimmed, onClick, onHoverStart, onHoverEnd, onQuickAdd, onQuickStyleKit, positionOverride
+  product, scale, isFocused, isHovered, dimmed, onClick, onHoverStart, onHoverEnd, onQuickAdd, onQuickStyleKit, positionOverride, actions = true
 }: ProductTileProps) {
   const pos = positionOverride || product.grid_position;
   const showLabel = scale > 0.45;
   const glowing = isFocused || isHovered;
-  const showActions = glowing && scale > 0.4;
+  const showActions = actions && glowing && scale > 0.4;
   const [imgLoaded, setImgLoaded] = useState(false);
   const { themeSettings } = useTheme();
 

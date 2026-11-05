@@ -27,8 +27,9 @@ function Shell() {
   );
 }
 
+// The store's tile hover glow is white at 8%, made for its dark page; on this light one it's the same glow in black.
 const page = (
-  <ThemeProvider storageKey="cb-landing" defaults={{ mode: "light", tileBgMode: "transparent" }}>
+  <ThemeProvider storageKey="cb-landing" defaults={{ mode: "light", tileBgMode: "transparent", tileHoverGlow: "hsla(0,0%,0%,0.08)" }}>
     <Shell />
   </ThemeProvider>
 );

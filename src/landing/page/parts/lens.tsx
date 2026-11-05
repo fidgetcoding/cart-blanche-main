@@ -1,56 +1,26 @@
-// The story: B1's pinned chapters (index and head on the left, the real UI on the right), where the move
-// from one feature to the next is A5's canvas zoom. The six screens sit on one sheet; the lens opens on the
-// whole sheet and closes on it, and between features pulls back just enough to frame the next screen beside
-// this one and glides across. Scroll drives the camera, eased so it stays calm; the store's own pills light
-// with it, and each feature's tags ride on its screen.
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject } from 'react';
-import { BEATS, FEATURES, nn, restOf, tagsOf } from '../lib/features';
-import { DARK_VARS, EASE_CSS, clamp01, useSize } from '../lib/core';
-import { Micro, PillBar } from './chrome';
+// The story. It opens as E3 did: the six screens on one sheet, seen whole in the window, then the camera zooms
+// into SmartShop. From there it is C2, the right rail mirrored (Nate's pick): the window holds still on the
+// right and becomes each feature in turn, and the rail on the left carries the feature's label, head and tags.
+// The scroll steps through every tag; the lit bar in the rail is the tag the window is acting out. The zoom
+// lands exactly on the window, because the window is the camera's frame: the stage is the zoomed-in sheet.
+import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { FEATURES, nn, restOf, tagsOf } from '../lib/features';
+import { BEAT_VH, storyTimeline, type At, type Cam } from '../lib/story';
+import { EASE_CSS, balance, clamp01, scrollBehavior, useSize } from '../lib/core';
+import { Micro } from './chrome';
 import { Layer } from './core';
 import { Screen } from './screens';
-import { Head } from './sections';
 
 export interface Nav { active: string; reached: number }
 
-/** Scroll per story unit, in vh. */
-const VH = 56;
+/** The rail's width, as C2 drew it. */
+const RAIL = 280;
 
-type Cam = { k: 'f'; i: number } | { k: 'o' } | { k: 'pair'; a: number; b: number };
-/** What the chapter shows: a feature and its beat. */
-interface At { f: number; beat: number }
-interface Seg { u: number; from: Cam; to: Cam; a: At; b: At }
 type V = { cx: number; cy: number; s: number };
 type Box = { x: number; y: number; w: number; h: number };
 
-/** The scroll timeline: which camera moves happen between the beats. */
-function build() {
-  const segs: Seg[] = [];
-  const F = (i: number): Cam => ({ k: 'f', i });
-  const O: Cam = { k: 'o' };
-  const first = (f: number): At => ({ f, beat: 0 });
-  const last = (f: number): At => ({ f, beat: BEATS[f] - 1 });
-  const push = (u: number, from: Cam, to: Cam, a: At, b: At = a) => segs.push({ u, from, to, a, b });
-  push(0.7, O, O, first(0));
-  push(0.6, O, F(0), first(0));
-  const starts: number[] = [];
-  FEATURES.forEach((_, f) => {
-    starts.push(segs.reduce((n, s) => n + s.u, 0));
-    for (let b = 0; b < BEATS[f]; b++) push(1, F(f), F(f), { f, beat: b });
-    if (f === FEATURES.length - 1) return;
-    // Pull back to just this screen and the next one, hold, then glide in on the next.
-    const via: Cam = { k: 'pair', a: f, b: f + 1 };
-    push(0.5, F(f), via, last(f));
-    push(0.25, via, via, last(f), first(f + 1));
-    push(0.5, via, F(f + 1), first(f + 1));
-  });
-  push(0.6, F(FEATURES.length - 1), O, last(FEATURES.length - 1));
-  push(0.9, O, O, last(FEATURES.length - 1));
-  return { segs, U: segs.reduce((n, s) => n + s.u, 0), starts };
-}
-
-/** The sheet: six screens the size of the lens, with a ProductTile-style label under each. They snake
- *  (top row left to right, bottom row right to left) so each screen sits beside the next. */
+/** The sheet: six screens the size of the window, with a ProductTile-style label under each. They snake
+ *  (top row left to right, bottom row right to left), as in the E3 overview. */
 function geometry(lw: number, lh: number) {
   const DW = Math.max(1, lw), DH = Math.max(1, lh);
   const G = Math.round(DW * 0.08), L = Math.round(DH * 0.13);
@@ -58,56 +28,39 @@ function geometry(lw: number, lh: number) {
   const rect = (i: number): Box => { const { c, r } = slot(i); return { x: c * (DW + G), y: r * (DH + L + G), w: DW, h: DH }; };
   const SW = 3 * DW + 2 * G, SH = 2 * (DH + L) + G;
   const cam = (c: Cam): V => {
-    let b: Box;
-    let m = 0.92;
-    if (c.k === 'f') { b = rect(c.i); m = 1; }
-    else if (c.k === 'o') b = { x: 0, y: 0, w: SW, h: SH };
-    else {
-      const A = rect(c.a), B = rect(c.b);
-      const x = Math.min(A.x, B.x), y = Math.min(A.y, B.y);
-      b = { x, y, w: Math.max(A.x, B.x) + DW - x, h: Math.max(A.y, B.y) + DH + L - y };
-    }
-    return { cx: b.x + b.w / 2, cy: b.y + b.h / 2, s: Math.min(lw / b.w, lh / b.h) * m };
+    const b = c.k === 'f' ? rect(0) : { x: 0, y: 0, w: SW, h: SH };
+    return { cx: b.x + b.w / 2, cy: b.y + b.h / 2, s: Math.min(lw / b.w, lh / b.h) * (c.k === 'f' ? 1 : 0.92) };
   };
   return { DW, DH, G, L, SW, SH, rect, cam };
 }
 
 const ease = (t: number) => t * t * (3 - 2 * t);
 const same = (a: At, b: At) => a.f === b.f && a.beat === b.beat;
-/** Screens that stay dark in the light page (the portal is dark only); their tag carries the dark tokens. */
-const DARK_SCREENS = ['portal', 'manager'];
-/** Where the tag sits on each screen. */
-const ON_UI: Record<string, CSSProperties> = {
-  smartshop: { left: 20, bottom: 18 },
-  buildaset: { left: 24, top: 22 },
-  smartcart: { left: 20, top: 20 },
-  portal: { right: 20, bottom: 18 },
-  manager: { right: 20, bottom: 18 },
-  lab: { right: 24, bottom: 22 },
-};
 
-/** One tag at a time, in the store's lit pill, crossfading as the beats change. */
-function TagChip({ fi, beat, side }: { fi: number; beat: number; side: 'left' | 'right' }) {
+/** C2's tags: ProductView.tsx photo bars set vertically, each captioned; the lit bar is the tag on screen. */
+function TagBars({ fi, active }: { fi: number; active: number }) {
   return (
-    <div className="relative h-[34px]">
+    <div className="flex flex-col gap-0.5 mt-7">
       {tagsOf(fi).map((t, i) => (
-        <div key={t} className={`absolute top-0 ${side === 'left' ? 'left-0' : 'right-0'}`} style={{ opacity: i === beat ? 1 : 0, transition: `opacity 500ms ${EASE_CSS}` }}>
-          <PillBar items={[{ id: t, label: t }]} active={t} />
+        <div key={t} className="flex items-center gap-3 py-1.5">
+          <span className={`w-6 h-1 rounded-full flex-shrink-0 transition-colors duration-300 ${i === active ? 'bg-foreground/80' : i < active ? 'bg-foreground/40' : 'bg-foreground/15'}`} />
+          <span className={`text-[10px] font-display tracking-[0.2em] uppercase transition-colors duration-300 ${i === active ? 'text-foreground' : 'text-muted-foreground'}`}>{t}</span>
         </div>
       ))}
     </div>
   );
 }
 
-export function Story({ thumb, onNav, jumpRef }: { thumb: boolean; onNav: (n: Nav) => void; jumpRef: MutableRefObject<(id: string) => void> }) {
-  const { segs, U, starts } = useMemo(() => build(), []);
+/** Memoised, so the page re-rendering for the nav doesn't redraw the story; its own scroll state drives it. */
+export const Story = memo(function Story({ thumb, onNav, jumpRef }: { thumb: boolean; onNav: (n: Nav) => void; jumpRef: MutableRefObject<(id: string) => void> }) {
+  const { segs, total, starts } = useMemo(() => storyTimeline(), []);
   const sec = useRef<HTMLElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const [lensRef, lens] = useSize<HTMLDivElement>();
   const geo = useMemo(() => geometry(lens.w, lens.h), [lens.w, lens.h]);
   const geoRef = useRef(geo);
   geoRef.current = geo;
-  const [st, setSt] = useState<{ at: At; t: number; zoomed: boolean }>(() => ({ at: segs[0].a, t: 0, zoomed: segs[0].from.k === 'f' && segs[0].to.k === 'f' }));
+  const [st, setSt] = useState<{ at: At; t: number; zoomed: boolean }>(() => ({ at: segs[0].at, t: 0, zoomed: false }));
   const navRef = useRef('');
   const onNavRef = useRef(onNav);
   onNavRef.current = onNav;
@@ -142,8 +95,8 @@ export function Story({ thumb, onNav, jumpRef }: { thumb: boolean; onNav: (n: Na
   };
 
   const xOf = (p: number) => {
-    let x = p * U;
-    for (const s of segs) { if (x <= s.u) return { seg: s, t: x / s.u }; x -= s.u; }
+    let x = p * total;
+    for (const s of segs) { if (x <= s.vh) return { seg: s, t: x / s.vh }; x -= s.vh; }
     return { seg: segs[segs.length - 1], t: 1 };
   };
 
@@ -159,14 +112,13 @@ export function Story({ thumb, onNav, jumpRef }: { thumb: boolean; onNav: (n: Na
     tgt.current = target;
     if (!cur.current || snap || thumb) { cur.current = { ...target }; draw(cur.current, false); }
     else if (!raf.current) raf.current = requestAnimationFrame(tick);
-    const at = t < 0.5 ? seg.a : seg.b;
-    const zoomed = seg.from.k === 'f' && seg.to.k === 'f';
-    const ct = zoomed ? Math.round(t * 20) / 20 : at.beat === 0 ? 0 : 1;
-    setSt(prev => (same(prev.at, at) && prev.t === ct && prev.zoomed === zoomed ? prev : { at, t: ct, zoomed }));
+    const zoomed = seg.from.k === 'f';
+    const ct = zoomed ? Math.round(t * 20) / 20 : 0;
+    setSt(prev => (same(prev.at, seg.at) && prev.t === ct && prev.zoomed === zoomed ? prev : { at: seg.at, t: ct, zoomed }));
     if (thumb) return;
     const before = r.top > 1, after = r.bottom < window.innerHeight - 1;
-    const active = before || after ? 'all' : FEATURES[at.f].id;
-    const reached = before ? -1 : after ? FEATURES.length - 1 : at.f;
+    const active = before || after ? 'all' : FEATURES[seg.at.f].id;
+    const reached = before ? -1 : after ? FEATURES.length - 1 : seg.at.f;
     const key = `${active}|${reached}`;
     if (key !== navRef.current) { navRef.current = key; onNavRef.current({ active, reached }); }
   };
@@ -181,71 +133,79 @@ export function Story({ thumb, onNav, jumpRef }: { thumb: boolean; onNav: (n: Na
     window.addEventListener('resize', on);
     return () => { window.removeEventListener('scroll', on); window.removeEventListener('resize', on); cancelAnimationFrame(frame); cancelAnimationFrame(raf.current); };
   }, [thumb]);
-  // New lens size: lay the sheet out again and jump the camera straight there.
+  // New window size: lay the sheet out again and jump the camera straight there.
   useEffect(() => { readRef.current(true); }, [geo]);
 
   const scrollToX = (x: number) => {
     const el = sec.current;
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: top + (x / U) * (el.offsetHeight - window.innerHeight), behavior: 'smooth' });
+    window.scrollTo({ top: top + (x / total) * (el.offsetHeight - window.innerHeight), behavior: scrollBehavior() });
   };
-  const toBeat = (fi: number, b: number) => scrollToX(starts[fi] + b + 0.5);
+  const toFeature = (fi: number) => scrollToX(starts[fi] + BEAT_VH / 2);
   jumpRef.current = (id: string) => {
-    if (id === 'all') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (id === 'all') { window.scrollTo({ top: 0, behavior: scrollBehavior() }); return; }
     const fi = FEATURES.findIndex(f => f.id === id);
-    if (fi >= 0) toBeat(fi, 0);
+    if (fi >= 0) toFeature(fi);
   };
 
   const { at, t, zoomed } = st;
+  // On the sheet (the opening, and SmartShop's first beat while the camera settles) every screen keeps its own
+  // spot. After that the stage stacks them all in the window, hidden under the one on show, so the next feature
+  // crossfades in where the last one was.
+  const spread = !zoomed || (at.f === 0 && at.beat === 0);
   const nameSize = geo.L * 0.36;
+  // Crossfades. A stacked screen that's leaving holds until the incoming one (on top) is fully in, then drops out
+  // of sight, so the window never dips to its backdrop between two features.
+  const fade = (on: boolean, stacked = false) => ({
+    opacity: on ? 1 : 0,
+    transition: thumb ? 'none' : on || !stacked ? `opacity 520ms ${EASE_CSS}` : 'opacity 0ms linear 520ms',
+  });
 
   return (
-    <section ref={sec} className="relative border-t border-border" style={{ height: thumb ? '100vh' : `${U * VH + 100}vh` }}>
-      <div id="story" aria-hidden className="absolute left-0 w-px h-px pointer-events-none" style={{ top: thumb ? 0 : `${(starts[0] + 0.3) * VH}vh` }} />
-      <div className="sticky top-0 h-screen pt-[82px] pb-[56px] flex flex-col">
-        <div className="flex-1 min-h-0 grid grid-cols-[minmax(0,0.66fr)_minmax(0,1.34fr)] gap-12 px-10 pt-6">
+    <section ref={sec} className="relative border-t border-border" style={{ height: thumb ? '100vh' : `${total + 100}vh` }}>
+      <div id="story" aria-hidden className="absolute left-0 w-px h-px pointer-events-none" style={{ top: thumb ? 0 : `${starts[0] + 0.3 * BEAT_VH}vh` }} />
+      <div className="sticky top-0 h-screen pt-[82px] flex flex-col">
+        <div className="flex-1 min-h-0 grid gap-10 px-6 pt-6 pb-8" style={{ gridTemplateColumns: `${RAIL}px minmax(0,1fr)` }}>
           <div className="relative min-h-0">
             {FEATURES.map((f, fi) => (
-              <Layer key={f.id} on={at.f === fi} thumb={thumb} className="flex flex-col justify-center pb-6">
+              <Layer key={f.id} on={at.f === fi} thumb={thumb} className="flex flex-col justify-center">
                 <Micro>{nn(fi)} / 06 · {f.label}</Micro>
-                <Head text={f.head} className="text-[40px] leading-[1.08] mt-4" />
+                <h2 className="font-display font-bold tracking-wide text-[26px] leading-[1.14] mt-3" style={balance}>{f.head}</h2>
+                <TagBars fi={fi} active={zoomed && at.f === fi ? at.beat : -1} />
               </Layer>
             ))}
           </div>
-          <div className="min-h-0 flex flex-col">
-            <div ref={lensRef} className="relative flex-1 min-h-0 rounded-xl overflow-hidden dynamic-bg shadow-[inset_0_0_0_1px_hsl(var(--border))]">
-              {lens.w > 0 && (
-                <div ref={sheet} className="absolute left-0 top-0" style={{ width: geo.SW, height: geo.SH, transformOrigin: '0 0' }}>
-                  {FEATURES.map((f, fi) => {
-                    const rect = geo.rect(fi);
-                    const mine = at.f === fi;
-                    const rest = restOf(fi, at.f);
-                    return (
-                      <div key={f.id} className="absolute" style={{ left: rect.x, top: rect.y, width: rect.w }}>
-                        <div className="relative rounded-xl border border-border overflow-hidden bg-background shadow-[0_14px_40px_-18px_rgba(0,0,0,0.28)]" style={{ height: rect.h }}>
-                          <Screen fi={fi} beat={mine ? at.beat : rest.beat} t={mine ? t : rest.t} thumb={thumb} live={zoomed && mine && fi === 0} />
-                          <div className="absolute z-30 pointer-events-none" style={{ ...ON_UI[f.id], ...(DARK_SCREENS.includes(f.id) ? DARK_VARS : {}), opacity: mine ? 1 : 0, transition: `opacity 500ms ${EASE_CSS}` }}>
-                            <TagChip fi={fi} beat={mine ? at.beat : -1} side={'right' in ON_UI[f.id] ? 'right' : 'left'} />
-                          </div>
-                          {!zoomed && !thumb && (
-                            <button type="button" aria-label={f.label} onClick={() => toBeat(fi, 0)} className="absolute inset-0 z-40 hover:bg-foreground/[0.03] transition-colors" />
-                          )}
-                        </div>
-                        {/* ProductTile.tsx label: name, then the number in the numeral line */}
-                        <div className="space-y-1" style={{ paddingTop: geo.L * 0.16 }}>
-                          <p className="font-display font-medium tracking-[0.05em] text-foreground/80 leading-none" style={{ fontSize: nameSize }}>{f.label}</p>
-                          <p className="text-foreground/60 leading-none" style={{ fontSize: nameSize * 0.72, fontFamily: 'var(--font-numeral)', marginTop: nameSize * 0.3 }}>{nn(fi)}</p>
-                        </div>
+          <div ref={lensRef} className="relative min-h-0 rounded-xl overflow-hidden dynamic-bg shadow-[inset_0_0_0_1px_hsl(var(--border)),0_20px_60px_-20px_rgba(0,0,0,0.5)]">
+            {lens.w > 0 && (
+              <div ref={sheet} className="absolute left-0 top-0" style={{ width: geo.SW, height: geo.SH, transformOrigin: '0 0' }}>
+                {FEATURES.map((f, fi) => {
+                  const rect = geo.rect(spread ? fi : 0);
+                  const mine = at.f === fi;
+                  const rest = restOf(fi, at.f);
+                  return (
+                    // Placed by transform: a screen stacking into the window as the stage takes over moves no layout box,
+                    // so it never counts as a layout shift (fast scrolls catch the last ones still fading out).
+                    <div key={f.id} className="absolute left-0 top-0" style={{ transform: `translate(${rect.x}px, ${rect.y}px)`, width: rect.w, zIndex: mine ? 2 : 1, ...fade(!zoomed || mine, !spread) }}>
+                      <div className="relative rounded-xl border border-border overflow-hidden bg-background shadow-[0_14px_40px_-18px_rgba(0,0,0,0.28)]" style={{ height: rect.h }}>
+                        <Screen fi={fi} beat={mine ? at.beat : rest.beat} t={mine ? t : rest.t} thumb={thumb} live={zoomed && mine && fi === 0} />
+                        {!zoomed && !thumb && (
+                          <button type="button" aria-label={f.label} onClick={() => toFeature(fi)} className="absolute inset-0 z-40 hover:bg-foreground/[0.03] transition-colors" />
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      {/* ProductTile.tsx label: name, then the number in the numeral line. The sheet's only. */}
+                      <div className="space-y-1" style={{ paddingTop: geo.L * 0.16, ...fade(!zoomed) }}>
+                        <p className="font-display font-medium tracking-[0.05em] text-foreground/80 leading-none" style={{ fontSize: nameSize }}>{f.label}</p>
+                        <p className="text-foreground/60 leading-none" style={{ fontSize: nameSize * 0.72, fontFamily: 'var(--font-numeral)', marginTop: nameSize * 0.3 }}>{nn(fi)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </section>
   );
-}
+});

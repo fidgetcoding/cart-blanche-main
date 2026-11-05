@@ -1,6 +1,6 @@
 // Phones get the story as a plain vertical sequence: each chapter's head, then its real UI pinned while the
 // tags under it light one by one. The SmartShop canvas stays live (drag sideways, pinch, tap a piece).
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import { BEATS, FEATURES, nn, tagsOf } from '../lib/features';
 import { useBeat } from '../lib/core';
 import { chapterId } from '../lib/mobile';
@@ -40,6 +40,6 @@ function MobileChapter({ fi, thumb }: { fi: number; thumb: boolean }) {
   );
 }
 
-export function MobileStory({ thumb }: { thumb: boolean }) {
+export const MobileStory = memo(function MobileStory({ thumb }: { thumb: boolean }) {
   return <div>{FEATURES.map((f, fi) => <MobileChapter key={f.id} fi={fi} thumb={thumb} />)}</div>;
-}
+});

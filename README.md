@@ -55,7 +55,7 @@ I'm not hosting a database for anyone. For real accounts and saved data you conn
 
 - **SmartShop:** a spatial storefront with two templates, zoom, drag, swipe, peeks at the next item, and sizes and colorways on the product.
 - **Build a Set:** complete-the-look pairing, driven by a pairing graph you edit on a node canvas (the Look Book).
-- **Smart Portal:** dashboard, inventory, products, orders, size charts, discounts, subscribers with CSV export, per-size waitlists, store settings.
+- **SmartPortal:** dashboard, inventory, products, orders, size charts, discounts, subscribers with CSV export, per-size waitlists, store settings.
 - **AI stylist and AI store manager:** the stylist recommends products from the store and the manager proposes changes you confirm. Both need your own Supabase and AI key, and they're built to talk to any OpenAI-compatible API.
 - **Demo mode:** with no backend configured, the storefront and every admin page run on sample data and never touch a database.
 - **Locked down:** merchant accounts are invitation only, shoppers can't write to the database or storage directly, and discount checks, signups and photos are rate limited. Those fixes were checked on a real local Supabase stack with a fake AI provider.

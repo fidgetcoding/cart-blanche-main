@@ -89,8 +89,10 @@ export default function AdminSizeCharts() {
   };
 
   if (loading || !chart) {
+    // Keyed so the page replaces it rather than reusing its element, which the browser would
+    // count as this line narrowing and moving when the charts arrive.
     return (
-      <div className="p-6 text-xs font-display tracking-widest text-muted-foreground animate-pulse">
+      <div key="loading" className="p-6 text-xs font-display tracking-widest text-muted-foreground animate-pulse">
         LOADING SIZE CHARTS...
       </div>
     );

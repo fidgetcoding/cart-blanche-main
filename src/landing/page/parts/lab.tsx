@@ -30,9 +30,14 @@ export function ComingList({ shown = 4, thumb = false, cols = 2, label = true }:
 
 function Phone({ src, name, on }: { src: string; name: string; on: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-2 h-full min-h-0">
-      <div className={`flex-1 min-h-0 aspect-[390/700] rounded-xl overflow-hidden border transition-colors duration-500 ${on ? 'border-foreground/40' : 'border-border'}`}>
-        <img src={src} alt={name} className="w-full h-full object-cover object-top" loading="lazy" />
+    <div className="flex flex-col items-center gap-2 h-full min-h-0 w-full">
+      {/* As tall as the column allows, unless that would make the phone wider than its column (a tall, narrow
+          lens); then it sits on its name, with the room to spare above it. */}
+      <div className="flex-1 min-h-0 w-full flex items-end justify-center" style={{ containerType: 'size' }}>
+        <div className={`aspect-[390/700] rounded-xl overflow-hidden border transition-colors duration-500 ${on ? 'border-foreground/40' : 'border-border'}`}
+          style={{ height: 'min(100cqh, 100cqw * 700 / 390)' }}>
+          <img src={src} alt={name} className="w-full h-full object-cover object-top" loading="lazy" />
+        </div>
       </div>
       <p className={`text-[10px] font-display tracking-[0.2em] uppercase transition-colors duration-500 ${on ? 'text-foreground' : 'text-muted-foreground'}`}>{name}</p>
     </div>

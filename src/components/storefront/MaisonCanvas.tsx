@@ -211,16 +211,16 @@ export function MaisonCanvas() {
           ))}
         </nav>
 
-        {/* Right: Smart Portal + Cart */}
+        {/* Right: SmartPortal + Cart */}
         <div className="ml-auto md:ml-0 flex items-center gap-1 flex-shrink-0">
           <button
             onClick={() => navigate('/admin')}
             className="group flex items-center gap-1.5 p-2 text-muted-foreground hover:text-foreground transition-colors"
-            title="Smart Portal"
+            title="SmartPortal"
           >
             <LayoutDashboard className="w-4 h-4" strokeWidth={1.5} />
             <span className="overflow-hidden max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out text-[10px] tracking-[0.2em] uppercase whitespace-nowrap">
-              Smart Portal
+              SmartPortal
             </span>
           </button>
           <button onClick={openCart} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">

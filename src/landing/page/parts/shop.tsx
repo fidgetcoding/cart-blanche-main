@@ -34,8 +34,8 @@ export const StoreCanvas = memo(function StoreCanvas({ products, view, cam, hidd
         const gone = hidden?.(i) ?? false;
         return (
           <div key={p.id} style={{ opacity: gone ? 0 : 1, transition: thumb ? 'none' : `opacity 600ms ${EASE_CSS}` }}>
-            <ProductTile product={p} scale={s} isFocused={false} isHovered={hovered === i} dimmed={dimmed?.(i) ?? false}
-              onClick={noop} onHoverStart={noop} onHoverEnd={noop} onQuickAdd={noop} onQuickStyleKit={noop} positionOverride={posOf(i)} />
+            <ProductTile product={p} scale={s} isFocused={false} isHovered={hovered === i} dimmed={dimmed?.(i) ?? false} actions={false}
+              onClick={noop} onHoverStart={noop} onHoverEnd={noop} positionOverride={posOf(i)} />
           </div>
         );
       })}

@@ -6,6 +6,9 @@ import { DEMO_PRODUCTS, type DemoProduct } from '@/data/demo-data';
 /** The app's transition ease (MaisonCanvas.tsx, ProductView.tsx). */
 export const EASE_CSS = 'cubic-bezier(0.25, 0.1, 0.25, 1)';
 export const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+/** The visitor has asked for less motion: nothing moves on its own, and jumps land instead of gliding. */
+export const lessMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const scrollBehavior = (): ScrollBehavior => (lessMotion() ? 'auto' : 'smooth');
 
 export const piece = (id: string) => DEMO_PRODUCTS.find(p => p.id === id) as DemoProduct;
 export const PAGE1 = DEMO_PRODUCTS.slice(0, 20);
@@ -70,7 +73,7 @@ export function useLatch(on: boolean, ms = 700) {
   return mounted;
 }
 
-// The dark token values from index.css (:root). The Smart Portal is dark only, so in the light page
+// The dark token values from index.css (:root). The SmartPortal is dark only, so in the light page
 // its panels keep these, the way the real portal looks.
 export const DARK_VARS = {
   '--background': '0 0% 5%', '--foreground': '0 0% 92%', '--card': '0 0% 10%', '--card-foreground': '0 0% 92%',

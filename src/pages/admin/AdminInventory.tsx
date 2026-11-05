@@ -1242,7 +1242,9 @@ export default function AdminInventory() {
         </button>
       </div>
 
-      {/* Search + Stats + Category Tags */}
+      {/* Search + Stats + Category Tags. Built from the products, so they wait for them: shown
+          early they grew when the products landed and pushed the whole list down. */}
+      {!loading && (
       <div className="space-y-3 mb-6">
         <div className="flex items-center gap-3">
           <div className="relative max-w-sm flex-1">
@@ -1465,6 +1467,7 @@ export default function AdminInventory() {
           </button>
         </div>
       </div>
+      )}
 
       {showArchives ? (
         <div className="space-y-4">
@@ -1581,7 +1584,9 @@ export default function AdminInventory() {
 
       {/* Product list */}
       {loading ? (
-        <div className="text-center py-20 text-muted-foreground font-display tracking-wider animate-pulse">LOADING...</div>
+        // Keyed so the list replaces it as a new element rather than reusing this one, which the
+        // browser would count as the placeholder jumping down below the filters.
+        <div key="loading" className="text-center py-20 text-muted-foreground font-display tracking-wider animate-pulse">LOADING...</div>
       ) : filtered.length === 0 ? (
         <div className="liquid-glass rounded-xl p-12 text-center">
           <p className="text-muted-foreground font-display tracking-wider text-sm">No products match your criteria</p>

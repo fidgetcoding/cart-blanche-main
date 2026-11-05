@@ -1,6 +1,7 @@
 // Phone navigation for the vertical story: each chapter's id, which chapter you're in and how far you've
 // come (for the pills and the photo bars), and the jump a pill makes.
 import { useEffect, useState } from 'react';
+import { scrollBehavior } from './core';
 import { FEATURES } from './features';
 
 export const chapterId = (fi: number) => (fi === 0 ? 'story' : `m-${FEATURES[fi].id}`);
@@ -32,8 +33,8 @@ export function useMobileNav(on: boolean) {
 }
 
 export function mobileGoTo(id: string) {
-  if (id === 'all') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  if (id === 'all') { window.scrollTo({ top: 0, behavior: scrollBehavior() }); return; }
   const fi = FEATURES.findIndex(f => f.id === id);
   const el = fi >= 0 ? document.getElementById(chapterId(fi)) : null;
-  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 58, behavior: 'smooth' });
+  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 58, behavior: scrollBehavior() });
 }

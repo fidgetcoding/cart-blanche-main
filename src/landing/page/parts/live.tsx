@@ -1,7 +1,9 @@
 // SmartShop, live. The real ProductTiles on a canvas the visitor can drag, zoom (pinch, + and −, or the wheel
-// once the canvas is in hand), hover for the real glow and quick add, and click to open the product.
+// once the canvas is in hand), hover for the real glow, and click to open the product. The tiles' quick actions
+// (Quick Add, Style Kit) stay in the store; the landing leaves them out.
 // A scene from the scroll story drives the camera until the visitor takes over; the hold lasts until the
-// page scrolls again, so the two never fight. Detail markup copied from ProductView.tsx.
+// page scrolls again, so the two never fight. With `pan` the canvas also drifts left and right on its own while
+// idle (lib/pan.ts). Detail markup copied from ProductView.tsx.
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { X, ShoppingBag, Layers, Ruler, Plus, Minus } from 'lucide-react';
 import { ProductTile } from '@/components/storefront/ProductTile';
@@ -9,6 +11,7 @@ import { getSwatchStyle } from '@/lib/swatch-style';
 import { useCart } from '@/contexts/CartContext';
 import type { DemoProduct } from '@/data/demo-data';
 import { EASE_CSS, useSize } from '../lib/core';
+import { panRange, useAutoPan } from '../lib/pan';
 import { PX, PY, TH, isOut, posOf, type Box, type Open, type Scene } from '../lib/shop';
 import { Fit, Layer } from './core';
 import { StoreCats, WaitlistCard } from './shop';
@@ -100,12 +103,11 @@ function Detail({ product, o, edit, thumb }: { product: DemoProduct; o: Open; ed
 /** ProductView.tsx close button and the canvas zoom buttons, in the same glass square. */
 const GLASS_BTN = 'p-2 rounded-xl backdrop-blur-md bg-foreground/[0.08] border border-foreground/[0.12] hover:bg-foreground/[0.14] transition-colors';
 
-export function LiveShop({ products, cols = 5, scene, live = true, thumb = false, pills = false, controls = true, homeMax = 1.1, ms = 900, inset, className = '' }: {
+export function LiveShop({ products, cols = 5, scene, live = true, thumb = false, pills = false, controls = true, homeMax = 1.1, ms = 900, inset, pan = false, className = '' }: {
   products: DemoProduct[]; cols?: number; scene: Scene; live?: boolean; thumb?: boolean; pills?: boolean; controls?: boolean; homeMax?: number; ms?: number;
-  inset?: { top?: number; bottom?: number; pad?: number }; className?: string;
+  inset?: { top?: number; bottom?: number; pad?: number }; pan?: boolean; className?: string;
 }) {
   const [ref, size] = useSize<HTMLDivElement>();
-  const { addItem } = useCart();
   const narrow = size.w < 560;
   const rows = Math.ceil(products.length / cols);
   const all: Box = { x: 0, y: 0, w: cols * PX - 6, h: (rows - 1) * PY + TH };
@@ -124,11 +126,20 @@ export function LiveShop({ products, cols = 5, scene, live = true, thumb = false
   const [user, setUser] = useState<{ tf: Tf | null; open: Open | null } | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const mode = useRef<'scene' | 'drag' | 'wheel'>('scene');
   const held = live && user !== null;
   const tf = held && user?.tf ? user.tf : sceneTf;
   const open = held ? user?.open ?? null : scene.open ?? null;
   if (!held) mode.current = 'scene';
+
+  // The idle drift slides a wrapper round the canvas; while the visitor has the canvas it holds, so any pointer
+  // maths below only has to allow for where it stopped (drift.off).
+  const panRef = useRef<HTMLDivElement>(null);
+  const drift = useAutoPan(ref, panRef, {
+    on: pan && !open, held: held || hover !== null || pressed,
+    range: panRange(tf.x, all.w * tf.s, pad, size.w - pad),
+  }, thumb);
 
   const st = useRef({ live, held, open: !!open, tf, sceneTf, minS, w: size.w, h: size.h });
   st.current = { live, held, open: !!open, tf, sceneTf, minS, w: size.w, h: size.h };
@@ -152,7 +163,8 @@ export function LiveShop({ products, cols = 5, scene, live = true, thumb = false
     const k = r.width / el.offsetWidth || 1;
     return { x: (cx - r.left) / k, y: (cy - r.top) / k, k };
   };
-  const zoomAt = (x: number, y: number, factor: number) => {
+  const zoomAt = (px: number, y: number, factor: number) => {
+    const x = px - drift.off.current;
     mode.current = 'wheel';
     setUser(u => {
       const cur = u?.tf ?? st.current.sceneTf;
@@ -168,6 +180,7 @@ export function LiveShop({ products, cols = 5, scene, live = true, thumb = false
     const el = ref.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
+      drift.poke();
       const s = st.current;
       if (!s.live || s.open) return;
       if (!e.ctrlKey && !s.held) return;
@@ -185,6 +198,7 @@ export function LiveShop({ products, cols = 5, scene, live = true, thumb = false
   const ptrs = useRef(new Map<number, { x: number; y: number }>());
   const gest = useRef<{ x: number; y: number; tf: Tf; k: number; d?: number; mx?: number; my?: number } | null>(null);
   const onPointerDown = (e: RPointerEvent<HTMLDivElement>) => {
+    drift.poke();
     if (!live || thumb || (e.pointerType === 'mouse' && e.button !== 0)) return;
     if ((e.target as HTMLElement).closest('button, a, [data-detail]')) return;
     const p = local(e.clientX, e.clientY);
@@ -193,12 +207,13 @@ export function LiveShop({ products, cols = 5, scene, live = true, thumb = false
     if (ptrs.current.size === 2) {
       const [a, b] = [...ptrs.current.values()];
       const m = local((a.x + b.x) / 2, (a.y + b.y) / 2);
-      gest.current = { x: 0, y: 0, tf: cur, k: p.k, d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: m.x, my: m.y };
+      gest.current = { x: 0, y: 0, tf: cur, k: p.k, d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: m.x - drift.off.current, my: m.y };
       didDrag.current = true;
       return;
     }
     if (ptrs.current.size > 2) return;
     didDrag.current = false;
+    setPressed(true);
     gest.current = { x: e.clientX, y: e.clientY, tf: cur, k: p.k };
     const move = (ev: PointerEvent) => {
       if (!ptrs.current.has(ev.pointerId)) return;
@@ -234,6 +249,7 @@ export function LiveShop({ products, cols = 5, scene, live = true, thumb = false
       window.removeEventListener('pointerup', end);
       window.removeEventListener('pointercancel', end);
       setDragging(false);
+      setPressed(false);
       gest.current = null;
       // A press without a drag also puts the canvas in hand, so the wheel zooms it next.
       if (!didDrag.current && ev.type === 'pointerup') setUser(u => u ?? { tf: null, open: null });
@@ -246,17 +262,11 @@ export function LiveShop({ products, cols = 5, scene, live = true, thumb = false
   const liveRef = useRef(live);
   liveRef.current = live;
   const openAt = (i: number) => setUser(u => ({ tf: u?.tf ?? null, open: { i, color: 0, size: null, img: 0, waitlist: false } }));
-  const handlers = useMemo(() => products.map((p, i) => ({
+  const handlers = useMemo(() => products.map((_, i) => ({
     click: () => { if (liveRef.current && !didDrag.current) openAt(i); },
     enter: () => { if (liveRef.current && !gest.current) setHover(i); },
     leave: () => setHover(h => (h === i ? null : h)),
-    add: (e: React.MouseEvent) => {
-      e.stopPropagation();
-      const v = p.variants.find(x => x.inventory_count > 0);
-      if (v) addItem({ productId: p.id, variantId: v.id, title: p.title, variantTitle: v.title, price: v.price ?? p.price, colorwayId: p.colorways?.[0]?.id, colorwayName: p.colorways?.[0]?.name });
-    },
-    kit: (e: React.MouseEvent) => { e.stopPropagation(); if (liveRef.current) openAt(i); },
-  })), [products, addItem]);
+  })), [products]);
 
   const edit = (patch: Partial<Open>) => setUser(u => {
     const base = (live && u ? u.open : null) ?? open;
@@ -270,18 +280,19 @@ export function LiveShop({ products, cols = 5, scene, live = true, thumb = false
   const transition = thumb || dragging ? 'none' : mode.current === 'wheel' ? 'transform 180ms ease-out' : `transform ${held ? 900 : ms}ms ${EASE_CSS}`;
 
   return (
-    <div ref={ref} onPointerDown={onPointerDown} data-live-shop
+    <div ref={ref} onPointerDown={onPointerDown} onPointerMove={drift.poke} onPointerEnter={drift.poke} data-live-shop
       className={`relative w-full h-full overflow-hidden dynamic-bg select-none ${className}`}
       style={{ touchAction: live ? 'pan-y' : undefined, cursor: live && !open ? (dragging ? 'grabbing' : 'grab') : undefined, pointerEvents: live ? undefined : 'none' }}>
       {size.w > 0 && (
         <>
-          <div className="absolute left-0 top-0" data-canvas
-            style={{ width: cols * PX, height: rows * PY, transformOrigin: '0 0', transform: `translate(${tf.x}px, ${tf.y}px) scale(${tf.s})`, transition }}>
-            {products.map((p, i) => (
-              <ProductTile key={p.id} product={p} scale={tf.s} isFocused={false} isHovered={hovered === i}
-                onClick={handlers[i].click} onHoverStart={handlers[i].enter} onHoverEnd={handlers[i].leave}
-                onQuickAdd={handlers[i].add} onQuickStyleKit={handlers[i].kit} positionOverride={posOf(i, cols)} />
-            ))}
+          <div ref={panRef} className="absolute left-0 top-0" style={{ willChange: pan && !thumb ? 'transform' : undefined }}>
+            <div className="absolute left-0 top-0" data-canvas
+              style={{ width: cols * PX, height: rows * PY, transformOrigin: '0 0', transform: `translate(${tf.x}px, ${tf.y}px) scale(${tf.s})`, transition }}>
+              {products.map((p, i) => (
+                <ProductTile key={p.id} product={p} scale={tf.s} isFocused={false} isHovered={hovered === i} actions={false}
+                  onClick={handlers[i].click} onHoverStart={handlers[i].enter} onHoverEnd={handlers[i].leave} positionOverride={posOf(i, cols)} />
+              ))}
+            </div>
           </div>
           {pills && <div className="absolute top-3 md:top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none"><StoreCats active="ALL" small={narrow} /></div>}
           {controls && live && (

@@ -1,8 +1,8 @@
 // Landing chrome. Every class string is copied from the app file named above it. Copy is copy.ts, word for word.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { Github, ShoppingBag } from 'lucide-react';
 import { COPY } from '../../copy';
-import { EASE_CSS } from '../lib/core';
+import { EASE_CSS, scrollBehavior } from '../lib/core';
 import { FEATURES, NAV } from '../lib/features';
 
 /** The wordmark from SpatialCanvas.tsx, alone: the landing has no DemoStoreLabel under it. */
@@ -47,7 +47,7 @@ function CompactPills({ active, onPick }: { active: string; onPick: (id: string)
     const b = r?.querySelector<HTMLElement>(`[data-pill="${active}"]`);
     if (!r || !b) return;
     const x = r.scrollLeft + b.getBoundingClientRect().left - r.getBoundingClientRect().left;
-    r.scrollTo({ left: Math.max(0, x - r.clientWidth / 2 + b.clientWidth / 2), behavior: 'smooth' });
+    r.scrollTo({ left: Math.max(0, x - r.clientWidth / 2 + b.clientWidth / 2), behavior: scrollBehavior() });
   }, [active]);
   return (
     <div ref={row} className="flex-1 mx-3 overflow-x-auto no-scrollbar min-w-0">
@@ -81,7 +81,7 @@ function BarCta() {
 /**
  * The storefront top bar (SpatialCanvas.tsx) as the page header, 58px under md and 82px from md: the
  * wordmark, the pills as the chapter nav, and an always-there Enter the demo button where the store has
- * its Smart Portal icon and cart button.
+ * its SmartPortal icon and cart button.
  */
 export function StoreBar({ active, onPick }: { active: string; onPick: (id: string) => void }) {
   return (
@@ -101,31 +101,15 @@ export function Micro({ children, className = '' }: { children: ReactNode; class
   return <p className={`text-[10px] font-display tracking-[0.2em] uppercase text-muted-foreground ${className}`}>{children}</p>;
 }
 
-/** The primary CTA: ProductView.tsx ADD TO CART (enabled), as a link into the demo. */
-export function Cta({ className = '', pulse = false }: { className?: string; pulse?: boolean }) {
-  return (
-    <>
-      {pulse && <style>{PULSE_CSS}</style>}
-      <a href={COPY.demo.href} className={`signup-cta ${pulse ? 'cbe-pulse' : ''} w-fit px-6 py-3 font-display font-semibold text-sm tracking-wider uppercase rounded-lg flex items-center justify-center gap-2 transition-all bg-foreground text-background hover:opacity-90 ${className}`}>
-        <ShoppingBag className="w-4 h-4 shrink-0" />
-        <span>{COPY.demo.cta}</span>
-      </a>
-    </>
-  );
-}
-
-/** Under-CTA line, in CartDrawer.tsx "Continue Shopping" type. */
-export function Under({ className = '' }: { className?: string }) {
-  return <p className={`text-xs text-muted-foreground ${className}`}>{COPY.demo.under}</p>;
-}
-
-/** Footer in the hint bar's type. */
+/** Footer in the hint bar's type, the last thing on the page. Its bottom padding keeps it clear of the fixed hint bar. */
 export function SiteFooter({ className = '' }: { className?: string }) {
-  const f = COPY.close.footer;
+  const f = COPY.footer;
   return (
-    <footer className={`flex flex-col md:flex-row md:items-end justify-between gap-2 px-4 md:px-6 py-4 md:py-5 tracking-wider uppercase text-muted-foreground ${className}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
+    <footer className={`flex flex-col md:flex-row md:items-end justify-between gap-2 px-4 md:px-6 pt-4 md:pt-5 pb-12 md:pb-16 tracking-wider uppercase text-muted-foreground ${className}`} style={{ fontSize: '10px', fontFamily: 'var(--font-body)' }}>
       <p>{f.credit}</p>
-      <a href={f.codeHref} className="hover:text-foreground transition-colors">{f.code}</a>
+      <a href={f.codeHref} className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors">
+        <Github aria-hidden="true" className="w-3 h-3 shrink-0" />{f.code}
+      </a>
     </footer>
   );
 }
@@ -141,7 +125,10 @@ export function PhotoBars({ n, lit, className = '', bar = 'h-1' }: { n: number; 
   );
 }
 
-const CUE_CSS = `@keyframes cbe-cue{0%{transform:translateY(-100%)}55%,100%{transform:translateY(100%)}}`;
+// The scroll cue's slow running line; still under reduced motion.
+const CUE_CSS = `@keyframes cbe-cue{0%{transform:translateY(-100%)}55%,100%{transform:translateY(100%)}}
+.cbe-cue{animation:cbe-cue 2.6s ${EASE_CSS} infinite}
+@media (prefers-reduced-motion: reduce){.cbe-cue{animation:none}}`;
 
 /**
  * The page's own hint bar, fixed to the bottom like the SpatialCanvas.tsx footer. At the top it carries
@@ -163,7 +150,7 @@ export function PageHint({ progress, thumb }: { progress: (number | null); thumb
       <style>{CUE_CSS}</style>
       <div className="flex items-center gap-3 tracking-wider uppercase text-muted-foreground" style={{ fontSize: '10px', fontFamily: 'var(--font-body)', ...fade(top) }}>
         <span className="relative block w-px h-6 overflow-hidden bg-foreground/15">
-          <span className="absolute inset-0 bg-foreground/70" style={{ animation: thumb ? 'none' : `cbe-cue 2.6s ${EASE_CSS} infinite` }} />
+          <span className={`absolute inset-0 bg-foreground/70 ${thumb ? '' : 'cbe-cue'}`} />
         </span>
         <span>{COPY.hero.scrollCue}</span>
       </div>

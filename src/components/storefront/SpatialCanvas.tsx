@@ -956,9 +956,9 @@ export function SpatialCanvas() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
-          <button onClick={() => navigate('/admin')} className="group flex items-center gap-1.5 p-1.5 md:p-2 hover:opacity-70 transition-opacity" title="Smart Portal">
+          <button onClick={() => navigate('/admin')} className="group flex items-center gap-1.5 p-1.5 md:p-2 hover:opacity-70 transition-opacity" title="SmartPortal">
             <LayoutDashboard className="w-4 h-4 text-foreground/70" />
-            <span className="overflow-hidden max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out text-[10px] font-display tracking-wider text-foreground/60 whitespace-nowrap">SMART PORTAL</span>
+            <span className="overflow-hidden max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out text-[10px] font-display tracking-wider text-foreground/60 whitespace-nowrap">SMARTPORTAL</span>
           </button>
           <button onClick={toggleCart} className={`relative p-2 md:p-2.5 rounded-xl backdrop-blur-md shadow-lg hover:shadow-xl transition-all ${themeSettings.mode === 'light' ? 'bg-foreground/10 border border-foreground/10 hover:bg-foreground/15' : 'bg-white/90 border border-white/20 hover:bg-white'}`}>
             <ShoppingBag className={`w-4 md:w-5 h-4 md:h-5 ${themeSettings.mode === 'light' ? 'text-foreground' : 'text-background'}`} />

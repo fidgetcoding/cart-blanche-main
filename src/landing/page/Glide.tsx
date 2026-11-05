@@ -1,9 +1,9 @@
-// E3 · Glide. The overview shows twice, at the start and the end. Between features the lens pulls back just
-// enough to frame the next screen beside this one and glides across, like dragging the store canvas.
-// Tags ride on the UI itself. Hero: the copy over the live store, which carries on behind it.
-// Final pick, the shipping landing (light first): the bar's right corner is always a softly pulsing Enter the
-// demo (no cart, no Smart Portal, no DEMO STOREFRONT label), the hero has no CTA of its own, and the opening
-// scrolls itself to SmartShop until the visitor touches anything.
+// E3 · Glide, up to the zoom: the story opens on the whole sheet of screens and the camera zooms into SmartShop.
+// From there it is C2, the right rail mirrored: the window holds still and becomes each feature, the rail on the
+// left lights the tag the window is acting out. Hero: the headline over the live store, which drifts behind it.
+// The shipping landing (light first): the bar's right corner is always a softly pulsing Enter the demo (no cart,
+// no SmartPortal icon, no DEMO STOREFRONT label), the hero has no CTA of its own, and the opening scrolls itself
+// to SmartShop until the visitor touches anything.
 import type { LabOptionProps } from '../types';
 import { LensPage } from './parts/page';
 

@@ -1,0 +1,17 @@
+/* The landing's own page-level rules. The built page links this in its head, so they hold from the first frame. */
+
+/* index.css paints the body in the app's dark background; the landing is light (the .light --background)
+   from its first frame, before React renders the .light shell, and in the overscroll past either end. */
+html,
+body {
+  background-color: hsl(0 0% 97%);
+}
+
+/* index.css drifts every .dynamic-bg backdrop; hold them still for visitors who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .dynamic-bg,
+  .light .dynamic-bg,
+  .light.dynamic-bg {
+    animation: none;
+  }
+}
