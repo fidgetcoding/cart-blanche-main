@@ -96,12 +96,13 @@ export default function AdminWaitlist() {
       <div className="border border-border/50 rounded-lg bg-card/40">
         {/* Tabs */}
         <div className="border-b border-border/50 px-4">
-          <div className="flex items-center gap-1">
+          {/* Scrolls sideways on a phone. The extra pixel below keeps the tab underline on the border. */}
+          <div className="flex items-center gap-1 overflow-x-auto -mb-px pb-px">
             {STATUS_TABS.map(t => (
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`relative px-4 py-3 text-sm font-display tracking-wide transition-colors ${
+                className={`relative flex-shrink-0 whitespace-nowrap px-4 py-3 text-sm font-display tracking-wide transition-colors ${
                   tab === t.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/70'
                 }`}
               >

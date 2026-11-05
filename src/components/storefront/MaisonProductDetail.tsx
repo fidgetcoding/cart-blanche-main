@@ -3,11 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, X, Ruler } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useCart } from '@/contexts/CartContext';
+import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useTheme, type ThemeSettings } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { splitSentences } from '@/lib/format-description';
 import { MaisonWaitlistModal } from './MaisonWaitlistModal';
 import { getSwatchStyle } from '@/lib/swatch-style';
+
+// A pause between wheel events longer than this starts a new swipe.
+const WHEEL_QUIET_MS = 250;
+// A drag past this share of a photo, or a flick faster than this, steps one photo; less springs back.
+const DRAG_STEP_SHARE = 0.15;
+const FLICK_PX_PER_MS = 0.3;
 
 interface MaisonProductDetailProps {
   product: DemoProduct | null;
@@ -67,14 +74,14 @@ function AlsoLikeCarousel({ product, allProducts, onNavigate, themeSettings }: {
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); scroll('left'); }}
-            onMouseEnter={(e) => { e.stopPropagation(); scroll('left'); }}
+            aria-label="Scroll back"
             className="p-1.5 transition-colors text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); scroll('right'); }}
-            onMouseEnter={(e) => { e.stopPropagation(); scroll('right'); }}
+            aria-label="Scroll forward"
             className="p-1.5 transition-colors text-muted-foreground hover:text-foreground"
           >
             <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
@@ -129,11 +136,20 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   const [selectedColorwayId, setSelectedColorwayId] = useState<string | null>(
     product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
   );
+  // "You may also like" swaps the product in place, so a new product starts on its own first
+  // colour. Set during render, not in an effect, so no frame shows the old colour, which can match
+  // none of the new product's photos.
+  const [colorwayProductId, setColorwayProductId] = useState(product?.id);
+  if (product && colorwayProductId !== product.id) {
+    setColorwayProductId(product.id);
+    setSelectedColorwayId(product.colorways?.[0]?.id ?? null);
+  }
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [currentVisibleImage, setCurrentVisibleImage] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { addItem } = useCart();
+  const { addItem, isOpen: cartOpen } = useCart();
+  const { isOpen: styleKitOpen } = useStyleKit();
   const { themeSettings } = useTheme();
 
   // Resolve the selected colorway object.
@@ -153,11 +169,6 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     setCurrentVisibleImage(0);
   }, [product?.id]);
 
-  // Reset gallery to first image when colorway changes.
-  useEffect(() => {
-    setCurrentVisibleImage(0);
-  }, [selectedColorwayId]);
-
   useEffect(() => {
     if (!selectedVariant) return;
     const current = product?.variants.find(v => v.id === selectedVariant);
@@ -173,23 +184,40 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedColorwayId]);
 
-  // Keyboard: Escape to close
+  // Keyboard: Escape to close, unless a layer on top (the cart, Build a Set, the size chart or the
+  // waitlist) is open, which takes the Escape itself.
+  const layerOnTop = cartOpen || styleKitOpen || sizeChartOpen || waitlistOpen;
   useEffect(() => {
     if (!product) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !layerOnTop) onClose();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [product, onClose]);
+  }, [product, onClose, layerOnTop]);
 
   // Continuous drag/scroll offset for smooth sliding
   const offsetY = useRef(0); // current pixel offset into the virtual strip
   const [renderOffset, setRenderOffset] = useState(0);
+
+  // The strip goes back to the first photo whenever the product or its colour changes. Reset during
+  // render, so no frame paints the new photos at the old position; the effect below resets the refs.
+  const stripKey = `${product?.id}:${selectedColorwayId}`;
+  const [shownStripKey, setShownStripKey] = useState(stripKey);
+  if (shownStripKey !== stripKey) {
+    setShownStripKey(stripKey);
+    setRenderOffset(0);
+    setCurrentVisibleImage(0);
+  }
   const animFrameRef = useRef<number | null>(null);
+  // The photo the strip rests on or is heading to, unwrapped, so quick steps add up.
+  const targetIndexRef = useRef(0);
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
   const dragStartOffset = useRef(0);
+  const dragStartIndex = useRef(0);
+  const wheelSwipeUsed = useRef(false);
+  const lastWheelAt = useRef(Number.NEGATIVE_INFINITY);
   const velocityRef = useRef(0);
   const lastDragY = useRef(0);
   const lastDragTime = useRef(0);
@@ -208,6 +236,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
 
   // Snap to nearest image with momentum
   const snapTo = useCallback((targetIndex: number, animated = true) => {
+    targetIndexRef.current = targetIndex;
     const h = containerHeight || 600;
     const targetOffset = targetIndex * h;
     if (!animated) {
@@ -243,49 +272,38 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
   }, [images.length, containerHeight]);
 
   const goToImage = useCallback((dir: 1 | -1) => {
-    const h = containerHeight || 600;
-    const currentIdx = Math.round(offsetY.current / h);
-    snapTo(currentIdx + dir);
-  }, [snapTo, containerHeight]);
+    snapTo(targetIndexRef.current + dir);
+  }, [snapTo]);
 
-  // Reset offset when product changes
+  // With the strip back on the first photo (see stripKey above), stop any slide still running and
+  // move its position there too. The state is set again in case that slide drew one more frame.
   useEffect(() => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     offsetY.current = 0;
+    targetIndexRef.current = 0;
     setRenderOffset(0);
-  }, [product?.id]);
+    setCurrentVisibleImage(0);
+  }, [product?.id, selectedColorwayId]);
 
-  // Wheel handler: continuous scrolling
+  // Wheel handler: one photo per swipe, the same rule as the YZ product view. A trackpad keeps
+  // sending wheel events for a second or more after the fingers lift, so any event that follows the
+  // last one within WHEEL_QUIET_MS belongs to the same swipe. Gaps are measured on the events' own
+  // timestamps, so a busy page that delivers the tail late still sees one swipe.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el || images.length <= 1) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      if (isDragging.current) return;
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      const h = containerHeight || 600;
-      offsetY.current += e.deltaY * 0.8;
-      setRenderOffset(offsetY.current);
-      const idx = Math.round(offsetY.current / h) % images.length;
-      setCurrentVisibleImage(idx < 0 ? idx + images.length : idx);
+      if (e.timeStamp - lastWheelAt.current > WHEEL_QUIET_MS) wheelSwipeUsed.current = false;
+      lastWheelAt.current = e.timeStamp;
+      if (isDragging.current || wheelSwipeUsed.current) return;
+      if (Math.abs(e.deltaY) < 15 || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+      wheelSwipeUsed.current = true;
+      goToImage(e.deltaY > 0 ? 1 : -1);
     };
-    // Snap on wheel end (debounce)
-    let wheelTimer: ReturnType<typeof setTimeout> | null = null;
-    const onWheelWithSnap = (e: WheelEvent) => {
-      onWheel(e);
-      if (wheelTimer) clearTimeout(wheelTimer);
-      wheelTimer = setTimeout(() => {
-        const h = containerHeight || 600;
-        const nearest = Math.round(offsetY.current / h);
-        snapTo(nearest);
-      }, 120);
-    };
-    el.addEventListener('wheel', onWheelWithSnap, { passive: false });
-    return () => {
-      el.removeEventListener('wheel', onWheelWithSnap);
-      if (wheelTimer) clearTimeout(wheelTimer);
-    };
-  }, [images.length, snapTo, containerHeight]);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [images.length, goToImage]);
 
   // Mouse drag handlers
   useEffect(() => {
@@ -297,6 +315,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       isDragging.current = true;
       dragStartY.current = e.clientY;
       dragStartOffset.current = offsetY.current;
+      dragStartIndex.current = targetIndexRef.current;
       lastDragY.current = e.clientY;
       lastDragTime.current = performance.now();
       velocityRef.current = 0;
@@ -313,9 +332,11 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       }
       lastDragY.current = e.clientY;
       lastDragTime.current = now;
-      offsetY.current = dragStartOffset.current - dy;
-      setRenderOffset(offsetY.current);
+      // The strip follows the pointer, up to one photo either way: one drag is one step at most.
       const h = containerHeight || 600;
+      const rest = dragStartIndex.current * h;
+      offsetY.current = Math.max(rest - h, Math.min(rest + h, dragStartOffset.current - dy));
+      setRenderOffset(offsetY.current);
       const idx = Math.round(offsetY.current / h) % images.length;
       setCurrentVisibleImage(idx < 0 ? idx + images.length : idx);
     };
@@ -324,11 +345,13 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
       isDragging.current = false;
       el.style.cursor = '';
       const h = containerHeight || 600;
-      // Use velocity to determine target
-      const momentum = -velocityRef.current * 150; // project forward
-      const projected = offsetY.current + momentum;
-      const nearest = Math.round(projected / h);
-      snapTo(nearest);
+      // Far enough, or a flick, steps one photo in the drag's direction; anything less springs back.
+      const moved = offsetY.current - dragStartIndex.current * h;
+      const flick = -velocityRef.current;
+      const dir = Math.abs(moved) > h * DRAG_STEP_SHARE ? Math.sign(moved)
+        : Math.abs(flick) > FLICK_PX_PER_MS ? Math.sign(flick)
+        : 0;
+      snapTo(dragStartIndex.current + dir);
     };
 
     el.addEventListener('mousedown', onMouseDown);
@@ -420,7 +443,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
           >
             <button
               onClick={(e) => { e.stopPropagation(); goToImage(-1); }}
-              onMouseEnter={(e) => { e.stopPropagation(); goToImage(-1); }}
+              aria-label="Previous photo"
               className="p-1 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5 rotate-90" strokeWidth={1.5} />
@@ -430,7 +453,7 @@ export function MaisonProductDetail({ product, products, allProducts, onClose, o
             <span className="text-[11px] text-muted-foreground">{images.length}</span>
             <button
               onClick={(e) => { e.stopPropagation(); goToImage(1); }}
-              onMouseEnter={(e) => { e.stopPropagation(); goToImage(1); }}
+              aria-label="Next photo"
               className="p-1 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronRight className="w-3.5 h-3.5 rotate-90" strokeWidth={1.5} />

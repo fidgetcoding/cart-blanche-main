@@ -14,13 +14,14 @@ vi.mock('@/components/admin/SmartChatPanel', () => ({
 
 import AdminLayout from '../AdminLayout';
 
-function renderAt(width: number) {
+function renderAt(width: number, path = '/admin') {
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
   return render(
-    <MemoryRouter initialEntries={['/admin']}>
+    <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<div>page content</div>} />
+          <Route path="settings" element={<div>settings content</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -50,6 +51,27 @@ describe('AdminLayout on a phone', () => {
     expect(isShown(page)).toBe(false);
     fireEvent.click(screen.getByTitle('Close AI store manager'));
     expect(isShown(page)).toBe(true);
+  });
+
+  // Side by side, a tablet left the page under 400px: the nav clipped Settings off and the pages crushed.
+  it('opens the chat over the page on a tablet too', async () => {
+    renderAt(768);
+    const page = await screen.findByText('page content');
+    expect(isShown(page)).toBe(true);
+    expect(isShown(screen.getByText('chat panel'))).toBe(false);
+    fireEvent.click(screen.getByTitle('Open AI store manager'));
+    expect(isShown(screen.getByText('chat panel'))).toBe(true);
+    expect(isShown(page)).toBe(false);
+  });
+
+  it('scrolls the sideways nav to the current page', async () => {
+    const scrolled: Element[] = [];
+    const scrollIntoView = vi.fn(function (this: Element) { scrolled.push(this); });
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+    renderAt(390, '/admin/settings');
+    await screen.findByText('settings content');
+    expect(scrolled).toContain(screen.getByTitle('Settings'));
+    delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
   });
 
   it('keeps both side by side on a laptop', async () => {

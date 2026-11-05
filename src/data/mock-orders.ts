@@ -259,7 +259,8 @@ export function getDashboardDataForRange(range: string): DashboardData {
   ];
 
   // Build chart data — bucket orders into time segments
-  const numBuckets = Math.min(days <= 1 ? 24 : days <= 7 ? 7 : 12, days);
+  // A day splits into hours. Longer ranges get a bucket per day, up to 12.
+  const numBuckets = days <= 1 ? 24 : Math.min(days <= 7 ? 7 : 12, days);
   const bucketSize = (days * 86400000) / numBuckets;
   const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -290,7 +291,7 @@ export function getDashboardDataForRange(range: string): DashboardData {
 
   const salesChartData = salesBuckets.map((v, i) => {
     let name: string;
-    if (days <= 1) name = `${i}:00`;
+    if (days <= 1) name = `${new Date(cutoff + i * bucketSize).getHours()}:00`;
     else if (days <= 7) name = dayLabels[new Date(cutoff + i * bucketSize).getDay()];
     else {
       const d = new Date(cutoff + i * bucketSize);

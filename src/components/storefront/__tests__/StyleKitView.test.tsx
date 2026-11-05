@@ -79,3 +79,69 @@ describe('StyleKitView slot sizes', () => {
     expect(details(cargo).getByRole('button', { name: 'M' })).not.toHaveClass('bg-primary');
   });
 });
+
+describe('StyleKitView browsing', () => {
+  beforeAll(() => { MotionGlobalConfig.skipAnimations = true; });
+  afterAll(() => { MotionGlobalConfig.skipAnimations = false; });
+
+  it("changes a carousel card's photo without adding that product to the look", async () => {
+    renderKit();
+    act(() => kit.openStyleKit(crewneck, 'counterparts'));
+    const dot = await waitForDot();
+    fireEvent.click(dot);
+    expect(kit.lookItems.map(p => p.id)).toEqual([crewneck.id]);
+  });
+
+  it('lists each size once for a product sold in several colours', async () => {
+    const puffer = product('p1');
+    expect(new Set(puffer.colorways!.map(c => c.id)).size).toBeGreaterThan(1);
+    renderKit();
+    act(() => kit.openStyleKit(puffer, 'counterparts'));
+    await screen.findByRole('heading', { name: puffer.title });
+    expect(details(puffer).getAllByRole('button', { name: 'M' })).toHaveLength(1);
+  });
+});
+
+// A photo dot on a carousel card (cards with several photos have one per photo).
+async function waitForDot() {
+  await screen.findAllByRole('button', { name: /ADD/ });
+  return document.querySelectorAll<HTMLElement>('.no-scrollbar button.flex-1')[1];
+}
+
+describe('StyleKitView lane arrows', () => {
+  beforeAll(() => { MotionGlobalConfig.skipAnimations = true; });
+  afterAll(() => { MotionGlobalConfig.skipAnimations = false; });
+
+  // Every lane measures this wide; the viewport is 1280.
+  function laneWidth(width: number) {
+    const scroll = vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockReturnValue(width);
+    const client = vi.spyOn(Element.prototype, 'clientWidth', 'get').mockReturnValue(1280);
+    return () => { scroll.mockRestore(); client.mockRestore(); };
+  }
+
+  it('shows no arrows on a lane that fits, since they would do nothing', async () => {
+    const restore = laneWidth(1280);
+    try {
+      renderKit();
+      act(() => kit.openStyleKit(crewneck, 'counterparts'));
+      await screen.findAllByRole('button', { name: /ADD/ });
+      expect(document.querySelectorAll('button:has(svg.lucide-chevron-left), button:has(svg.lucide-chevron-right)')).toHaveLength(0);
+    } finally {
+      restore();
+    }
+  });
+
+  it('keeps the arrows on a lane that scrolls', async () => {
+    const restore = laneWidth(2600);
+    try {
+      renderKit();
+      act(() => kit.openStyleKit(crewneck, 'counterparts'));
+      await screen.findAllByRole('button', { name: /ADD/ });
+      expect(screen.getByRole('button', { name: 'Scroll forward' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Scroll back' })).toBeTruthy();
+    } finally {
+      restore();
+    }
+  });
+});
+

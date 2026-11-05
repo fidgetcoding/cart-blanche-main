@@ -218,6 +218,9 @@ export function CartFooter({ subtotal, discount, discountAmount, total, applyDis
   const subtotalRef = useRef(subtotal);
   subtotalRef.current = subtotal;
 
+  // An error about the code (say, its minimum spend) no longer applies once the cart changes.
+  useEffect(() => { setPromoError(''); }, [subtotal]);
+
   const handleApplyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
     if (!code || promoPending.current) return;
@@ -382,6 +385,14 @@ export function CartDrawer() {
       setActiveTab(items.length > 0 ? 'cart' : 'assistant');
     }
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Escape closes the drawer, the top layer, rather than the product view beneath it.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeCart(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, closeCart]);
 
   // Clear unread when switching to assistant tab
   useEffect(() => {

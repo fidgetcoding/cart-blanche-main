@@ -70,3 +70,26 @@ describe('MaisonCanvas header and grid', () => {
     expect(screen.getByRole('button', { name: 'View by 3' })).toBeTruthy();
   });
 });
+
+describe('MaisonCanvas cart and filters', () => {
+  afterEach(() => Object.defineProperty(window, 'innerWidth', { configurable: true, value: original }));
+
+  it('opens a single cart drawer', async () => {
+    await renderAt(1440);
+    fireEvent.click(document.querySelector('header button:has(svg.lucide-shopping-bag)')!);
+    expect(await screen.findAllByText('SMARTCART')).toHaveLength(1);
+  });
+
+  it('opens the type list on hover and keeps it open when the pointer comes back', async () => {
+    await renderAt(1440);
+    const toggle = screen.getByText('CATEGORY').closest('button')!;
+    fireEvent.mouseEnter(toggle);
+    expect(await screen.findByRole('button', { name: 'JACKET' })).toBeTruthy();
+    fireEvent.mouseLeave(toggle);
+    fireEvent.mouseEnter(toggle);
+    // Long enough for a closing list to finish its exit animation.
+    await new Promise(resolve => setTimeout(resolve, 600));
+    expect(screen.getByRole('button', { name: 'JACKET' })).toBeTruthy();
+  });
+});
+

@@ -23,7 +23,7 @@ export function WaitlistTable({ signups, onMarkFulfilled, onDelete, showProductC
     );
   }
   return (
-    <div className="border border-border/50 rounded-lg overflow-hidden">
+    <div className="border border-border/50 rounded-lg overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-secondary/30 border-b border-border/50">

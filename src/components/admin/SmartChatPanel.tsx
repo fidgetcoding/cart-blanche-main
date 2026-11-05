@@ -1,12 +1,11 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2, Check, XCircle, Sparkles, BarChart3, Package, Tag, ImagePlus, X, Plus, MessageSquare, PanelLeftClose, PanelLeft, Trash2, Warehouse, Grid3X3, ShoppingCart, Settings, GitBranch } from 'lucide-react';
+import { Send, Loader2, Check, XCircle, Sparkles, BarChart3, Package, Tag, ImagePlus, X, Plus, MessageSquare, PanelLeftClose, PanelLeft, Trash2, Warehouse, Grid3X3, ShoppingCart, Settings, GitBranch, Mail, Users, Ruler } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { DEMO_CHAT_MESSAGE, isDemoSession, supabase } from '@/lib/demo/client';
 import type { Json } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
 type ToolCall = { tool: string; args: Record<string, unknown>; result: unknown };
@@ -70,6 +69,24 @@ const PROMPTS_BY_ROUTE: Record<string, SuggestedPrompt[]> = {
     { icon: Tag, text: "What's the optimal platform fee?", label: "Fee Advice" },
     { icon: BarChart3, text: "Review my store configuration", label: "Configuration Review" },
   ],
+  waitlist: [
+    { icon: Mail, text: "Which products have the longest waitlists?", label: "Top Waitlists" },
+    { icon: Warehouse, text: "What should I restock for people on the waitlist?", label: "Restock Picks" },
+    { icon: Sparkles, text: "Write a back-in-stock email", label: "Restock Email" },
+    { icon: BarChart3, text: "How many waitlist signups have I fulfilled?", label: "Fulfilled" },
+  ],
+  subscribers: [
+    { icon: Users, text: "How many subscribers do I have?", label: "Subscriber Count" },
+    { icon: BarChart3, text: "How is my subscriber list growing?", label: "List Growth" },
+    { icon: Sparkles, text: "Write a newsletter for my subscribers", label: "Newsletter" },
+    { icon: Tag, text: "Suggest a welcome offer for new subscribers", label: "Welcome Offer" },
+  ],
+  'size-charts': [
+    { icon: Ruler, text: "Review my size charts for gaps", label: "Chart Review" },
+    { icon: Sparkles, text: "Write fit notes for my size charts", label: "Fit Notes" },
+    { icon: Settings, text: "Should my size charts use inches or centimeters?", label: "Units" },
+    { icon: Package, text: "Which products need a size chart?", label: "Missing Charts" },
+  ],
   discounts: [
     { icon: Tag, text: "Show me all active discount codes", label: "Active Codes" },
     { icon: Sparkles, text: "Suggest a promotion strategy for this month", label: "Promo Strategy" },
@@ -90,13 +107,18 @@ const PROMPTS_BY_ROUTE: Record<string, SuggestedPrompt[]> = {
   ],
 };
 
-export function SmartChatPanel() {
+const MIN_WIDTH = 280;
+const MAX_WIDTH = 600;
+// The page beside the chat keeps at least this much, or its nav clips Settings off the end.
+const MIN_PAGE_WIDTH = 560;
+
+/** `overlay` is for a screen too narrow to fit the chat beside the page: it fills it and doesn't resize. */
+export function SmartChatPanel({ overlay = false }: { overlay?: boolean }) {
   const location = useLocation();
-  const isMobile = useIsMobile();
+  // The page is the first segment after /admin, so /admin/lab/sl and /admin/inventory/ both count.
   const currentRoute = useMemo(() => {
-    const path = location.pathname.replace('/admin/', '').replace('/admin', '') || 'dashboard';
-    if (path.startsWith('lab')) return 'lab';
-    return path in PROMPTS_BY_ROUTE ? path : 'dashboard';
+    const page = location.pathname.split('/')[2] || 'dashboard';
+    return page in PROMPTS_BY_ROUTE ? page : 'dashboard';
   }, [location.pathname]);
   const suggestedPrompts = PROMPTS_BY_ROUTE[currentRoute];
 
@@ -111,7 +133,7 @@ export function SmartChatPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const resizeRef = useRef<{ pointerId: number; startX: number; startWidth: number } | null>(null);
 
   // Load conversations on mount
   useEffect(() => {
@@ -395,26 +417,36 @@ export function SmartChatPanel() {
     }
   };
 
-  // Resize handle
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+  // Resize handle. Pointer events cover mouse, pen and touch; capturing the pointer keeps the drag
+  // (and its cursor) on the handle even when the pointer runs ahead of the 4px strip.
+  const handleResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
-    resizeRef.current = { startX: e.clientX, startWidth: panelWidth };
-    const onMove = (e: MouseEvent) => {
-      if (!resizeRef.current) return;
-      const diff = e.clientX - resizeRef.current.startX;
-      setPanelWidth(Math.max(280, Math.min(600, resizeRef.current.startWidth + diff)));
-    };
-    const onUp = () => {
-      resizeRef.current = null;
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  }, [panelWidth]);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // Start from the width on screen, which a narrow window may have capped below panelWidth.
+    const shown = e.currentTarget.parentElement?.getBoundingClientRect().width || panelWidth;
+    resizeRef.current = { pointerId: e.pointerId, startX: e.clientX, startWidth: Math.min(panelWidth, shown) };
+  };
+  const handleResizeMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = resizeRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const widest = Math.min(MAX_WIDTH, window.innerWidth - MIN_PAGE_WIDTH);
+    setPanelWidth(Math.max(MIN_WIDTH, Math.min(widest, drag.startWidth + e.clientX - drag.startX)));
+  };
+  const handleResizeEnd = () => {
+    resizeRef.current = null;
+  };
+
+  // Grow with the text up to 100px, and shrink back when the message is sent or cleared.
+  useLayoutEffect(() => {
+    const box = inputRef.current;
+    if (!box) return;
+    box.style.height = 'auto';
+    if (input) box.style.height = Math.min(box.scrollHeight, 100) + 'px';
+  }, [input]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Enter while an input method is composing (Japanese, Chinese) picks a word; it doesn't send.
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       sendMessage(input);
     }
@@ -423,7 +455,7 @@ export function SmartChatPanel() {
   const isNewChat = activeConversationId === null && messages.length === 0;
 
   return (
-    <div className="flex flex-shrink-0 flex-1 min-h-0" style={{ width: isMobile ? '100%' : panelWidth }}>
+    <div className="flex flex-shrink-0 flex-1 min-h-0" style={overlay ? { width: '100%' } : { width: panelWidth, maxWidth: `calc(100vw - ${MIN_PAGE_WIDTH}px)` }}>
       {/* Conversation history sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -452,25 +484,31 @@ export function SmartChatPanel() {
                   No conversations yet
                 </p>
               )}
+              {/* A row holds two buttons side by side: a button inside a button isn't valid HTML. */}
               {conversations.map(conv => (
-                <button
+                <div
                   key={conv.id}
-                  onClick={() => selectConversation(conv)}
-                  className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-[11px] transition-colors group ${
+                  className={`w-full flex items-center rounded-lg text-[11px] transition-colors group ${
                     activeConversationId === conv.id
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
                   }`}
                 >
-                  <MessageSquare className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate flex-1">{conv.title}</span>
+                  <button
+                    onClick={() => selectConversation(conv)}
+                    className="flex-1 min-w-0 flex items-center gap-2 pl-2.5 py-2 text-left"
+                  >
+                    <MessageSquare className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate flex-1">{conv.title}</span>
+                  </button>
                   <button
                     onClick={(e) => deleteConversation(conv.id, e)}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-destructive transition-opacity"
+                    aria-label={`Delete chat: ${conv.title}`}
+                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-0.5 mx-2 hover:text-destructive transition-opacity"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
-                </button>
+                </div>
               ))}
             </div>
           </motion.div>
@@ -628,12 +666,7 @@ export function SmartChatPanel() {
               placeholder="Ask your AI store manager..."
               rows={1}
               className="flex-1 resize-none bg-card border border-border rounded-lg px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent min-h-[36px] max-h-[100px]"
-              style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = Math.min(target.scrollHeight, 100) + 'px';
-              }}
+              style={{ overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
             />
             <Button
               size="icon"
@@ -648,10 +681,18 @@ export function SmartChatPanel() {
       </div>
 
       {/* Resize handle */}
-      <div
-        className="hidden md:block w-1 cursor-col-resize bg-border/30 hover:bg-accent/50 transition-colors flex-shrink-0"
-        onMouseDown={handleResizeStart}
-      />
+      {!overlay && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize chat"
+          className="w-1 cursor-col-resize touch-none bg-border/30 hover:bg-accent/50 transition-colors flex-shrink-0"
+          onPointerDown={handleResizeStart}
+          onPointerMove={handleResizeMove}
+          onPointerUp={handleResizeEnd}
+          onPointerCancel={handleResizeEnd}
+        />
+      )}
     </div>
   );
 }

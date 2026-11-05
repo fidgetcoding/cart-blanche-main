@@ -16,6 +16,7 @@ import { DemoStoreLabel } from './DemoStoreLabel';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StyleKitView } from './StyleKitView';
 import { GenderSymbol } from './GenderSymbol';
+import { visibleGenderChips, withoutHiddenGenders } from '@/lib/hidden-genders';
 
 
 import { ShoppingBag } from 'lucide-react';
@@ -82,7 +83,9 @@ export function MaisonCanvas() {
     if (typeCloseTimer.current) clearTimeout(typeCloseTimer.current);
   }, []);
 
-  const allProducts = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
+  // Genders hidden in Inventory leave the store, like hidden product types leave the type list.
+  const hiddenGenders = layout?.hiddenGenders;
+  const allProducts = useMemo(() => withoutHiddenGenders(getOrderedProducts(), hiddenGenders), [getOrderedProducts, hiddenGenders]);
   const categories = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
 
   const productTypes = useMemo(() => {
@@ -248,7 +251,8 @@ export function MaisonCanvas() {
             className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
             onMouseEnter={() => {
               if (typeCloseTimer.current) { clearTimeout(typeCloseTimer.current); typeCloseTimer.current = null; }
-              setTypeDropdownOpen(prev => !prev);
+              // Opens, never toggles: a pointer brushing in and out must not flicker it shut.
+              setTypeDropdownOpen(true);
             }}
           >
             <AnimatePresence mode="wait">
@@ -309,7 +313,7 @@ export function MaisonCanvas() {
                 <>
                   <div className="w-px h-4 bg-border/60 mx-3 flex-shrink-0" />
                   <div className="flex items-center gap-4 flex-nowrap">
-                    {['MEN', 'WOMEN', 'UNISEX'].map(g => {
+                    {visibleGenderChips(hiddenGenders).map(g => {
                       const isActive = activeGenders.includes(g);
                       const isAvailable = isGenderAvailable(g);
                       return (
@@ -325,6 +329,7 @@ export function MaisonCanvas() {
                                 : 'text-muted-foreground opacity-50 hover:opacity-80 hover:text-foreground'
                           }`}
                           title={!isAvailable ? `No ${g.toLowerCase()} items in this category` : undefined}
+                          aria-label={g.charAt(0) + g.slice(1).toLowerCase()}
                           aria-pressed={isActive}
                           aria-disabled={!isAvailable}
                         >
@@ -400,9 +405,6 @@ export function MaisonCanvas() {
           </div>
         </div>
       )}
-      {/* Cart drawer */}
-      <CartDrawer />
-
       {/* Build a Set — Modal popup (portaled to body to escape CSS containment) */}
       {buildSetProduct && createPortal(
         <AnimatePresence>

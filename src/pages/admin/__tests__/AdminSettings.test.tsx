@@ -37,6 +37,16 @@ describe('AdminSettings', () => {
     expect(update.mock.calls[0][0].store_slug).toBeNull();
   });
 
+  // A banner above the form pushed every section down, then pulled them back up when it cleared.
+  it('shows the save result beside the button, so the form never jumps', async () => {
+    update.mockReturnValue({ eq: async () => ({ error: null }) });
+    await open();
+    const save = screen.getByRole('button', { name: /SAVE/ });
+    fireEvent.click(save);
+    const message = await screen.findByText('Settings saved!');
+    expect(message.parentElement).toBe(save.parentElement);
+  });
+
   it('says when a slug is taken', async () => {
     update.mockReturnValue({ eq: async () => ({ error: { code: '23505' } }) });
     await open();

@@ -27,6 +27,9 @@ export function MaisonWaitlistModal({ open, onClose, product, lockedSize }: Mais
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { submit, submitting } = useWaitlistSignup();
 
+  // A product sold in several colours has a variant per colour and size; offer each size once.
+  const sizes = [...new Set(product.variants.map(v => v.title))];
+
   // Esc to close
   useEffect(() => {
     if (!open) return;
@@ -162,7 +165,7 @@ export function MaisonWaitlistModal({ open, onClose, product, lockedSize }: Mais
               </div>
 
               {/* Size — button style, matches detail-view selector */}
-              {product.variants.length > 1 && (
+              {sizes.length > 1 && (
                 <div>
                   <label
                     className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-3"
@@ -179,13 +182,13 @@ export function MaisonWaitlistModal({ open, onClose, product, lockedSize }: Mais
                         {lockedSize}
                       </span>
                     ) : (
-                      product.variants.map(v => {
-                        const active = size === v.title;
+                      sizes.map(title => {
+                        const active = size === title;
                         return (
                           <button
-                            key={v.id}
+                            key={title}
                             type="button"
-                            onClick={() => setSize(active ? '' : v.title)}
+                            onClick={() => setSize(active ? '' : title)}
                             className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase border transition-colors ${
                               active
                                 ? 'bg-foreground text-background border-foreground'
@@ -193,7 +196,7 @@ export function MaisonWaitlistModal({ open, onClose, product, lockedSize }: Mais
                             }`}
                             style={{ fontFamily: 'var(--font-body)' }}
                           >
-                            {v.title}
+                            {title}
                           </button>
                         );
                       })

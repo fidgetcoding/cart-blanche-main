@@ -36,3 +36,16 @@ it('shows the cents actually charged instead of rounding the displayed totals', 
   expect(screen.getByText('-$3.99')).toBeInTheDocument();
   expect(screen.getByText('$15.96')).toBeInTheDocument();
 });
+
+it('drops a minimum-spend error once the cart total changes', async () => {
+  rpc.mockResolvedValueOnce({ data: [{ status: 'valid', code: 'SPRING20', discount_type: 'percentage', discount_value: 20, minimum_spend: 150 }], error: null });
+  const footer = (subtotal: number) => (
+    <CartFooter subtotal={subtotal} discount={null} discountAmount={0} total={subtotal} applyDiscount={() => {}} removeDiscount={() => {}} closeCart={() => {}} />
+  );
+  const { rerender } = render(footer(50));
+  fireEvent.change(screen.getByPlaceholderText('Discount code'), { target: { value: 'SPRING20' } });
+  fireEvent.click(screen.getByRole('button', { name: 'APPLY' }));
+  expect(await screen.findByText('Minimum spend of $150 required')).toBeInTheDocument();
+  rerender(footer(150));
+  expect(screen.queryByText('Minimum spend of $150 required')).toBeNull();
+});

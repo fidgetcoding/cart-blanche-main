@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { carouselItems } from '@/lib/carousel-items';
 import { X, ShoppingBag, Plus, ArrowLeftRight, Layers, Copy, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check } from 'lucide-react';
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useCart } from '@/contexts/CartContext';
 import { getSuggestedProducts, getFillProducts, getSmartOrientation, getBodyZone, type ProductPreset } from '@/lib/pairing-logic';
@@ -10,6 +10,7 @@ import { resolveStoreMerchantId } from '@/lib/store-merchant';
 import type { DemoProduct } from '@/data/demo-data';
 import { useGridLayout } from '@/hooks/use-grid-layout';
 import { splitSentences } from '@/lib/format-description';
+import { withoutHiddenGenders } from '@/lib/hidden-genders';
 
 function CarouselCard({
   product,
@@ -57,7 +58,8 @@ function CarouselCard({
             {product.images!.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setImgIdx(i)}
+                // Changes the photo only; the card's own click adds it to the look.
+                onClick={(e) => { e.stopPropagation(); setImgIdx(i); }}
                 onMouseEnter={() => setImgIdx(i)}
                 className="flex-1 relative group/dot pointer-events-auto"
               >
@@ -200,6 +202,22 @@ function CarouselRow({
     ? (cardSize === 'large' ? 'w-[350px]' : 'w-[240px]')
     : 'w-full';
 
+  // Arrows only when the lane has somewhere to scroll; on a lane that fits they did nothing.
+  // Measured before paint, and again whenever the lane resizes.
+  const [overflows, setOverflows] = useState(false);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const measure = () => setOverflows(isHorizontal
+      ? el.scrollWidth > el.clientWidth + 1
+      : el.scrollHeight > el.clientHeight + 1);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isHorizontal, loopedProducts.length]);
+
   const scrollBy = (amount: number) => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({
@@ -210,10 +228,11 @@ function CarouselRow({
 
   return (
     <div className="relative h-full w-full min-h-0 min-w-0">
-      {isHorizontal ? (
+      {!overflows ? null : isHorizontal ? (
         <>
           <button
             onClick={() => scrollBy(-300)}
+            aria-label="Scroll back"
             className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background via-background/60 to-transparent z-10 flex items-center justify-start pl-3 cursor-pointer hover:from-background/95 transition-colors"
           >
             <motion.div animate={{ x: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
@@ -222,6 +241,7 @@ function CarouselRow({
           </button>
           <button
             onClick={() => scrollBy(300)}
+            aria-label="Scroll forward"
             className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background via-background/60 to-transparent z-10 flex items-center justify-end pr-3 cursor-pointer hover:from-background/95 transition-colors"
           >
             <motion.div animate={{ x: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
@@ -233,6 +253,7 @@ function CarouselRow({
         <>
           <button
             onClick={() => scrollBy(-300)}
+            aria-label="Scroll back"
             className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-background via-background/60 to-transparent z-10 flex items-start justify-center pt-3 cursor-pointer hover:from-background/95 transition-colors"
           >
             <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
@@ -241,6 +262,7 @@ function CarouselRow({
           </button>
           <button
             onClick={() => scrollBy(300)}
+            aria-label="Scroll forward"
             className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background via-background/60 to-transparent z-10 flex items-end justify-center pb-3 cursor-pointer hover:from-background/95 transition-colors"
           >
             <motion.div animate={{ y: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
@@ -415,7 +437,8 @@ function LockedPairPanel({
   onRemove: () => void;
   direction?: 'horizontal' | 'vertical';
 }) {
-  const sizes = product.variants.map(v => v.title);
+  // A product sold in several colours has a variant per colour and size; list each size once.
+  const sizes = [...new Set(product.variants.map(v => v.title))];
   const selectedVariant = product.variants.find(v => v.title === selectedSize);
 
   if (direction === 'vertical') {
@@ -509,7 +532,7 @@ function AnchorPanel({
   if (!anchorProduct) return null;
 
   const lookTotal = lookItems.reduce((sum, p) => sum + p.price, 0);
-  const sizes = anchorProduct.variants.map(v => v.title);
+  const sizes = [...new Set(anchorProduct.variants.map(v => v.title))];
   const selectedVariant = anchorProduct.variants.find(v => v.title === selectedSize);
 
   // PAIRS mode: horizontal direction → thumbnail LEFT, details RIGHT
@@ -601,8 +624,10 @@ function AnchorPanel({
 }
 
 export function StyleKitView() {
-  const { getOrderedProducts } = useGridLayout();
-  const catalog = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
+  const { layout, getOrderedProducts } = useGridLayout();
+  // Build a Set never suggests a gender hidden in Inventory.
+  const hiddenGenders = layout?.hiddenGenders;
+  const catalog = useMemo(() => withoutHiddenGenders(getOrderedProducts(), hiddenGenders), [getOrderedProducts, hiddenGenders]);
   const { isOpen, anchorProduct, mode, setMode, closeStyleKit, addToLook, removeFromLook, changeAnchor, replaceInLook, lookItems, initialAnchorSize, activeGenders } = useStyleKit();
   const { items: cartItems, addItem } = useCart();
   const [previewProduct, setPreviewProduct] = useState<DemoProduct | null>(null);

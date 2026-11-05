@@ -38,3 +38,13 @@ describe('product names on the waitlist page', () => {
     expect(screen.queryByText('gone')).toBeNull();
   });
 });
+
+// On a phone the four status tabs ran past the card's edge, cutting off "Cancelled" and pushing the
+// page sideways. The strip scrolls inside the card instead.
+describe('the waitlist status tabs on a phone', () => {
+  it('scroll inside the card', () => {
+    render(<AdminWaitlist />);
+    const strip = screen.getByRole('button', { name: /Cancelled/ }).parentElement!;
+    expect(strip.className.split(' ')).toContain('overflow-x-auto');
+  });
+});

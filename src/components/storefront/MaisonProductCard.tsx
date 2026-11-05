@@ -7,6 +7,9 @@ import { useCart } from '@/contexts/CartContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
 import { MaisonWaitlistModal } from './MaisonWaitlistModal';
 
+// A pause between wheel events longer than this starts a new swipe.
+const WHEEL_QUIET_MS = 250;
+
 interface MaisonProductCardProps {
   product: DemoProduct;
   viewMode: 3 | 6;
@@ -53,13 +56,16 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
     setTimeout(() => { cooldown.current = false; }, 120);
   }, [images.length]);
 
-  // Wheel handler — dead simple: one swipe = one transition, then ignore everything for 800ms
+  // Wheel handler: one photo per horizontal swipe. A trackpad keeps sending wheel events for a
+  // second or more after the fingers lift, so any event that follows the last one within
+  // WHEEL_QUIET_MS belongs to the same swipe. Gaps are measured on the events' own timestamps, not
+  // timers, so a busy page that delivers the tail late still sees one swipe.
   useEffect(() => {
     const el = imageAreaRef.current;
     if (!el || !hasMultiple) return;
 
-    let blocked = false;
-    let blockTimer: ReturnType<typeof setTimeout> | null = null;
+    let swipeUsed = false;
+    let lastWheelAt = Number.NEGATIVE_INFINITY;
 
     const onWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
@@ -67,18 +73,17 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       e.preventDefault();
       e.stopPropagation();
 
-      if (blocked) return;
+      if (e.timeStamp - lastWheelAt > WHEEL_QUIET_MS) swipeUsed = false;
+      lastWheelAt = e.timeStamp;
+      if (swipeUsed) return;
       if (Math.abs(e.deltaX) < 15) return;
+      swipeUsed = true;
 
       if (e.deltaX > 0) {
         setCurrentImage(prev => (prev + 1) % images.length);
       } else {
         setCurrentImage(prev => (prev - 1 + images.length) % images.length);
       }
-
-      blocked = true;
-      if (blockTimer) clearTimeout(blockTimer);
-      blockTimer = setTimeout(() => { blocked = false; }, 800);
     };
 
     let touchStartClientX = 0;
@@ -112,7 +117,6 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
-      if (blockTimer) clearTimeout(blockTimer);
     };
   }, [hasMultiple, images.length, nextImage, prevImage]);
 
@@ -128,16 +132,17 @@ export function MaisonProductCard({ product, viewMode, onClick, onBuildSet, inde
     return () => { if (resetTimer.current) clearTimeout(resetTimer.current); };
   }, []);
 
+  // One photo per key press; a held key's repeats don't step again.
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!hasMultiple) return;
     if (e.key === 'ArrowRight') {
       e.preventDefault();
       e.stopPropagation();
-      nextImage();
+      if (!e.repeat) nextImage();
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
       e.stopPropagation();
-      prevImage();
+      if (!e.repeat) prevImage();
     }
   }, [hasMultiple, nextImage, prevImage]);
   const isCompact = viewMode === 6;

@@ -74,17 +74,19 @@ export default function AdminSettings() {
     <div className="p-5 w-full">
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-display text-xl font-bold">Settings</h1>
-        <button onClick={handleSave} disabled={saving}
-          className="px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2">
-          <Save className="w-3.5 h-3.5" /> {saving ? 'SAVING...' : 'SAVE'}
-        </button>
-      </div>
-
-      {message && (
-        <div className={`mb-4 p-2.5 rounded-lg text-xs font-display ${message.includes('Error') ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success'}`}>
-          {message}
+        {/* The result sits beside the button: a banner above the form moved every section when it came and went. */}
+        <div className="flex items-center gap-3 min-w-0">
+          {message && (
+            <div role="status" className={`px-2.5 py-1.5 rounded-lg text-xs font-display truncate ${message.includes('Error') ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success'}`}>
+              {message}
+            </div>
+          )}
+          <button onClick={handleSave} disabled={saving}
+            className="px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2 flex-shrink-0">
+            <Save className="w-3.5 h-3.5" /> {saving ? 'SAVING...' : 'SAVE'}
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Store Info */}
       <section className="mb-5">

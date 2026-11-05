@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
 import { getImageUrl, type DemoProduct } from '@/data/demo-data';
 import { GripVertical, Save, RotateCcw, Plus, Loader2, Pencil, Check, Eye, EyeOff, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -72,7 +72,6 @@ export default function AdminPageEditor() {
   const [initialized, setInitialized] = useState(false);
   const [editorPage, setEditorPage] = useState(0);
   const editorTotalPages = Math.max(1, Math.ceil(products.length / ITEMS_PER_PAGE));
-  const arrowHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize from Supabase layout once loaded
   useEffect(() => {
@@ -140,18 +139,23 @@ export default function AdminPageEditor() {
   const rows = Math.max(1, Math.ceil(pageProductCount / COLS));
   const canvasH = rows * (TILE_H + GAP) - GAP;
 
-  useEffect(() => {
+  // Fit the canvas to the editor's own box, which the chat panel beside it resizes as
+  // well as the window. The box only exists once the layout has loaded, and it's measured
+  // before that first paint so the canvas never shows at the placeholder scale and jumps.
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
     function resize() {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
+      const rect = container!.getBoundingClientRect();
       const sx = (rect.width - 180) / CANVAS_W;
       const sy = (rect.height - 180) / canvasH;
       setScale(Math.min(sx, sy, 1));
     }
     resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
-  }, [canvasH]);
+    const observer = new ResizeObserver(resize);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [canvasH, initialized]);
 
   const pointToSlot = useCallback((clientX: number, clientY: number): number | null => {
     if (!canvasRef.current) return null;
@@ -450,25 +454,16 @@ export default function AdminPageEditor() {
         </div>
 
         <div className="relative flex items-center">
-          {/* Left page arrow */}
+          {/* Left page arrow. Pages turn on click only, one per click: hovering never turns them. */}
           {editorTotalPages > 1 && (
-            <div
+            <button
+              type="button"
+              aria-label="Previous page"
               className="flex-shrink-0 w-12 flex items-center justify-center cursor-pointer group"
-              onMouseEnter={() => {
-                arrowHoverTimerRef.current = setTimeout(() => {
-                  setEditorPage(prev => prev <= 0 ? editorTotalPages - 1 : prev - 1);
-                }, 200);
-              }}
-              onMouseLeave={() => {
-                if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
-              }}
-              onClick={() => {
-                if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
-                setEditorPage(prev => prev <= 0 ? editorTotalPages - 1 : prev - 1);
-              }}
+              onClick={() => setEditorPage(prev => prev <= 0 ? editorTotalPages - 1 : prev - 1)}
             >
               <ChevronLeft className="w-8 h-8 text-muted-foreground/20 group-hover:text-muted-foreground/60 transition-colors" />
-            </div>
+            </button>
           )}
 
           <div
@@ -582,23 +577,14 @@ export default function AdminPageEditor() {
 
           {/* Right page arrow */}
           {editorTotalPages > 1 && (
-            <div
+            <button
+              type="button"
+              aria-label="Next page"
               className="flex-shrink-0 w-12 flex items-center justify-center cursor-pointer group"
-              onMouseEnter={() => {
-                arrowHoverTimerRef.current = setTimeout(() => {
-                  setEditorPage(prev => prev >= editorTotalPages - 1 ? 0 : prev + 1);
-                }, 200);
-              }}
-              onMouseLeave={() => {
-                if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
-              }}
-              onClick={() => {
-                if (arrowHoverTimerRef.current) { clearTimeout(arrowHoverTimerRef.current); arrowHoverTimerRef.current = null; }
-                setEditorPage(prev => prev >= editorTotalPages - 1 ? 0 : prev + 1);
-              }}
+              onClick={() => setEditorPage(prev => prev >= editorTotalPages - 1 ? 0 : prev + 1)}
             >
               <ChevronRight className="w-8 h-8 text-muted-foreground/20 group-hover:text-muted-foreground/60 transition-colors" />
-            </div>
+            </button>
           )}
         </div>
       </div>

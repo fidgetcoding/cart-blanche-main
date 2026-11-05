@@ -18,7 +18,8 @@ const StorefrontShell = ({ activeTemplate }: { activeTemplate: ActiveTemplate })
         <SmartCartProvider>
           <StyleKitProvider>
             {activeTemplate === 'sl' ? <MaisonCanvas /> : <SpatialCanvas />}
-            <StyleKitView />
+            {/* SL shows Build a Set in its own modal; a second full-screen copy sat behind it. */}
+            {activeTemplate !== 'sl' && <StyleKitView />}
             <SubscriberPopup variant={activeTemplate} />
           </StyleKitProvider>
         </SmartCartProvider>

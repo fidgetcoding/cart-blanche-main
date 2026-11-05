@@ -583,9 +583,9 @@ export default function AdminStylingGuide() {
     <>
       <BlockerDialog />
     <div className="flex flex-col h-full border-t border-border">
-      <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
+      <div className="flex items-center justify-between flex-wrap gap-3 px-6 pt-6 pb-4 flex-shrink-0">
         <h1 className="font-display text-2xl font-bold tracking-wide">Look Book</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-2">
           <div className="flex items-center bg-secondary rounded-lg p-1">
             <button
               onClick={() => { setActiveView('list'); setExpandedProductId(null); }}
@@ -668,9 +668,10 @@ export default function AdminStylingGuide() {
         </div>
       )}
 
-      <div className="flex-1 flex min-h-0">
+      {/* On a phone the product list sits above the matches: beside them it pushed them off screen. */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0">
         {/* LEFT: Product list sidebar */}
-        <div className={`w-96 border-r border-foreground/5 overflow-y-auto flex-shrink-0 liquid-glass transition-shadow duration-500 ${activeView === 'canvas' && blankNodeActive ? 'shadow-[0_0_40px_8px_hsl(var(--primary)/0.25),inset_0_0_30px_-10px_hsl(var(--primary)/0.1)]' : ''}`}>
+        <div className={`w-full md:w-96 max-h-[40%] md:max-h-none border-b md:border-b-0 md:border-r border-foreground/5 overflow-y-auto flex-shrink-0 liquid-glass transition-shadow duration-500 ${activeView === 'canvas' && blankNodeActive ? 'shadow-[0_0_40px_8px_hsl(var(--primary)/0.25),inset_0_0_30px_-10px_hsl(var(--primary)/0.1)]' : ''}`}>
           {activeView === 'canvas' && blankNodeActive && (
             <div className="px-4 py-2.5 border-b border-foreground/5 bg-primary/5 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0" />

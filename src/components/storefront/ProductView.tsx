@@ -10,6 +10,7 @@ import { GenderSymbol } from './GenderSymbol';
 import { splitSentences } from '@/lib/format-description';
 import { WaitlistModal } from './WaitlistModal';
 import { getSwatchStyle } from '@/lib/swatch-style';
+import { visibleGenderChips } from '@/lib/hidden-genders';
 
 // Cross-product size memory: when a shopper locks a size on a top, pre-select
 // that same size on the next top they view (same for bottoms).
@@ -20,6 +21,21 @@ function getSizeGroup(category: string | undefined): SizeGroup | null {
   if (category === 'shirt' || category === 'jacket') return 'top';
   if (category === 'pants' || category === 'shorts') return 'bottom';
   return null;
+}
+
+// The variant in the size the shopper last locked for this garment group, when the product has it
+// in stock in its first colour.
+function rememberedVariantId(product: DemoProduct | undefined): string | null {
+  const group = getSizeGroup(product?.product_type);
+  const remembered = group ? rememberedSizeByGroup.get(group) : undefined;
+  const match = remembered
+    ? product?.variants.find(v =>
+        v.title === remembered &&
+        v.inventory_count > 0 &&
+        (!v.colorway_id || v.colorway_id === (product?.colorways?.[0]?.id ?? null))
+      )
+    : undefined;
+  return match ? match.id : null;
 }
 
 
@@ -34,6 +50,8 @@ interface ProductViewProps {
   activeGenders?: string[];
   onToggleGender?: (g: string) => void;
   availableGenders?: Set<string>;
+  /** Genders hidden in Inventory; their chips don't show. */
+  hiddenGenders?: string[];
 }
 
 function getWrappingNeighbor(
@@ -162,12 +180,21 @@ function fadeMaskFor(direction: 'left' | 'right' | 'top' | 'bottom', edgeFade: P
 // A pause between wheel events longer than this starts a new swipe.
 const WHEEL_QUIET_MS = 250;
 
-const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function ProductViewContent({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders }, _ref) {
+// Wheel, key and touch input steps the view only when it comes from the view itself or the page
+// beneath it. Input from a layer on top (the cart drawer, a popup) or typed into a text field is
+// left alone, so that layer scrolls and its fields keep their arrow keys.
+function isViewInput(root: HTMLElement | null, target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return true;
+  if (target.closest('input, textarea, select, [contenteditable="true"]')) return false;
+  return !root || root.contains(target) || target.contains(root);
+}
+
+const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function ProductViewContent({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders, hiddenGenders }, _ref) {
   const DEMO_PRODUCTS = products;
   const CATEGORIES = categories;
   const { themeSettings } = useTheme();
 
-  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<string | null>(() => rememberedVariantId(products[productIndex]));
   
   const [expandDetails, setExpandDetails] = useState(false);
 
@@ -204,8 +231,12 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
   const [activeImage, setActiveImage] = useState(0);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const { addItem, openCart, itemCount } = useCart();
-  const { openStyleKit } = useStyleKit();
+  const { addItem, openCart, itemCount, isOpen: cartOpen } = useCart();
+  const { openStyleKit, isOpen: styleKitOpen } = useStyleKit();
+  const rootRef = useRef<HTMLDivElement>(null);
+  // While the cart, Build a Set, the size chart or the waitlist is open on top, it owns the wheel,
+  // the keys and touch.
+  const layerOnTop = cartOpen || styleKitOpen || sizeChartOpen || waitlistOpen;
   const scrollCooldown = useRef(true);
   // One step per wheel gesture. A trackpad keeps sending wheel events for a second or more
   // after the fingers lift, so any event that follows the last one within WHEEL_QUIET_MS belongs
@@ -227,6 +258,21 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
     product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null
   );
   const [colorwayPage, setColorwayPage] = useState(0);
+
+  // Reset the shopper's choices when the product changes, pre-selecting a size they locked on this
+  // garment group (top vs bottom). Done during render, not in an effect, so the new product's first
+  // frame already shows its own first photo and colour: an effect let one frame paint the old photo
+  // index and colour, which flashed a different photo, or none. Keyed on the product's id, so a
+  // refreshed product object doesn't wipe the selections.
+  const [shownProductId, setShownProductId] = useState(product.id);
+  if (shownProductId !== product.id) {
+    setShownProductId(product.id);
+    setSelectedVariant(rememberedVariantId(product));
+    setExpandDetails(false);
+    setActiveImage(0);
+    setColorwayPage(0);
+    setSelectedColorwayId(product.colorways?.[0]?.id ?? null);
+  }
 
   // Resolve the selected colorway object. If null (no colorways) or
   // the id doesn't match any colorway (defensive), this is null.
@@ -257,31 +303,13 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
   );
   const posInFiltered = visibleIndices.indexOf(productIndex) + 1;
 
-  // Reset variant selection when product changes & preload alternate images.
-  // If the shopper has already locked a size for this garment group (top vs bottom),
-  // pre-select the matching variant on the next product in that group.
-  // Keyed on productIndex alone (product read via ref) so a refreshed product
-  // object at the same index doesn't wipe the shopper's selections.
+  // Preload alternate images when the product changes (product read via ref).
   const productRef = useRef(product);
   productRef.current = product;
   useEffect(() => {
     const product = productRef.current;
-    const group = getSizeGroup(product?.product_type);
-    const remembered = group ? rememberedSizeByGroup.get(group) : undefined;
-    const match = remembered
-      ? product?.variants.find(v =>
-          v.title === remembered &&
-          v.inventory_count > 0 &&
-          (!v.colorway_id || v.colorway_id === (product?.colorways?.[0]?.id ?? null))
-        )
-      : undefined;
-    setSelectedVariant(match ? match.id : null);
-    setExpandDetails(false);
-    setActiveImage(0);
-    setColorwayPage(0);
     const firstColorwayId =
       product.colorways && product.colorways.length > 0 ? product.colorways[0].id : null;
-    setSelectedColorwayId(firstColorwayId);
     // Preload worn/alternate images for the SELECTED colorway in
     // background. Only the currently-displayed images need preloading;
     // images for other colorways will load when their swatch is selected.
@@ -294,7 +322,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
         const img = new Image();
         img.src = src.medium;
       });
-  }, [productIndex]);
+  }, [product.id]);
 
   // Preserve image index when colorway changes. If the new
   // colorway has fewer images than current index, clamp to last.
@@ -355,6 +383,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
   // product's photos. Everywhere else, and vertical anywhere, navigates
   // between products.
   const handleWheel = useCallback((e: WheelEvent) => {
+    if (layerOnTop || !isViewInput(rootRef.current, e.target)) return;
     e.preventDefault();
     if (e.timeStamp - lastWheelAt.current > WHEEL_QUIET_MS) wheelGestureUsed.current = false;
     lastWheelAt.current = e.timeStamp;
@@ -394,7 +423,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
     } else {
       navigate(e.deltaY > 0 ? 'down' : 'up');
     }
-  }, [navigate, displayImages.length]);
+  }, [navigate, displayImages.length, layerOnTop]);
 
   useEffect(() => {
     const el = document.body;
@@ -402,28 +431,43 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
 
-  // Touch swipe navigation
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  // Touch swipe navigation. Same zones as the wheel: a horizontal swipe on the image cycles its
+  // photos, any other swipe moves between products.
+  const touchStart = useRef<{ x: number; y: number; onImage: boolean } | null>(null);
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
+      touchStart.current = null;
+      // A second finger makes it a pinch, not a swipe.
+      if (e.touches.length !== 1 || layerOnTop || !isViewInput(rootRef.current, e.target)) return;
+      const target = e.target as Element;
+      // The swatch column pages its own colours.
+      if (totalColorwayPages > 1 && target.closest?.('[data-colorway-column]')) return;
       const t = e.touches[0];
-      touchStart.current = { x: t.clientX, y: t.clientY };
+      touchStart.current = { x: t.clientX, y: t.clientY, onImage: target.closest?.('[data-image-zone]') != null };
     };
     const onTouchEnd = (e: TouchEvent) => {
-      if (!touchStart.current) return;
+      const start = touchStart.current;
+      touchStart.current = null;
+      if (!start) return;
       const t = e.changedTouches[0];
-      const dx = t.clientX - touchStart.current.x;
-      const dy = t.clientY - touchStart.current.y;
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
       const MIN_SWIPE = 50;
-      if (absX < MIN_SWIPE && absY < MIN_SWIPE) { touchStart.current = null; return; }
+      if (absX < MIN_SWIPE && absY < MIN_SWIPE) return;
+      if (absX > absY && start.onImage) {
+        const imageCount = displayImages.length;
+        if (imageCount > 1) {
+          setActiveImage(prev => dx < 0 ? (prev + 1) % imageCount : (prev - 1 + imageCount) % imageCount);
+        }
+        return;
+      }
       if (absX > absY) {
         navigate(dx < 0 ? 'right' : 'left');
       } else {
         navigate(dy < 0 ? 'down' : 'up');
       }
-      touchStart.current = null;
     };
     window.addEventListener('touchstart', onTouchStart, { passive: true });
     window.addEventListener('touchend', onTouchEnd, { passive: true });
@@ -431,27 +475,28 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
       window.removeEventListener('touchstart', onTouchStart);
       window.removeEventListener('touchend', onTouchEnd);
     };
-  }, [navigate]);
+  }, [navigate, layerOnTop, totalColorwayPages, displayImages.length]);
 
-  // Keyboard navigation
+  // Keyboard navigation: one product per key press. A held key's repeats don't step again.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (layerOnTop || !isViewInput(rootRef.current, e.target)) return;
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault();
-          navigate('left');
+          if (!e.repeat) navigate('left');
           break;
         case 'ArrowRight':
           e.preventDefault();
-          navigate('right');
+          if (!e.repeat) navigate('right');
           break;
         case 'ArrowUp':
           e.preventDefault();
-          navigate('up');
+          if (!e.repeat) navigate('up');
           break;
         case 'ArrowDown':
           e.preventDefault();
-          navigate('down');
+          if (!e.repeat) navigate('down');
           break;
         case 'Escape':
           e.preventDefault();
@@ -462,7 +507,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, onClose]);
+  }, [navigate, onClose, layerOnTop]);
 
   const variant = product.variants.find(v => v.id === selectedVariant);
   const canAdd = product.variants.length <= 1 || selectedVariant !== null;
@@ -523,6 +568,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
 
   return (
     <motion.div
+      ref={rootRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -665,13 +711,14 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
       {/* Content layer — pointer-events-none container, auto on interactive children */}
       <div className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto pt-20 pb-8 pointer-events-none">
 
-        {/* Category tabs + gender symbols — centered as one group, mirroring SpatialCanvas header */}
+        {/* Category tabs + gender symbols — centered as one group, mirroring SpatialCanvas header.
+            On a phone the group spans the width left of the cart button and the tabs scroll. */}
         <div className={
           effectivePeekMode
-            ? 'absolute top-4 left-4 z-50 pointer-events-auto flex flex-col items-start gap-2'
-            : 'absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-3'
+            ? 'absolute top-4 left-4 max-md:right-20 z-50 pointer-events-auto flex flex-col items-start gap-2'
+            : 'absolute top-4 left-1/2 -translate-x-1/2 max-md:left-4 max-md:right-20 max-md:translate-x-0 z-50 pointer-events-auto flex items-center gap-3'
         }>
-          <div className="flex items-center gap-0.5 bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
+          <div className="flex items-center gap-0.5 min-w-0 max-w-full overflow-x-auto scrollbar-hide bg-foreground/[0.08] backdrop-blur-xl border border-foreground/[0.12] rounded-lg px-1 py-0.5">
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
@@ -696,9 +743,9 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
             <div className={
               effectivePeekMode
                 ? 'flex flex-col items-center gap-1 pl-2'
-                : 'flex items-center gap-2'
+                : 'flex items-center gap-2 shrink-0'
             }>
-              {['MEN', 'WOMEN', 'UNISEX'].map(g => {
+              {visibleGenderChips(hiddenGenders).map(g => {
                 const isActive = activeGenders.includes(g);
                 return (
                   <button
@@ -740,7 +787,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
           onClick={() => navigate('left')}
           aria-label="Previous product"
           className="absolute top-1/2 -translate-y-1/2 z-40 p-1 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
-          style={{ right: 'calc(50% + min(16rem, 26vh) + 0.5rem)' }}
+          style={{ right: 'min(calc(50% + min(16rem, 26vh) + 0.5rem), calc(100% - 2.25rem))' }}
         >
           <ChevronLeft className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
@@ -748,7 +795,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
           onClick={() => navigate('right')}
           aria-label="Next product"
           className="absolute top-1/2 -translate-y-1/2 z-40 p-1 hover:bg-foreground/10 rounded-full transition-all group pointer-events-auto"
-          style={{ left: 'calc(50% + min(16rem, 26vh) + 0.5rem)' }}
+          style={{ left: 'min(calc(50% + min(16rem, 26vh) + 0.5rem), calc(100% - 2.25rem))' }}
         >
           <ChevronRight className="w-6 h-6 text-foreground/40 group-hover:text-foreground transition-colors" />
         </button>
@@ -844,6 +891,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
                     </div>
                   )}
                   <div
+                    data-colorway-column
                     className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 z-20"
                     style={{ overscrollBehavior: 'contain' }}
                     onClick={(e) => e.stopPropagation()}
@@ -879,7 +927,6 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
                     <button
                       key={i}
                       onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
-                      onMouseEnter={() => setActiveImage(i)}
                       className="flex-1 relative group"
                     >
                       <div className={`absolute bottom-2 left-1 right-1 h-1 rounded-full transition-all duration-200 ${
@@ -922,11 +969,12 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
             </div>
 
             {/* Expand button — only renders in collapsed state. When expanded,
-                an X button renders below the action buttons (see after AnimatePresence). */}
+                an X button renders below the action buttons (see after AnimatePresence).
+                Click only: expanding on hover reflowed the panel under a still cursor, so the
+                click meant for "+" landed on ADD TO CART. */}
             {!expandDetails && !isWholeProductOutOfStock && (
               <button
                 onClick={() => setExpandDetails(true)}
-                onMouseEnter={() => setExpandDetails(true)}
                 className={`mt-1 rounded-full transition-all text-foreground hover:bg-secondary ring-1 ring-transparent hover:ring-foreground/20 flex items-center justify-center gap-1.5 ${
                   themeSettings.yzExpandTriggerStyle === 'icon'
                     ? 'p-2'
@@ -1070,7 +1118,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
         </AnimatePresence>
 
         {/* Navigation hints — bottom left */}
-        <div className="group absolute bottom-14 left-6 pointer-events-auto cursor-default">
+        <div className="group absolute bottom-14 left-6 max-w-[calc(100%-7rem)] pointer-events-auto cursor-default">
           <p className="text-[10px] tracking-wider text-muted-foreground/30 group-hover:text-foreground/80 transition-colors duration-700" style={{ fontFamily: 'var(--font-body)' }}>
             <span className="hidden md:inline">SWIPE OR USE ARROW-KEYS TO CYCLE PRODUCTS & PHOTOS</span>
             <span className="md:hidden">SWIPE OR USE ARROW-KEYS TO CYCLE PRODUCTS & PHOTOS</span>

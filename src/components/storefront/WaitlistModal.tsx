@@ -39,6 +39,17 @@ export function WaitlistModal({ open, onClose, product, lockedSize }: WaitlistMo
     if (open && lockedSize) setSize(lockedSize);
   }, [open, lockedSize]);
 
+  // Escape closes the modal, the top layer, and leaves the product view beneath it open.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  // A product sold in several colours has a variant per colour and size; offer each size once.
+  const sizes = [...new Set(product.variants.map(v => v.title))];
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !name.trim()) return;
@@ -121,7 +132,7 @@ export function WaitlistModal({ open, onClose, product, lockedSize }: WaitlistMo
                 />
               </label>
 
-              {product.variants.length > 1 && (
+              {sizes.length > 1 && (
                 <div>
                   <span className="text-[11px] tracking-wider uppercase text-foreground/60">Size preference</span>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -130,20 +141,20 @@ export function WaitlistModal({ open, onClose, product, lockedSize }: WaitlistMo
                         {lockedSize}
                       </span>
                     ) : (
-                      product.variants.map((v) => {
-                        const active = size === v.title;
+                      sizes.map((title) => {
+                        const active = size === title;
                         return (
                           <button
-                            key={v.id}
+                            key={title}
                             type="button"
-                            onClick={() => setSize(active ? '' : v.title)}
+                            onClick={() => setSize(active ? '' : title)}
                             className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
                               active
                                 ? 'bg-foreground text-background border-foreground'
                                 : 'bg-background/40 text-foreground border-foreground/20 hover:border-foreground/40'
                             }`}
                           >
-                            {v.title}
+                            {title}
                           </button>
                         );
                       })

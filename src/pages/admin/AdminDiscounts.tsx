@@ -48,6 +48,14 @@ export default function AdminDiscounts() {
   // Mark dirty when form is open with changes
   useEffect(() => { if (showForm) markDirty(); else markClean(); }, [showForm, markDirty, markClean]);
 
+  // Escape closes the form, as the backdrop and Cancel do.
+  useEffect(() => {
+    if (!showForm) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowForm(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showForm]);
+
   useEffect(() => {
     fetchCodes();
   }, []);
@@ -183,8 +191,8 @@ export default function AdminDiscounts() {
       {/* Create/Edit modal */}
       {showForm && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-8" onClick={() => setShowForm(false)}>
-          <div className="liquid-glass rounded-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h2 className="font-display text-lg font-bold">{editCode ? 'Edit Discount Code' : 'New Discount Code'}</h2>
+          <div role="dialog" aria-modal="true" aria-labelledby="discount-form-title" className="liquid-glass rounded-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <h2 id="discount-form-title" className="font-display text-lg font-bold">{editCode ? 'Edit Discount Code' : 'New Discount Code'}</h2>
 
             <div>
               <label className="text-xs font-display tracking-widest text-muted-foreground">CODE</label>
@@ -295,7 +303,7 @@ export default function AdminDiscounts() {
           )}
         </div>
       ) : (
-        <div className="liquid-glass rounded-xl overflow-hidden">
+        <div className="liquid-glass rounded-xl overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">

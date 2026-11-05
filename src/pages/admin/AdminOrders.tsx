@@ -73,14 +73,19 @@ function getPaymentStatus(order: Order) {
   return 'paid';
 }
 
+// Built once: toLocaleString with options builds a new formatter on every call, and the list
+// formats every row on each render, so ticking one checkbox took 50ms on a 4x-throttled CPU.
+const DAY_FORMAT = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+const TIME_FORMAT = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+const MONEY_FORMAT = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 function formatDate(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-    ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return DAY_FORMAT.format(d) + ', ' + TIME_FORMAT.format(d);
 }
 
 function formatCurrency(n: number) {
-  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return '$' + MONEY_FORMAT.format(n);
 }
 
 // ─── Order Detail View ───────────────────────────────────────────
@@ -425,6 +430,7 @@ export default function AdminOrders() {
             </p>
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50">
@@ -509,6 +515,7 @@ export default function AdminOrders() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

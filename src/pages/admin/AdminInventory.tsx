@@ -166,7 +166,7 @@ function getTagTextColor(tag: string) {
 const DEFAULT_GENDERS = ['men', 'women', 'unisex'];
 
 export default function AdminInventory() {
-  const { layout: gridLayout, saveHiddenTags, saveHiddenProductIds, saveHiddenGenders, saveDemoProductOverride, saveLayout, getAllProductsUnfiltered } = useGridLayout();
+  const { layout: gridLayout, loading: layoutLoading, saveHiddenTags, saveHiddenProductIds, saveHiddenGenders, saveDemoProductOverride, saveLayout, getAllProductsUnfiltered } = useGridLayout();
   const { forProduct: getWaitlistForProduct, countFor: countWaitlistFor, markFulfilled: markWaitlistFulfilled, deleteSignup: deleteWaitlistSignup } = useProductWaitlist();
   const editProductWaitlistRef = useRef<HTMLDivElement>(null);
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -240,12 +240,25 @@ export default function AdminInventory() {
   const [inlineColorName, setInlineColorName] = useState('');
   const [inlineColorHex, setInlineColorHex] = useState('#000000');
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
-  const [customProductTypes, setCustomProductTypes] = useState<string[]>(() => {
-    try {
-      const raw = localStorage.getItem('cb_custom_product_types');
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  });
+  // A real store's custom types are remembered in this browser. The demo's last for
+  // the visit, like its other changes, so it only reads and writes them for a real store.
+  const [customProductTypes, setCustomProductTypes] = useState<string[]>([]);
+  const remembersTypesRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled || !session || isDemoSession(session)) return;
+      remembersTypesRef.current = true;
+      try {
+        const raw = localStorage.getItem('cb_custom_product_types');
+        const saved: string[] = raw ? JSON.parse(raw) : [];
+        setCustomProductTypes(prev => [...saved, ...prev.filter(t => !saved.includes(t))]);
+      } catch {
+        // Storage blocked or unreadable: start with none.
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
   const [addingTypeForId, setAddingTypeForId] = useState<string | null>(null);
   const [newTypeInput, setNewTypeInput] = useState('');
   const allCategoryOptions = useMemo(() => {
@@ -259,10 +272,12 @@ export default function AdminInventory() {
     setCustomProductTypes(prev => {
       if (prev.includes(v) || (PRODUCT_TYPES as readonly string[]).includes(v)) return prev;
       const next = [...prev, v];
-      try {
-        localStorage.setItem('cb_custom_product_types', JSON.stringify(next));
-      } catch {
-        // Storage blocked: the type still works for this visit.
+      if (remembersTypesRef.current) {
+        try {
+          localStorage.setItem('cb_custom_product_types', JSON.stringify(next));
+        } catch {
+          // Storage blocked: the type still works for this visit.
+        }
       }
       return next;
     });
@@ -322,12 +337,13 @@ export default function AdminInventory() {
 
   // Re-initialize once gridLayout loads to apply saved order. Watching loading
   // too covers a layout that arrives while the mount fetch is still in flight.
+  // A store with no saved layout is settled once the load ends, so the layout its
+  // first save creates (hiding a product, say) doesn't refetch over unsaved edits.
   useEffect(() => {
-    if (gridLayout && !initialized && !loading) {
-      fetchInventoryRef.current();
-      setInitialized(true);
-    }
-  }, [gridLayout, initialized, loading]);
+    if (initialized || loading || layoutLoading) return;
+    if (gridLayout) fetchInventoryRef.current();
+    setInitialized(true);
+  }, [gridLayout, initialized, loading, layoutLoading]);
 
   // Keep liveProducts synced when not dragging
   useEffect(() => {
@@ -518,6 +534,9 @@ export default function AdminInventory() {
       return true;
     });
   }, [products, activeFilter, activeTypeFilter, activeGenderFilter, search]);
+
+  // A row drag reorders the whole catalogue, so it's only offered on the unfiltered list.
+  const showsWholeList = activeFilter === 'all' && activeTypeFilter === 'all' && activeGenderFilter === 'all' && !search;
 
   const archivedProducts = useMemo(() => {
     return products.filter(p => p.status === 'archived');
@@ -1207,7 +1226,7 @@ export default function AdminInventory() {
   return (
     <>
     <BlockerDialog />
-    <div className="p-8 max-w-[1200px]">
+    <div className="p-4 sm:p-8 max-w-[1200px]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl font-bold">Inventory</h1>
@@ -1593,7 +1612,7 @@ export default function AdminInventory() {
               >
                 {/* Product row */}
                 <div
-                  className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
+                  className="flex flex-wrap items-center gap-4 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}
                 >
                   {/* Selection checkbox */}
@@ -1608,8 +1627,9 @@ export default function AdminInventory() {
                     )}
                   </button>
                   {/* Drag handle */}
-                  {activeFilter === 'all' && !isExpanded && !tagEditMode && (
+                  {showsWholeList && !isExpanded && !tagEditMode && (
                     <div
+                      title="Drag to reorder"
                       className="text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors flex-shrink-0 touch-none"
                       onPointerDown={(e) => handleGripPointerDown(e, realIdx)}
                     >
@@ -1631,8 +1651,9 @@ export default function AdminInventory() {
                     )}
                   </div>
 
-                  {/* Title + tags */}
-                  <div className="flex-1 min-w-0">
+                  {/* Title + tags. Never narrower than 8rem: when the row runs out of room
+                      the numbers below wrap onto a second line instead. */}
+                  <div className="flex-1 min-w-[8rem]">
                     <p className="font-display text-sm font-medium truncate">{p.title}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       {p.product_type && (
@@ -1653,8 +1674,9 @@ export default function AdminInventory() {
                     </div>
                   </div>
 
+                  <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-4 ml-auto">
                   {/* Price */}
-                  <div className="text-right flex-shrink-0 w-24">
+                  <div className="text-right flex-shrink-0 sm:w-24">
                     <span className="font-display text-sm">${p.price}</span>
                     {p.compare_at_price && (
                       <span className="text-[10px] text-muted-foreground line-through ml-1.5">${p.compare_at_price}</span>
@@ -1662,13 +1684,13 @@ export default function AdminInventory() {
                   </div>
 
                   {/* Total stock */}
-                  <div className="flex-shrink-0 w-20 text-right">
+                  <div className="flex-shrink-0 sm:w-20 text-right">
                     <span className="font-display text-sm">{p.totalStock}</span>
                     <span className="text-[10px] text-muted-foreground ml-1">units</span>
                   </div>
 
                   {/* Visibility toggle */}
-                  <div className="flex-shrink-0 w-16 flex justify-center" onClick={e => e.stopPropagation()}>
+                  <div className="flex-shrink-0 sm:w-16 flex justify-center" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => toggleProductVisibility(p.id, p.status)}
                       className={`p-1.5 rounded transition-colors ${
@@ -1683,7 +1705,7 @@ export default function AdminInventory() {
                   </div>
 
                   {/* Status badge */}
-                  <div className="flex-shrink-0 w-24 text-right">
+                  <div className="flex-shrink-0 sm:w-24 text-right">
                     {isOut ? (
                       <span className="text-[10px] font-display px-2 py-1 rounded bg-destructive/20 text-destructive">OUT OF STOCK</span>
                     ) : isLow ? (
@@ -1711,6 +1733,7 @@ export default function AdminInventory() {
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
+                  </div>
                   </div>
                 </div>
 

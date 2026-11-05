@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Outlet, NavLink, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { realAuth } from '@/lib/demo/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -21,6 +21,10 @@ import {
   X,
 } from 'lucide-react';
 
+// Below this width the chat opens over the page instead of beside it: next to a 380px chat,
+// a tablet's page was too narrow for the nav and the pages' own layouts.
+const CHAT_BESIDE_PAGE_MIN_WIDTH = 1024;
+
 const NAV_ITEMS = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/inventory', icon: Warehouse, label: 'Inventory' },
@@ -38,9 +42,16 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isDemo, setIsDemo] = useState(false);
-  const isMobile = useIsMobile();
-  // A phone can't fit the chat beside the page, so it opens over it.
+  const isMobile = useIsMobile(CHAT_BESIDE_PAGE_MIN_WIDTH);
+  // A phone or tablet can't fit the chat beside the page, so it opens over it.
   const [chatOpen, setChatOpen] = useState(false);
+  const { pathname } = useLocation();
+  const navRef = useRef<HTMLElement>(null);
+
+  // A narrow nav scrolls sideways, so bring the current page's tab into view.
+  useEffect(() => {
+    navRef.current?.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [pathname, loading]);
 
   // No session means demo data, never a redirect: pages read through the
   // demo-aware client in @/lib/demo/client, so they stay away from the database.
@@ -64,9 +75,9 @@ export default function AdminLayout() {
 
   /* ── MAIN ADMIN LAYOUT ── */
   return (
-    <div key={isDemo ? 'demo' : 'live'} className="h-screen dynamic-bg flex flex-col md:flex-row overflow-hidden">
+    <div key={isDemo ? 'demo' : 'live'} className="h-screen dynamic-bg flex flex-col lg:flex-row overflow-hidden">
       {/* Left side: brand header + chat panel */}
-      <div className={`flex flex-col flex-shrink-0 md:border-r border-sidebar-border md:h-full ${isMobile && chatOpen ? 'flex-1 min-h-0' : ''}`}>
+      <div className={`flex flex-col flex-shrink-0 lg:border-r border-sidebar-border lg:h-full ${isMobile && chatOpen ? 'flex-1 min-h-0' : ''}`}>
         <div className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 gap-2">
           <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">CART BLANCHE</h1>
           {isDemo && (
@@ -99,13 +110,13 @@ export default function AdminLayout() {
           </button>
         </div>
         <div className={isMobile && !chatOpen ? 'hidden' : 'contents'}>
-          <SmartChatPanel />
+          <SmartChatPanel overlay={isMobile} />
         </div>
       </div>
 
       {/* Right side: nav header + content */}
       <div className={`flex-1 min-h-0 flex flex-col overflow-hidden ${isMobile && chatOpen ? 'hidden' : ''}`}>
-        <header className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 overflow-x-auto md:overflow-hidden gap-0.5">
+        <header ref={navRef} className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 z-10 overflow-x-auto lg:overflow-hidden gap-0.5">
           {NAV_ITEMS.map(item => (
             <NavLink
               key={item.to}

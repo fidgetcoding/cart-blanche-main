@@ -105,7 +105,7 @@ export default function AdminSubscribers() {
           ) : filtered.length === 0 ? (
             <p className="text-xs text-muted-foreground font-display tracking-widest text-center py-10">No subscribers match your search.</p>
           ) : (
-            <div className="border border-border/50 rounded-lg overflow-hidden">
+            <div className="border border-border/50 rounded-lg overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-secondary/30 border-b border-border/50">

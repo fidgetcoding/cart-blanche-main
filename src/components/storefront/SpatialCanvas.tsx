@@ -16,6 +16,7 @@ import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/contexts/ThemeContext';
 import { GenderSymbol } from '@/components/storefront/GenderSymbol';
+import { visibleGenderChips, withoutHiddenGenders } from '@/lib/hidden-genders';
 
 const TILE_W = 220;
 const TILE_H = 300;
@@ -43,8 +44,19 @@ export function SpatialCanvas() {
   const storeName = useStoreName(themeSettings.storeName);
 
   // Load layout from Supabase
-  const { loading: layoutLoading, getOrderedProducts, getOrderedCategories } = useGridLayout();
-  const DEMO_PRODUCTS = useMemo(() => getOrderedProducts(), [getOrderedProducts]);
+  const { loading: layoutLoading, layout, getOrderedProducts, getOrderedCategories } = useGridLayout();
+  // Genders hidden in Inventory leave the store. The rest close up, so the zoomed-out peek has no gaps.
+  const hiddenGenders = layout?.hiddenGenders;
+  const DEMO_PRODUCTS = useMemo(() => {
+    const ordered = getOrderedProducts();
+    const shown = withoutHiddenGenders(ordered, hiddenGenders);
+    if (shown === ordered) return ordered;
+    return shown.map((p, i) => ({
+      ...p,
+      grid_position: { x: (i % COLS) * (TILE_W + TILE_GAP), y: Math.floor(i / COLS) * (TILE_H + TILE_GAP) },
+    }));
+  }, [getOrderedProducts, hiddenGenders]);
+  const genderChips = useMemo(() => visibleGenderChips(hiddenGenders), [hiddenGenders]);
   const CATEGORIES = useMemo(() => getOrderedCategories(), [getOrderedCategories]);
 
   // Pagination: filter by Navigation Tag first, then paginate
@@ -156,7 +168,7 @@ export function SpatialCanvas() {
   const peekTimerRef = useRef<number>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const maxZoomTriggeredRef = useRef(false);
-  const { toggleCart, itemCount } = useCart();
+  const { toggleCart, itemCount, isOpen: cartOpen } = useCart();
   
   const { addItem } = useCart();
   const { openStyleKit, isOpen: styleKitOpen } = useStyleKit();
@@ -725,8 +737,10 @@ export function SpatialCanvas() {
     return () => root.removeEventListener('click', refocus, true);
   }, []);
 
-  // Keyboard navigation
+  // Keyboard navigation. Keys typed into the cart drawer, or into any field, belong to it: without
+  // this, Enter in the stylist chat opened a product and the arrow keys couldn't move the caret.
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (cartOpen || (e.target as HTMLElement).closest?.('input, textarea, select, [contenteditable="true"]')) return;
     if (e.key === 'Escape') {
       e.preventDefault();
       if (selectedIndex !== null) {
@@ -756,6 +770,8 @@ export function SpatialCanvas() {
 
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
+      // One tile per key press; a held key's repeats don't move it again.
+      if (e.repeat) return;
       if (focusedIndex === -1) {
         setFocusedIndex(visibleWithIndex.length > 0 ? visibleWithIndex[0].i : 0);
         return;
@@ -830,7 +846,7 @@ export function SpatialCanvas() {
     }
     if (e.key === '=' || e.key === '+') setScaleSmooth(Math.min(MAX_SCALE, targetTransformRef.current.scale * 1.15));
     if (e.key === '-') setScaleSmooth(Math.max(minScaleRef.current, targetTransformRef.current.scale * 0.85));
-  }, [focusedIndex, selectedIndex, setScaleSmooth, activeCategory, DEMO_PRODUCTS, displayPositions, fitToVisibleProducts, snapToFitVisible]);
+  }, [cartOpen, focusedIndex, selectedIndex, setScaleSmooth, activeCategory, DEMO_PRODUCTS, displayPositions, fitToVisibleProducts, snapToFitVisible]);
 
   // Pan to focused product when zoomed in
   useEffect(() => {
@@ -885,7 +901,7 @@ export function SpatialCanvas() {
 
             {/* Gender symbols — always rendered. Chips with no matching products in the current category are auto-disabled (grayed, non-interactive). User's selection persists across category switches. */}
             <div className="flex items-center gap-2">
-              {['MEN', 'WOMEN', 'UNISEX'].map(g => {
+              {genderChips.map(g => {
                 const isActive = activeGenders.includes(g);
                 const isAvailable = isGenderAvailable(g);
                 return (
@@ -1000,12 +1016,13 @@ export function SpatialCanvas() {
         </div>
       </div>
 
-      {/* Page navigation arrows — left and right margins */}
+      {/* Page navigation arrows — left and right margins. On a phone the tiles reach 20px from the
+          edge, so the arrows shrink into that gutter instead of covering the outer columns. */}
       {totalPages > 1 && (
         <>
           {/* Left arrow — previous page */}
           <div
-            className="absolute left-0 top-16 bottom-16 w-24 z-30 flex items-center justify-center cursor-pointer group"
+            className="absolute left-0 top-16 bottom-16 w-5 md:w-24 z-30 flex items-center justify-center cursor-pointer group"
             role="button"
             aria-label="Previous page"
             onClick={(e) => {
@@ -1013,12 +1030,12 @@ export function SpatialCanvas() {
               setCurrentPage(prev => prev <= 0 ? totalPages - 1 : prev - 1);
             }}
           >
-            <ChevronLeft className="w-14 h-14 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300" />
+            <ChevronLeft className="w-5 h-5 md:w-14 md:h-14 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300" />
           </div>
 
           {/* Right arrow — next page */}
           <div
-            className="absolute right-0 top-16 bottom-16 w-24 z-30 flex items-center justify-center cursor-pointer group"
+            className="absolute right-0 top-16 bottom-16 w-5 md:w-24 z-30 flex items-center justify-center cursor-pointer group"
             role="button"
             aria-label="Next page"
             onClick={(e) => {
@@ -1026,7 +1043,7 @@ export function SpatialCanvas() {
               setCurrentPage(prev => prev >= totalPages - 1 ? 0 : prev + 1);
             }}
           >
-            <ChevronRight className="w-14 h-14 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300" />
+            <ChevronRight className="w-5 h-5 md:w-14 md:h-14 text-foreground/10 group-hover:text-foreground/40 transition-colors duration-300" />
           </div>
         </>
       )}
@@ -1083,6 +1100,7 @@ export function SpatialCanvas() {
             activeGenders={activeGenders}
             onToggleGender={toggleGender}
             availableGenders={availableGenders}
+            hiddenGenders={hiddenGenders}
           />
         )}
       </AnimatePresence>
