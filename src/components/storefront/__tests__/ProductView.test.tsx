@@ -79,4 +79,29 @@ describe('ProductView', () => {
       vi.useRealTimers();
     }
   });
+
+  it('stays one step per swipe when the page stalls mid-swipe', () => {
+    vi.useFakeTimers();
+    try {
+      const onNavigate = vi.fn();
+      render(view(0, onNavigate));
+      vi.advanceTimersByTime(700);
+      // Wheel events keep the time the trackpad made them. A busy page delivers some late,
+      // after a pause longer than the quiet window, but their timestamps are still 16ms apart.
+      const wheelAt = (timeStamp: number) => {
+        const event = new WheelEvent('wheel', { deltaX: 80, deltaY: 0, bubbles: true, cancelable: true });
+        Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+        document.body.dispatchEvent(event);
+      };
+      const start = performance.now();
+      wheelAt(start);
+      wheelAt(start + 16);
+      vi.advanceTimersByTime(400);
+      wheelAt(start + 32);
+      wheelAt(start + 48);
+      expect(onNavigate).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

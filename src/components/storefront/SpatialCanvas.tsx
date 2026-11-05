@@ -28,7 +28,7 @@ const COLS = 5;
 const ITEMS_PER_PAGE = 20;
 const CANVAS_W = COLS * (TILE_W + TILE_GAP) - TILE_GAP;
 
-// Silence after the last wheel event that ends a page swipe, momentum included.
+// A pause between wheel events longer than this starts a new swipe.
 const PAGE_WHEEL_QUIET_MS = 250;
 
 export function SpatialCanvas() {
@@ -49,16 +49,11 @@ export function SpatialCanvas() {
 
   // Pagination: filter by Navigation Tag first, then paginate
   const [currentPage, setCurrentPage] = useState(0);
-  // One page per wheel swipe. A trackpad keeps sending wheel events for a second or more
-  // after the fingers lift, so the lock holds until the wheel has gone quiet.
-  const pageWheelLockRef = useRef(false);
-  const pageWheelQuietRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const holdPageWheelLock = useCallback(() => {
-    pageWheelLockRef.current = true;
-    if (pageWheelQuietRef.current) clearTimeout(pageWheelQuietRef.current);
-    pageWheelQuietRef.current = setTimeout(() => { pageWheelLockRef.current = false; }, PAGE_WHEEL_QUIET_MS);
-  }, []);
-  useEffect(() => () => { if (pageWheelQuietRef.current) clearTimeout(pageWheelQuietRef.current); }, []);
+  // One page per wheel swipe. A trackpad keeps sending wheel events for a second or more after
+  // the fingers lift, so events within PAGE_WHEEL_QUIET_MS of the last one are the same gesture.
+  // Gaps use the events' own timestamps, so a busy page that delivers the tail late can't split it.
+  const pageGestureFlippedRef = useRef(false);
+  const lastWheelAtRef = useRef(Number.NEGATIVE_INFINITY);
 
   const [activeCategory, setActiveCategory] = useState('ALL');
   const activeCategoryRef = useRef('ALL');
@@ -425,9 +420,11 @@ export function SpatialCanvas() {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       setFooterIntroVisible(false);
-      // Finish a page swipe before anything else reads the wheel, so its momentum tail
-      // can't flip another page or zoom into the tiles that slid under the cursor.
-      if (pageWheelLockRef.current) { holdPageWheelLock(); return; }
+      if (e.timeStamp - lastWheelAtRef.current > PAGE_WHEEL_QUIET_MS) pageGestureFlippedRef.current = false;
+      lastWheelAtRef.current = e.timeStamp;
+      // The rest of a swipe that flipped a page is spent, so its momentum tail can't flip
+      // another page or zoom into the tiles that slid under the cursor.
+      if (pageGestureFlippedRef.current) return;
       
       const target = targetTransformRef.current;
 
@@ -439,7 +436,7 @@ export function SpatialCanvas() {
           const absX = Math.abs(e.deltaX);
           const absY = Math.abs(e.deltaY);
           if (absX > absY && absX > 15) {
-            holdPageWheelLock();
+            pageGestureFlippedRef.current = true;
             setCurrentPage(prev => {
               if (e.deltaX > 0) {
                 return prev >= totalPages - 1 ? 0 : prev + 1;
@@ -521,7 +518,7 @@ export function SpatialCanvas() {
     return () => {
       container.removeEventListener('wheel', onWheel);
     };
-  }, [getProductAtCursor, activeCategory, startAnimation, totalPages, peekingAll, holdPageWheelLock]);
+  }, [getProductAtCursor, activeCategory, startAnimation, totalPages, peekingAll]);
 
   // Touch gestures (pan + pinch-to-zoom)
   useEffect(() => {

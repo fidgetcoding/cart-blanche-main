@@ -159,7 +159,7 @@ function fadeMaskFor(direction: 'left' | 'right' | 'top' | 'bottom', edgeFade: P
   return `linear-gradient(${dir}, transparent 0%, black ${stop}%)`;
 }
 
-// Silence after the last wheel event that ends a swipe, momentum included.
+// A pause between wheel events longer than this starts a new swipe.
 const WHEEL_QUIET_MS = 250;
 
 const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function ProductViewContent({ productIndex, products, categories, onClose, onNavigate, activeCategory, onCategoryChange, activeGenders = [], onToggleGender, availableGenders }, _ref) {
@@ -207,17 +207,12 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
   const { addItem, openCart, itemCount } = useCart();
   const { openStyleKit } = useStyleKit();
   const scrollCooldown = useRef(true);
-  // One step per wheel gesture. A trackpad keeps sending wheel events for a second or
-  // more after the fingers lift, so a fixed cooldown let that tail fire extra steps.
-  // The lock holds until the wheel has gone quiet.
-  const wheelGestureLock = useRef(false);
-  const wheelQuietTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const holdWheelLock = useCallback(() => {
-    wheelGestureLock.current = true;
-    if (wheelQuietTimer.current) clearTimeout(wheelQuietTimer.current);
-    wheelQuietTimer.current = setTimeout(() => { wheelGestureLock.current = false; }, WHEEL_QUIET_MS);
-  }, []);
-  useEffect(() => () => { if (wheelQuietTimer.current) clearTimeout(wheelQuietTimer.current); }, []);
+  // One step per wheel gesture. A trackpad keeps sending wheel events for a second or more
+  // after the fingers lift, so any event that follows the last one within WHEEL_QUIET_MS belongs
+  // to the same gesture. Gaps are measured on the events' own timestamps, not timers, so a busy
+  // page that delivers the tail late still sees one gesture.
+  const wheelGestureUsed = useRef(false);
+  const lastWheelAt = useRef(Number.NEGATIVE_INFINITY);
   const colorwayWheelLockRef = useRef(false);
   const colorwayTouchStartY = useRef<number | null>(null);
 
@@ -361,8 +356,11 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
   // between products.
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
-    if (scrollCooldown.current) return;
-    if (wheelGestureLock.current) { holdWheelLock(); return; }
+    if (e.timeStamp - lastWheelAt.current > WHEEL_QUIET_MS) wheelGestureUsed.current = false;
+    lastWheelAt.current = e.timeStamp;
+    // The gesture that opened the view (a zoom in) never steps it.
+    if (scrollCooldown.current) { wheelGestureUsed.current = true; return; }
+    if (wheelGestureUsed.current) return;
     const absX = Math.abs(e.deltaX);
     const absY = Math.abs(e.deltaY);
     if (absX < 15 && absY < 15) return;
@@ -374,7 +372,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
 
     // Horizontal swipe inside image card → cycle photos (wrap around)
     if (insideImage && isHorizontal && imageCount > 1) {
-      holdWheelLock();
+      wheelGestureUsed.current = true;
       setActiveImage(prev =>
         e.deltaX > 0
           ? (prev + 1) % imageCount
@@ -390,13 +388,13 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
     }
 
     // All other cases: existing product-navigation behavior.
-    holdWheelLock();
+    wheelGestureUsed.current = true;
     if (absX > absY) {
       navigate(e.deltaX > 0 ? 'right' : 'left');
     } else {
       navigate(e.deltaY > 0 ? 'down' : 'up');
     }
-  }, [navigate, displayImages.length, holdWheelLock]);
+  }, [navigate, displayImages.length]);
 
   useEffect(() => {
     const el = document.body;
