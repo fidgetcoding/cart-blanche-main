@@ -6,9 +6,9 @@ My words are quoted as I wrote or said them, typos fixed, nothing else. Commit h
 
 In February 2026 the owners of a real fashion brand told me what running a serious Shopify store actually takes. On February 17 I had a PDF and no code. On February 18 Lovable made 417 commits for me and I presented a first version to those same owners.
 
-Over the next three months it grew into a spatial storefront with two templates, a pairing canvas and a merchant portal, in 2,164 Lovable commits, with most of them landing on a handful of huge days. A technical collaborator came on to plan production and mobile. On November 1 it got a logged-out demo, a security pass and an MIT license, and it left Lovable for good. It's now a clone developed only in Claude Code, and readers bring their own Supabase and AI key.
+Over the next three months it grew into a spatial storefront with two templates, a pairing canvas and a merchant portal, in 2,164 Lovable commits, with most of them landing on a handful of huge days. A technical collaborator came on to plan production and mobile. On November 1 it got a logged-out demo, a security pass and an MIT license, and it left Lovable for good. It's now a clone developed only in Claude Code, and readers bring their own Supabase and AI key. On November 4 and 5 the cart got steadier, a shopper's first download got 44% smaller, every lint warning and audit advisory went to zero, and the store moved to its own address at cartblanche.io/demo.
 
-This repo is the public prototype. I continued this project privately for a series of boutique fashion brands and wired it for their specific stores. Rather than an open system, Cart Blanche has chosen to be a "selects" platform: invite only, for premier boutique fashion brands.
+This repo is the public prototype. I continued this project privately for a series of boutique fashion brands, wiring it for their specific stores. That happens in a private version, and that work is still in progress. Rather than an open system, Cart Blanche has chosen to be a "selects" platform: invite only, for premier boutique fashion brands.
 
 ## 2. Origin, in my words
 
@@ -62,8 +62,14 @@ The use case: the owners of a real fashion brand explained the problem and gave 
 | Nov 1 | Shopper signups and photos through rate limited functions, discount checks rate limited, merchant accounts invitation only | `fe19888`, `43b1f33`, `74cae19`, `6b31fea` |
 | Nov 1 | The SL template on phones, real product details kept, failed saves reported, Build a Set and the look book on the store's own products, CI | `d21bf32`, `7c074a2`, `9bf53e5`, `b901de1`, `9d2c5d4`, `8df52d2` |
 | Nov 1 | Real-store fixes: no sample catalogue on a real store, stylist on the store's own products, no invented orders, blank slugs. Phone admin, responses on Checkout and Connect Stripe, a details panel that stopped flapping | `cac1ec2`, `296d08e`, `f2af4e7`, `165ba35`, `ebd12fd`, `3c8b504`, `1444ecc` |
+| Nov 1 | A merchant's flows on a clean local stack, then a button sweep: 13 fixes, from the look book list to the Orders export | `a469ade` to `34b5c43` |
+| Nov 4 | A steadier cart and a smaller first download: bad saved data no longer crashes the cart, money runs in cents, merchant pages load only when opened. Released and checked on the live deploy | `d973711`, release record |
+| Nov 5 | `npm audit` and lint warnings both to 0, React Router 7, and the stale-value bugs those warnings were hiding, fixed | `5632af8` |
+| Nov 5 | Store and portal move under `/demo`. The root sends you there while it waits for a landing page, and old `/admin` and `/auth` links forward | `0d9443c` |
+| Nov 5 | cartblanche.io points at the store, `www` lands on it in one hop, and the docs link there | `97f1d36`, `abe30ee`, private note |
+| Nov 5 | Landing page design rounds. The first two got dropped, and the third started from the copy | Private note |
 
-History shape: February 495 commits, March 933, April 157, May 579. Three days hold more than half of it: March 2, February 18, May 2.
+History shape: February 495 commits, March 933, April 157, May 579, November 67. Three days hold more than half of it: March 2, February 18, May 2.
 
 ## 4. Round by round
 
@@ -104,6 +110,31 @@ History shape: February 495 commits, March 933, April 157, May 579. Three days h
 - **Broke:** on that real stack every table failed with permission denied, because new Supabase projects no longer expose new tables by default (`2f10bb2`). A real store also sold the sample catalogue and could only get recommendations from it (`cac1ec2`, `296d08e`), and a store with no orders saw 100 invented ones (`f2af4e7`). Oversized photos hung the client (`5fc90bd`), and the product details looped open and shut under the cursor (`1444ecc`).
 - **Fixed:** all of those, and every lint error, with no rules turned off (`6af6d32`).
 
+### Round 7: a steadier cart and a smaller download (November 4)
+- **Built:** the cart recovers from bad saved data and failed writes, quantities get checked, totals and discounts run in cents, and a minimum-spend code drops off when the cart falls under it. Recommendations and Quick Add skip sold-out sizes, and a budget swap keeps the sizes and quantities you actually picked. Clearing the stylist chat cancels the request still in flight. The merchant pages now load only when you open them, so a shopper's first download went from 1,426,048 bytes of JavaScript to 800,168.
+- **Tested:** 341 tests in 40 files, and 45 browser checks on a local build covering the cart, all 11 guest admin routes and both templates on a phone. CI went green on the released commit. Then 19 read-only checks on the live deploy, where all 10 entry files matched the local build byte for byte. See section 6.
+- **Broke, found in the audit:** malformed cart data crashed the totals, percentage discounts rounded to whole currency units, a minimum-spend code stayed on after the cart dropped below it, a cleared chat still took old replies, draft and archived samples leaked into the shop and its recommendations, and every admin page shipped in the shopper's first download.
+- **Fixed:** all of those, with regression tests (`d973711`).
+- **Wanted next:** the 50 lint warnings and 5 moderate audit advisories that were still sitting there.
+
+### Round 8: zero warnings (November 5)
+- **Built:** React Router 6.30 to 7.18.5 to clear its advisories, patched nested packages, providers and button variants moved into their own files, and complete hook dependency lists. No lint rules switched off.
+- **Tested:** lint at 0 warnings, `npm audit` at 0 for production and dev, 347 tests in 43 files, a build with no warnings, and 45 browser checks with no console warnings or errors (`5632af8`, then CI).
+- **Broke, found by fixing the warnings:** the style guide canvas got stuck in a render loop, a save during the first insert made a duplicate row, inventory skipped the saved product order when the layout arrived mid-fetch, zooming back in didn't cancel the all-products peek, the product view showed stale photos and counters after a colorway or gender switch, and a swapped-in Style Kit product kept the old size.
+- **Fixed:** all of them, with regression tests (`5632af8`).
+- **Wanted next:** its own address.
+
+### Round 9: its own address (November 5)
+- **Built:** the store and portal moved under `/demo`, set from one constant (`src/lib/base-path.ts`). The root redirects to `/demo` for now, kept free for a landing page, and old `/admin` and `/auth` links forward to the same page under `/demo`. cartblanche.io points at it.
+- **Tested:** 347 tests and 48 browser checks, including the root and old `/admin` redirects (`0d9443c`). CI green on every push since.
+- **Broke:** `www` took two redirects to reach the store.
+- **Fixed:** one hop now (`97f1d36`).
+- **Wanted next:** a landing page at the root whose one job is getting you into the demo. The first round of designs didn't look like the app at all (private note, November 5):
+
+> "tbh I hate all of these, none of them look like the app itself... suddenly using fonts that aren't in the app, buttons that aren't, etc..."
+
+The second round was built inside the real app, with its own fonts, buttons and both light and dark modes, and it still didn't land. The problem was the copy. So the third round started from the copy, a scroll through the whole system, and that design work is still going. Until it ships, the root sends you straight to the demo.
+
 ## 5. Feature family tree
 
 ```
@@ -114,9 +145,12 @@ History shape: February 495 commits, March 933, April 157, May 579. Three days h
 │  └─ AI store manager (propose, then confirm)
 ├─ cart → AI style assistant → SmartCart chat → stylist on the store's own products
 └─ "complete the look" → Style Guide canvas → pairing logic → Build a Set → Look Book
-reviewers can't log in → demo client → all admin routes work logged out
+visitors can't log in → demo client → all admin routes work logged out
 real store → sample catalogue leaks found → samples kept to the demo
 leaving Lovable → Claude Code only → bring your own Supabase and AI key → SETUP.md
+cart audit → money in cents, bad saved data survived → merchant pages load on demand → 44% smaller first download
+lint and audit to zero → hidden stale-value bugs found and fixed
+store under /demo → cartblanche.io → landing page (in design)
 ```
 
 ## 6. Test log
@@ -144,6 +178,14 @@ leaving Lovable → Claude Code only → bring your own Supabase and AI key → 
 | Nov 1 | Edge functions, outbound stubbed | 16 `smartcart-chat`, 15 `smart-chat` checks pass | Audit report |
 | Nov 1 | Browser sweep, dev and production | No writes, no other Supabase requests. One dev-only console error, fixed in `3c8b504` | Audit report |
 | Nov 1 | Demo clicks | Discount create and delete, waitlist, order status, inventory, add product, cart promo rules all behave | Audit report |
+| Nov 4, `d973711` | Fresh install, Vitest, lint, `tsc`, build | 341 of 341 in 40 files. Lint 0 errors, 50 warnings. `tsc` clean. Build passes. `npm audit --omit=dev`: no high or critical, 5 moderate | Release record |
+| Nov 4, `d973711` | Browser checks on a local build | 45 pass, no uncaught errors: cart, promo, reload and bad-data recovery, all 11 guest admin routes, demo writes and reset, both templates on a phone | Release record |
+| Nov 4, `d973711` | First JavaScript download, before and after | 1,426,048 to 800,168 bytes (43.89% less), gzipped 389,854 to 241,369 (38.09% less). That's download size, not page speed | Release record |
+| Nov 4, `d973711` | GitHub Actions: install, lint, typecheck, tests, build | Green, 341 tests | GitHub Actions run 41858702829 |
+| Nov 4, `d973711` | Read-only checks on the production deploy | 19 pass, no browser errors. All 10 entry files match the local build byte for byte | Release record |
+| Nov 5, `5632af8` | Lint, `tsc`, tests, build, audit, browser | Lint 0 warnings. 347 of 347 in 43 files. Build with no warnings. `npm audit` 0, production and dev. 45 browser checks with no console warnings or errors | `5632af8`, GitHub Actions |
+| Nov 5, `0d9443c` | The same, plus the redirects | 347 tests. 48 browser checks, including the root and old `/admin` redirects | `0d9443c`, GitHub Actions |
+| Nov 5, `abe30ee` | GitHub Actions | 347 of 347 in 43 files, lint clean, 0 vulnerabilities, build passes | GitHub Actions run 42011714889 |
 
 ## 7. Roads not taken
 
@@ -151,13 +193,15 @@ leaving Lovable → Claude Code only → bring your own Supabase and AI key → 
 - **Matching Shopify feature for feature.** The competitive teardown argued against it.
 - **Picking one default template.** Decided May 2: it depends on the audience.
 - **One exclusive payment processor.** Decided May 2: bring your own.
-- **Loosening the database for reviewers.** The demo runs on an in-memory client instead.
+- **Loosening the database for visitors.** The demo runs on an in-memory client instead.
 - **Passwords.** Gone. Email link only.
 - **Staying on Lovable.** The clone moved to bring-your-own instead.
+- **Switching lint rules off.** Every warning got fixed where it started, with no `eslint-disable` comments, and that's how the hidden bugs in round 8 turned up.
+- **A landing page in a new look.** The first designs brought in fonts and buttons the app doesn't have, so they went.
 
 ## 8. Where it went
 
-I continued this project privately for a series of boutique fashion brands and wired it for their specific stores. Rather than an open system, Cart Blanche has chosen to be a "selects" platform: invite only, for premier boutique fashion brands.
+I continued this project privately for a series of boutique fashion brands, wiring it for their specific stores. That happens in a private version, and that work is still in progress. Rather than an open system, Cart Blanche has chosen to be a "selects" platform: invite only, for premier boutique fashion brands.
 
 ## 9. Before and after visuals
 
@@ -197,3 +241,5 @@ Product photos and the logo aren't covered by the MIT license.
 - Code: `src/lib/demo/`, `src/lib/pairing-logic.ts`, `src/pages/admin/`, `supabase/migrations/`, `supabase/functions/`. Setup: `SETUP.md`.
 - Private, kept by me: chat and call records dated February 17 to May 3, 2026. Status note, May 3. Tracker docs, March and April 26. `SmartCart_AI_Style_Assistant_Spec.md`. `shopify-competitive-analysis.md`.
 - Audit report, November 1, 2026 (session notes), plus runs made while writing this.
+- Release record for `d973711`, November 4, 2026, kept offline: the audit, the test, browser and bundle logs, and the live checks.
+- CI runs on the repo's Actions tab. Landing page design notes, November 5, 2026 (private note).

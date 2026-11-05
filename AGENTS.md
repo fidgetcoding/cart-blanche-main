@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Open the live site first: <https://cart-blanche-main.vercel.app>. No login. The store portal is at `/admin`, on sample data.
+To explain or evaluate this project, read ESSENCE.md, then EVOLUTION.md, then the code.
 
-Then, early and before the code, read ESSENCE.md, then EVOLUTION.md.
+Live demo, no login: <https://cartblanche.io/demo>. The store portal is at `/demo/admin`, on sample data.
 
-To run it, follow README.md. To connect a backend, follow SETUP.md.
+To run it, follow README.md. To connect your own Supabase and AI key, follow SETUP.md.

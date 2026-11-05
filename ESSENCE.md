@@ -1,4 +1,4 @@
-# Cart Blanche, on one page
+# Cart Blanche: the essence
 
 **Try it live, no login: <https://cartblanche.io/demo>** (store portal at [/demo/admin](https://cartblanche.io/demo/admin))
 
@@ -16,15 +16,13 @@
 
 **How to try it.** `git clone https://github.com/fidgetcoding/cart-blanche-main && cd cart-blanche-main && npm ci && npm run dev`. Shop at `/demo`, run the store at `/demo/admin`. No login. Nothing you do gets saved. For the backend, follow [SETUP.md](SETUP.md).
 
-## What works today
-
+**What works today.**
 - Storefront with two templates, product detail, sizes, Build a Set, cart, discount rules, subscribe popup, all on bundled data.
 - All 11 admin routes work logged out on sample data, with no backend configured.
 - On `main` as of 2026-11-05, `npm ci` works, 347 unit and component tests pass, lint has 0 errors and 0 warnings, `tsc` is clean and the build passes with no warnings. `npm audit` reports 0 vulnerabilities. GitHub Actions runs the same checks on every push.
+- Since November 4 the merchant pages load only when you open them, so a shopper's first download is 800,168 bytes of JavaScript, down from 1,426,048. That's 44% smaller.
 - Security work on November 1: merchant accounts are invitation only, shoppers can't write to the database or storage directly, and discount checks, signups and photos are rate limited. Those fixes were checked on a real local Supabase stack with real sign-in tokens and a fake AI provider. The per-minute limits were actually hit there, and a real magic link landed through the local mail catcher.
 
-## Where it went
-
-I continued this project privately for a series of boutique fashion brands and wired it for their specific stores. Rather than an open system, Cart Blanche has chosen to be a "selects" platform: invite only, for premier boutique fashion brands.
+**Where it went.** I continued this project privately for a series of boutique fashion brands, wiring it for their specific stores. That happens in a private version, and that work is still in progress. Rather than an open system, Cart Blanche has chosen to be a "selects" platform: invite only, for premier boutique fashion brands.
 
 See [EVOLUTION.md](EVOLUTION.md) for how it got here.

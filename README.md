@@ -16,7 +16,7 @@ Zoom out to see the whole collection, drag around it, dive into a jacket, build 
 
 This repo runs on a demo catalogue and sample data, so you can open the admin with no login and click everything. Your edits stay in memory and reset on reload.
 
-Published under MIT. I continued this project privately for a series of boutique fashion brands and wired it for their specific stores. Rather than an open system, Cart Blanche has chosen to be a "selects" platform: invite only, for premier boutique fashion brands.
+Published under MIT. I continued this project privately for a series of boutique fashion brands, wiring it for their specific stores. That happens in a private version, and that work is still in progress. Rather than an open system, Cart Blanche has chosen to be a "selects" platform: invite only, for premier boutique fashion brands.
 
 ## Why I made it
 
