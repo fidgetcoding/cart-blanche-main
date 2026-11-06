@@ -6,6 +6,7 @@ import { CartProvider } from "@/contexts/CartProvider";
 import { SmartCartProvider } from "@/contexts/SmartCartProvider";
 import { StyleKitProvider } from "@/contexts/StyleKitProvider";
 import Glide from "./page/Glide";
+import { LANDING_THEME } from "./theme";
 
 // The landing is always the app's light mode (SL defaults); the demo itself stays dark.
 // The store pieces shown here are the real components, so they need the store's providers.
@@ -27,9 +28,8 @@ function Shell() {
   );
 }
 
-// The store's tile hover glow is white at 8%, made for its dark page; on this light one it's the same glow in black.
 const page = (
-  <ThemeProvider storageKey="cb-landing" defaults={{ mode: "light", tileBgMode: "transparent", tileHoverGlow: "hsla(0,0%,0%,0.08)" }}>
+  <ThemeProvider storageKey="cb-landing" defaults={LANDING_THEME}>
     <Shell />
   </ThemeProvider>
 );

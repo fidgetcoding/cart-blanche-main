@@ -1,9 +1,8 @@
-// Landing sections ahead of the story: hero, problem and system. All copy is copy.ts, word for word.
+// Landing sections between the opening and the story: problem and system. All copy is copy.ts, word for word.
 // Each section is memoised: the page re-renders whenever the nav lights a new chapter, and they never need to.
 import { memo } from 'react';
 import { COPY } from '../../copy';
-import { PAGE1, balance } from '../lib/core';
-import { LiveShop } from './live';
+import { balance } from '../lib/core';
 import { SystemHand } from './hand';
 
 const sentences = (s: string) => s.split(/(?<=\.)\s+/);
@@ -20,50 +19,6 @@ export function Head({ text, className = '', oneLine = false }: { text: string; 
     </h2>
   );
 }
-
-/** Hero copy: the headline, on one line from lg up. The way into the demo is the bar's button. */
-function HeroCopy({ className = '' }: { className?: string }) {
-  const h = COPY.hero;
-  return (
-    <div className={`flex flex-col items-center text-center ${className}`}>
-      {/* 0.0361 = 0.97 / the headline's width at 1px (26.84 px per px of Space Grotesk bold), inside px-6. */}
-      <h1 className="font-display font-bold text-[64px] leading-[1.02] lg:whitespace-nowrap lg:[font-size:min(64px,calc((100vw_-_48px)_*_0.0361))]" style={balance}>{h.headline}</h1>
-    </div>
-  );
-}
-
-/** The hero's store, ten across: framed from its left end, it pans left and right along its wall on its own from
- *  the moment the page loads (LiveShop's idle drift) until a visitor takes it, and holds still under reduced motion. */
-const HERO_CAM = { x: 0, y: 0, w: 1943, h: 586 };
-function DriftShop({ thumb }: { thumb: boolean }) {
-  return <LiveShop products={PAGE1} cols={10} scene={{ cam: HERO_CAM, max: 0.7 }} homeMax={0.6} thumb={thumb} inset={{ top: 268, bottom: 92, pad: 40 }} pan />;
-}
-
-/** 0. Hero. Almost empty: the copy over the live store, which carries on behind it. On a phone the store
- *  fills the rest of the first screen, four across so the pieces read bigger. */
-export const Hero = memo(function Hero({ thumb, narrow }: { thumb: boolean; narrow: boolean }) {
-  if (narrow) {
-    const h = COPY.hero;
-    return (
-      <section id="top" className="min-h-[100svh] flex flex-col px-4 pt-[82px] pb-16">
-        <h1 className="font-display font-bold text-[34px] leading-[1.05]" style={balance}>{h.headline}</h1>
-        <div className="relative flex-1 min-h-[380px] mt-7 rounded-xl border border-border overflow-hidden">
-          <div className="absolute inset-0">
-            <LiveShop products={PAGE1} cols={4} scene={{ cam: 'all' }} homeMax={0.44} thumb={thumb} controls={false} pan />
-          </div>
-        </div>
-      </section>
-    );
-  }
-  return (
-    <section id="top" className="relative h-screen min-h-[720px]">
-      <div className="absolute inset-0 pt-[82px]">
-        <DriftShop thumb={thumb} />
-      </div>
-      <HeroCopy className="absolute left-0 right-0 top-[150px] px-6 pointer-events-none" />
-    </section>
-  );
-});
 
 /** 1. Problem: the head, then the question that leads into the system. */
 export const Problem = memo(function Problem({ narrow }: { narrow: boolean }) {

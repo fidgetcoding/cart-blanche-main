@@ -17,7 +17,8 @@ beforeAll(() => {
   Element.prototype.scrollTo = vi.fn() as unknown as typeof Element.prototype.scrollTo;
 });
 
-const heads = [COPY.hero.headline, COPY.problem.head, COPY.system.head];
+// The opening (the carousel) sets the headline on its own lines, see below.
+const heads = [COPY.problem.head, COPY.system.head];
 
 describe('section heads from 1024 up', () => {
   it.each(heads)('keeps “%s” on one line, sized to the viewport', text => {
@@ -28,5 +29,16 @@ describe('section heads from 1024 up', () => {
     expect(head.className).toMatch(/\blg:\[font-size:min\(\d+px,calc\(/);
     // Sentences sit inline from lg up (below lg each sentence may take its own balanced line).
     for (const s of head.querySelectorAll('span')) expect(s.className).toMatch(/\blg:inline\b/);
+  });
+});
+
+describe('the opening headline', () => {
+  it('sets the whole headline in two unbroken lines on a desktop, as the carousel was picked', () => {
+    render(<Landing />);
+    const h1 = document.querySelector('#top h1')!;
+    expect(h1.textContent!.replace(/\s+/g, ' ').trim()).toBe(COPY.hero.headline);
+    const lines = [...h1.children].filter(c => c.classList.contains('block'));
+    expect(lines.map(l => l.textContent!.trim())).toEqual(['Fashion commerce with AI', 'on both sides of the counter.']);
+    for (const l of lines) expect(l.className).toMatch(/\bwhitespace-nowrap\b/);
   });
 });

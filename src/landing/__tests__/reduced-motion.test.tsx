@@ -15,13 +15,15 @@ afterAll(() => { window.matchMedia = matchMedia; });
 stubStoryLayout();
 
 describe('under reduced motion', () => {
-  it('holds the hero store still', async () => {
+  it('holds the opening still: one screen, no flight, the words already in place', async () => {
     vi.useFakeTimers();
     render(<Landing />);
-    const canvas = () => document.querySelector<HTMLElement>('#top [data-canvas]')!.style.transform;
-    const before = canvas();
+    const top = document.getElementById('top')!;
+    expect(top.style.height).toBe('100vh');
+    expect(document.getElementById('carousel-grid')).toBeNull();
+    for (const w of top.querySelectorAll<HTMLElement>('.g-w > span')) expect(w.style.animation).toMatch(/none/);
     await act(async () => { vi.advanceTimersByTime(7000); });
-    expect(canvas()).toBe(before);
+    expect(top.style.height).toBe('100vh');
     vi.useRealTimers();
   });
 

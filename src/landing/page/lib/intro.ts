@@ -32,7 +32,8 @@ function settled(cap: number) {
   return Promise.race([fonts, new Promise(r => setTimeout(r, cap))]);
 }
 
-export function useAutoIntro(on: boolean, delay = 1500) {
+/** `extra`: ids of points (inside the opening) to rest on, comma separated, before the usual stops. */
+export function useAutoIntro(on: boolean, delay = 1500, extra = '') {
   useEffect(() => {
     if (!on || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let stopped = false, raf = 0, timer = 0, expect = -1;
@@ -58,7 +59,8 @@ export function useAutoIntro(on: boolean, delay = 1500) {
       };
       // Legs: glide to each stop, then rest a beat on the problem and the system before moving on. Each stop is
       // measured as its leg starts, so a reflow since the last one (a late font, an image) can't strand it.
-      const ids = STOPS.filter(id => document.getElementById(id));
+      const stops = [...extra.split(',').filter(Boolean), ...STOPS];
+      const ids = stops.filter(id => document.getElementById(id));
       const legs = ids.map((id, i) => ({ id, rest: i < ids.length - 1 ? 1100 : 0, to: 0 }));
       let from = window.scrollY, leg = 0, t0 = 0, resting = false;
       expect = from;
@@ -81,7 +83,7 @@ export function useAutoIntro(on: boolean, delay = 1500) {
         } else if (now - t0 >= L.rest) {
           // On arrival at SmartShop, look again: if the page moved under the last stop, glide on to where it is.
           const again = leg === legs.length - 1 ? stopAt(L.id) : null;
-          if (again !== null && Math.abs(again - L.to) > 2 && legs.length < STOPS.length + 3) legs.push({ ...L });
+          if (again !== null && Math.abs(again - L.to) > 2 && legs.length < stops.length + 3) legs.push({ ...L });
           from = L.to; leg += 1; t0 = 0; resting = false;
         }
         raf = requestAnimationFrame(frame);
@@ -90,5 +92,5 @@ export function useAutoIntro(on: boolean, delay = 1500) {
     };
     timer = window.setTimeout(() => { void settled(2500).then(begin); }, delay);
     return stop;
-  }, [on, delay]);
+  }, [on, delay, extra]);
 }
