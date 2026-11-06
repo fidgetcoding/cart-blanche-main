@@ -1,6 +1,6 @@
 // Phones get the story as a plain vertical sequence: each chapter's head, then its real UI pinned while the
 // tags under it light one by one. The SmartShop canvas stays live (drag sideways, pinch, tap a piece).
-import { memo, useRef } from 'react';
+import { memo, useEffect, useRef, useState, type RefObject } from 'react';
 import { BEATS, FEATURES, nn, tagsOf } from '../lib/features';
 import { useBeat } from '../lib/core';
 import { chapterId } from '../lib/mobile';
@@ -9,10 +9,25 @@ import { ComingList } from './lab';
 import { Screen } from './screens';
 import { Head } from './sections';
 
+/** True once the element comes within a screen and a half of the viewport, and from then on. */
+function useNear(ref: RefObject<HTMLElement>, on: boolean) {
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!on || near || !el) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setNear(true); }, { rootMargin: '150% 0px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, on, near]);
+  return near;
+}
+
 function MobileChapter({ fi, thumb }: { fi: number; thumb: boolean }) {
   const f = FEATURES[fi];
   const ref = useRef<HTMLDivElement>(null);
   const beat = useBeat(ref, BEATS[fi]);
+  // The Template Lab's SL store and editor are heavy: they mount as the chapter comes close.
+  const warm = useNear(ref, f.id === 'lab' && !thumb);
   const tags = tagsOf(fi);
   return (
     <section id={chapterId(fi)} className="px-4 pt-14 pb-2 border-t border-border">
@@ -21,7 +36,7 @@ function MobileChapter({ fi, thumb }: { fi: number; thumb: boolean }) {
       <div ref={ref} className="relative mt-6">
         <div className="sticky top-[66px] z-10 bg-background pb-3">
           <div className="h-[46vh] rounded-xl border border-border overflow-hidden bg-background">
-            <Screen fi={fi} beat={thumb ? 0 : beat} t={1} thumb={thumb} live={fi === 0} compact />
+            <Screen fi={fi} beat={thumb ? 0 : beat} t={1} thumb={thumb} live={fi === 0} compact warm={warm} />
           </div>
         </div>
         <ol>

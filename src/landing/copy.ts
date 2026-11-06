@@ -26,7 +26,7 @@ export const COPY = {
     { id: 'smartcart', label: 'SmartCart', head: 'A stylist in the cart.', tags: ['Knows your stock', 'Builds outfits', 'Fits a budget', 'Reads photos'] },
     { id: 'portal', label: 'SmartPortal', head: 'The back office, minus the hire.', tags: ['Dashboard', 'Inventory', 'Orders', 'Waitlists', 'Grid Editor'] },
     { id: 'manager', label: 'AI Manager', head: 'It drafts the work. You confirm it.', tags: ['On every page', 'Confirm to apply'] },
-    { id: 'lab', label: 'Template Lab', head: 'Where your store’s next look gets built.', tags: ['YZ', 'SL'], coming: { label: 'Coming to the Lab', items: ['Editorial spreads', 'Single product stages', 'Spatial rooms', 'House grids'] } },
+    { id: 'lab', label: 'Template Lab', head: 'Where your store’s next look gets built.', tags: ['YZ', 'SL', 'Settings', 'AI Template Builder'], coming: { label: 'Coming to the Lab', items: ['Editorial spreads', 'Single product stages', 'Spatial rooms', 'House grids'] } },
   ],
   // Nate's edits: no hero eyebrow, no compare table and no closing invite; the story runs straight into the footer.
   footer: { credit: 'Built by Lorecraft LLC', code: 'GitHub', codeHref: 'https://github.com/fidgetcoding/cart-blanche-main' },

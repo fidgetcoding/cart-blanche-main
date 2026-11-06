@@ -73,7 +73,7 @@ function injectCustomFont(file: File): Promise<string> {
 }
 
 
-function ThemeControls() {
+export function ThemeControls() {
   const { themeSettings, updateTheme, saveTheme, revertTheme, hasUnsavedChanges } = useTheme();
   const { layout, getOrderedProducts, saveHiddenProductTypes } = useGridLayout();
   const [expanded, setExpanded] = useState(true);

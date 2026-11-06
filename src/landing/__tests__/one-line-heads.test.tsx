@@ -5,7 +5,10 @@ import { COPY } from '../copy';
 
 // From 1024 up every section head sits on one line: it doesn't wrap, and its size follows the viewport so it
 // shrinks rather than overflowing. jsdom has no layout, so this checks the rule each head carries; the QA run
-// measures the heads in Chrome at 1024, 1280, 1440 and 1920.
+// measures the heads in Chrome at 1024, 1280, 1440 and 1920. The page ships opening C (no Problem, no System);
+// the rule still holds for both heads should the longer opening come back, so this renders opening A.
+vi.mock('../page/lib/opening', async importOriginal => ({ ...(await importOriginal<typeof import('../page/lib/opening')>()), OPENING: 'A' }));
+
 beforeAll(() => {
   class Observer { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } }
   vi.stubGlobal('IntersectionObserver', Observer);

@@ -47,8 +47,10 @@ describe('Landing', () => {
     expect(document.body.textContent).not.toContain('One system beats a stack of apps.');
     expect(document.body.textContent).not.toMatch(/premier boutique fashion brands/i);
     expect(document.body.textContent).not.toContain('No login needed');
-    // The bar's Enter the demo is the only one left.
-    expect(document.querySelectorAll('a.signup-cta')).toHaveLength(1);
+    // The bar's Enter the demo, and the copy of it that flies to the middle at the end, are the only ones.
+    const ctas = document.querySelectorAll('a.signup-cta');
+    expect(ctas).toHaveLength(2);
+    expect(document.querySelectorAll('header a.signup-cta, a[data-end-cta].signup-cta')).toHaveLength(2);
   });
 
   it('credits Lorecraft LLC and marks the code link with the GitHub icon', () => {

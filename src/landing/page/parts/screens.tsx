@@ -30,8 +30,8 @@ function Pad({ children, compact }: { children: ReactNode; compact: boolean }) {
 }
 
 /** Memoised: as the story scrolls, only the screen whose beat is moving re-renders; the other five hold still. */
-export const Screen = memo(function Screen({ fi, beat, t, thumb = false, live = false, compact = false }: {
-  fi: number; beat: number; t: number; thumb?: boolean; live?: boolean; compact?: boolean;
+export const Screen = memo(function Screen({ fi, beat, t, thumb = false, live = false, compact = false, warm = false }: {
+  fi: number; beat: number; t: number; thumb?: boolean; live?: boolean; compact?: boolean; warm?: boolean;
 }) {
   switch (FEATURES[fi].id) {
     // The store drifts on its own while it's zoomed out (its first beat), already moving when the opening lands.
@@ -41,6 +41,8 @@ export const Screen = memo(function Screen({ fi, beat, t, thumb = false, live = 
     case 'portal': return <PortalScreen beat={beat} t={t} thumb={thumb} compact={compact} />;
     // On every page: the manager's prompts follow the page, from Inventory on (Dashboard is the portal's own first look).
     case 'manager': return <ManagerVisual step={beat === 0 ? 0 : 2} t={beat === 0 ? 0.26 + 0.74 * t : 1} thumb={thumb} compact={compact} framed={false} />;
-    default: return <Pad compact={compact}><LabVisual step={beat} t={beat === 1 ? 1 : t} thumb={thumb} compact={compact} /></Pad>;
+    // The Template Lab fills the window edge to edge, the way the editor fills the screen; `warm` mounts its SL
+    // store and editor while the chapter before it plays.
+    default: return <LabVisual step={beat} t={t} thumb={thumb} compact={compact} warm={warm} />;
   }
 });

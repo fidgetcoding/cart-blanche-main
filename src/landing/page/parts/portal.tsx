@@ -32,7 +32,8 @@ const PROMPTS: Partial<Record<Route, { icon: LucideIcon; label: string }[]>> = {
   lab: [{ icon: Sparkles, label: 'Browse Templates' }, { icon: Settings, label: 'Customize' }, { icon: Grid3X3, label: 'Compare' }, { icon: Package, label: 'Recommend' }],
 };
 
-function BrandBar() {
+/** AdminLayout.tsx brand header, over the chat column. */
+export function BrandBar() {
   return (
     <div className="h-12 liquid-glass border-b border-sidebar-border flex items-center px-3 xl:px-5 flex-shrink-0 gap-2">
       <h1 className="font-display text-xs font-bold tracking-[0.2em] text-sidebar-foreground flex-shrink-0">CART BLANCHE</h1>
@@ -283,15 +284,5 @@ export function ManagerVisual({ step, t, thumb = false, compact = false, framed 
     <FitWidth w={1440} minH={720} className={`w-full h-full ${framed ? 'rounded-xl border border-border' : ''}`} style={{ background: 'hsl(0 0% 5%)' }}>
       {h => <PortalFrame route={route} pages={['dashboard', 'inventory', 'grid', 'discounts']} chat={chat} typed={typed} chatTitle={title} thumb={thumb} h={h} />}
     </FitWidth>
-  );
-}
-
-/** The Lab page inside the portal shell (tab header + Templates), 1060 × 250, for the Template Lab chapter. */
-export function LabPanel({ active }: { active: 'yz' | 'sl' }) {
-  return (
-    <PortalDark className="w-[1060px] h-[250px] dynamic-bg flex flex-col overflow-hidden rounded-xl border border-border">
-      <PortalNav active="lab" />
-      <LabPage active={active} />
-    </PortalDark>
   );
 }

@@ -188,7 +188,7 @@ export const Story = memo(function Story({ thumb, onNav, jumpRef }: { thumb: boo
                     // so it never counts as a layout shift (fast scrolls catch the last ones still fading out).
                     <div key={f.id} className="absolute left-0 top-0" style={{ transform: `translate(${rect.x}px, ${rect.y}px)`, width: rect.w, zIndex: mine ? 2 : 1, ...fade(!zoomed || mine, !spread) }}>
                       <div className="relative rounded-xl border border-border overflow-hidden bg-background shadow-[0_14px_40px_-18px_rgba(0,0,0,0.28)]" style={{ height: rect.h }}>
-                        <Screen fi={fi} beat={mine ? at.beat : rest.beat} t={mine ? t : rest.t} thumb={thumb} live={zoomed && mine && fi === 0} />
+                        <Screen fi={fi} beat={mine ? at.beat : rest.beat} t={mine ? t : rest.t} thumb={thumb} live={zoomed && mine && fi === 0} warm={fi === FEATURES.length - 1 && at.f >= fi - 1} />
                         {!zoomed && !thumb && (
                           <button type="button" aria-label={f.label} onClick={() => toFeature(fi)} className="absolute inset-0 z-40 hover:bg-foreground/[0.03] transition-colors" />
                         )}
