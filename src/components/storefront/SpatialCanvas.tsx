@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { ProductTile } from '@/components/storefront/ProductTile';
 import { ProductView } from '@/components/storefront/ProductView';
+import { warmPhoto } from '@/lib/warm-photo';
 import { DemoStoreLabel } from '@/components/storefront/DemoStoreLabel';
 import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
@@ -999,7 +1000,7 @@ export function SpatialCanvas() {
                 isHovered={hoveredIndex === i}
                 dimmed={isDimmed}
                 onClick={() => { if (!didDragRef.current) setSelectedIndex(i); }}
-                onHoverStart={() => { setHoveredIndex(i); setFocusedIndex(-1); }}
+                onHoverStart={() => { setHoveredIndex(i); setFocusedIndex(-1); warmPhoto(product.images?.[0]?.medium); }}
                 onHoverEnd={() => setHoveredIndex(null)}
                 onQuickAdd={(e) => {
                   e.stopPropagation();
@@ -1072,8 +1073,9 @@ export function SpatialCanvas() {
             productIndex={pageProducts.findIndex(p => p === DEMO_PRODUCTS[selectedIndex!])}
             products={pageProducts}
             categories={CATEGORIES}
-            onClose={() => {
-              setFocusedIndex(selectedIndex);
+            onClose={(via) => {
+              // The keyboard keeps its place on the piece it closed; a click or tap leaves no highlight behind.
+              setFocusedIndex(via === 'key' ? selectedIndex : -1);
               setSelectedIndex(null);
               maxZoomTriggeredRef.current = false;
               snapToFitVisible();

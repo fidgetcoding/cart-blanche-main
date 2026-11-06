@@ -72,4 +72,23 @@ describe('SpatialCanvas', () => {
       expect(zone.className).toContain('md:w-24');
     }
   });
+  it('leaves no highlight on a tile after a click closes its product', async () => {
+    await renderCanvas();
+    fireEvent.click(document.querySelector('[data-canvas-area] img[alt="Deconstructed Blazer"]')!.closest('.absolute')!);
+    await vi.waitFor(() => expect(document.querySelector('[data-image-zone]')).not.toBeNull(), { timeout: 2000 });
+    fireEvent.click(document.querySelector('button:has(svg.lucide-x)')!);
+    await vi.waitFor(() => expect(document.querySelector('[data-image-zone]')).toBeNull(), { timeout: 2000 });
+    expect(focusedTile()).toBeUndefined();
+  });
+
+  it('keeps the keyboard on the piece it closed with Escape', async () => {
+    const { root } = await renderCanvas();
+    fireEvent.keyDown(root, { key: 'ArrowRight' });
+    const piece = focusedTile();
+    fireEvent.keyDown(root, { key: 'Enter' });
+    await vi.waitFor(() => expect(document.querySelector('[data-image-zone]')).not.toBeNull(), { timeout: 2000 });
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await vi.waitFor(() => expect(document.querySelector('[data-image-zone]')).toBeNull(), { timeout: 2000 });
+    expect(focusedTile()).toBe(piece);
+  });
 });

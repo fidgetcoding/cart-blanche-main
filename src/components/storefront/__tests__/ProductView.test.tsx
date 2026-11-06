@@ -245,8 +245,7 @@ describe('ProductView', () => {
         for (const node of [...record.addedNodes, ...record.removedNodes]) {
           if (!(node instanceof Element)) continue;
           for (const img of node.matches('img') ? [node] : [...node.querySelectorAll('img')]) {
-            const src = img.getAttribute('src')!;
-            if (second.images.some(i => i.medium === src)) mounted.add(src);
+            mounted.add(img.getAttribute('src')!);
           }
         }
       }
@@ -257,7 +256,9 @@ describe('ProductView', () => {
     collect(observer.takeRecords());
     observer.disconnect();
     expect(first.id).not.toBe(second.id);
-    expect([...mounted]).toEqual([second.images[0].medium]);
+    // Its own first photo (the thumbnail the canvas already has, sharpening to the full one), never the first product's.
+    expect([...mounted].filter(src => first.images.some(i => i.thumb === src || i.medium === src))).toEqual([]);
+    expect([...mounted].filter(src => src === second.images[0].thumb || src === second.images[0].medium)).toHaveLength(1);
   });
 
   it('closes the waitlist on Escape and keeps the product open beneath it', async () => {

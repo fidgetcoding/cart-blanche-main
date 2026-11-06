@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProductTile } from '../ProductTile';
 import { DEMO_PRODUCTS } from '@/data/demo-data';
 
@@ -21,5 +21,28 @@ describe('ProductTile', () => {
     expect(screen.queryByTitle('Quick Add')).toBeNull();
     expect(screen.queryByTitle('Style Kit')).toBeNull();
     expect((container.querySelector('.rounded-lg') as HTMLElement).style.boxShadow).not.toBe('');
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('shows a photo the browser already has at once, with no fade from blank', () => {
+    vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(400);
+    const { container } = render(<ProductTile {...props()} />);
+    expect(container.querySelector('img')!.className).toContain('opacity-100');
+  });
+
+  it('fades in a photo that is still loading', () => {
+    const { container } = render(<ProductTile {...props()} />);
+    expect(container.querySelector('img')!.className).toContain('opacity-0');
+  });
+  it('shows a remounted tile its photo at once once it has loaded before, as on a page flip back', () => {
+    const product = { ...DEMO_PRODUCTS[0], id: 'flip', images: [{ ...DEMO_PRODUCTS[0].images[0], thumb: '/products/flip-thumb.webp' }] };
+    const first = render(<ProductTile {...props()} product={product} />);
+    fireEvent.load(first.container.querySelector('img')!);
+    first.unmount();
+    const again = render(<ProductTile {...props()} product={product} />);
+    const img = again.container.querySelector('img')!;
+    expect(img.className).toContain('opacity-100');
+    expect(img.getAttribute('loading')).toBe('eager');
   });
 });

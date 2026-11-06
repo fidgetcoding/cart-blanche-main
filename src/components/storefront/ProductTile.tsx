@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { ShoppingBag, Layers } from 'lucide-react';
 import type { DemoProduct } from '@/data/demo-data';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -19,6 +19,9 @@ interface ProductTileProps {
   actions?: boolean;
 }
 
+/** Thumbnails this page has already loaded and shown. */
+const shownThumbs = new Set<string>();
+
 export const ProductTile = memo(function ProductTile({
   product, scale, isFocused, isHovered, dimmed, onClick, onHoverStart, onHoverEnd, onQuickAdd, onQuickStyleKit, positionOverride, actions = true
 }: ProductTileProps) {
@@ -26,10 +29,20 @@ export const ProductTile = memo(function ProductTile({
   const showLabel = scale > 0.45;
   const glowing = isFocused || isHovered;
   const showActions = actions && glowing && scale > 0.4;
-  const [imgLoaded, setImgLoaded] = useState(false);
+  // A photo this page has already shown (a tile remounting on a page flip, a filter or a return from a product)
+  // shows at once, eagerly and decoded in step. Fading it in from nothing blanked every tile on the canvas for a
+  // moment, because a lazy image starts out unloaded even when the browser has it.
+  const src = product.images?.[0]?.thumb;
+  const [seen] = useState(() => !!src && shownThumbs.has(src));
+  const [imgLoaded, setImgLoaded] = useState(seen);
+  const imgRef = useRef<HTMLImageElement>(null);
+  useLayoutEffect(() => {
+    const el = imgRef.current;
+    if (el?.complete && el.naturalWidth > 0) setImgLoaded(true);
+  }, []);
   const { themeSettings } = useTheme();
 
-  const handleLoad = useCallback(() => setImgLoaded(true), []);
+  const handleLoad = useCallback(() => { if (src) shownThumbs.add(src); setImgLoaded(true); }, [src]);
 
   return (
     <div
@@ -56,10 +69,11 @@ export const ProductTile = memo(function ProductTile({
         }}>
           {product.images && product.images.length > 0 ? (
             <img
+              ref={imgRef}
               src={product.images[0].thumb}
               alt={product.title}
-              loading="lazy"
-              decoding="async"
+              loading={seen ? 'eager' : 'lazy'}
+              decoding={seen ? 'sync' : 'async'}
               onLoad={handleLoad}
               className={`w-full h-full object-cover rounded-lg pointer-events-none transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             />

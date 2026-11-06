@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useStyleKit } from '@/contexts/StyleKitContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SizeChartOverlay } from './SizeChartOverlay';
+import { ProductPhoto } from './ProductPhoto';
 import { GenderSymbol } from './GenderSymbol';
 import { splitSentences } from '@/lib/format-description';
 import { WaitlistModal } from './WaitlistModal';
@@ -43,7 +44,8 @@ interface ProductViewProps {
   productIndex: number;
   products: DemoProduct[];
   categories: string[];
-  onClose: () => void;
+  /** How the shopper closed it: a click or tap, or the keyboard (Escape). */
+  onClose: (via?: 'pointer' | 'key') => void;
   onNavigate: (newIndex: number) => void;
   activeCategory: string;
   onCategoryChange: (cat: string) => void;
@@ -505,7 +507,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
           break;
         case 'Escape':
           e.preventDefault();
-          onClose();
+          onClose('key');
           break;
       }
     };
@@ -582,7 +584,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
       {/* Backdrop — click to close */}
       <div
         className="absolute inset-0 bg-background"
-        onClick={onClose}
+        onClick={() => onClose('pointer')}
       />
 
       {/* ── Adjacent Item Peeks — gated on URL param + viewport + details state ── */}
@@ -730,7 +732,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
                 onClick={(e) => {
                   e.stopPropagation();
                   onCategoryChange(cat);
-                  onClose();
+                  onClose('pointer');
                 }}
                 className={`whitespace-nowrap text-[10px] font-display tracking-[0.12em] uppercase rounded-md px-2.5 py-1 transition-colors ${
                   activeCategory === cat
@@ -846,7 +848,7 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
           >
             {/* Close button — above image, left-aligned */}
             <button
-              onClick={onClose}
+              onClick={() => onClose('pointer')}
               className="self-end mb-3 p-2 rounded-xl backdrop-blur-md bg-foreground/[0.08] border border-foreground/[0.12] hover:bg-foreground/[0.15] transition-all"
             >
               <X className="w-5 h-5 text-foreground/60" />
@@ -855,13 +857,10 @@ const ProductViewContent = forwardRef<HTMLDivElement, ProductViewProps>(function
             {/* Product image area */}
             <div data-image-zone="true" className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden shrink-0 [@media(max-height:760px)]:mb-3" style={{ width: expandDetails ? 'min(100%, 28rem, 42vh)' : 'min(100%, 32rem, 52vh)' }}>
               {displayImages && displayImages.length > 0 ? (
-                <img
-                  key={`${product.id}-${selectedColorwayId || 'default'}-${activeImage}`}
+                <ProductPhoto
                   src={displayImages[Math.min(activeImage, displayImages.length - 1)].medium}
+                  placeholder={displayImages[Math.min(activeImage, displayImages.length - 1)].thumb}
                   alt={product.title}
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                  decoding="async"
                 />
               ) : (
                 <span className="font-display text-muted-foreground/15 text-lg tracking-[0.3em]">
